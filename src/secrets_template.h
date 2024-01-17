@@ -2,14 +2,12 @@
  
 #define SECRET
 
-String THINGSSPEAK_API_KEY = "****";
-String THINGSSPEAK_TEMP_FIELD = "field5"; // kök(1&2), toa(3&4), sov(5&6)
-String THINGSSPEAK_HUMIDITY_FIELD = "field6"; //
+const char THINGSSPEAK_API_KEY[] = "****";
+const char THINGSSPEAK_TEMP_FIELD[] = "field5"; // kök(1&2), toa(3&4), sov(5&6)
+const char THINGSSPEAK_HUMIDITY_FIELD[] = "field6"; //
 
 #define aws_iot_THINGNAME "****"
- 
-int8_t TIME_ZONE = 1; //STOCKHOLM(SWEDEN): +1 UTC
- 
+
 // Copy from aws iot core settings - Device data endpoint here 
 const char aws_iot_MQTT_HOST[] = "**.amazonaws.com";
  
