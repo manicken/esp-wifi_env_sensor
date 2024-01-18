@@ -20,6 +20,7 @@ namespace NTP {
         DEBUG_UART.print("Setting time using SNTP");
         configTime(TIME_ZONE * 3600, 0 * 3600, "pool.ntp.org", "time.nist.gov");
         now = time(nullptr);
+        
         while (now < nowish)
         {
             delay(500);
@@ -27,10 +28,13 @@ namespace NTP {
             now = time(nullptr);
         }
         DEBUG_UART.println("done!");
-        struct tm timeinfo;
-        gmtime_r(&now, &timeinfo);
+        struct tm* timeinfo;
+        timeinfo = localtime(&now);
+        //gmtime_r(&now, &timeinfo);
         DEBUG_UART.print("Current time: ");
-        DEBUG_UART.print(asctime(&timeinfo));
+        DEBUG_UART.print(asctime(timeinfo));
+        DEBUG_UART.println();
+        DEBUG_UART.println();
     }
 }
 #endif

@@ -10,14 +10,7 @@
 // OTA
 #include "OTA.h"
 // Amazon AWS IoT
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
-#include <time.h>
-#include "NTP.h"
-#include "secrets/db_kitchen/secrets.h"
-//#include "secrets/db_toilet/secrets.h"
-//#include "secrets/db_bedroom/secrets.h"
+#include "AWS_IOT.h"
 
 // sensors
 #include <DHTesp.h>
@@ -73,16 +66,6 @@ ESP8266WebServer server(HTTP_PORT);
 HTTPClient http;
 WiFiClient wifiClient;
 
-// AWS stuff
-WiFiClientSecure wifiClientSecure;
-
-BearSSL::X509List aws_iot_ca_cert(AWS_IOT_CA_CERTIFICATE); // from #include "secrets/*/secrets.h"
-BearSSL::X509List aws_iot_client_cert(AWS_IOT_CLIENT_CERTIFICATE);
-BearSSL::PrivateKey aws_iot_private_key(AWS_IOT_PRIVATE_KEY);
-
-PubSubClient aws_iot_client(wifiClientSecure);
-
-
 uint32_t test = 1234567890;
 
 uint8_t update_display = 0;
@@ -90,24 +73,25 @@ uint8_t update_display = 0;
 unsigned long currTime = 0;
 unsigned long deltaTime_displayUpdate = 0;
 unsigned long deltaTime_sendToWebUpdate = 0;
+unsigned long deltaTime_sendToAwsIot = 0;
 
 
 #define UPLOAD_INTERVAL_SEC (60*10)
 
-float temp_read = 0;
-float humidity_read = 0;
-float temp = 0;
-float humidity = 0;
-float temp_old = 0;
-float humidity_old = 0;
+
+
 
 String urlApi = "";
 int8_t anyChanged = 0;
+
 DHTesp dht;
+float temp_dht = 0;
+float humidity_dht = 0;
 
 #define ONE_WIRE_BUS 12
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
+float temp_ds = 0;
 
 void printESP_info(void);
 
@@ -129,16 +113,14 @@ void setup() {
     tcp2uart.begin();
     dht.setup(13, DHTesp::DHT11);
 
-    temp = 0.0f;
-    humidity = 0.0f;
-
     sensors.begin(); // one wire sensors
+
+    AWS_IOT::setup_and_connect();
 
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
 }
 
-//DHT dht(13, DHT11);
-float temp2_read = 0;
+
 
 void loop() {
     tcp2uart.BridgeMainTask();
@@ -147,62 +129,57 @@ void loop() {
     
     currTime = millis();
 
-    if (currTime - deltaTime_displayUpdate >= 1000) {
-        deltaTime_displayUpdate = currTime;
-        temp_read = dht.getTemperature();
-        humidity_read = dht.getHumidity();
+    if (millis() - deltaTime_displayUpdate >= 1000) {
+        deltaTime_displayUpdate = millis();
+        temp_dht = dht.getTemperature();
+        humidity_dht = dht.getHumidity();
         sensors.requestTemperatures(); // Send the command to get temperatures
-        temp2_read = sensors.getTempCByIndex(0);
-
-        temp = temp2_read;
-        humidity = humidity_read;
-        
+        temp_ds = sensors.getTempCByIndex(0);
+      
         display.setCursor(0,0);
-        display.print(temp_read);
+        display.print(temp_dht);
         display.print("  ");
-        display.setCursor(0,8);
-        display.print(temp2_read);
-        display.print("  ");
-        display.setCursor(0,16);
-        display.print(humidity_read);
-        display.print("  ");
+        display.print(humidity_dht);
 
+        display.setCursor(0,8);
+        display.print(temp_ds);
+        
         update_display = 1;
     }
-    if (currTime - deltaTime_sendToWebUpdate >= (1000 * UPLOAD_INTERVAL_SEC)) {
-        deltaTime_sendToWebUpdate = currTime;
-        //temp = temp / UPLOAD_INTERVAL_SEC;
-        //humidity = humidity / UPLOAD_INTERVAL_SEC;
+    if (!AWS_IOT::client.connected())
+    {
+        connect_to_wifi();
+        AWS_IOT::setup_and_connect();
+    }
+    else
+    {
+        AWS_IOT::client.loop();
+        if (millis() - deltaTime_sendToAwsIot > 5000)
+        {
+            deltaTime_sendToAwsIot = millis();
+            AWS_IOT::publishMessage(humidity_dht, temp_ds);
+        }
+    }
+
+    if (millis() - deltaTime_sendToWebUpdate >= (1000 * UPLOAD_INTERVAL_SEC)) {
+        deltaTime_sendToWebUpdate = millis();
 
         urlApi = "";
-        //anyChanged = 0;
-        //if (temp != temp_old) {
-        //    temp_old = temp;
-            urlApi += "&"+String(THINGSSPEAK_TEMP_FIELD)+"=" + String(temp);
-        //    anyChanged = 1;
-        //}
-        //if (humidity != humidity_old) {
-        //    humidity_old = humidity;
-            urlApi += "&"+String(THINGSSPEAK_HUMIDITY_FIELD)+"=" + String(humidity);
-        //    anyChanged = 1;
-        //}
+        urlApi += "&"+String(THINGSSPEAK_TEMP_FIELD)+"=" + String(temp_ds);
+        urlApi += "&"+String(THINGSSPEAK_HUMIDITY_FIELD)+"=" + String(humidity_dht);
+        String url = "http://api.thingspeak.com/update?api_key="+ String(THINGSSPEAK_API_KEY) + urlApi;
+        http.begin(wifiClient, url);
         
-
-        //if (anyChanged == 1) {
-            String url = "http://api.thingspeak.com/update?api_key="+ String(THINGSSPEAK_API_KEY) + urlApi;
-            http.begin(wifiClient, url);
-            
-            int httpCode = http.GET();
-            if (httpCode > 0) {
-                DEBUG_UART.println(F("\r\nGET request sent\r\n"));
-                DEBUG_UART.println(urlApi);
-            }
-            else {
-                DEBUG_UART.println(F("\r\nGET request FAILURE\r\n"));
-                DEBUG_UART.println(urlApi);
-            }
-            http.end();
-        //}
+        int httpCode = http.GET();
+        if (httpCode > 0) {
+            DEBUG_UART.println(F("\r\nGET request sent\r\n"));
+            DEBUG_UART.println(urlApi);
+        }
+        else {
+            DEBUG_UART.println(F("\r\nGET request FAILURE\r\n"));
+            DEBUG_UART.println(urlApi);
+        }
+        http.end();
     }
     
     if (update_display == 1) {
@@ -289,4 +266,6 @@ void connect_to_wifi(void)
             DEBUG_UART.println(F("Flash Chip configuration ok.\r\n"));
         }
         DEBUG_UART.printf(" ESP8266 Chip id = %08X\n", ESP.getChipId());
+        DEBUG_UART.println();
+        DEBUG_UART.println();
     }
