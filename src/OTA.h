@@ -12,7 +12,7 @@ namespace OTA{
     
     static int otaPartProcentCount = 0;
     void setup(WiFiClient wifiClient);
-    void Pulled_check(WiFiClient wifiClient);
+    void Download_Update(WiFiClient wifiClient, String url);
     void setup_PushedOTA(void);
     
     void setup(WiFiClient wifiClient)
@@ -21,13 +21,17 @@ namespace OTA{
         setup_PushedOTA();
     }
 
-    void Pulled_check(WiFiClient wifiClient)
+    void Download_Update(WiFiClient wifiClient, String url)
+    {
+        Download_Update(wifiClient, url.c_str());
+    }
+    void Download_Update(WiFiClient wifiClient, const char *url)
     {
         //EEPROM.put(SPI_FLASH_SEC_SIZE, "hello");
 
         DEBUG_UART.println(F("checking for updates"));
-        String updateUrl = "http://espOtaServer/esp_ota/" + String(ESP.getChipId(), HEX) + ".bin";
-        t_httpUpdate_return ret = ESPhttpUpdate.update(wifiClient, updateUrl.c_str());
+        //String updateUrl = "http://espOtaServer/esp_ota/" + String(ESP.getChipId(), HEX) + ".bin";
+        t_httpUpdate_return ret = ESPhttpUpdate.update(wifiClient, url);
         DEBUG_UART.print(F("HTTP_UPDATE_"));
         switch (ret) {
         case HTTP_UPDATE_FAILED:
