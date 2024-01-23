@@ -35,10 +35,11 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include "FSBrowser.h"
-#include "TCP2UART.h"
+#include "RF433.h"
+//#include "TCP2UART.h"
 
 // the following are not used when having config and files on internal filesystem
-#include "secrets/db_kitchen/secrets.h"
+//#include "secrets/db_kitchen/secrets.h"
 //#include "secrets/db_toilet/secrets.h"
 //#include "secrets/db_bedroom/secrets.h"
 
@@ -50,7 +51,7 @@ Adafruit_SSD1306 display(128, 32, &Wire, -1); // -1 = no reset pin
 
 #define DEBUG_UART Serial1
 
-TCP2UART tcp2uart;
+//TCP2UART tcp2uart;
 
 // QUICKFIX...See https://github.com/esp8266/Arduino/issues/263
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -73,8 +74,6 @@ unsigned long last_wifi_check_time = 0;
 
 ESP8266WebServer webserver(HTTP_PORT);
 
-WiFiClient wifiClient;
-
 uint32_t test = 1234567890;
 
 uint8_t update_display = 0;
@@ -83,12 +82,6 @@ unsigned long currTime = 0;
 unsigned long deltaTime_displayUpdate = 0;
 unsigned long deltaTime_sendToWebUpdate = 0;
 unsigned long deltaTime_sendToAwsIot = 0;
-
-
-#define UPLOAD_INTERVAL_SEC (60*10)
-
-String urlApi = "";
-int8_t anyChanged = 0;
 
 DHTesp dht;
 float temp_dht = 0;
@@ -101,15 +94,13 @@ float temp_ds = 0;
 
 StaticJsonDocument<200> jsonDoc;
 
-char jsonBuffer[512];
-
-
+char jsonBuffer[160];
 
 void init_display(void);
 void connect_to_wifi(void);
 void printESP_info(void);
 void srv_handle_info(void);
-
+void initWebServerHandlers(void);
 
 
 void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
@@ -133,6 +124,10 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
             DEBUG_UART.println("sending to AWS IOT");
             AWS_IOT::publishMessage(humidity_dht, temp_ds);
         }
+        else if (cmd == "RF433")
+        {
+            RF433::DecodeFromJSON(jsonDoc);
+        }
         else if (cmd == "OTA_update")
         {
             if (jsonDoc.containsKey("path"))
@@ -141,85 +136,58 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
 
                 DEBUG_UART.printf("starting OTA from %s\n", url.c_str());
                 
-                OTA::Download_Update(wifiClient, url.c_str());
+                OTA::Download_Update(url.c_str());
             }
         }
     }
 }
 
 void setup() {
-  
-   
+DEBUG_UART.printf("free @ start:%ld\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
-    DEBUG_UART.print("Init LittleFS ");
-    if ( LittleFS.begin())
-        DEBUG_UART.println("[OK]");
-    else
-        DEBUG_UART.println("[FAIL]");
-
+    //DEBUG_UART.print(F("Init LittleFS "));
+    LittleFS.begin();
+    //if ( LittleFS.begin())
+    //    DEBUG_UART.println("[OK]");
+    //else
+    //    DEBUG_UART.println("[FAIL]");
+//DEBUG_UART.printf("free-2:%ld\n",ESP.getFreeHeap());
     init_display();
-
-    //printESP_info();
+//DEBUG_UART.printf("free-1:%ld\n",ESP.getFreeHeap());
     connect_to_wifi();
-    
-    OTA::setup(wifiClient);
-
-    tcp2uart.begin();
+//DEBUG_UART.printf("free1:%ld\n",ESP.getFreeHeap());
+    OTA::setup();
+//DEBUG_UART.printf("free2:%ld\n",ESP.getFreeHeap());
+    //tcp2uart.begin();
+//DEBUG_UART.printf("free3:%ld\n",ESP.getFreeHeap());
     dht.setup(13, DHTesp::DHT11);
-
     sensors.begin(); // one wire sensors
-
-    if (AWS_IOT::setup_readFiles())
-        AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
-    else
-        DEBUG_UART.println("AWS_IOT error cannot setup AWS IoT without the cert and key files!!!");
-
-    ThingSpeak::loadSettings();
-
-    webserver.on("/",  []() {
-        if (LittleFS.exists("index.html")) FSBrowser::handleFileRead("index.html");
-        else if (LittleFS.exists("index.htm")) FSBrowser::handleFileRead("index.htm");
-        else webserver.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
-    });
-    webserver.on("/info", srv_handle_info);
-    webserver.on("/formatLittleFs", []() { if (LittleFS.format()) webserver.send(200,"text/html", "Format OK"); else webserver.send(200,"text/html", "format Fail"); });
-    webserver.on("/aws_iot/refresh", []() {
-        if (AWS_IOT::setup_readFiles()) {
-            webserver.send(200,"text/html", "AWS_IOT setup_readFiles OK");
-            AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
-            
-        }
-        else
-        {
-            webserver.send(200,"text/html", "AWS_IOT setup_readFiles Fail");
-        }
-        });
-    webserver.on("/thingspeak/refresh", []() {
-        if (ThingSpeak::loadSettings())
-            webserver.send(200,"text/html", "Thingspeak loadSettings OK");
-        else
-            webserver.send(200,"text/html", "Thingspeak loadSettings error");
-    });
-    webserver.onNotFound([]() {                              // If the client requests any URI
-        if (!FSBrowser::handleFileRead(webserver.uri()))                  // send it if it exists
-
-        webserver.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
-    });
-
-    FSBrowser::setup(webserver);
-
-    webserver.begin();
+//DEBUG_UART.printf("free4:%ld\n",ESP.getFreeHeap());
     
-
+    
+    if (AWS_IOT::setup_readFiles()) {
+//DEBUG_UART.printf("free5:%ld\n",ESP.getFreeHeap());
+        AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
+    }
+    else
+        DEBUG_UART.println(F("AWS_IOT error cannot setup AWS IoT without the cert and key files!!!"));
+    
+//DEBUG_UART.printf("free6:%ld\n",ESP.getFreeHeap());
+    ThingSpeak::loadSettings();
+//DEBUG_UART.printf("free7:%ld\n",ESP.getFreeHeap());
+    initWebServerHandlers();
+//DEBUG_UART.printf("free8:%ld\n",ESP.getFreeHeap());
+    FSBrowser::setup(webserver);
+//DEBUG_UART.printf("free9:%ld\n",ESP.getFreeHeap());
+    webserver.begin();
+DEBUG_UART.printf("free end of setup:%ld\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
-
-
 }
 
 void loop() {
-    tcp2uart.BridgeMainTask();
+    //tcp2uart.BridgeMainTask();
     ArduinoOTA.handle();
     webserver.handleClient();
     
@@ -257,17 +225,51 @@ void loop() {
         
     }
 
-
     if (millis() - deltaTime_sendToWebUpdate >= (1000 * ThingSpeak::update_rate_sec)) {
         deltaTime_sendToWebUpdate = millis();
+       // DEBUG_UART.printf("free loop:%ld  ",ESP.getFreeHeap());
         if (ThingSpeak::canPost)
             ThingSpeak::SendData(temp_ds, humidity_dht);
+        
     }
     
     if (update_display == 1) {
         update_display = 0;
         display.display();
     }
+}
+
+void initWebServerHandlers(void)
+{
+
+    webserver.on("/",  []() {
+        if (LittleFS.exists(F("index.html"))) FSBrowser::handleFileRead(F("index.html"));
+        else if (LittleFS.exists(F("index.htm"))) FSBrowser::handleFileRead(F("index.htm"));
+        else webserver.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
+    });
+    webserver.on("/info", srv_handle_info);
+    //webserver.on(F("/formatLittleFs"), []() { if (LittleFS.format()) webserver.send(200,"text/html", "Format OK"); else webserver.send(200,"text/html", "format Fail"); });
+    webserver.on(F("/aws_iot/refresh"), []() {
+        if (AWS_IOT::setup_readFiles()) {
+            webserver.send(200,"text/html", F("AWS_IOT setup_readFiles OK"));
+            AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
+            
+        }
+        else
+        {
+            webserver.send(200,"text/html", F("AWS_IOT setup_readFiles Fail"));
+        }
+        });
+    webserver.on("/thingspeak/refresh", []() {
+        if (ThingSpeak::loadSettings())
+            webserver.send(200,"text/html", F("Thingspeak loadSettings OK"));
+        else
+            webserver.send(200,"text/html", F("Thingspeak loadSettings error"));
+    });
+    webserver.onNotFound([]() {                              // If the client requests any URI
+        if (!FSBrowser::handleFileRead(webserver.uri()))                  // send it if it exists
+            webserver.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
+    });
 }
 
 void init_display(void)
@@ -285,9 +287,10 @@ void init_display(void)
 
     }
     else{
-        DEBUG_UART.println(F("oled init fail"));
-        if (display.begin(SSD1306_SWITCHCAPVCC, 0x3D))
-            DEBUG_UART.println(F("oled addr is 0x3D"));
+        //DEBUG_UART.println(F("oled init fail"));
+        display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+        //if (display.begin(SSD1306_SWITCHCAPVCC, 0x3D))
+            //DEBUG_UART.println(F("oled addr is 0x3D"));
     }
 }
 
@@ -296,7 +299,7 @@ void connect_to_wifi(void)
     WiFiManager wifiManager;
     DEBUG_UART.println(F("trying to connect to saved wifi"));
     display.setCursor(0, 0);
-    display.println("WiFi connecting...");
+    display.println(F("WiFi connecting..."));
     display.display();
     if (wifiManager.autoConnect() == true) { // using ESP.getChipId() internally
         display.setCursor(0, 9);
@@ -315,7 +318,7 @@ void connect_to_wifi(void)
     display.display();
 }
 
-
+/*
 // called from setup() function
 void printESP_info(void) { 
     uint32_t realSize = ESP.getFlashChipRealSize();
@@ -340,7 +343,7 @@ void printESP_info(void) {
     DEBUG_UART.printf(" ESP8266 Chip id = %08X\n", ESP.getChipId());
     DEBUG_UART.println();
     DEBUG_UART.println();
-}
+}*/
 
 void srv_handle_info()
 {

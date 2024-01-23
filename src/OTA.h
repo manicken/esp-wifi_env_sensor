@@ -9,23 +9,25 @@
 namespace OTA{
 
     #define DEBUG_UART Serial1
+
+    WiFiClient wifiClient;
     
     static int otaPartProcentCount = 0;
-    void setup(WiFiClient wifiClient);
-    void Download_Update(WiFiClient wifiClient, String url);
+    void setup();
+    void Download_Update(String url);
     void setup_PushedOTA(void);
     
-    void setup(WiFiClient wifiClient)
+    void setup()
     {
         //Pulled_check(wifiClient);
         setup_PushedOTA();
     }
 
-    void Download_Update(WiFiClient wifiClient, String url)
+    void Download_Update(String url)
     {
-        Download_Update(wifiClient, url.c_str());
+        Download_Update(url.c_str());
     }
-    void Download_Update(WiFiClient wifiClient, const char *url)
+    void Download_Update(const char *url)
     {
         //EEPROM.put(SPI_FLASH_SEC_SIZE, "hello");
 
