@@ -19,8 +19,8 @@
 namespace AWS_IOT {
 
     #define DEBUG_UART Serial1
-    #define AWS_IOT_FILES_DIR        "/aws_iot/"
-    #define AWS_IOT_CONFIG_JSON_FILE "/aws_iot/cfg.json"
+    #define AWS_IOT_FILES_DIR                   "/aws_iot"
+    #define AWS_IOT_CONFIG_JSON_FILE            F("/aws_iot/cfg.json")
     #define AWS_IOT_JSON_FIELD_MQTT_HOST        F("mqtt_host")
     #define AWS_IOT_JSON_FIELD_THINGNAME        F("thingName")
     #define AWS_IOT_JSON_FIELD_CA_CERT_FILE     F("ca_cert_file")
@@ -30,7 +30,7 @@ namespace AWS_IOT {
     #define AWS_IOT_FILE_DEFAULT_CA_CERT        "RootCA1.pem"
     #define AWS_IOT_FILE_DEFAULT_DEVICE_CERT    "device.crt"
     #define AWS_IOT_FILE_DEFAULT_PRIVATE_KEY    "private.key"
-  
+
     std::string mqtt_host = "";
     std::string thingName = "";
     std::string publish_topic = "/pub";
@@ -55,6 +55,8 @@ namespace AWS_IOT {
     
     bool setup_readFiles()
     {
+        if (!LittleFS.exists(AWS_IOT_FILES_DIR))
+            LittleFS.mkdir(AWS_IOT_FILES_DIR);
 
         if(LittleFS.exists(AWS_IOT_CONFIG_JSON_FILE))
         {
@@ -91,21 +93,24 @@ namespace AWS_IOT {
 
         publish_topic = std::string(thingName) + "/pub";
         subscribe_topic = std::string(thingName) + "/sub";
+        file_path_ca_cert = std::string(AWS_IOT_FILES_DIR) + "/";
+        file_path_device_cert = std::string(AWS_IOT_FILES_DIR) + "/";
+        file_path_private_key = std::string(AWS_IOT_FILES_DIR) + "/";
         
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_CA_CERT_FILE))
-            file_path_ca_cert = AWS_IOT_FILES_DIR + (std::string)jsonDoc[AWS_IOT_JSON_FIELD_CA_CERT_FILE];
+            file_path_ca_cert.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_CA_CERT_FILE]);
         else
-            file_path_ca_cert = AWS_IOT_FILES_DIR AWS_IOT_FILE_DEFAULT_CA_CERT;
+            file_path_ca_cert.append(AWS_IOT_FILE_DEFAULT_CA_CERT);
         
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_DEVICE_CERT_FILE))
-            file_path_device_cert = AWS_IOT_FILES_DIR + (std::string)jsonDoc[AWS_IOT_JSON_FIELD_DEVICE_CERT_FILE];
+            file_path_device_cert.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_DEVICE_CERT_FILE]);
         else
-            file_path_device_cert = AWS_IOT_FILES_DIR AWS_IOT_FILE_DEFAULT_CA_CERT;
+            file_path_device_cert.append(AWS_IOT_FILE_DEFAULT_CA_CERT);
 
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_PRIVATE_KEY_FILE))
-            file_path_private_key = AWS_IOT_FILES_DIR + (std::string)jsonDoc[AWS_IOT_JSON_FIELD_PRIVATE_KEY_FILE];
+            file_path_private_key.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_PRIVATE_KEY_FILE]);
         else
-            file_path_private_key = AWS_IOT_FILES_DIR AWS_IOT_FILE_DEFAULT_PRIVATE_KEY;
+            file_path_private_key.append(AWS_IOT_FILE_DEFAULT_PRIVATE_KEY);
 
         if (!LittleFS.exists(file_path_ca_cert.c_str())){/*DEBUG_UART.printf("AWS_IOT error: cannot find ca_cert file: %s\n",file_path_ca_cert.c_str());*/ return false; }
         if (!LittleFS.exists(file_path_device_cert.c_str())){/*DEBUG_UART.printf("AWS_IOT error: cannot find client_cert file: %s\n",file_path_device_cert.c_str());*/ return false; }

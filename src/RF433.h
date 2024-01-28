@@ -35,6 +35,10 @@ namespace RF433 {
     void Send433LC_Sync(void);
     void Send433LC_Start(void);
 
+    void init()
+    {
+        pinMode(14, OUTPUT);
+    }
     U8 Get1AsciiHex(U8 value ) // converts only the lower nibble
     {
         value = value & 0x0F;
@@ -257,6 +261,17 @@ namespace RF433 {
         } while (mask);
     }
 
+    /* example json
+    {
+    "cmd": "RF433",
+    "type":"slc",
+    "uid":"3AD4FF6",
+    "btn":"F",
+    "state":"0",
+    "grp_btn":"0"
+    }
+    */
+
     void SendTo433_SLC(const char *strUniqueId, U8 groupBtn, U8 enable, U8 btnCode) // 433MHz "Simple Learning Code" (NEXA)
     {
         int i;
@@ -295,49 +310,62 @@ namespace RF433 {
         }
     }
 
+    
+    void DecodeFromJSON_SFC(JsonDocument &json)
+    {
+        if (!json.containsKey("ch")) return;
+        std::string ch = json["ch"];
+        if (!json.containsKey("btn")) return;
+        std::string btn = json["btn"];
+        if (!json.containsKey("state")) return;
+        std::string state = json["state"];
+        SendTo433_SFC(ch[0], btn[0], state[0]);
+    }
+    void DecodeFromJSON_AFC(JsonDocument &json)
+    {
+        if (!json.containsKey("ch")) return;
+        std::string ch = json["ch"];
+        if (!json.containsKey("btn")) return;
+        std::string btn = json["btn"];
+        if (!json.containsKey("state")) return;
+        std::string state = json["state"];
+        SendTo433_AFC(ch[0], btn[0], state[0]);
+    }
+    void DecodeFromJSON_SLC(JsonDocument &json)
+    {
+        Serial1.println("slc type");
+        if (!json.containsKey("uid")) return;
+        std::string uid = json["uid"];
+        if (!json.containsKey("grp_btn")) return; // grp_btn can be '1' or '0'
+        std::string grp_btn = json["grp_btn"];
+        if (!json.containsKey("state")) return;
+        std::string state = json["state"];
+        if (!json.containsKey("btn")) return; // can be any number 1-4
+        std::string btn = json["btn"];
+        Serial1.println("slc sending");
+        SendTo433_SLC(uid.c_str(), grp_btn[0], state[0], btn[0]);
+    }
+    void DecodeFromJSON_ALC(JsonDocument &json)
+    {
+        if (!json.containsKey("raw")) return;
+        std::string raw = json["raw"];
+        SendTo433_ALC(raw.c_str());
+    }
+
     void DecodeFromJSON(JsonDocument &json) {
         if (!json.containsKey("type")) return;
         std::string type = json["type"];
 
         for (char &c : type)
             c = std::tolower(c);
+            
         if (type == "sfc") //simple fixed code
-        {
-            if (!json.containsKey("ch")) return;
-            std::string ch = json["ch"];
-            if (!json.containsKey("btn")) return;
-            std::string btn = json["btn"];
-            if (!json.containsKey("state")) return;
-            std::string state = json["state"];
-            SendTo433_SFC(ch[0], btn[0], state[0]);
-        }
+            DecodeFromJSON_SFC(json);
         else if (type == "afc") // advanced fixed code
-        {
-            if (!json.containsKey("ch")) return;
-            std::string ch = json["ch"];
-            if (!json.containsKey("btn")) return;
-            std::string btn = json["btn"];
-            if (!json.containsKey("state")) return;
-            std::string state = json["state"];
-            SendTo433_AFC(ch[0], btn[0], state[0]);
-        }
+            DecodeFromJSON_AFC(json);
         else if (type == "slc") // simple learning code
-        {
-            if (!json.containsKey("uid")) return;
-            std::string uid = json["uid"];
-            if (!json.containsKey("grp_btn")) return; // grp_btn can be '1' or '0'
-            std::string grp_btn = json["grp_btn"];
-            if (!json.containsKey("state")) return;
-            std::string state = json["state"];
-            if (!json.containsKey("btn")) return; // can be any number 1-4
-            std::string btn = json["btn"];
-            SendTo433_SLC(uid.c_str(), grp_btn[0], state[0], btn[0]);
-        }
+            DecodeFromJSON_SLC(json);
         else if (type == "alc") // advanced learning code
-        {
-            if (!json.containsKey("raw")) return;
-            std::string raw = json["raw"];
-            SendTo433_ALC(raw.c_str());
-        }
+            DecodeFromJSON_ALC(json);
     }
 }

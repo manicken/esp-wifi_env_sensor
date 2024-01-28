@@ -34,8 +34,11 @@
 // other addons
 #include <LittleFS.h>
 #include <ArduinoJson.h>
+#include <TimeLib.h>
+#include <TimeAlarms.h>
 #include "FSBrowser.h"
 #include "RF433.h"
+#include "FAN.h"
 //#include "TCP2UART.h"
 
 // the following are not used when having config and files on internal filesystem
@@ -128,16 +131,19 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
         {
             RF433::DecodeFromJSON(jsonDoc);
         }
+        else if (cmd == "FAN")
+        {
+            FAN::DecodeFromJSON(jsonDoc);
+        }
         else if (cmd == "OTA_update")
         {
-            if (jsonDoc.containsKey("path"))
-            {
-                std::string url = (std::string)jsonDoc["url"];
+            if (!jsonDoc.containsKey("url")) return;
 
-                DEBUG_UART.printf("starting OTA from %s\n", url.c_str());
-                
-                OTA::Download_Update(url.c_str());
-            }
+            std::string url = (std::string)jsonDoc["url"];
+
+            DEBUG_UART.printf("starting OTA from %s\n", url.c_str());
+            
+            OTA::Download_Update(url.c_str());
         }
     }
 }
@@ -147,40 +153,42 @@ DEBUG_UART.printf("free @ start:%ld\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
-    //DEBUG_UART.print(F("Init LittleFS "));
     LittleFS.begin();
-    //if ( LittleFS.begin())
-    //    DEBUG_UART.println("[OK]");
-    //else
-    //    DEBUG_UART.println("[FAIL]");
-//DEBUG_UART.printf("free-2:%ld\n",ESP.getFreeHeap());
+
     init_display();
-//DEBUG_UART.printf("free-1:%ld\n",ESP.getFreeHeap());
     connect_to_wifi();
-//DEBUG_UART.printf("free1:%ld\n",ESP.getFreeHeap());
     OTA::setup();
-//DEBUG_UART.printf("free2:%ld\n",ESP.getFreeHeap());
     //tcp2uart.begin();
-//DEBUG_UART.printf("free3:%ld\n",ESP.getFreeHeap());
     dht.setup(13, DHTesp::DHT11);
     sensors.begin(); // one wire sensors
-//DEBUG_UART.printf("free4:%ld\n",ESP.getFreeHeap());
+    RF433::init();
+    FAN::init();
     
-    
+    //if ("target" == "fan_on")
+    //    Alarm.
+
+    // clear all alarms NOT timers
+    for (int i = 0;i<dtNBR_ALARMS;i++) {
+        uint8_t type = Alarm.Alarm[i].Mode.alarmType;
+        if (type == dtAlarmPeriod_t::dtTimer) continue;
+        if (type == dtAlarmPeriod_t::dtNotAllocated) continue;
+
+        Alarm.Alarm[i].Mode.isEnabled = false;
+        Alarm.Alarm[i].Mode.alarmType = dtNotAllocated;
+        Alarm.Alarm[i].onTickHandler = NULL;
+        Alarm.Alarm[i].value = 0;
+        Alarm.Alarm[i].nextTrigger = 0;
+    }
+
     if (AWS_IOT::setup_readFiles()) {
-//DEBUG_UART.printf("free5:%ld\n",ESP.getFreeHeap());
         AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
     }
     else
         DEBUG_UART.println(F("AWS_IOT error cannot setup AWS IoT without the cert and key files!!!"));
     
-//DEBUG_UART.printf("free6:%ld\n",ESP.getFreeHeap());
     ThingSpeak::loadSettings();
-//DEBUG_UART.printf("free7:%ld\n",ESP.getFreeHeap());
     initWebServerHandlers();
-//DEBUG_UART.printf("free8:%ld\n",ESP.getFreeHeap());
     FSBrowser::setup(webserver);
-//DEBUG_UART.printf("free9:%ld\n",ESP.getFreeHeap());
     webserver.begin();
 DEBUG_UART.printf("free end of setup:%ld\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
@@ -188,6 +196,7 @@ DEBUG_UART.printf("free end of setup:%ld\n",ESP.getFreeHeap());
 
 void loop() {
     //tcp2uart.BridgeMainTask();
+    Alarm.delay(0);
     ArduinoOTA.handle();
     webserver.handleClient();
     

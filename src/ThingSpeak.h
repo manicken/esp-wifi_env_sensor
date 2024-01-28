@@ -10,6 +10,7 @@ namespace ThingSpeak
      
     const char TS_ROOT_URL[] = "http://api.thingspeak.com/update?api_key=";
 
+    #define TS_FILES_PATH                 F("/thingspeak")
     #define TS_CONFIG_JSON_FILE           F("/thingspeak/cfg.json")
     #define TS_JSON_FIELD_API_KEY         F("api_key")
     #define TS_JSON_FIELD_UPDATE_RATE_SEC F("update_rate_sec")
@@ -31,20 +32,17 @@ namespace ThingSpeak
     bool canPost = false;
 
     std::string urlApi;
-    //char urlApi[128];
-    //size_t urlApiStartIndex = 0;
 
     bool loadSettings()
     {
         canPost = false;
         jsonDoc.clear();
-        //DEBUG_UART.printf("free6a:%ld\n",ESP.getFreeHeap());
+        if (!LittleFS.exists(TS_FILES_PATH))
+            LittleFS.mkdir(TS_FILES_PATH);
 
         if(LittleFS.exists(TS_CONFIG_JSON_FILE)) {
             LittleFS_ext::load_from_file(TS_CONFIG_JSON_FILE, jsonBuffer);
-            //DEBUG_UART.printf("free6b:%ld\n",ESP.getFreeHeap());
             deserializeJson(jsonDoc, jsonBuffer);
-            //DEBUG_UART.printf("free6c:%ld\n",ESP.getFreeHeap());
         }
         else {
             return false;
@@ -70,41 +68,14 @@ namespace ThingSpeak
             humidity_field = "field2";
 
         canPost = true;
-        //DEBUG_UART.printf("free6y:%ld\n",ESP.getFreeHeap());
         urlApi = TS_ROOT_URL + api_key + "&" + temp_field + "=";
-        //DEBUG_UART.printf("free6z:%ld\n",ESP.getFreeHeap());
-        /*urlApi[0] = '\0';
-        strcat(urlApi, TS_ROOT_URL);
-        strcat(urlApi, api_key.c_str());
-        strcat(urlApi, "&");
-        strcat(urlApi, temp_field.c_str());
-        strcat(urlApi, "=");
-        urlApiStartIndex = strlen(urlApi);*/
 
-        //memcpy(urlApi, TS_ROOT_URL, strlen(TS_ROOT_URL));
-        //memcpy(urlApi+strlen(TS_ROOT_URL), api_key.c_str(), api_key.length() );
-        
         return true;
     }
 
     void SendData(float temp, float humidity)
     {
         urlApi += std::to_string(temp) + "&" + humidity_field + "=" + std::to_string(humidity);
-/*
-        std::string tempValueString = std::to_string(temp);
-        std::string humidityValueString = std::to_string(humidity);
-        strcat(&urlApi[urlApiStartIndex], tempValueString.c_str());
-        strcat(urlApi, "&");
-        strcat(urlApi, humidity_field.c_str());
-        strcat(urlApi, "=");
-        strcat(urlApi, humidityValueString.c_str());*/
-
-        //urlApi = "";
-        //urlApi += "&"+ThingSpeak::temp_field+"=" + std::to_string(temp);
-        //urlApi += "&"+ThingSpeak::humidity_field+"=" + std::to_string(humidity);
-        //std::string url = "";//TS_ROOT_URL;
-        //url..append(TS_ROOT_URL);
-        // + ThingSpeak::api_key + urlApi;
 
         //DEBUG_UART.print(F("\r\nGET request"));
         //DEBUG_UART.println(urlApi.c_str());
@@ -112,17 +83,12 @@ namespace ThingSpeak
         http.begin(wifiClient, urlApi.c_str());
         
         int httpCode = http.GET();
-        if (httpCode > 0) {
-            DEBUG_UART.println(F("[OK]\r\n"));
-            
-        }
-        else {
-            DEBUG_UART.println(F("[FAIL]\r\n"));
-        }
-        http.end();
-        
+        if (httpCode > 0) DEBUG_UART.println(F("[OK]\r\n"));
+        else DEBUG_UART.println(F("[FAIL]\r\n"));
 
-       urlApi.clear();
-       urlApi = TS_ROOT_URL + api_key + "&" + temp_field + "=";
+        http.end();
+
+        urlApi.clear();
+        urlApi = TS_ROOT_URL + api_key + "&" + temp_field + "=";
     }
 }
