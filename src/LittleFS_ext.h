@@ -32,6 +32,16 @@ namespace LittleFS_ext
         this_file.close();
         return true;
     }
+    int getFileSize(String file_name)
+    {
+        File this_file = LittleFS.open(file_name, "r");
+        if (!this_file) { // failed to open the file, retrn empty result
+            return -1;
+        }
+        int size = this_file.available();
+        this_file.close();
+        return size;
+    }
 }
 
 #endif

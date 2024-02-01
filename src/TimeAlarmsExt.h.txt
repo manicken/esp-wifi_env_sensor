@@ -1,0 +1,85 @@
+//this is only a prototype 
+// for the additional functionality that should be added to TimeAlarms.h and TimeAlarms.cpp
+
+
+#include <iostream>
+#include <string>
+
+class CustomParameterBaseClass
+{
+public:
+    virtual ~CustomParameterBaseClass() = default; // Virtual destructor
+    
+};
+
+class StringAndInt : public CustomParameterBaseClass
+{
+public:
+    std::string param1 = "";
+    int param2 = 0;
+};
+
+// Modify OnTick_t to accept a reference or pointer to CustomParameterBaseClass
+typedef void (*OnTick_t)(const CustomParameterBaseClass&);
+
+#define IF_DYNAMIC_CAST_DERIVED(TYPE, OUTPUT_NAME, ptr) if (const auto* OUTPUT_NAME = dynamic_cast<const TYPE*>(&ptr))
+
+
+class AlarmClass
+{
+public:
+    AlarmClass();
+    OnTick_t onTickHandler;
+    CustomParameterBaseClass parameters;
+};
+
+class Alarms
+{
+public:
+    AlarmClass Alarm[8];
+
+    void setAlarm(int index, OnTick_t callback, const CustomParameterBaseClass& parameters)
+    {
+        Alarm[index].onTickHandler = callback;
+        Alarm[index].parameters = parameters;
+    }
+
+    void activateAlarm(int index)
+    {
+        OnTick_t cb = Alarm[index].onTickHandler;
+        if (cb != nullptr)
+            (*cb)(Alarm[index].parameters);
+    }
+};
+
+// Example callback function
+void customCallback(const CustomParameterBaseClass& params)
+{
+    // Handle the parameters
+    // Example: For StringAndInt type
+   /* if (const auto* derivedParams = dynamic_cast<const StringAndInt*>(&params))
+    {
+        std::cout << "Callback called with parameters: " << derivedParams->param1 << ", " << derivedParams->param2 << std::endl;
+    }*/
+    
+    // using macro
+    IF_DYNAMIC_CAST_DERIVED(StringAndInt, derivedParams, params)
+    {
+        std::cout << "Callback called with parameters: " << derivedParams->param1 << ", " << derivedParams->param2 << std::endl;
+    }
+}
+
+int main()
+{
+    Alarms alarms;
+
+    // Example usage
+    StringAndInt customParams;
+    customParams.param1 = "Hello";
+    customParams.param2 = 42;
+
+    alarms.setAlarm(0, customCallback, customParams);
+    alarms.activateAlarm(0);
+
+    return 0;
+}

@@ -39,6 +39,7 @@
 #include "FSBrowser.h"
 #include "RF433.h"
 #include "FAN.h"
+#include "TimeAlarmsFromJson.h"
 //#include "TCP2UART.h"
 
 // the following are not used when having config and files on internal filesystem
@@ -99,6 +100,28 @@ StaticJsonDocument<200> jsonDoc;
 
 char jsonBuffer[160];
 
+TimeAlarmsFromJson::NameToFunction nameToFunctionList[3];
+
+void Timer_SendEnvData()
+{
+    if (ThingSpeak::canPost)
+        ThingSpeak::SendData(temp_ds, humidity_dht);
+}
+void Alarm_SetFanSpeed(const OnTickExtParameters *param)
+{
+    IF_STATIC_CAST_DERIVED(AsJsonVariantParameter, casted_param, param)
+    {
+        FAN::DecodeFromJSON(casted_param->json);
+    }
+}
+void Alarm_SendToRF433(const OnTickExtParameters *param)
+{
+    IF_STATIC_CAST_DERIVED(AsJsonVariantParameter, casted_param, param)
+    {
+        RF433::DecodeFromJSON(casted_param->json);
+    }
+}
+
 void init_display(void);
 void connect_to_wifi(void);
 void printESP_info(void);
@@ -111,13 +134,14 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
     DEBUG_UART.print("Received [");
     DEBUG_UART.print(topic);
     DEBUG_UART.print("]: ");
-    for (int i = 0; i < length; i++)
+    for (unsigned int i = 0; i < length; i++)
     {
         DEBUG_UART.print((char)payload[i]);
     }
     DEBUG_UART.println();
 
     deserializeJson(jsonDoc, payload);
+
 
     if (jsonDoc.containsKey("cmd"))
     {
@@ -129,11 +153,13 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
         }
         else if (cmd == "RF433")
         {
-            RF433::DecodeFromJSON(jsonDoc);
+            JsonVariant jsonVariant = jsonDoc.as<JsonVariant>();
+            RF433::DecodeFromJSON(jsonVariant);
         }
         else if (cmd == "FAN")
         {
-            FAN::DecodeFromJSON(jsonDoc);
+            JsonVariant jsonVariant = jsonDoc.as<JsonVariant>();
+            FAN::DecodeFromJSON(jsonVariant);
         }
         else if (cmd == "OTA_update")
         {
@@ -149,7 +175,7 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
 }
 
 void setup() {
-DEBUG_UART.printf("free @ start:%ld\n",ESP.getFreeHeap());
+DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
@@ -164,21 +190,14 @@ DEBUG_UART.printf("free @ start:%ld\n",ESP.getFreeHeap());
     RF433::init();
     FAN::init();
     
-    //if ("target" == "fan_on")
-    //    Alarm.
-
-    // clear all alarms NOT timers
-    for (int i = 0;i<dtNBR_ALARMS;i++) {
-        uint8_t type = Alarm.Alarm[i].Mode.alarmType;
-        if (type == dtAlarmPeriod_t::dtTimer) continue;
-        if (type == dtAlarmPeriod_t::dtNotAllocated) continue;
-
-        Alarm.Alarm[i].Mode.isEnabled = false;
-        Alarm.Alarm[i].Mode.alarmType = dtNotAllocated;
-        Alarm.Alarm[i].onTickHandler = NULL;
-        Alarm.Alarm[i].value = 0;
-        Alarm.Alarm[i].nextTrigger = 0;
-    }
+    nameToFunctionList[0].name = "sendEnvData";
+    nameToFunctionList[0].onTick = Timer_SendEnvData;
+    nameToFunctionList[1].name = "fan";
+    nameToFunctionList[1].onTickExt = Alarm_SetFanSpeed;
+    nameToFunctionList[2].name = "rf433";
+    nameToFunctionList[2].onTickExt = Alarm_SendToRF433;
+    TimeAlarmsFromJson::SetFunctionTable(nameToFunctionList, 3);
+    TimeAlarmsFromJson::LoadJson("/schedule/list.json");
 
     if (AWS_IOT::setup_readFiles()) {
         AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
@@ -190,7 +209,7 @@ DEBUG_UART.printf("free @ start:%ld\n",ESP.getFreeHeap());
     initWebServerHandlers();
     FSBrowser::setup(webserver);
     webserver.begin();
-DEBUG_UART.printf("free end of setup:%ld\n",ESP.getFreeHeap());
+DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
 }
 
@@ -234,13 +253,13 @@ void loop() {
         
     }
 
+/*
     if (millis() - deltaTime_sendToWebUpdate >= (1000 * ThingSpeak::update_rate_sec)) {
         deltaTime_sendToWebUpdate = millis();
        // DEBUG_UART.printf("free loop:%ld  ",ESP.getFreeHeap());
-        if (ThingSpeak::canPost)
-            ThingSpeak::SendData(temp_ds, humidity_dht);
         
-    }
+        
+    }*/
     
     if (update_display == 1) {
         update_display = 0;

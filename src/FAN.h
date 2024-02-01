@@ -31,8 +31,16 @@ namespace FAN {
         
     }
     
+    void SetFanSpeed(uint32_t val)
+    {
+        if (inv_out)
+            value = getInvValue(val);
+        else
+            value = val;
+        analogWrite(pin, val);
+    }
 
-    void DecodeFromJSON(JsonDocument &json)
+    void DecodeFromJSON(JsonVariant &json)
     {
         if (json.containsKey("pin")) {
             pin = json["pin"];
@@ -46,10 +54,7 @@ namespace FAN {
             analogWriteResolution(resolution);
         }
         if (json.containsKey("val")) {
-            value = json["val"];
-            if (inv_out)
-                value = getInvValue(value);
-            analogWrite(pin, value);
+            SetFanSpeed(json["val"]);
         }
     }
 }

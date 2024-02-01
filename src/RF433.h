@@ -311,7 +311,7 @@ namespace RF433 {
     }
 
     
-    void DecodeFromJSON_SFC(JsonDocument &json)
+    void DecodeFromJSON_SFC(JsonVariant &json)
     {
         if (!json.containsKey("ch")) return;
         std::string ch = json["ch"];
@@ -321,7 +321,7 @@ namespace RF433 {
         std::string state = json["state"];
         SendTo433_SFC(ch[0], btn[0], state[0]);
     }
-    void DecodeFromJSON_AFC(JsonDocument &json)
+    void DecodeFromJSON_AFC(JsonVariant &json)
     {
         if (!json.containsKey("ch")) return;
         std::string ch = json["ch"];
@@ -331,7 +331,7 @@ namespace RF433 {
         std::string state = json["state"];
         SendTo433_AFC(ch[0], btn[0], state[0]);
     }
-    void DecodeFromJSON_SLC(JsonDocument &json)
+    void DecodeFromJSON_SLC(JsonVariant &json)
     {
         Serial1.println("slc type");
         if (!json.containsKey("uid")) return;
@@ -345,14 +345,15 @@ namespace RF433 {
         Serial1.println("slc sending");
         SendTo433_SLC(uid.c_str(), grp_btn[0], state[0], btn[0]);
     }
-    void DecodeFromJSON_ALC(JsonDocument &json)
+    void DecodeFromJSON_ALC(JsonVariant &json)
     {
         if (!json.containsKey("raw")) return;
         std::string raw = json["raw"];
         SendTo433_ALC(raw.c_str());
     }
 
-    void DecodeFromJSON(JsonDocument &json) {
+    void DecodeFromJSON(JsonVariant &json) {
+
         if (!json.containsKey("type")) return;
         std::string type = json["type"];
 
