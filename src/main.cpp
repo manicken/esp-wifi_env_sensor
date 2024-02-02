@@ -96,31 +96,39 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 float temp_ds = 0;
 
-StaticJsonDocument<200> jsonDoc;
 
-char jsonBuffer[160];
 
-TimeAlarmsFromJson::NameToFunction nameToFunctionList[3];
 
 void Timer_SendEnvData()
 {
+    DEBUG_UART.println("Timer_SendEnvData");
     if (ThingSpeak::canPost)
         ThingSpeak::SendData(temp_ds, humidity_dht);
 }
 void Alarm_SetFanSpeed(const OnTickExtParameters *param)
 {
-    IF_STATIC_CAST_DERIVED(AsJsonVariantParameter, casted_param, param)
+    DEBUG_UART.println("\nAlarm_SetFanSpeed");
+    const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
+    if (casted_param != nullptr)
     {
-        FAN::DecodeFromJSON(casted_param->json);
+        FAN::DecodeFromJSON(casted_param->jsonStr);
     }
 }
 void Alarm_SendToRF433(const OnTickExtParameters *param)
 {
-    IF_STATIC_CAST_DERIVED(AsJsonVariantParameter, casted_param, param)
+    DEBUG_UART.println("Alarm_SendToRF433");
+    IF_STATIC_CAST_DERIVED(AsStringParameter, casted_param, param)
     {
-        RF433::DecodeFromJSON(casted_param->json);
+        RF433::DecodeFromJSON(casted_param->jsonStr);
     }
 }
+
+TimeAlarmsFromJson::NameToFunction nameToFunctionList[3] = {
+//   name         , onTick            , onTickExt
+    {"sendEnvData", &Timer_SendEnvData, nullptr           },
+    {"fan"        , nullptr           , &Alarm_SetFanSpeed},
+    {"rf433"      , nullptr           , &Alarm_SendToRF433}
+};
 
 void init_display(void);
 void connect_to_wifi(void);
@@ -139,6 +147,7 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
         DEBUG_UART.print((char)payload[i]);
     }
     DEBUG_UART.println();
+    DynamicJsonDocument jsonDoc(256);
 
     deserializeJson(jsonDoc, payload);
 
@@ -175,6 +184,7 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
 }
 
 void setup() {
+    FAN::init();
 DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
@@ -188,16 +198,28 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     dht.setup(13, DHTesp::DHT11);
     sensors.begin(); // one wire sensors
     RF433::init();
-    FAN::init();
     
-    nameToFunctionList[0].name = "sendEnvData";
-    nameToFunctionList[0].onTick = Timer_SendEnvData;
-    nameToFunctionList[1].name = "fan";
-    nameToFunctionList[1].onTickExt = Alarm_SetFanSpeed;
-    nameToFunctionList[2].name = "rf433";
-    nameToFunctionList[2].onTickExt = Alarm_SendToRF433;
+    NTP::NTPConnect();
+    tmElements_t now2;
+    breakTime(time(nullptr), now2);
+    int year = (int)now2.Year + 1970;
+
+    std::string nowstr = "time(nullptr):" +
+                    std::to_string(year) + "-" +
+                     std::to_string(now2.Month) + "-" +
+                     std::to_string(now2.Day) + " " +
+                     std::to_string(now2.Hour) + ":" +
+                     std::to_string(now2.Minute) + ":" +
+                     std::to_string(now2.Second);
+    DEBUG_UART.println(nowstr.c_str());
+
+    setTime(now2.Hour+1, now2.Minute, now2.Second, now2.Day, now2.Month, year);
+
+    size_t nameToFunctionList_Count = sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]);
+    DEBUG_UART.printf("nameToFunctionList_Count:%d\r\n", nameToFunctionList_Count);
     TimeAlarmsFromJson::SetFunctionTable(nameToFunctionList, 3);
     TimeAlarmsFromJson::LoadJson("/schedule/list.json");
+    
 
     if (AWS_IOT::setup_readFiles()) {
         AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
@@ -215,10 +237,10 @@ DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
 
 void loop() {
     //tcp2uart.BridgeMainTask();
-    Alarm.delay(0);
+    
     ArduinoOTA.handle();
     webserver.handleClient();
-    
+    Alarm.delay(0);
     currTime = millis();
 
     if (millis() - deltaTime_displayUpdate >= 1000) {
@@ -253,14 +275,6 @@ void loop() {
         
     }
 
-/*
-    if (millis() - deltaTime_sendToWebUpdate >= (1000 * ThingSpeak::update_rate_sec)) {
-        deltaTime_sendToWebUpdate = millis();
-       // DEBUG_UART.printf("free loop:%ld  ",ESP.getFreeHeap());
-        
-        
-    }*/
-    
     if (update_display == 1) {
         update_display = 0;
         display.display();
@@ -293,6 +307,27 @@ void initWebServerHandlers(void)
             webserver.send(200,"text/html", F("Thingspeak loadSettings OK"));
         else
             webserver.send(200,"text/html", F("Thingspeak loadSettings error"));
+    });
+    webserver.on("/schedule/refresh", []() {
+        if (TimeAlarmsFromJson::LoadJson("/schedule/list.json"))
+            webserver.send(200,"text/html", F("schedule load json OK"));
+        else
+            webserver.send(200,"text/html", F("schedule load json error"));
+    });
+    webserver.on("/esp/free_heap", []() {
+        std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap()) + ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
+        webserver.send(200,"text/html", ret.c_str());
+    });
+    webserver.on("/schedule/getTime", []() {
+        tmElements_t now2;
+        breakTime(now(), now2);
+        std::string nowstr = std::to_string(now2.Year) + "-" +
+                     std::to_string(now2.Month) + "-" +
+                     std::to_string(now2.Day) + " " +
+                     std::to_string(now2.Hour) + ":" +
+                     std::to_string(now2.Minute) + ":" +
+                     std::to_string(now2.Second);
+        webserver.send(200,"text/html", nowstr.c_str());
     });
     webserver.onNotFound([]() {                              // If the client requests any URI
         if (!FSBrowser::handleFileRead(webserver.uri()))                  // send it if it exists

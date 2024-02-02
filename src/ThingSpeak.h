@@ -25,9 +25,7 @@ namespace ThingSpeak
     WiFiClient wifiClient;
     
     HTTPClient http;
-    StaticJsonDocument<256> jsonDoc;
-
-    char jsonBuffer[256];
+    
 
     bool canPost = false;
 
@@ -36,7 +34,9 @@ namespace ThingSpeak
     bool loadSettings()
     {
         canPost = false;
-        jsonDoc.clear();
+        DynamicJsonDocument jsonDoc(256);
+        char jsonBuffer[256];
+
         if (!LittleFS.exists(TS_FILES_PATH))
             LittleFS.mkdir(TS_FILES_PATH);
 

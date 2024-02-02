@@ -47,14 +47,16 @@ namespace AWS_IOT {
 
     PubSubClient pubSubClient(wifiClientSecure);
     
-    StaticJsonDocument<256> jsonDoc;
-
-    char jsonBuffer[320];
+    
 
     bool canConnect = false;
     
     bool setup_readFiles()
     {
+        StaticJsonDocument<256> jsonDoc;
+
+        char jsonBuffer[320];
+
         if (!LittleFS.exists(AWS_IOT_FILES_DIR))
             LittleFS.mkdir(AWS_IOT_FILES_DIR);
 
@@ -180,8 +182,10 @@ namespace AWS_IOT {
         NTP::now = time(nullptr);
         //gmtime_r(&NTP::now, &timeinfo);
         timeinfo = localtime(&NTP::now);
+        
+        DynamicJsonDocument jsonDoc(128);
+        char jsonBuffer[128];
 
-        jsonDoc.clear();
         jsonDoc["time"] = asctime(timeinfo);// millis();
         jsonDoc["humidity"] = h;
         jsonDoc["temperature"] = t;

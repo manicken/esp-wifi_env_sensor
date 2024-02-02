@@ -5,12 +5,17 @@
 #include <LittleFS.h>
 #include "LittleFS_ext.h"
 
-class AsJsonVariantParameter : public OnTickExtParameters
+class AsStringParameter : public OnTickExtParameters
+{
+public:
+    AsStringParameter(JsonVariant json):OnTickExtParameters(0,1)
     {
-    public:
-        AsJsonVariantParameter(JsonVariant &json):OnTickExtParameters(0), json(json) {}
-        JsonVariant &json;
-    };
+        char buff[256];
+        serializeJson(json, buff);
+        jsonStr = std::string(buff);
+    }
+    std::string jsonStr;
+};
 
 namespace TimeAlarmsFromJson
 {
@@ -33,7 +38,7 @@ namespace TimeAlarmsFromJson
         int s;
     } JsonBaseVars;
 
-    DynamicJsonDocument jsonDoc(2048);
+    
 
     bool LoadJson(String filePath);
     void ParseItem(JsonVariant json);
@@ -45,36 +50,41 @@ namespace TimeAlarmsFromJson
 
     bool LoadJson(String filePath)
     {
+        DEBUG_UART.println("TimeAlarmsFromJson LoadJson start");
+        
         int size = LittleFS_ext::getFileSize(filePath);
         if (size == -1) {DEBUG_UART.println(F("LoadJson file error getting file size -1")); return false; }
-        //DEBUG_UART.printf("file size:%ld\n", size);
-        char* buff = (char*)malloc(size);
+        
+        DEBUG_UART.printf("file size:%d\r\n", size);
+
+        char* buff = (char*)malloc(size+2);
         if (buff == NULL) { DEBUG_UART.println(F("LoadJson malloc fail")); return false; }
+
         if (LittleFS_ext::load_from_file(filePath, buff) == false) {
             DEBUG_UART.println(F("LoadJson LittleFS_ext::load_from_file error"));
             free(buff);
             return false;
         }
-        jsonDoc.clear();
+        DynamicJsonDocument jsonDoc(2048);
         DeserializationError jsonStatus = deserializeJson(jsonDoc, buff);
-        free(buff);
+        DEBUG_UART.printf("deserialized json document size:%d\r\n", jsonDoc.memoryUsage());
         if (jsonStatus != DeserializationError::Ok) {
-            DEBUG_UART.printf("LoadJson DeserializationError: %ld",jsonStatus); DEBUG_UART.println();
+            free(buff);
+            DEBUG_UART.printf("LoadJson DeserializationError: %d",(int)jsonStatus.code()); DEBUG_UART.println();
             return false;
         }
-        if (jsonDoc.is<JsonArray>() == false) {
-            DEBUG_UART.println(F("LoadJson error: root is not a array"));
-            return false;
-        }
-        JsonArray items = jsonDoc.to<JsonArray>();
 
+        DEBUG_UART.printf(" %u found schedules\r\n", jsonDoc.size());
         // clear both timers and alarms (ALL)
         for (uint8_t id = 0; id < dtNBR_ALARMS; id++) {
             Alarm.free(id);
         }
-        for (uint8_t i = 0; i < items.size(); i++) {
-            ParseItem(items[i]);
+        size_t itemCount = jsonDoc.size();
+        for (uint8_t i = 0; i < itemCount; i++) {
+            ParseItem(jsonDoc[i]);
         }
+        DEBUG_UART.println("TimeAlarmsFromJson LoadJson end");
+        free(buff);
         return true;
     }
 
@@ -92,29 +102,30 @@ namespace TimeAlarmsFromJson
         {
             JsonBaseVars vars;
             if (GetJsonBaseVars(json, vars) == false) return;
-            
+            AlarmID_t id=-1;
             if(json.containsKey("params")) {
-                JsonVariant jsonParams = json["params"];
-                AsJsonVariantParameter *params = new AsJsonVariantParameter(jsonParams);
-                Alarm.timerRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
+                AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
+                id = Alarm.timerRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
             }
             else {
-                Alarm.timerRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
+                id = Alarm.timerRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
+            DEBUG_UART.printf("added timer repeat %d:%d:%d  %lld   %lld\r\n", vars.h, vars.m, vars.s, Alarm.read(id), now());
         }
         else if (mode == "daily")
         {
             JsonBaseVars vars;
             if (GetJsonBaseVars(json, vars) == false) return;
-            
+            AlarmID_t id=-1;
             if(json.containsKey("params")) {
-                JsonVariant jsonParams = json["params"];
-                AsJsonVariantParameter *params = new AsJsonVariantParameter(jsonParams);
-                Alarm.alarmRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
+                AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
+                id = Alarm.alarmRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
             }
             else {
-                Alarm.alarmRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
+                id = Alarm.alarmRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
+            
+            DEBUG_UART.printf("added alarm daily %d:%d:%d  %lld  %lld  %lld\r\n", vars.h, vars.m, vars.s, Alarm.read(id), Alarm.getNextTrigger(id), now());
         }
         else if (mode == "weekly")
         {
@@ -125,13 +136,13 @@ namespace TimeAlarmsFromJson
             timeDayOfWeek_t dow = GetTimerAlarmsDOW(json["D"]);
 
             if(json.containsKey("params")) {
-                JsonVariant jsonParams = json["params"];
-                AsJsonVariantParameter *params = new AsJsonVariantParameter(jsonParams);
+                AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
                 Alarm.alarmRepeat(dow, vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
             }
             else {
                 Alarm.alarmRepeat(dow, vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
+            DEBUG_UART.println("added alarm weekly");
         }
         else if (mode == "explicit")
         {
@@ -146,13 +157,14 @@ namespace TimeAlarmsFromJson
             if(json.containsKey("s")) tm.Second = json["s"]; else tm.Second = 0;
             time_t dateTime = makeTime(tm);
             if(json.containsKey("params")) {
-                JsonVariant jsonParams = json["params"];
-                AsJsonVariantParameter *params = new AsJsonVariantParameter(jsonParams);
+                JsonVariant jsonVar = json["params"].as<JsonVariant>();
+                AsStringParameter *params = new AsStringParameter(jsonVar);
                 Alarm.triggerOnce(dateTime, GetFunctionExt(funcName), params);
             }
             else {
                 Alarm.triggerOnce(dateTime, GetFunction(funcName));
             }
+            DEBUG_UART.println("added alarm explicit");
         }
     }
 

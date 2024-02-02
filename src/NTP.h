@@ -17,7 +17,7 @@ namespace NTP {
 
     void NTPConnect(void)
     {
-        DEBUG_UART.print("Setting time using SNTP");
+        DEBUG_UART.print("Setting time using SNTP  ");
         configTime(TIME_ZONE * 3600, 0 * 3600, "pool.ntp.org", "time.nist.gov");
         now = time(nullptr);
         
@@ -27,7 +27,7 @@ namespace NTP {
             DEBUG_UART.print(".");
             now = time(nullptr);
         }
-        DEBUG_UART.println("done!");
+        DEBUG_UART.println("[OK]");
         struct tm* timeinfo;
         timeinfo = localtime(&now);
         //gmtime_r(&now, &timeinfo);
