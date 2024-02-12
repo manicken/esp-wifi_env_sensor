@@ -17,8 +17,24 @@ public:
     std::string jsonStr;
 };
 
+
 namespace TimeAlarmsFromJson
 {
+    struct DayLookupTable {
+        const char* abbreviation;
+        timeDayOfWeek_t dayOfWeek;
+    };
+    // Define a lookup table for day abbreviations to corresponding enum values
+    const DayLookupTable dayLookupTable[] = {
+        {"mon", timeDayOfWeek_t::dowMonday},
+        {"tue", timeDayOfWeek_t::dowTuesday},
+        {"wed", timeDayOfWeek_t::dowWednesday},
+        {"thu", timeDayOfWeek_t::dowThursday},
+        {"fri", timeDayOfWeek_t::dowFriday},
+        {"sat", timeDayOfWeek_t::dowSaturday},
+        {"sun", timeDayOfWeek_t::dowSunday}
+    };
+
     #define DEBUG_UART Serial1
 
     typedef struct NameToFunction {
@@ -200,8 +216,9 @@ namespace TimeAlarmsFromJson
         return true;
     }
 
-    timeDayOfWeek_t GetTimerAlarmsDOW(std::string sDOW) // short for for DOW
+    timeDayOfWeek_t GetTimerAlarmsDOW(std::string sDOW) // short for: short DOW
     {
+        /*
         if (sDOW == "mon") return timeDayOfWeek_t::dowMonday;
         else if (sDOW == "tue") return timeDayOfWeek_t::dowTuesday;
         else if (sDOW == "wed") return timeDayOfWeek_t::dowWednesday;
@@ -210,5 +227,24 @@ namespace TimeAlarmsFromJson
         else if (sDOW == "sat") return timeDayOfWeek_t::dowSaturday;
         else if (sDOW == "sun") return timeDayOfWeek_t::dowSunday;
         else return timeDayOfWeek_t::dowInvalid;
+        */
+        for (const auto& entry : dayLookupTable) {
+            if (sDOW == entry.abbreviation) {
+                return entry.dayOfWeek;
+            }
+        }
+        return timeDayOfWeek_t::dowInvalid;
+    }
+
+    std::string GetShortFormDowListAsJson()
+    {
+        int item_Count = sizeof(dayLookupTable) / sizeof(dayLookupTable[0]);
+        std::string ret = "[";
+        for (int i=0;i<item_Count;i++) {
+            ret += "\"" + std::string(dayLookupTable[i].abbreviation) + "\"";
+            if (i < (item_Count-1)) ret += ",";
+        }
+        ret += "]";
+        return ret;
     }
 }

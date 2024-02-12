@@ -409,6 +409,7 @@ void handleFileUpload() {
   HTTPUpload& upload = server->upload();
   if (upload.status == UPLOAD_FILE_START) {
     String filename = upload.filename;
+    
     // Make sure paths always start with "/"
     if (!filename.startsWith("/")) { filename = "/" + filename; }
     DBG_OUTPUT_PORT.println(String("handleFileUpload Name: ") + filename);

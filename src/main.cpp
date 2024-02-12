@@ -40,6 +40,7 @@
 #include "RF433.h"
 #include "FAN.h"
 #include "TimeAlarmsFromJson.h"
+//#include <sstream>
 //#include "TCP2UART.h"
 
 // the following are not used when having config and files on internal filesystem
@@ -96,7 +97,15 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 float temp_ds = 0;
 
+time_t startTime = 0;
 
+void init_display(void);
+void connect_to_wifi(void);
+void printESP_info(void);
+void srv_handle_info(void);
+const char* getResetReason(void);
+void initWebServerHandlers(void);
+std::string GetTimeAsString(time_t time);
 
 
 void Timer_SendEnvData()
@@ -129,12 +138,6 @@ TimeAlarmsFromJson::NameToFunction nameToFunctionList[3] = {
     {"fan"        , nullptr           , &Alarm_SetFanSpeed},
     {"rf433"      , nullptr           , &Alarm_SendToRF433}
 };
-
-void init_display(void);
-void connect_to_wifi(void);
-void printESP_info(void);
-void srv_handle_info(void);
-void initWebServerHandlers(void);
 
 
 void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
@@ -189,6 +192,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
+    DEBUG_UART.println(getResetReason());
     LittleFS.begin();
 
     init_display();
@@ -214,6 +218,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(nowstr.c_str());
 
     setTime(now2.Hour+1, now2.Minute, now2.Second, now2.Day, now2.Month, year);
+    startTime = now();
 
     size_t nameToFunctionList_Count = sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]);
     DEBUG_UART.printf("nameToFunctionList_Count:%d\r\n", nameToFunctionList_Count);
@@ -287,51 +292,91 @@ void initWebServerHandlers(void)
     webserver.on("/",  []() {
         if (LittleFS.exists(F("index.html"))) FSBrowser::handleFileRead(F("index.html"));
         else if (LittleFS.exists(F("index.htm"))) FSBrowser::handleFileRead(F("index.htm"));
-        else webserver.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
+        else webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
-    webserver.on("/info", srv_handle_info);
+    webserver.on(F("/json_cmd"), HTTP_POST, [](){ webserver.send(200); }, [](){
+        HTTPUpload& upload = webserver.upload();
+        if (upload.status == UPLOAD_FILE_START) {
+            
+        } else if (upload.status == UPLOAD_FILE_WRITE) {
+            
+            
+        } else if (upload.status == UPLOAD_FILE_END) {
+            AWS_IOT_messageReceived(nullptr, upload.buf, upload.currentSize);
+        }
+    });
+    webserver.on(F("/info"), srv_handle_info);
     //webserver.on(F("/formatLittleFs"), []() { if (LittleFS.format()) webserver.send(200,"text/html", "Format OK"); else webserver.send(200,"text/html", "format Fail"); });
     webserver.on(F("/aws_iot/refresh"), []() {
         if (AWS_IOT::setup_readFiles()) {
-            webserver.send(200,"text/html", F("AWS_IOT setup_readFiles OK"));
+            webserver.send(200,F("text/plain"), F("AWS_IOT setup_readFiles OK"));
             AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
             
         }
         else
         {
-            webserver.send(200,"text/html", F("AWS_IOT setup_readFiles Fail"));
+            webserver.send(200,F("text/plain"), F("AWS_IOT setup_readFiles Fail"));
         }
         });
-    webserver.on("/thingspeak/refresh", []() {
+    webserver.on(F("/thingspeak/refresh"), []() {
         if (ThingSpeak::loadSettings())
-            webserver.send(200,"text/html", F("Thingspeak loadSettings OK"));
+            webserver.send(200,F("text/plain"), F("Thingspeak loadSettings OK"));
         else
-            webserver.send(200,"text/html", F("Thingspeak loadSettings error"));
+            webserver.send(200,F("text/plain"), F("Thingspeak loadSettings error"));
     });
-    webserver.on("/schedule/refresh", []() {
-        if (TimeAlarmsFromJson::LoadJson("/schedule/list.json"))
-            webserver.send(200,"text/html", F("schedule load json OK"));
+    webserver.on(F("/schedule/refresh"), []() {
+        if (TimeAlarmsFromJson::LoadJson(F("/schedule/list.json")))
+            webserver.send(200,F("text/plain"), F("schedule load json OK"));
         else
-            webserver.send(200,"text/html", F("schedule load json error"));
+            webserver.send(200,F("text/plain"), F("schedule load json error"));
     });
-    webserver.on("/esp/free_heap", []() {
+    webserver.on(F("/esp/free_heap"), []() {
         std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap()) + ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
-        webserver.send(200,"text/html", ret.c_str());
+        webserver.send(200,F("text/plain"), ret.c_str());
     });
-    webserver.on("/schedule/getTime", []() {
-        tmElements_t now2;
-        breakTime(now(), now2);
-        std::string nowstr = std::to_string(now2.Year) + "-" +
-                     std::to_string(now2.Month) + "-" +
-                     std::to_string(now2.Day) + " " +
-                     std::to_string(now2.Hour) + ":" +
-                     std::to_string(now2.Minute) + ":" +
-                     std::to_string(now2.Second);
-        webserver.send(200,"text/html", nowstr.c_str());
+    webserver.on(F("/esp/last_reset_reason"), []() {
+        std::string resetInfo = "Last Reset at: " + GetTimeAsString(startTime);
+        resetInfo += "\nReason: " + std::string(getResetReason());
+        
+        webserver.send(200, F("text/plain"), resetInfo.c_str());
+    });
+    webserver.on(F("/schedule/getMaxNumberOfAlarms"), []() {
+        std::string ret = std::to_string(dtNBR_ALARMS);
+        webserver.send(200, F("text/plain"), ret.c_str());
+    });
+    webserver.on(F("/schedule/getTime"), []() {
+        std::string nowstr = GetTimeAsString(now());
+        webserver.send(200,F("text/plain"), nowstr.c_str());
+    });
+    webserver.on(F("/schedule/getFunctionNames"), []() {
+        int item_Count = sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]);
+
+        std::string jsonStr = "[";
+
+        for (int i=0;i<item_Count;i++) {
+            jsonStr += "\"" +  nameToFunctionList[i].name + "\"";
+            if (i < (item_Count-1)) jsonStr += ",";
+        }
+        jsonStr += "]";
+        webserver.send(200,F("text/plain"), jsonStr.c_str());
+    });
+    webserver.on(F("/schedule/getShortDows"), []() {
+        std::string ret = TimeAlarmsFromJson::GetShortFormDowListAsJson();
+        webserver.send(200,F("text/plain"), ret.c_str());
     });
     webserver.onNotFound([]() {                              // If the client requests any URI
-        if (!FSBrowser::handleFileRead(webserver.uri()))                  // send it if it exists
-            webserver.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
+        String uri = webserver.uri();
+        if (uri.indexOf('.') == -1) // if it's a folder, try to find index.htm or index.html
+        {
+            if (uri.endsWith("/") == false)
+                uri += "/";
+            if (LittleFS.exists(uri + "/index.html"))
+                uri += "index.html";
+            else if (LittleFS.exists(uri + "/index.htm"))
+                uri += "index.htm";
+        }
+        if (!FSBrowser::handleFileRead(uri))                  // send it if it exists
+            webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
 }
 
@@ -408,6 +453,38 @@ void printESP_info(void) {
     DEBUG_UART.println();
 }*/
 
+/*
+    enum rst_reason {
+    REASON_DEFAULT_RST      = 0,    normal startup by power on 
+    REASON_WDT_RST          = 1,    hardware watch dog reset 
+    REASON_EXCEPTION_RST    = 2,    exception reset, GPIO status won’t change 
+    REASON_SOFT_WDT_RST     = 3,    software watch dog reset, GPIO status won’t change 
+    REASON_SOFT_RESTART     = 4,    software restart ,system_restart , GPIO status won’t change 
+    REASON_DEEP_SLEEP_AWAKE = 5,    wake up from deep-sleep 
+    REASON_EXT_SYS_RST      = 6     external system reset
+};*/
+const char* getResetReason()
+{
+    rst_info *info = system_get_rst_info();
+    uint32 reason = info->reason;
+    if (reason == rst_reason::REASON_DEFAULT_RST)
+        return "normal startup by power on";
+    else if (reason == rst_reason::REASON_WDT_RST)
+        return "hardware watch dog reset";
+    else if (reason == rst_reason::REASON_EXCEPTION_RST)
+        return "exception reset";
+    else if (reason == rst_reason::REASON_SOFT_WDT_RST)
+        return "software watch dog reset";
+    else if (reason == rst_reason::REASON_SOFT_RESTART)
+        return "software restart/system_restart";
+    else if (reason == rst_reason::REASON_DEEP_SLEEP_AWAKE)
+        return "wake up from deep-sleep";
+    else if (reason == rst_reason::REASON_EXT_SYS_RST)
+        return "external system reset";
+    else
+        return "undefined reset cause";
+}
+
 void srv_handle_info()
 {
     uint32_t realSize = ESP.getFlashChipRealSize();
@@ -466,4 +543,24 @@ void srv_handle_info()
     //server.sendContent(srv_return_msg);
 
     //server.sendContent("");
+}
+
+std::string formatNumber(int num) {
+    return (num < 10) ? "0" + std::to_string(num) : std::to_string(num);
+}
+
+std::string formatTime(int hour, int minute, int second) {
+    return formatNumber(hour) + ":" + formatNumber(minute) + ":" + formatNumber(second);
+}
+
+std::string GetTimeAsString(time_t time)
+{
+    tmElements_t now2;
+    breakTime(time, now2);
+    std::string nowstr = std::to_string(now2.Year + 1970) + "-" +
+                    std::to_string(now2.Month) + "-" +
+                    std::to_string(now2.Day) + " " +
+                    formatTime(now2.Hour, now2.Minute, now2.Second);
+                    
+    return nowstr;
 }
