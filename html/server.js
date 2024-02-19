@@ -16,14 +16,17 @@ const wss = new WebSocket.Server({port:8080});
 const functionNames = ["ntp_sync","sendEnvData","fan","rf433"];
 const shortDows = ["mon","tue", "wed", "thu", "fri", "sat", "sun"];
 
+let execFileChange = true;
 // Watch for file changes
 chokidar.watch('./schedule').on('change', (path) => {
+  if (execFileChange == false) return;
+
   // Trigger rebuild process
   console.log("file changed: "+  path);
   // Notify connected clients
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send('{"cmd":"reload"'); // Send a message to reload the page immediately
+      client.send('{"cmd":"reload"}'); // Send a message to reload the page immediately
     }
   });
 });
@@ -60,6 +63,7 @@ const storage = multer.diskStorage({
     cb(null, './');
   },
   filename: function (req, file, cb) {
+    execFileChange = false; // set this to avoid file changed event, set to true in webserver.post('/edit')
     cb(null, sanitizeFilePath(file.originalname));
   }
 });
@@ -89,10 +93,15 @@ const uploadFile = multer({
 
 // Route to handle file upload
 webserver.post('/edit', uploadFile.single("data"), (req, res) => {
+  execFileChange = true; // set back to normal operation
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
   console.log(req.file);
+  // This function will be executed after the file has been saved to disk
+  console.log('File saved successfully');
+  return res.status(200).send('File uploaded successfully.');
+  
 });
 
 webserver.get('/schedule/refresh', (req, res) => {
