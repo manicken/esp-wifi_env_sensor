@@ -13,9 +13,20 @@ const upload = multer();
 const port = 80;
 const wss = new WebSocket.Server({port:8080});
 
-
 const functionNames = ["ntp_sync","sendEnvData","fan","rf433"];
 const shortDows = ["mon","tue", "wed", "thu", "fri", "sat", "sun"];
+
+// Watch for file changes
+chokidar.watch('./schedule').on('change', (path) => {
+  // Trigger rebuild process
+  console.log("file changed: "+  path);
+  // Notify connected clients
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send('{"cmd":"reload"'); // Send a message to reload the page immediately
+    }
+  });
+});
 
 webserver.use(express.json());
 webserver.use(express.urlencoded({extended: true}));
@@ -189,17 +200,6 @@ function getContentType(filePath) {
     }
   }
 
-  // Watch for file changes
-chokidar.watch('./').on('change', (path) => {
-  // Trigger rebuild process
-  console.log("file changed: "+  path);
-  // Notify connected clients
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send('reload'); // Send a message to reload the page
-    }
-  });
-});
 
 // Handle WebSocket connections
 wss.on('connection', function connection(ws) {
@@ -209,10 +209,14 @@ wss.on('connection', function connection(ws) {
     console.log('Received: %s', message);
   });
 
-  ws.send('Hello, Client!');
+  ws.send('{"connected":"Hello, Client from webserver!"}');
 });
 
 // Display a message when the server starts listening
 wss.on('listening', () => {
   console.log('WebSocket server is listening on port 8080');
+});
+
+wss.on('close', function() {
+  console.log("websocket server closed");
 });

@@ -1,22 +1,34 @@
-console.log("injected javascript hehe");
+console.log("injected javascript for autorefresh on file change");
 
-  // Establish WebSocket connection
-  const socket = new WebSocket('ws://localhost:8080');
+// Establish WebSocket connection
+const socket = new WebSocket('ws://localhost:8080');
+// websocket for custom_nodemon
+const socket2 = new WebSocket('ws://localhost:8081');
 
-  // Log errors
-  socket.onerror = function(error) {
+function onError(error) {
     console.error('WebSocket error:', error);
-  };
+}
 
-  // Log messages from the server
-  socket.onmessage = function(event) {
+function onMessage(event) {
     console.log('Message from server:', event.data);
+    const msg = JSON.parse(event.data);
     
-    // You can handle the message here, for example, if the message indicates a page reload:
-    if (event.data === 'reload') {
-      location.reload();
-    }
-  };
 
-  // Optionally, you can send messages to the server
-  // socket.send('Hello, server!');
+    // You can handle the message here, for example, if the message indicates a page reload:
+    if (msg.cmd === 'reload') {
+        if (msg.timeout == undefined)
+            location.reload();
+        else
+            setTimeout(function() {
+                location.reload();
+            },  parseInt(msg.timeout));
+    }
+}
+
+// Log errors
+socket.onerror = onError;
+socket2.onerror = onError;
+
+// Log messages from the server
+socket.onmessage = onMessage;
+socket2.onmessage = onMessage;
