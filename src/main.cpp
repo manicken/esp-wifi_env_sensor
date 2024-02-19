@@ -77,6 +77,7 @@ Adafruit_SSD1306 display(128, 32, &Wire, -1); // -1 = no reset pin
 unsigned long auto_last_change = 0;
 unsigned long last_wifi_check_time = 0;
 
+
 ESP8266WebServer webserver(HTTP_PORT);
 
 uint32_t test = 1234567890;
@@ -107,6 +108,14 @@ const char* getResetReason(void);
 void initWebServerHandlers(void);
 std::string GetTimeAsString(time_t time);
 
+void Timer_SyncTime() {
+    DEBUG_UART.println("Timer_SyncTime");
+    NTP::NTPConnect();
+    tmElements_t now2;
+    breakTime(time(nullptr), now2);
+    int year = (int)now2.Year + 1970;
+    setTime(now2.Hour+1, now2.Minute, now2.Second, now2.Day, now2.Month, year);
+}
 
 void Timer_SendEnvData()
 {
@@ -132,8 +141,9 @@ void Alarm_SendToRF433(const OnTickExtParameters *param)
     }
 }
 
-TimeAlarmsFromJson::NameToFunction nameToFunctionList[3] = {
+TimeAlarmsFromJson::NameToFunction nameToFunctionList[4] = {
 //   name         , onTick            , onTickExt
+    {"ntp_sync"   , &Timer_SyncTime   , nullptr           },
     {"sendEnvData", &Timer_SendEnvData, nullptr           },
     {"fan"        , nullptr           , &Alarm_SetFanSpeed},
     {"rf433"      , nullptr           , &Alarm_SendToRF433}
@@ -207,16 +217,6 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     tmElements_t now2;
     breakTime(time(nullptr), now2);
     int year = (int)now2.Year + 1970;
-
-    std::string nowstr = "time(nullptr):" +
-                    std::to_string(year) + "-" +
-                     std::to_string(now2.Month) + "-" +
-                     std::to_string(now2.Day) + " " +
-                     std::to_string(now2.Hour) + ":" +
-                     std::to_string(now2.Minute) + ":" +
-                     std::to_string(now2.Second);
-    DEBUG_UART.println(nowstr.c_str());
-
     setTime(now2.Hour+1, now2.Minute, now2.Second, now2.Day, now2.Month, year);
     startTime = now();
 
@@ -245,7 +245,7 @@ void loop() {
     
     ArduinoOTA.handle();
     webserver.handleClient();
-    Alarm.delay(0);
+    TimeAlarmsFromJson::HandleAlarms();
     currTime = millis();
 
     if (millis() - deltaTime_displayUpdate >= 1000) {

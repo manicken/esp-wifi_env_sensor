@@ -80,20 +80,21 @@ namespace OTA{
             DEBUG_UART.println("\n100%\nOTA End");
 
         });
-
+/*
         ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
 
             //DEBUG_UART.printf("Progress: %u%%\r", (progress / (total / 100)));
             //Serial1.printf("%u%%\r", (progress / (total / 100)));
             //DEBUG_UART.print("-");
-            /*if (otaPartProcentCount < 9)
+            if (otaPartProcentCount < 9)
             otaPartProcentCount++;
             else
             {
             otaPartProcentCount = 0;
             DEBUG_UART.printf(" %u%%\r", (progress / (total / 100)));
-            }*/
+            }
         });
+        */
 
         ArduinoOTA.onError([](ota_error_t error) {
             DEBUG_UART.printf("OTA Error");
@@ -106,6 +107,7 @@ namespace OTA{
         });
 
         ArduinoOTA.begin();
+        //WiFi.setHostname("test");
 
         DEBUG_UART.println("Ready");
 

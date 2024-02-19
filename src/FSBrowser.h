@@ -50,6 +50,10 @@ char upload_html[] PROGMEM = R"=====(
 <form method="post" enctype="multipart/form-data">
       <input type="file" name="name">
       <input class="button" type="submit" value="Upload">
+      <br>
+      <a href="/edit">
+      <button>Goto edit page</button>
+      </a>
 </form>
 
 )=====";

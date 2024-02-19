@@ -13,6 +13,34 @@ var functionNames = [];
 var shortDows = [];
 
 function setup() {
+/*
+  document.getElementById('uploadForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent default form submission
+    
+    // Get file input element
+    const fileInput = document.getElementById('fileInput');
+    console.log(fileInput.files[0]);
+    // Create FormData object
+    const formData = new FormData();
+    
+    // Append file to FormData object
+    formData.append('file', fileInput.files[0]);
+    
+    // Send AJAX request to server
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/edit');
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+          console.log('File uploaded successfully!');
+        } else {
+          console.error('Error uploading file:', xhr.statusText);
+        }
+      }
+    };
+    xhr.send(formData);
+  }); */
+
   getFile("schedule/getFunctionNames", function(contents1) {
     console.log(contents1);
     functionNames = JSON.parse(contents1);
@@ -279,7 +307,7 @@ function saveConfiguration()
   console.log(dataJSON);
   
   
-  //postFile("/schedule/list.json", dataJSON, "text/json", newScheduleFile_Posted, newScheduleFile_NotPosted)
+  postFile("schedule/list.json", dataJSON, "application/json", newScheduleFile_Posted, newScheduleFile_NotPosted)
 }
 
 function newScheduleFile_Posted(){
@@ -384,7 +412,7 @@ function getFile(path, whenLoaded, onError) {
   xhttp.send();
 }
 
-function postFile(path, data, type, onOk, onError){
+function postFile(path, data, type, onOK, onError){
   var xmlHttp = new XMLHttpRequest();
   xmlHttp.onload = function() {
     if (xmlHttp.status != 200) { 
@@ -392,12 +420,21 @@ function postFile(path, data, type, onOk, onError){
       else console.log("post file fail:" + path);
     }
     else {
-      if (onOk != undefined) onOK();
+      if (onOK != undefined) onOK();
       else console.log("post file ok:" + path);
     }
   };
   var formData = new FormData();
-  formData.append("data", new Blob([data], { type: type }), path);
-  xmlHttp.open("POST", "../../edit");
+  formData.append("data", new Blob([data], { type: type }), "\\\\"+path);
+  //formData.append("file", data);//, path);
+  //formData.append("data", data);
+  //formData.append("type", type);
+  //formData.append("path", path);
+  console.log(path);
+  
+  xmlHttp.open("POST", "/edit");
   xmlHttp.send(formData);
+  
 }
+
+
