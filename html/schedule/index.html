@@ -1,9 +1,11 @@
 <!doctype html>
 <html>
 <head>
-<title>Home Assistant WiFi Switch - Settings</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" /> 
+<title>Scheduler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <script type='text/javascript' src='schedule/main.js'></script>
+<script type='text/javascript' src='schedule/helpers.js'></script>
 <link rel="stylesheet" type="text/css" href="schedule/style.css"/>
 
 </head>
@@ -16,9 +18,9 @@
   </form>-->
   <div class="Menu">
     <div class="MenuItem"><a href="/index.html"><button type="button" style="width:170px;">back to MainMenus</button></a></div>
-    <div class="MenuItem"><button type="button" onclick="saveConfiguration()" style="width:75px; font-weight:bold;">save</button></div>
-    <div class="MenuItem"><button type="button" onclick="loadConfiguration()" style="width:75px; font-weight:bold;">reload</button></div>
-    <input type="text" id="fname" name="fname"><br><br>
+    <div class="MenuItem"><button type="button" onclick="saveSchedueles()" style="width:75px; font-weight:bold;">save</button></div>
+    <div class="MenuItem"><button type="button" onclick="loadSchedules()" style="width:75px; font-weight:bold;">reload</button></div>
+    <!--<input type="text" id="fname" name="fname"><br><br>-->
   </div>
   <div class="tabs">
     <button class="tab active" onclick="openTab(event, 'dataTable_timers')">timers</button>

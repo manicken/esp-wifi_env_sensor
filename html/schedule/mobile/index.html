@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+<title>Scheduler for mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<script type='text/javascript' src='/schedule/mobile/main.js'></script>
+<script type='text/javascript' src='/schedule/helpers.js'></script>
+<link rel="stylesheet" type="text/css" href="/schedule/mobile/style.css"/>
+<link rel="stylesheet" type="text/css" href="/schedule/checkbox.css"/>
+
+</head>
+
+
+<body>
+    <div id="myModal" class="modal">
+
+        <!-- Modal content -->
+        <div class="modal-content">
+          <div class="modal-title-bar">
+            <div id="modal-title" class="modal-title-bar-item">Edit schedule item</div>
+            <div class="modal-close modal-title-bar-item" onclick="closeModal()">&times;</div>
+          </div>
+          <div id="modal-innerContent">contents</div>
+        </div>
+      
+      </div>
+    <div class="Menu">
+        <div class="MenuItem"><a href="/index.html"><button type="button" style="width:170px;">back to MainMenus</button></a></div>
+        <div class="MenuItem"><button type="button" onclick="saveSchedules()" style="width:75px; font-weight:bold;">save</button></div>
+        <div class="MenuItem"><button type="button" onclick="loadSchedules()" style="width:75px; font-weight:bold;">reload</button></div>
+        <!--<div class="MenuItem"></div><button onclick="openModal()">Open Modal</button></div>-->
+        <!--<input type="text" id="fname" name="fname"><br><br>-->
+    </div>
+    
+    <div id="item_list" class="schedule-list">
+        <div class="schedule-item">
+            <div class="schedule-item-var time">00:00</div>
+            <div class="schedule-item-var enable_switch">
+                <label class="el-switch">
+                    <input type="checkbox" name="switch">
+                    <span class="el-switch-style"></span>
+                </label>
+            </div>
+            <div class="schedule-item-var details">
+                <p>Everyday</p>
+                <p>Switch 1: ON</p>
+            </div>
+        </div>
+        <div class="verticalSeperator"></div>
+        <div class="schedule-item">
+            <div class="schedule-item-var time">12:00</div>
+            <div class="schedule-item-var enable_switch">
+                <label class="el-switch">
+                    <input type="checkbox" name="switch">
+                    <span class="el-switch-style"></span>
+                </label>
+            </div>
+            <div class="schedule-item-var details">
+                <p>Mon Tue Wed Thu Fri Sat Sun</p>
+                <p>Switch 1: OFF</p>
+            </div>
+        </div>
+        <div class="verticalSeperator"></div>
+        <div class="schedule-item">
+            
+            <div class="schedule-item-var time">12:00</div>
+            <div class="schedule-item-var enable_switch">
+                <label class="el-switch">
+                    <input type="checkbox" name="switch">
+                    <span class="el-switch-style"></span>
+                </label>
+            </div>
+            <div class="schedule-item-var details">
+                <p>2024-01-29</p>
+                <p>Switch 1: OFF</p>
+            </div>
+        </div>
+    </div>
+    <div class="addNewItem">
+        <button>Add Schedule</button>
+    </div>
+    <div id='info'></div>
+</body>
+</html>

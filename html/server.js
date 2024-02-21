@@ -30,6 +30,18 @@ chokidar.watch('./schedule').on('change', (path) => {
     }
   });
 });
+chokidar.watch('./schedule2').on('change', (path) => {
+  if (execFileChange == false) return;
+
+  // Trigger rebuild process
+  console.log("file changed: "+  path);
+  // Notify connected clients
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send('{"cmd":"reload"}'); // Send a message to reload the page immediately
+    }
+  });
+});
 
 webserver.use(express.json());
 webserver.use(express.urlencoded({extended: true}));
@@ -115,53 +127,58 @@ webserver.get('/schedule/getFunctionNames', (req, res) => {
 webserver.get('/schedule/getShortDows', (req, res) => {
     res.contentType("application/json").send(JSON.stringify(shortDows));
 });
-  
-webserver.get('*', (req, res) => {
-    // Get the requested file path
-    const filePath = path.join(__dirname, req.url);
-    
-    if (req.url.indexOf(".") == -1) {
-      console.log("requesting index file @ " + filePath);
 
-      let indexHtml = path.join(filePath, 'index.html');
-      if (fileExists(indexHtml)) {
+function getAnyIndexFileFromDir(req, res, dirPath) {
+    console.log("requesting index file @ " + dirPath);
+
+    let indexHtml = path.join(dirPath, 'index.html');
+    if (fileExists(indexHtml)) {
         req.url += "/index.html";
         console.log("index.html found");
         sendFile(res, indexHtml);
         return;
-      }
+    }
 
-      let indexHtm = path.join(filePath, 'index.htm');
-      if (fileExists(indexHtm)) {
+    let indexHtm = path.join(dirPath, 'index.htm');
+    if (fileExists(indexHtm)) {
         req.url += "/index.htm";
         console.log("index.htm found");
         sendFile(res, indexHtm);
         return;
-      }
-
-      // not any index file
-      res.status(404).send('404: Not Found');
-      return;
     }
-    console.log("requesting file: " + filePath);
+
+    // not any index file
+    res.status(404).send('404: Not Found');
+}
+  
+webserver.get('*', (req, res) => {
+    // Get the requested file path
+    const localPath = path.join(__dirname, req.url);
+    
+    if (req.url.indexOf(".") == -1) {
+        // if url is a dir, i.e. without any file extension
+        getAnyIndexFileFromDir(req, res, localPath);
+        return;
+    }
+    console.log("requesting file: " + localPath);
     // Check if the file exists
-    if (fileExists(filePath) == false) {
+    if (fileExists(localPath) == false) {
       // If the file does not exist, send a 404 response
       res.status(404).send('404: Not Found');
       return;
     }
-    sendFile(res, filePath);
+    sendFile(res, localPath);
 });
 
 
 
 // Start the server
-webserver.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/`);
+webserver.listen(port, '0.0.0.0', () => {
+  
+    console.log(`Server running at http://0.0.0.0:${port}/`);
 });
 
 function sendFile(res, filePath) {
-    
     // If the file exists, read and send it
     fs.readFile(filePath, 'utf8', (err, data) => {
       if (err) {
@@ -212,10 +229,10 @@ function getContentType(filePath) {
 
 // Handle WebSocket connections
 wss.on('connection', function connection(ws) {
-  console.log('Client connected');
+  console.log('server Client connected');
   
   ws.on('message', function incoming(message) {
-    console.log('Received: %s', message);
+    console.log('server Received: %s', message);
   });
 
   ws.send('{"connected":"Hello, Client from webserver!"}');
@@ -223,9 +240,5 @@ wss.on('connection', function connection(ws) {
 
 // Display a message when the server starts listening
 wss.on('listening', () => {
-  console.log('WebSocket server is listening on port 8080');
-});
-
-wss.on('close', function() {
-  console.log("websocket server closed");
+  console.log('server WebSocket server is listening on port 8080');
 });

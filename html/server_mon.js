@@ -42,22 +42,18 @@ function watchFiles() {
 
 // Handle WebSocket connections
 wss.on('connection', function connection(ws) {
-    console.log('Client connected');
+    console.log('server_mon Client connected');
     
     ws.on('message', function incoming(message) {
-      console.log('Received: %s', message);
+      console.log('server_mon Received: %s', message);
     });
   
-    ws.send('{"connected":"Hello, Client from custom_nodemon!"}');
+    ws.send('{"connected":"Hello, Client from server_mon!"}');
   });
   
   // Display a message when the server starts listening
   wss.on('listening', () => {
-    console.log('WebSocket server is listening on port 8080');
-  });
-  
-  wss.on('close', function() {
-    console.log("websocket server closed");
+    console.log('server_mon WebSocket server is listening on port 8080');
   });
 
 // Start the server
