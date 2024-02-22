@@ -2,14 +2,20 @@
 
 window.addEventListener('load', setup);
 
-var functionNames = [];
-var shortDows = [];
-
 var modal;
 // Function to open the modal
 function openModal(scheduleItem) {
   modal.style.display = 'block';
-  document.querySelector("#modal-innerContent").innerHTML = scheduleItem.innerHTML;
+  
+  let modalBounding = document.getElementById("modal-content").getBoundingClientRect();
+  console.log(modalBounding);
+  let lastItem = document.getElementById("edit-params").getBoundingClientRect();
+  console.log(lastItem);
+
+  let newHeight =  modalBounding.height - lastItem.y;
+  console.log("newHeight:" + newHeight);
+  document.getElementById("edit-params").style.height = newHeight + "px";
+  //document.querySelector("#modal-innerContent").innerHTML = scheduleItem.innerHTML;
 }
 
 // Function to close the modal
@@ -24,10 +30,43 @@ window.onclick = function(event) {
   }
 }
 
+function handleNumberInputKeyDown(event) {
+  // Get the key code of the pressed key
+  var keyCode = event.keyCode || event.which;
+
+  // Cancel the key press if it's not a number key (0-9)
+  /*if (keyCode < 48 || keyCode > 57) {
+      event.preventDefault(); // Cancel the default action of the key press
+  }*/
+}
+
+function handleNumberInputChange(input) {
+  let valueStr = input.value.replace(/[^\d.-]/g, '');
+  if (valueStr == "") valueStr = input.min; // provide any number in case input.value only contains non digits
+  // get current value and Remove non-integer characters
+  var value = parseInt(valueStr);
+  var max = parseInt(input.max);
+  var min = parseInt(input.min);
+  var leadingZeroAttribute = input.getAttribute('leadingZero');
+
+  console.log(value + " " + max + " " + min);
+  if (value > max) { value = max; }
+  if (value < min) { value = min; }
+  
+  console.log(leadingZeroAttribute!=undefined);
+  if (leadingZeroAttribute != undefined) {
+    
+    if (value < 10)
+      value = "0" + value;
+  }
+  input.value = value;
+  console.log(input.value);
+}
+
 function setup() {
   // Get the modal
   modal = document.getElementById('myModal');
-  //openModal();
+  openModal();
   let isMobileDevice = checkIfMobileDevice();
   
   //document.querySelector(".modal-content").style.maxHeight = document.body.clientHeight;
@@ -43,14 +82,19 @@ function setup() {
   }
   
 
-  getFile("/schedule/getFunctionNames", function(contents1) {
-    console.log(contents1);
-    functionNames = JSON.parse(contents1);
+  getFile("/schedule/getFunctionNames", function(itemsJsonStr) {
+    console.log(itemsJsonStr);
+    let items = JSON.parse(itemsJsonStr);
+    const functionNames = Object.keys(items);
+    
     console.log("functions:");
-    console.log(functionNames);
+    console.log(items, functionNames);
+    
+    document.getElementById("edit-func-options").innerHTML = getOptionsHtml(functionNames, true, functionNames[0]);
+    
     getFile("/schedule/getShortDows", function(contents2) {
       console.log(contents2);
-      shortDows = JSON.parse(contents2);
+      let shortDows = JSON.parse(contents2);
     
       loadSchedules();
     }, function () { setState("error cannot load short DOW list"); });

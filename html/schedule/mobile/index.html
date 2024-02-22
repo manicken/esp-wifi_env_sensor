@@ -11,22 +11,66 @@
 
 </head>
 
-
 <body>
     <div id="myModal" class="modal">
 
         <!-- Modal content -->
-        <div class="modal-content">
+        <div id="modal-content" class="modal-content">
           <div class="modal-title-bar">
             <div id="modal-title" class="modal-title-bar-item">Edit schedule item</div>
             <div class="modal-close modal-title-bar-item" onclick="closeModal()">&times;</div>
           </div>
-          <div id="modal-innerContent">contents</div>
+          <div class="modal-innerContent">
+            <div class="edit-mode">
+                <label for="edit-mode">Mode:</label>
+                <select id="edit-mode">
+                    <option value="timer">timer</option>
+                    <option value="daily">daily</option>
+                    <option value="weekly">weekly</option>
+                    <option value="explicit">explicit</option>
+                </select>
+            </div>
+            <div class="edit-hms edit-time active">
+                <label for="edit-time-h">Hour</label>
+                <label for="edit-time-m">Minute</label>
+                <label for="edit-time-s">Second</label>
+                <input id="edit-time-h" type="text" leadingZero="" value="00" maxlength="2" min="0" max="23" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-time-m" type="text" leadingZero="" value="00" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-time-s" type="text" leadingZero="" value="00" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+            </div>
+            
+            <div class="edit-hms edit-timer active">
+                <label>Hours</label>
+                <label>Minutes</label>
+                <label>Seconds</label>
+                <input id="edit-timer-h" type="text" value="0" maxlength="2" min="0" max="24" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-timer-m" type="text" value="0" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-timer-s" type="text" value="0" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+            </div>
+            <div class="edit-ymd active">
+                <label>Year</label>
+                <label>Month</label>
+                <label>Day</label>
+                <input id="edit-time-y" type="text" value='2024' maxlength="4" min="0" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-time-M" type="text" value='2' maxlength="2"  min="1" max="12" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-time-d" type="text" value='22' maxlength="2"  min="1" max="31" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+            </div>
+            <div class="edit-func">
+                <label for="edit-func-options">Func:</label>
+                <select id="edit-func-options">
+                    
+                </select>
+            </div>
+            <div class="edit-params">
+                <label for="edit-params">Parameters:</label>
+                <textarea id="edit-params" class="full-size"></textarea>
+            </div>
+          </div>
         </div>
       
       </div>
     <div class="Menu">
-        <div class="MenuItem"><a href="/index.html"><button type="button" style="width:170px;">back to MainMenus</button></a></div>
+        <div class="MenuItem"><a href="/index.html"><button type="button" style="width:170px;">back to MainMenu</button></a></div>
         <div class="MenuItem"><button type="button" onclick="saveSchedules()" style="width:75px; font-weight:bold;">save</button></div>
         <div class="MenuItem"><button type="button" onclick="loadSchedules()" style="width:75px; font-weight:bold;">reload</button></div>
         <!--<div class="MenuItem"></div><button onclick="openModal()">Open Modal</button></div>-->

@@ -12,8 +12,16 @@ const webserver = express();
 const upload = multer();
 const port = 80;
 const wss = new WebSocket.Server({port:8080});
-
-const functionNames = ["ntp_sync","sendEnvData","fan","rf433"];
+/*
+TimeAlarmsFromJson::NameToFunction nameToFunctionList[4] = {
+  //   name         , onTick            , onTickExt
+      {"ntp_sync"   , &Timer_SyncTime   , nullptr           },
+      {"sendEnvData", &Timer_SendEnvData, nullptr           },
+      {"fan"        , nullptr           , &Alarm_SetFanSpeed},
+      {"rf433"      , nullptr           , &Alarm_SendToRF433}
+  };
+  */
+const functionNames = {"ntp_sync":"","sendEnvData":"","fan":"params","rf433":"params"};
 const shortDows = ["mon","tue", "wed", "thu", "fri", "sat", "sun"];
 
 let execFileChange = true;
@@ -60,7 +68,7 @@ webserver.use((req, res, next) => {
       const script = fs.readFileSync('autoRefresh.js', 'utf8');
       console.log("injecting javascript into: ", req.url ? req.url : 'unknown');
       // Inject JavaScript into HTML
-      data = data.replace('</body>', `<script>${script}</script></body>`);
+      data = data.replace('</head>', `<script>${script}</script></head>`);
     }
     // Call the original send function
     res.oldSend(data);

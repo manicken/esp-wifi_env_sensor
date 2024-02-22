@@ -136,3 +136,90 @@ button {
     text-decoration: none;
     cursor: pointer;
   }
+
+  .modal-innerContent {
+    padding-top: 5px;
+    padding-left: 5px;
+  }
+  
+  .edit-mode {
+    padding-left: 10px;
+    padding-top: 10px;
+  }
+  .edit-mode select {
+    font-size: 2em;
+  }
+  .edit-mode label {
+    font-size: 1.5em;
+  }
+  .edit-func {
+    padding-left: 10px;
+    padding-top: 10px;
+  }
+  .edit-func select {
+    font-size: 2em;
+  }
+  .edit-func label {
+    font-size: 1.5em;
+  }
+  .edit-params {
+    width: 100%;
+    height: 100%;
+  }
+  .full-size {
+    width: 100%; /* Make the textarea fill its container horizontally */
+    height: 100%; /* Make the textarea fill its container vertically */
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+     -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+     box-sizing: border-box;         /* Opera/IE 8+ */
+    resize: none; /* Prevent resizing by the user */
+  }
+
+  .edit-hms {
+    padding-top: 10px;
+    display: none;
+    grid-template-columns: repeat(3, auto);
+    text-align: center;
+}
+
+.edit-time.active, .edit-timer.active {
+    display: grid;
+}
+
+.edit-hms label {
+  font-size: 1.5em;
+  /*border: 1px solid;*/ /*debug*/
+}
+
+.edit-hms input {
+  max-width: 70px;
+  font-size: 3em;
+  text-align: center;
+  justify-self: center;
+}
+
+.edit-ymd {
+  padding-top: 10px;
+   display: none;
+   grid-template-columns: repeat(3, auto);
+   text-align: center;
+}
+.edit-ymd.active {
+  display: grid;
+}
+
+.edit-ymd label {
+  font-size: 1.5em;
+  /*border: 1px solid;*/ /*debug*/
+}
+.edit-ymd input {
+  max-width: 70px;
+  font-size: 3em;
+  text-align: center;
+  justify-self: center;
+}
+#edit-time-y {
+  max-width: 115px;
+}
+
+  
