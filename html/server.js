@@ -21,7 +21,7 @@ TimeAlarmsFromJson::NameToFunction nameToFunctionList[4] = {
       {"rf433"      , nullptr           , &Alarm_SendToRF433}
   };
   */
-const functionNames = {"ntp_sync":"","sendEnvData":"","fan":"params","rf433":"params"};
+const functionNames = {"ntp_sync":"","sendEnvData":"","fan":"p","rf433":"p"};
 const shortDows = ["mon","tue", "wed", "thu", "fri", "sat", "sun"];
 
 let execFileChange = true;

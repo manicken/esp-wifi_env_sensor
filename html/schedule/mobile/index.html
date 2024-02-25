@@ -23,12 +23,38 @@
           <div class="modal-innerContent">
             <div class="edit-mode">
                 <label for="edit-mode">Mode:</label>
-                <select id="edit-mode">
+                <select id="edit-mode" onchange="scheduleModeChanged(this.value)">
                     <option value="timer">timer</option>
                     <option value="daily">daily</option>
                     <option value="weekly">weekly</option>
                     <option value="explicit">explicit</option>
                 </select>
+            </div>
+            <div class="edit-weekly-container">
+                <div class="edit-weekly active">
+                    <input type="radio" id="edit-weekly-mon" name="radios" value="all" checked>
+                    <label for="edit-weekly-mon">mon</label>
+                    <input type="radio" id="edit-weekly-tue" name="radios"value="false">
+                    <label for="edit-weekly-tue">tue</label>
+                    <input type="radio" id="edit-weekly-wed" name="radios" value="true">
+                    <label for="edit-weekly-wed">wed</label>
+                    <input type="radio" id="edit-weekly-thu" name="radios" value="true">
+                    <label for="edit-weekly-thu">thu</label>
+                    <input type="radio" id="edit-weekly-fri" name="radios" value="true">
+                    <label for="edit-weekly-fri">fri</label>
+                    <input type="radio" id="edit-weekly-sat" name="radios" value="true">
+                    <label for="edit-weekly-sat">sat</label>
+                    <input type="radio" id="edit-weekly-sun" name="radios" value="true">
+                    <label for="edit-weekly-sun">sun</label>
+                </div>
+            </div>
+            <div class="edit-ymd active">
+                <label>Year</label>
+                <label>Month</label>
+                <label>Day</label>
+                <input id="edit-time-y" type="text" value='2024' maxlength="4" min="0" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-time-M" type="text" value='2' maxlength="2"  min="1" max="12" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
+                <input id="edit-time-d" type="text" value='22' maxlength="2"  min="1" max="31" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
             </div>
             <div class="edit-hms edit-time active">
                 <label for="edit-time-h">Hour</label>
@@ -38,7 +64,6 @@
                 <input id="edit-time-m" type="text" leadingZero="" value="00" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
                 <input id="edit-time-s" type="text" leadingZero="" value="00" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
             </div>
-            
             <div class="edit-hms edit-timer active">
                 <label>Hours</label>
                 <label>Minutes</label>
@@ -46,14 +71,6 @@
                 <input id="edit-timer-h" type="text" value="0" maxlength="2" min="0" max="24" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
                 <input id="edit-timer-m" type="text" value="0" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
                 <input id="edit-timer-s" type="text" value="0" maxlength="2" min="0" max="59" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
-            </div>
-            <div class="edit-ymd active">
-                <label>Year</label>
-                <label>Month</label>
-                <label>Day</label>
-                <input id="edit-time-y" type="text" value='2024' maxlength="4" min="0" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
-                <input id="edit-time-M" type="text" value='2' maxlength="2"  min="1" max="12" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
-                <input id="edit-time-d" type="text" value='22' maxlength="2"  min="1" max="31" onchange="handleNumberInputChange(this)" onkeydown="handleNumberInputKeyDown(event)">
             </div>
             <div class="edit-func">
                 <label for="edit-func-options">Func:</label>
@@ -78,8 +95,9 @@
     </div>
     
     <div id="item_list" class="schedule-list">
-        <div class="schedule-item">
-            <div class="schedule-item-var time">00:00</div>
+        <!--this first item defines the template for one schedule list item-->
+        <div id="schedule-item-template" class="schedule-item">
+            <div class="schedule-item-var time">00:00:00</div>
             <div class="schedule-item-var enable_switch">
                 <label class="el-switch">
                     <input type="checkbox" name="switch">
@@ -87,8 +105,9 @@
                 </label>
             </div>
             <div class="schedule-item-var details">
-                <p>Everyday</p>
-                <p>Switch 1: ON</p>
+                <p class="schedule-item-mode">Everyday</p>
+                <p class="schedule-item-func">functionName</p>
+                <p class="schedule-item-params">{}</p>
             </div>
         </div>
         <div class="verticalSeperator"></div>
@@ -101,8 +120,9 @@
                 </label>
             </div>
             <div class="schedule-item-var details">
-                <p>Mon Tue Wed Thu Fri Sat Sun</p>
-                <p>Switch 1: OFF</p>
+                <p class="schedule-item-mode">Mon Tue Wed Thu Fri Sat Sun</p>
+                <p class="schedule-item-func">functionName</p>
+                <p class="schedule-item-params">{}</p>
             </div>
         </div>
         <div class="verticalSeperator"></div>
@@ -116,8 +136,9 @@
                 </label>
             </div>
             <div class="schedule-item-var details">
-                <p>2024-01-29</p>
-                <p>Switch 1: OFF</p>
+                <p class="schedule-item-mode">2024-01-29</p>
+                <p class="schedule-item-func">functionName</p>
+                <p class="schedule-item-params">{}</p>
             </div>
         </div>
     </div>

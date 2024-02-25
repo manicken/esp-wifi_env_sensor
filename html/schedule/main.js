@@ -9,6 +9,7 @@ window.addEventListener('load', setup);
 
 var currentTab = "dataTable_timers";
 
+var functionDefs = [];
 var functionNames = [];
 var shortDows = [];
 
@@ -16,7 +17,8 @@ function setup() {
 
   getFile("schedule/getFunctionNames", function(contents1) {
     console.log(contents1);
-    functionNames = JSON.parse(contents1);
+    functionDefs = JSON.parse(contents1);
+    functionNames = Object.keys(functionDefs);
     console.log("functions:");
     console.log(functionNames);
     getFile("schedule/getShortDows", function(contents2) {

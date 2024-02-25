@@ -3,6 +3,7 @@
 window.addEventListener('load', setup);
 
 var modal;
+var scheduleItemTemplate;
 // Function to open the modal
 function openModal(scheduleItem) {
   modal.style.display = 'block';
@@ -15,7 +16,53 @@ function openModal(scheduleItem) {
   let newHeight =  modalBounding.height - lastItem.y;
   console.log("newHeight:" + newHeight);
   document.getElementById("edit-params").style.height = newHeight + "px";
+  document.getElementById("edit-mode").value = scheduleItem.mode;
+  refreshEditScheduleItem_mode(scheduleItem.mode);
+  document.getElementById("edit-func-options").value = scheduleItem.func;
+  document.getElementById("edit-params").value = scheduleItem.params;
+  document.getElementById("edit-time-h").value = scheduleItem.h;
+  document.getElementById("edit-time-m").value = scheduleItem.m;
+  document.getElementById("edit-time-s").value = scheduleItem.s;
+  document.getElementById("edit-timer-h").value = scheduleItem.h;
+  document.getElementById("edit-timer-m").value = scheduleItem.m;
+  document.getElementById("edit-timer-s").value = scheduleItem.s;
+  document.getElementById("edit-time-y").value = scheduleItem.y?scheduleItem.y:2024;
+  document.getElementById("edit-time-M").value = scheduleItem.M?scheduleItem.M:1;
+  document.getElementById("edit-time-d").value = scheduleItem.d?scheduleItem.d:1;
+  if (scheduleItem.D != undefined) {
+    let weeklySel = document.getElementById("edit-weekly-" + scheduleItem.D);
+    if (weeklySel != undefined)
+      weeklySel.checked = true;
+  }
+    
   //document.querySelector("#modal-innerContent").innerHTML = scheduleItem.innerHTML;
+}
+
+function refreshEditScheduleItem_mode(mode) {
+  if (mode == 'timer') {
+    document.querySelector(".edit-time").classList.remove('active');
+    document.querySelector(".edit-timer").classList.add('active');
+    document.querySelector(".edit-weekly").classList.remove('active');
+    document.querySelector(".edit-ymd").classList.remove('active');
+  }
+  else if (mode == 'daily') {
+    document.querySelector(".edit-timer").classList.remove('active');
+    document.querySelector(".edit-time").classList.add('active');
+    document.querySelector(".edit-weekly").classList.remove('active');
+    document.querySelector(".edit-ymd").classList.remove('active');
+  }
+  else if (mode == 'weekly') {
+    document.querySelector(".edit-timer").classList.remove('active');
+    document.querySelector(".edit-time").classList.add('active');
+    document.querySelector(".edit-weekly").classList.add('active');
+    document.querySelector(".edit-ymd").classList.remove('active');
+  }
+  else if (mode == 'explicit') {
+    document.querySelector(".edit-timer").classList.remove('active');
+    document.querySelector(".edit-time").classList.add('active');
+    document.querySelector(".edit-weekly").classList.remove('active');
+    document.querySelector(".edit-ymd").classList.add('active');
+  }
 }
 
 // Function to close the modal
@@ -63,24 +110,34 @@ function handleNumberInputChange(input) {
   console.log(input.value);
 }
 
+function scheduleModeChanged(mode) 
+{
+  console.log(mode);
+  refreshEditScheduleItem_mode(mode);
+}
+
 function setup() {
   // Get the modal
   modal = document.getElementById('myModal');
-  openModal();
+  //openModal();
   let isMobileDevice = checkIfMobileDevice();
   
   //document.querySelector(".modal-content").style.maxHeight = document.body.clientHeight;
   if (isMobileDevice) {
     document.body.style.width = "auto";
     document.body.style.margin = "2 auto"; /* Center-align body content */
-    document.querySelector(".modal-content").style.maxWidth = "95%";
+    document.querySelector("#modal-content").style.width = "99%";
+    document.querySelector("#modal-content").style.height = "99.5%";
     setState("You are using a Mobile Device");
   } else {
       document.body.style.width = "360px";
-      document.querySelector(".modal-content").style.maxWidth = document.body.style.width;
+      console.log(document.body.clientHeight);
+      document.querySelector("#modal-content").style.width = "370px";
+      document.querySelector("#modal-content").style.height = "890px";
       setState("You are using Desktop");
   }
-  
+  // get a copy of the template
+  scheduleItemTemplate = document.getElementById("schedule-item-template").cloneNode(true);
 
   getFile("/schedule/getFunctionNames", function(itemsJsonStr) {
     console.log(itemsJsonStr);
@@ -113,7 +170,7 @@ function fixTimerValue(data) {
   data.s = data.s?data.s:0;
 }
 
-function getItemHtml(data) {
+function setItemData(item, data) {
   console.log(data);
   let mode = data.mode;
 
@@ -132,31 +189,37 @@ function getItemHtml(data) {
   if (mode == 'daily') mode = 'Everyday';
   else if (mode == 'timer') mode = 'timer';
   else if (mode == 'weekly') mode = data.D;
-  else if (mode == 'explicit') mode = 'once';
+  else if (mode == 'explicit') mode = data.y+"-"+data.M+"-"+data.d;
   let params = data.params?data.params:"";
-  let html = '<div class="schedule-item">';
-  html += `<div class="schedule-item-var time" data-h="${data.h}" data-m="${data.m}" data-s="${data.s}">${time}</div>`;
-  html += `<div class="schedule-item-var enable_switch"> <label class="el-switch"> <input type="checkbox" name="switch" ${enabled}> <span class="el-switch-style"></span> </label> </div>`
-  html += `<div class="schedule-item-var details" data-mode="${data.mode}" data-func="${data.func}" data-params="${params}">`+
-          `<p class="schedule-item-mode">${mode}</p>`+
-          `<p class="schedule-item-func">${data.func}</p>`+
-          `<p class="schedule-item-params">${params}</p>`+
-          '</div>';
-  html += '</div>';
-  return html;
+
+  let timeItem = item.querySelector('.time');
+  item.data = data;
+
+  timeItem.innerHTML = time;
+  item.querySelector('input').checked = enabled;
+  item.querySelector('.schedule-item-mode').innerHTML = mode;
+  item.querySelector('.schedule-item-func').innerHTML = data.func;
+  item.querySelector('.schedule-item-params').innerHTML = params;
 }
 
 function drawItemList(data) {
-  let html = "";
+  let item_list = document.getElementById("item_list");
+  item_list.innerHTML = "";
   for (let i=0;i<data.length;i++) {
     if (data[i].params == undefined) data[i].params = "";
     else data[i].params = JSON.stringify(data[i].params); // this needs to be edited as a string
+    let newItem = scheduleItemTemplate.cloneNode(true);
+    newItem.removeAttribute('id');
+    setItemData(newItem, data[i]);
+    item_list.appendChild(newItem);
+    newItem.children = "";
 
-    html += getItemHtml(data[i]);
-    if (i < data.length-1)
-      html += '<div class="verticalSeperator"></div>';
+    if (i < data.length-1) {
+      let seperator = document.createElement("div");
+      seperator.className = "verticalSeperator";
+      item_list.appendChild(seperator);
+    }
   }
-  document.getElementById("item_list").innerHTML = html;
 
   const scheduleItems = document.getElementsByClassName('schedule-item');
   console.log(scheduleItems);
@@ -171,7 +234,8 @@ function drawItemList(data) {
           if (event.target !== checkbox && event.target !== checkbox2) {
               // Perform your onClick() event here
               //setState('Schedule item clicked!'+event.currentTarget.innerHTML);
-              openModal(event.currentTarget);
+              console.log(event.currentTarget.data);
+              openModal(event.currentTarget.data);
           }
           else
             setState("");

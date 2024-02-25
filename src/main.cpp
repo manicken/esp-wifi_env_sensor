@@ -351,13 +351,13 @@ void initWebServerHandlers(void)
     webserver.on(F("/schedule/getFunctionNames"), []() {
         int item_Count = sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]);
 
-        std::string jsonStr = "[";
+        std::string jsonStr = "{";
 
         for (int i=0;i<item_Count;i++) {
-            jsonStr += "\"" +  nameToFunctionList[i].name + "\"";
+            jsonStr += "\"" +  nameToFunctionList[i].name + "\":\"" + ((nameToFunctionList[i].onTickExt!=nullptr)?"p":"") + "\"";
             if (i < (item_Count-1)) jsonStr += ",";
         }
-        jsonStr += "]";
+        jsonStr += "}";
         webserver.send(200,F("text/plain"), jsonStr.c_str());
     });
     webserver.on(F("/schedule/getShortDows"), []() {

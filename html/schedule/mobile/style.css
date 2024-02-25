@@ -90,20 +90,33 @@ button {
   
   .modal-content {
     position: absolute;
-    left:5px;
-    top:5px;
+    left:1px;
+    top:1px;
     margin-top: 0px;
     background-color: #fefefe;
-    width: 100%;
+    /*width: 100%;*/
 
     border-radius: 10px;
-    padding: 2px;
+    padding: 0px;
     border: 1px solid #888;
     
-    height: 90%;
+    height: 99%;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   }
+  .modal-innerContent {
+    height: 99%;
+    background-color: #f3f4ff;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    padding-top: 0px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
   .modal-title-bar {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background-color: #e5e7fd;
     display: grid;
     grid-template-columns: auto auto;
     border-bottom: 2px solid #888;
@@ -114,8 +127,14 @@ button {
     font-family: Verdana,Arial,sans-serif;
     font-weight: bold;
   }
+  /*
   .modal-title-bar-item {
     border: 0px solid rgba(0, 0, 0, 0.8);
+    
+  }*/
+  #modal-title {
+    padding-left: 10px;
+    padding-top: 4px;
   }
   
   .modal-close {
@@ -137,16 +156,17 @@ button {
     cursor: pointer;
   }
 
-  .modal-innerContent {
-    padding-top: 5px;
-    padding-left: 5px;
-  }
+  
   
   .edit-mode {
     padding-left: 10px;
     padding-top: 10px;
   }
   .edit-mode select {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    padding: 3px;
+    padding-top: 1px;
+    border-radius: 10px;
     font-size: 2em;
   }
   .edit-mode label {
@@ -157,16 +177,22 @@ button {
     padding-top: 10px;
   }
   .edit-func select {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    padding-top: 1px;
+    border-radius: 10px;
     font-size: 2em;
   }
   .edit-func label {
     font-size: 1.5em;
   }
   .edit-params {
+    
     width: 100%;
     height: 100%;
   }
   .full-size {
+    border-radius: 10px;
     width: 100%; /* Make the textarea fill its container horizontally */
     height: 100%; /* Make the textarea fill its container vertically */
     -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
@@ -192,6 +218,8 @@ button {
 }
 
 .edit-hms input {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
   max-width: 70px;
   font-size: 3em;
   text-align: center;
@@ -213,6 +241,8 @@ button {
   /*border: 1px solid;*/ /*debug*/
 }
 .edit-ymd input {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
   max-width: 70px;
   font-size: 3em;
   text-align: center;
@@ -222,4 +252,59 @@ button {
   max-width: 115px;
 }
 
+.edit-weekly-container {
+  display: flex; /* Use flexbox for container */
+  justify-content: center; /* Center children horizontally */
+  /* Optionally, you can add styles for container */
+  /* align-items: center; */ /* Optionally, center vertically */
+  /* Other container styles */
+}
+
+.edit-weekly {
+  padding-top: 10px;
+  display: none;
+}
+.edit-weekly.active {
+  display: block;
+}
+
+/*
+  Hide radio button (the round disc)
+  we will use just the label to create pushbutton effect
+*/
+input[type=radio] {
+  display:none; 
+  margin:10px;
   
+}
+
+/*
+Change the look'n'feel of labels (which are adjacent to radiobuttons).
+Add some margin, padding to label
+*/
+input[type=radio] + label {
+  border-radius: 22px;
+  line-height: 40px;
+  display:inline-block;
+  margin-top:0px;
+  width: 44px;
+  text-align: center;
+
+  padding-left:0px;
+
+  font-size: 1em;
+  font-family: Verdana,Arial,sans-serif;
+
+  height: 44px;
+  
+  background-color: #e7e7e7;
+  border-color: #ddd;
+}
+/*
+Change background color for label next to checked radio button
+to make it look like highlighted button
+*/
+input[type=radio]:checked + label { 
+ background-image: none;
+  background-color:#d4d2fd;
+}
