@@ -79,10 +79,21 @@
                     
                 </select>
             </div>
-            <div class="edit-params-class active">
+            <div class="edit-func-param-template active">
+                <label for="edit-func-param-template-options">Template:</label>
+                <select id="edit-func-param-template-options">
+                    
+                </select>
+                <button type="button" onclick="insertParamTemplate()" >insert</button>
+            </div>
+            <div class="edit-params active">
                 <label for="edit-params">Parameters:</label>
                 <textarea id="edit-params" class="full-size"></textarea>
             </div>
+            <div class="edit-remove-item">
+                <button type="button" onclick="removeItem()" >Remove</button>
+            </div>
+            
           </div>
         </div>
       
@@ -95,7 +106,7 @@
         <!--<input type="text" id="fname" name="fname"><br><br>-->
     </div>
     
-    <div id="item_list" class="schedule-list">
+    <div id="item-list" class="schedule-list">
         <!--this first item defines the template for one schedule list item-->
         <div id="schedule-item-template" class="schedule-item">
             <div class="schedule-item-var time">00:00:00</div>
@@ -111,7 +122,7 @@
                 <p class="schedule-item-params">{}</p>
             </div>
         </div>
-        <div class="verticalSeperator"></div>
+        
         <div class="schedule-item">
             <div class="schedule-item-var time">12:00</div>
             <div class="schedule-item-var enable_switch">
@@ -128,7 +139,6 @@
         </div>
         <div class="verticalSeperator"></div>
         <div class="schedule-item">
-            
             <div class="schedule-item-var time">12:00</div>
             <div class="schedule-item-var enable_switch">
                 <label class="el-switch">
@@ -144,7 +154,7 @@
         </div>
     </div>
     <div class="addNewItem">
-        <button>Add Schedule</button>
+        <button onclick="addNewSchedule()">Add Schedule</button>
     </div>
     <div id='info'></div>
 </body>

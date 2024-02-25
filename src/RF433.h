@@ -333,15 +333,20 @@ namespace RF433 {
     }
     void DecodeFromJSON_SLC(const JsonVariant &json)
     {
+        std::string grp_btn = "", btn = "";
         Serial1.println("slc type");
         if (!json.containsKey("uid")) return;
         std::string uid = json["uid"];
-        if (!json.containsKey("grp_btn")) return; // grp_btn can be '1' or '0'
-        std::string grp_btn = json["grp_btn"];
+        if (json.containsKey("grp_btn")) // grp_btn can be '1' or '0'
+            grp_btn = (std::string)json["grp_btn"];
+        else
+            grp_btn = "0";
         if (!json.containsKey("state")) return;
         std::string state = json["state"];
-        if (!json.containsKey("btn")) return; // can be any number 1-4
-        std::string btn = json["btn"];
+        if (json.containsKey("btn")) // can be any number 1-4
+            btn = (std::string)json["btn"];
+        else
+            btn = "0";
         Serial1.println("slc sending");
         SendTo433_SLC(uid.c_str(), grp_btn[0], state[0], btn[0]);
     }
