@@ -17,13 +17,14 @@
         <!-- Modal content -->
         <div id="modal-content" class="modal-content">
           <div class="modal-title-bar">
-            <div id="modal-title" class="modal-title-bar-item">Edit schedule item</div>
             <div class="modal-close modal-title-bar-item" onclick="closeModal()">&times;</div>
+            <div id="modal-title" class="modal-title-bar-item">Edit schedule item</div>
+            <div class="modal-ok modal-title-bar-item" onclick="okModal()">OK</div>
           </div>
           <div class="modal-innerContent">
             <div class="edit-mode">
                 <label for="edit-mode">Mode:</label>
-                <select id="edit-mode" onchange="scheduleModeChanged(this.value)">
+                <select id="edit-mode" onchange="refreshEditScheduleItem_mode(this.value)">
                     <option value="timer">timer</option>
                     <option value="daily">daily</option>
                     <option value="weekly">weekly</option>
@@ -74,11 +75,11 @@
             </div>
             <div class="edit-func">
                 <label for="edit-func-options">Func:</label>
-                <select id="edit-func-options">
+                <select id="edit-func-options" onchange="scheduleFuncChanged(this.value)">
                     
                 </select>
             </div>
-            <div class="edit-params">
+            <div class="edit-params-class active">
                 <label for="edit-params">Parameters:</label>
                 <textarea id="edit-params" class="full-size"></textarea>
             </div>

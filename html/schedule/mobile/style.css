@@ -118,7 +118,7 @@ button {
     border-top-right-radius: 10px;
     background-color: #e5e7fd;
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: auto auto auto;
     border-bottom: 2px solid #888;
     height: 32px;
     padding-top:2px;
@@ -127,11 +127,11 @@ button {
     font-family: Verdana,Arial,sans-serif;
     font-weight: bold;
   }
-  /*
+  
   .modal-title-bar-item {
-    border: 0px solid rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.8);
     
-  }*/
+  }
   #modal-title {
     padding-left: 10px;
     padding-top: 4px;
@@ -140,13 +140,16 @@ button {
   .modal-close {
     color: #aaa;
     /*float: right;*/
-    position: absolute;
-    left: auto;
-    right: 10px;
-    top: 0px;
+    /*position: absolute;
+    left: 10px;
+    right: auto;
+    top: 0px;*/
+    margin-top: -2px;
+    margin-left: -1px;
     font-size: 28px;
     font-weight: bold;
-    text-align: top;
+    text-align: top left;
+    width: 32px;
   }
   
   .modal-close:hover,
@@ -155,7 +158,21 @@ button {
     text-decoration: none;
     cursor: pointer;
   }
-
+  .modal-ok {
+    color: rgb(0, 66, 0);
+    text-align: right;
+    padding-right: 5px;
+    margin-top: -2px;
+    width: 64px;
+    align-self: right;
+    justify-self: right;
+  }
+  .modal-ok:hover,
+  .modal-ok:focus {
+    color:rgb(255, 0, 0)k;
+    text-decoration: none;
+    cursor: pointer;
+  }
   
   
   .edit-mode {
@@ -176,6 +193,7 @@ button {
     padding-left: 10px;
     padding-top: 10px;
   }
+ 
   .edit-func select {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     padding: 5px;
@@ -186,10 +204,13 @@ button {
   .edit-func label {
     font-size: 1.5em;
   }
-  .edit-params {
-    
+  .edit-params-class {
+    display: none;
     width: 100%;
     height: 100%;
+  }
+  .edit-params-class.active {
+    display: block;
   }
   .full-size {
     border-radius: 10px;

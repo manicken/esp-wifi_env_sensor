@@ -1,36 +1,39 @@
 
 
 window.addEventListener('load', setup);
+var functionDefs;
 
 var modal;
 var scheduleItemTemplate;
+var currentEditItem;
 // Function to open the modal
-function openModal(scheduleItem) {
+function openModal() {
+  let data = currentEditItem.data;
   modal.style.display = 'block';
   
-  let modalBounding = document.getElementById("modal-content").getBoundingClientRect();
+  let modalBounding = modal.querySelector("#modal-content").getBoundingClientRect();
   console.log(modalBounding);
-  let lastItem = document.getElementById("edit-params").getBoundingClientRect();
+  let lastItem = modal.querySelector("#edit-params").getBoundingClientRect();
   console.log(lastItem);
 
   let newHeight =  modalBounding.height - lastItem.y;
   console.log("newHeight:" + newHeight);
-  document.getElementById("edit-params").style.height = newHeight + "px";
-  document.getElementById("edit-mode").value = scheduleItem.mode;
-  refreshEditScheduleItem_mode(scheduleItem.mode);
-  document.getElementById("edit-func-options").value = scheduleItem.func;
-  document.getElementById("edit-params").value = scheduleItem.params;
-  document.getElementById("edit-time-h").value = scheduleItem.h;
-  document.getElementById("edit-time-m").value = scheduleItem.m;
-  document.getElementById("edit-time-s").value = scheduleItem.s;
-  document.getElementById("edit-timer-h").value = scheduleItem.h;
-  document.getElementById("edit-timer-m").value = scheduleItem.m;
-  document.getElementById("edit-timer-s").value = scheduleItem.s;
-  document.getElementById("edit-time-y").value = scheduleItem.y?scheduleItem.y:2024;
-  document.getElementById("edit-time-M").value = scheduleItem.M?scheduleItem.M:1;
-  document.getElementById("edit-time-d").value = scheduleItem.d?scheduleItem.d:1;
-  if (scheduleItem.D != undefined) {
-    let weeklySel = document.getElementById("edit-weekly-" + scheduleItem.D);
+  modal.querySelector("#edit-params").style.height = newHeight + "px";
+  modal.querySelector("#edit-mode").value = data.mode;
+  refreshEditScheduleItem_mode(data.mode);
+  modal.querySelector("#edit-func-options").value = data.func;
+  modal.querySelector("#edit-params").value = data.params?JSON.stringify(data.params, null, 2):"";
+  modal.querySelector("#edit-time-h").value = data.h?data.h:0;
+  modal.querySelector("#edit-time-m").value = data.m?data.m:0;
+  modal.querySelector("#edit-time-s").value = data.s?data.s:0;
+  modal.querySelector("#edit-timer-h").value = data.h?data.h:0;
+  modal.querySelector("#edit-timer-m").value = data.m?data.m:0;
+  modal.querySelector("#edit-timer-s").value = data.s?data.s:0;
+  modal.querySelector("#edit-time-y").value = data.y?data.y:2024;
+  modal.querySelector("#edit-time-M").value = data.M?data.M:1;
+  modal.querySelector("#edit-time-d").value = data.d?data.d:1;
+  if (data.D != undefined) {
+    let weeklySel = modal.querySelector("#edit-weekly-" + data.D);
     if (weeklySel != undefined)
       weeklySel.checked = true;
   }
@@ -40,34 +43,88 @@ function openModal(scheduleItem) {
 
 function refreshEditScheduleItem_mode(mode) {
   if (mode == 'timer') {
-    document.querySelector(".edit-time").classList.remove('active');
-    document.querySelector(".edit-timer").classList.add('active');
-    document.querySelector(".edit-weekly").classList.remove('active');
-    document.querySelector(".edit-ymd").classList.remove('active');
+    modal.querySelector(".edit-time").classList.remove('active');
+    modal.querySelector(".edit-timer").classList.add('active');
+    modal.querySelector(".edit-weekly").classList.remove('active');
+    modal.querySelector(".edit-ymd").classList.remove('active');
   }
   else if (mode == 'daily') {
-    document.querySelector(".edit-timer").classList.remove('active');
-    document.querySelector(".edit-time").classList.add('active');
-    document.querySelector(".edit-weekly").classList.remove('active');
-    document.querySelector(".edit-ymd").classList.remove('active');
+    modal.querySelector(".edit-timer").classList.remove('active');
+    modal.querySelector(".edit-time").classList.add('active');
+    modal.querySelector(".edit-weekly").classList.remove('active');
+    modal.querySelector(".edit-ymd").classList.remove('active');
   }
   else if (mode == 'weekly') {
-    document.querySelector(".edit-timer").classList.remove('active');
-    document.querySelector(".edit-time").classList.add('active');
-    document.querySelector(".edit-weekly").classList.add('active');
-    document.querySelector(".edit-ymd").classList.remove('active');
+    modal.querySelector(".edit-timer").classList.remove('active');
+    modal.querySelector(".edit-time").classList.add('active');
+    modal.querySelector(".edit-weekly").classList.add('active');
+    modal.querySelector(".edit-ymd").classList.remove('active');
   }
   else if (mode == 'explicit') {
-    document.querySelector(".edit-timer").classList.remove('active');
-    document.querySelector(".edit-time").classList.add('active');
-    document.querySelector(".edit-weekly").classList.remove('active');
-    document.querySelector(".edit-ymd").classList.add('active');
+    modal.querySelector(".edit-timer").classList.remove('active');
+    modal.querySelector(".edit-time").classList.add('active');
+    modal.querySelector(".edit-weekly").classList.remove('active');
+    modal.querySelector(".edit-ymd").classList.add('active');
   }
 }
 
 // Function to close the modal
 function closeModal() {
   modal.style.display = 'none';
+}
+
+function okModal() {
+  let data = currentEditItem.data;
+  
+  data.mode = modal.querySelector("#edit-mode").value;
+  data.func = modal.querySelector("#edit-func-options").value;
+  data.params = JSON.parse(modal.querySelector("#edit-params").value);
+  let mode = data.mode;
+  if (mode == 'timer') {
+    data.h = parseInt(modal.querySelector("#edit-timer-h").value);
+    data.m = parseInt(modal.querySelector("#edit-timer-m").value);
+    data.s = parseInt(modal.querySelector("#edit-timer-s").value);
+  } 
+  else if (mode == 'daily' || mode == 'weekly' || mode == 'explicit') { // inlcude all here instead of just using else for future implementations
+    data.h = parseInt(modal.querySelector("#edit-time-h").value);
+    data.m = parseInt(modal.querySelector("#edit-time-m").value);
+    data.s = parseInt(modal.querySelector("#edit-time-s").value);
+    if (mode == 'weekly') {
+      data.D = getSingleDOWselection();
+    }
+    else if (mode == 'explicit') {
+      data.y = parseInt(modal.querySelector("#edit-time-y").value);
+      data.M = parseInt(modal.querySelector("#edit-time-M").value);
+      data.d = parseInt(modal.querySelector("#edit-time-d").value);
+    }
+  }
+  //currentEditItem.data = data;
+  setItemElementsFromItemData(currentEditItem);
+  console.log("ok pressed");
+  modal.style.display = 'none';
+}
+
+function getSingleDOWselection() {
+  var radios = document.querySelectorAll('.edit-weekly input[type="radio"]');
+  for (let i=0;i<radios.length; i++) {
+    if (radios[i].checked == true)
+    {
+      let id = radios[i].id;
+      return id.substring(id.lastIndexOf('-') + 1);
+    }
+  }
+  return "invalid";
+}
+
+function getAllDOWselections() {
+  var radios = document.querySelectorAll('.edit-weekly.active input[type="radio"]');
+  var checkedStates = {};
+
+  radios.forEach(function(radio) {
+      checkedStates[radio.id] = radio.checked;
+  });
+
+  return checkedStates;
 }
 
 // Close the modal when clicking outside of it
@@ -110,10 +167,18 @@ function handleNumberInputChange(input) {
   console.log(input.value);
 }
 
-function scheduleModeChanged(mode) 
+function scheduleFuncChanged(funcName)
 {
-  console.log(mode);
-  refreshEditScheduleItem_mode(mode);
+  //console.log(funcName);
+  //console.log(functionDefs[funcName]);
+  if (functionDefs[funcName] != '') {
+    //console.log("active");
+      modal.querySelector(".edit-params-class").classList.add('active');
+  }
+  else {
+    //console.log("inactive");
+      modal.querySelector(".edit-params-class").classList.remove('active');
+  }
 }
 
 function setup() {
@@ -141,11 +206,11 @@ function setup() {
 
   getFile("/schedule/getFunctionNames", function(itemsJsonStr) {
     console.log(itemsJsonStr);
-    let items = JSON.parse(itemsJsonStr);
-    const functionNames = Object.keys(items);
+    functionDefs = JSON.parse(itemsJsonStr);
+    const functionNames = Object.keys(functionDefs);
     
     console.log("functions:");
-    console.log(items, functionNames);
+    console.log(functionDefs, functionNames);
     
     document.getElementById("edit-func-options").innerHTML = getOptionsHtml(functionNames, true, functionNames[0]);
     
@@ -159,43 +224,44 @@ function setup() {
   //setupWebSocket();
 }
 
-function fixTimeToHHMMSS(data) {
-  data.h = data.h?( (data.h<10)?("0"+data.h):data.h ):"00";
-  data.m = data.m?( (data.m<10)?("0"+data.m):data.m ):"00";
-  data.s = data.s?( (data.s<10)?("0"+data.s):data.s ):"00";
+function getFixedTimeToHHMMSS(data) {
+  return { h: data.h?( (data.h<10)?("0"+data.h):data.h ):"00",
+           m: data.m?( (data.m<10)?("0"+data.m):data.m ):"00",
+           s: data.s?( (data.s<10)?("0"+data.s):data.s ):"00"};
 }
-function fixTimerValue(data) {
-  data.h = data.h?data.h:0;
-  data.m = data.m?data.m:0;
-  data.s = data.s?data.s:0;
+function getFixedTimerValue(data) {
+  return {h: data.h?data.h:0,
+          m: data.m?data.m:0,
+          s: data.s?data.s:0};
 }
 
-function setItemData(item, data) {
+function setItemElementsFromItemData(item) {
+  let data = item.data;
   console.log(data);
   let mode = data.mode;
 
   if (mode != 'timer') {
-    fixTimeToHHMMSS(data);
-    var time = data.h + ":" + data.m + ((data.s>0)?(":" + data.s):'');
+    let tv = getFixedTimeToHHMMSS(data);
+    var compositeTime = tv.h + ":" + tv.m + ((tv.s>0)?(":" + tv.s):'');
   }
   else {
-    fixTimerValue(data);
-    let h = data.h, m = data.m, s = data.s;
-    var time = ((h>0)?(h + " h"):'') + ((m>0)?(((h>0)?", ":'') + m + " m"):'') + ((s>0)?(((h>0 || m>0)?", ":'')  + s + " s"):'');
+    let tv = getFixedTimerValue(data);
+    
+    var compositeTime = ((tv.h>0)?(tv.h + " h"):'') + ((tv.m>0)?(((tv.h>0)?", ":'') + tv.m + " m"):'') + ((tv.s>0)?(((tv.h>0 || tv.m>0)?", ":'')  + tv.s + " s"):'');
     //var time = ((h>0)?(h + " hours"):'') + ((m>0)?(((h>0)?", ":'') + m + " mins"):'') + ((s>0)?(((h>0 || m>0)?", ":'')  + s + " sec"):'');
   }
-  let enabled = data.disabled==undefined ? 'checked':'';
+  let enabled = (data.disabled==undefined) ? true:false;
   
   if (mode == 'daily') mode = 'Everyday';
   else if (mode == 'timer') mode = 'timer';
   else if (mode == 'weekly') mode = data.D;
   else if (mode == 'explicit') mode = data.y+"-"+data.M+"-"+data.d;
-  let params = data.params?data.params:"";
+  let params = data.params?JSON.stringify(data.params):"";
 
   let timeItem = item.querySelector('.time');
   item.data = data;
 
-  timeItem.innerHTML = time;
+  timeItem.innerHTML = compositeTime;
   item.querySelector('input').checked = enabled;
   item.querySelector('.schedule-item-mode').innerHTML = mode;
   item.querySelector('.schedule-item-func').innerHTML = data.func;
@@ -206,13 +272,13 @@ function drawItemList(data) {
   let item_list = document.getElementById("item_list");
   item_list.innerHTML = "";
   for (let i=0;i<data.length;i++) {
-    if (data[i].params == undefined) data[i].params = "";
-    else data[i].params = JSON.stringify(data[i].params); // this needs to be edited as a string
+    //if (data[i].params == undefined) data[i].params = {};
+    //else data[i].params = JSON.stringify(data[i].params); // this needs to be edited as a string
     let newItem = scheduleItemTemplate.cloneNode(true);
     newItem.removeAttribute('id');
-    setItemData(newItem, data[i]);
+    newItem.data = data[i];
+    setItemElementsFromItemData(newItem);
     item_list.appendChild(newItem);
-    newItem.children = "";
 
     if (i < data.length-1) {
       let seperator = document.createElement("div");
@@ -235,10 +301,16 @@ function drawItemList(data) {
               // Perform your onClick() event here
               //setState('Schedule item clicked!'+event.currentTarget.innerHTML);
               console.log(event.currentTarget.data);
-              openModal(event.currentTarget.data);
+              currentEditItem = event.currentTarget;
+              openModal();
           }
-          else
-            setState("");
+          else if (event.target === checkbox) {
+            //setState("");
+            console.log("checkbox clicked:" + event.target.checked);
+            if (event.target.checked) { delete event.currentTarget.data.disabled; }
+            else event.currentTarget.data.disabled = true;
+          }
+            
       });
   }
 }
@@ -254,5 +326,40 @@ function loadSchedules() {
 }
 
 function saveSchedules() {
+  let items = document.getElementsByClassName("schedule-item");
+  var dataJSON = "[\n";
+  for (let i=0;i<items.length;i++) {
+    let item = items[i].data;
+    let newItem = {mode:item.mode};
+    
+    if (item.mode == 'timer') {
+      newItem.h = (item.h!=0)?item.h:undefined;
+      newItem.m = (item.m!=0)?item.m:undefined;
+      newItem.s = (item.s!=0)?item.s:undefined;
+      if (newItem.h == undefined && newItem.m == undefined && newItem.s == undefined) newItem.s = 1; // at least one second
+    }
+    else if (item.mode == 'daily' || item.mode == 'weekly' || item.mode == 'explicit') {
+      if (item.mode == 'weekly')
+        newItem.D = item.D;
+      else if (item.mode == 'explicit') {
+        newItem.y = item.y;
+        newItem.M = item.M;
+        newItem.d = item.d;
+      }
+      newItem.h = item.h; // allways set hour for clarification
+      newItem.m = (item.m!=0)?item.m:undefined;
+      newItem.s = (item.s!=0)?item.s:undefined;
+    }
+    newItem.func = item.func;
+    if (item.params != "") newItem.params = item.params;
 
+    dataJSON += JSON.stringify(newItem);
+    if (i<(items.length-1))
+      dataJSON += ',';
+    dataJSON += "\n";
+    //console.log(newItem);
+  }
+  dataJSON += "]";
+
+  console.log(dataJSON);
 }
