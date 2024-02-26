@@ -22,10 +22,19 @@ var scheduleItemTemplate;
 var currentEditItem;
 // Function to open the modal
 function openModal() {
-  let data = currentEditItem.data;
+  if (currentEditItem == undefined) { // new item
+    let funcNames = Object.keys(functionDefs);
+    var data = {mode:'daily',func:funcNames[0]};
+    modal.querySelector(".edit-remove-item").classList.remove('active');
+  }
+  else {
+    var data = currentEditItem.data;
+    modal.querySelector(".edit-remove-item").classList.add('active');
+  }
+
   modal.style.display = 'block';
-  
-  document.querySelector(".edit-remove-item").style.top = (window.innerHeight - 35) + 'px';
+  modal.style.height = window.innerHeight + 'px';
+  //document.querySelector(".edit-remove-item").style.top = (window.innerHeight - 35) + 'px';
 
   modal.querySelector("#edit-mode").value = data.mode;
   refreshEditScheduleItem_mode(data.mode);
@@ -54,12 +63,16 @@ function openModal() {
 function updateEditParamsTextAreaSize() {
   let modalBounding = modal.querySelector("#modal-content").getBoundingClientRect();
   console.log(modalBounding);
-  let lastItem = modal.querySelector("#edit-params").getBoundingClientRect();
+  let lastItem = modal.querySelector(".edit-params label").getBoundingClientRect();
   console.log(lastItem);
+  /*let lastItem2 = modal.querySelector("#edit-params").getBoundingClientRect();
+  console.log(lastItem2);*/
 
-  let newHeight =  modalBounding.height - lastItem.y;
+  let newHeight =  modalBounding.height - lastItem.bottom;
   console.log("newHeight:" + newHeight);
-  modal.querySelector("#edit-params").style.height = newHeight + "px";
+  modal.querySelector("#edit-params").style.height = newHeight + 'px';
+  
+  modal.querySelector(".edit-params").style.height = (newHeight+lastItem.height+2) + 'px';
 }
 
 function refreshEditScheduleItem_mode(mode) {
@@ -96,8 +109,14 @@ function closeModal() {
 }
 
 function okModal() {
-  let data = currentEditItem.data;
-  
+  console.log("ok pressed");
+
+  if (currentEditItem == undefined) { // when creating new schedule items
+    var data = {};
+  }
+  else {
+    var data = currentEditItem.data;
+  }
   data.mode = modal.querySelector("#edit-mode").value;
   data.func = modal.querySelector("#edit-func-options").value;
   if (functionDefs[data.func] != '') {
@@ -124,10 +143,17 @@ function okModal() {
       data.d = parseInt(modal.querySelector("#edit-time-d").value);
     }
   }
-  //currentEditItem.data = data;
-  setItemElementsFromItemData(currentEditItem);
-  console.log("ok pressed");
   modal.style.display = 'none';
+  if (currentEditItem == undefined) {  // when creating new schedule items
+    let item_list = document.getElementById("item-list");
+    addNewItem(item_list, data, (document.querySelector("#item-list").length!=0));
+    console.log("created new schedule item");
+  }
+  else {
+    setItemElementsFromItemData(currentEditItem);
+    console.log("edit schedule item");
+  }
+  
 }
 
 function removeItem()
@@ -235,19 +261,19 @@ function insertParamTemplate()
 }
 function addNewSchedule()
 {
-  let item_list = document.getElementById("item-list");
-  let funcNames = Object.keys(functionDefs);
-  let data = {mode:'daily',h:0,func:funcNames[0]};
-  addNewItem(item_list, data, (document.querySelector("#item-list").length!=0));
+  currentEditItem = undefined;
+  openModal();
+  
 }
 
 function windowResize(event) {
   //console.log(event);
   if (isMobileDevice) return;
-
+  document.body.height = window.innerHeight + 'px';
   document.querySelector('#item-list').style.height = (window.innerHeight - 120)+ 'px';
+  document.querySelector('#myModal').style.maxHeight = window.innerHeight + 'px';
   document.querySelector("#modal-content").style.height = (window.innerHeight -40)+ 'px';
-  document.querySelector(".edit-remove-item").style.top = (window.innerHeight - 30) + 'px';
+  //document.querySelector(".edit-remove-item").style.top = (window.innerHeight - 30) + 'px';
   updateEditParamsTextAreaSize();
 }
 let isMobileDevice = false;
