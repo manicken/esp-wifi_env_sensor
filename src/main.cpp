@@ -570,7 +570,7 @@ void listDir(const char *dirname, uint8_t levels) {
       DEBUG_UART.print("  DIR : ");
       DEBUG_UART.println(file.name());
       if (levels) {
-        listDir(file.name(), levels - 1);
+        listDir(file.path(), levels - 1);
       }
     } else {
       DEBUG_UART.print("  FILE: ");
@@ -628,6 +628,9 @@ void srv_handle_info()
             srv_return_msg.concat(F("<br>LittleFS usedBytes = ")); srv_return_msg.concat(fsi.usedBytes); 
         }
         else
+#elif defined(ESP32)
+        srv_return_msg.concat(F("<br>LittleFS totalBytes = ")); srv_return_msg.concat(LittleFS.totalBytes());
+        srv_return_msg.concat(F("<br>LittleFS usedBytes = ")); srv_return_msg.concat(LittleFS.usedBytes()); 
 #else
             srv_return_msg.concat(F("<br>LittleFS info not implemented"));
 #endif

@@ -162,6 +162,7 @@ void handleStatus() {
   #ifdef ESP8266
   FSInfo fs_info;
   #endif
+  
   String json;
   json.reserve(128);
 
@@ -175,6 +176,11 @@ void handleStatus() {
     json += fs_info.totalBytes;
     json += F("\", \"usedBytes\":\"");
     json += fs_info.usedBytes;
+    #elif defined(ESP32)
+    json += F("\"true\", \"totalBytes\":\"");
+    json += LittleFS.totalBytes();
+    json += F("\", \"usedBytes\":\"");
+    json += LittleFS.usedBytes();
     #endif
     json += "\"";
   } else {
@@ -192,6 +198,13 @@ void handleStatus() {
    Return the list of files in the directory specified by the "dir" query string parameter.
    Also demonstrates the use of chunked responses.
 */
+#if defined(ESP8266)
+  #define FS_FILE_SIZE_FUNC fileSize
+  #define FS_FILE_NAME_FUNC fileName
+#elif defined(ESP32)
+  #define FS_FILE_SIZE_FUNC size
+  #define FS_FILE_NAME_FUNC name
+#endif
 void handleFileList() {
   if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
 
@@ -247,21 +260,15 @@ void handleFileList() {
       output += "dir";
     } else {
       output += F("file\",\"size\":\"");
-#if defined(ESP8266)
-  #define FS_FILE_SIZE_FUNC fileSize
-  #define FS_FILE_NAME_FUNC fileName
-#elif defined(ESP32)
-  #define FS_FILE_SIZE_FUNC size
-  #define FS_FILE_NAME_FUNC name
-#endif
-      output += dir.FS_FILE_SIZE_FUNC();
+
+      output += file.FS_FILE_SIZE_FUNC();
     }
     output += F("\",\"name\":\"");
     // Always return names without leading "/"
-    if (dir.FS_FILE_NAME_FUNC()[0] == '/') {
-      output += &(dir.FS_FILE_NAME_FUNC()[1]);
+    if (file.FS_FILE_NAME_FUNC()[0] == '/') {
+      output += &(file.FS_FILE_NAME_FUNC()[1]);
     } else {
-      output += dir.FS_FILE_NAME_FUNC();
+      output += file.FS_FILE_NAME_FUNC();
     }
     output += "\"}";
   }
