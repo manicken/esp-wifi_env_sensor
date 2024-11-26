@@ -108,15 +108,17 @@ void TCP2UART::bridgeConfigRx_parse_SerialSetting(void)
     uint8_t bitCfg = 0x00;
     uint8_t parityCfg = 0x00;
     uint8_t stopbitCfg = 0x00;
-
-    if (bridgeConfigRx[4] == '5')
-        bitCfg = UART_NB_BIT_5;
-    else if (bridgeConfigRx[4] == '6')
-        bitCfg = UART_NB_BIT_6;
-    else if (bridgeConfigRx[4] == '7')
-        bitCfg = UART_NB_BIT_7;
-    else if (bridgeConfigRx[4] == '8')
-        bitCfg = UART_NB_BIT_8;
+#if defined(ESP8266)
+    if (bridgeConfigRx[4] == '5') bitCfg = UART_NB_BIT_5;
+    else if (bridgeConfigRx[4] == '6') bitCfg = UART_NB_BIT_6;
+    else if (bridgeConfigRx[4] == '7') bitCfg = UART_NB_BIT_7;
+    else if (bridgeConfigRx[4] == '8') bitCfg = UART_NB_BIT_8;
+#elif defined(ESP32)
+    if (bridgeConfigRx[4] == '5') bitCfg = UART_DATA_5_BITS;
+    else if (bridgeConfigRx[4] == '6') bitCfg = UART_DATA_6_BITS;
+    else if (bridgeConfigRx[4] == '7') bitCfg = UART_DATA_7_BITS;
+    else if (bridgeConfigRx[4] == '8') bitCfg = UART_DATA_8_BITS;
+#endif
     else
     {
         bridgeClient.println("parse error - data bits (only 5, 6, 7 & 8) supported!");
@@ -124,7 +126,11 @@ void TCP2UART::bridgeConfigRx_parse_SerialSetting(void)
     }
 
     if (bridgeConfigRx[5] == 'N')
+#if defined(ESP8266)
         parityCfg = UART_PARITY_NONE;
+#elif defined(ESP32)
+        parityCfg = UART_PARITY_DISABLE;
+#endif
     else if (bridgeConfigRx[5] == 'E')
         parityCfg = UART_PARITY_EVEN;
     else if (bridgeConfigRx[5] == 'O')
@@ -134,11 +140,13 @@ void TCP2UART::bridgeConfigRx_parse_SerialSetting(void)
         bridgeClient.println("parse error - parity (only N, E & O) supported!");
         return;
     }
-
-    if (bridgeConfigRx[6] == '1')
-        stopbitCfg = UART_NB_STOP_BIT_1;
-    else if (bridgeConfigRx[6] == '2')
-        stopbitCfg = UART_NB_STOP_BIT_2;
+#if defined(ESP8266)
+    if (bridgeConfigRx[6] == '1') stopbitCfg = UART_NB_STOP_BIT_1;
+    else if (bridgeConfigRx[6] == '2') stopbitCfg = UART_NB_STOP_BIT_2;
+#elif defined (ESP32)
+    if (bridgeConfigRx[6] == '1') stopbitCfg = UART_STOP_BITS_1;
+    else if (bridgeConfigRx[6] == '2') stopbitCfg = UART_STOP_BITS_2;
+#endif
     else
     {
         bridgeClient.println("parse error - stop bits (only 1 & 2) supported!");

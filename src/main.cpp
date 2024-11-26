@@ -6,12 +6,19 @@
 #include "SPI.h"
 
 // WiFi
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+#endif
 #include <WiFiManager.h>
 // OTA
 #include "OTA.h"
+#if defined(ESP8266)
 // Amazon AWS IoT
 #include "AWS_IOT.h"
+#endif
+
 // Thingspeak
 #include "ThingSpeak.h"
 
@@ -22,8 +29,13 @@
 
 
 // HTTP stuff
+#if defined(ESP8266)
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WebServer.h>
+#elif defined(ESP32)
+#include <HTTPClient.h>
+#include <WebServer.h>
+#endif
 
 // Display
 #include <Wire.h>
@@ -33,6 +45,7 @@
 
 // other addons
 #include <LittleFS.h>
+//#define ARDUINOJSON_ENABLE_PROGMEM 0
 #include <ArduinoJson.h>
 #include <TimeLib.h>
 #include <TimeAlarms.h>
@@ -40,6 +53,8 @@
 #include "RF433.h"
 #include "FAN.h"
 #include "TimeAlarmsFromJson.h"
+//#include "NordPoolFetcher.h"
+
 //#include <sstream>
 //#include "TCP2UART.h"
 
@@ -54,7 +69,7 @@
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(128, 32, &Wire, -1); // -1 = no reset pin
 
-#define DEBUG_UART Serial1
+#define DEBUG_UART Serial
 
 //TCP2UART tcp2uart;
 
@@ -77,8 +92,13 @@ Adafruit_SSD1306 display(128, 32, &Wire, -1); // -1 = no reset pin
 unsigned long auto_last_change = 0;
 unsigned long last_wifi_check_time = 0;
 
-
+#ifdef ESP8266
 ESP8266WebServer webserver(HTTP_PORT);
+#define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin()
+#elif ESP32
+fs_WebServer webserver(HTTP_PORT);
+#define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(false, "", 10, "spiffs")
+#endif
 
 uint32_t test = 1234567890;
 
@@ -135,7 +155,8 @@ void Alarm_SetFanSpeed(const OnTickExtParameters *param)
 void Alarm_SendToRF433(const OnTickExtParameters *param)
 {
     DEBUG_UART.println("Alarm_SendToRF433");
-    IF_STATIC_CAST_DERIVED(AsStringParameter, casted_param, param)
+    const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
+    if (casted_param != nullptr)
     {
         RF433::DecodeFromJSON(casted_param->jsonStr);
     }
@@ -167,11 +188,13 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
 
     if (jsonDoc.containsKey("cmd"))
     {
-        std::string cmd = (std::string)jsonDoc["cmd"];
+        std::string cmd = (std::string)jsonDoc["cmd"].as<std::string>();
         if (cmd == "sendEnvData")
         {
+#if defined(ESP8266)
             DEBUG_UART.println("sending to AWS IOT");
             AWS_IOT::publishMessage(humidity_dht, temp_ds);
+#endif
         }
         else if (cmd == "RF433")
         {
@@ -187,7 +210,7 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
         {
             if (!jsonDoc.containsKey("url")) return;
 
-            std::string url = (std::string)jsonDoc["url"];
+            std::string url = (std::string)jsonDoc["url"].as<std::string>();
 
             DEBUG_UART.printf("starting OTA from %s\n", url.c_str());
             
@@ -197,13 +220,14 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
 }
 
 void setup() {
+
     FAN::init();
 DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
     DEBUG_UART.println(getResetReason());
-    LittleFS.begin();
+    LITTLEFS_BEGIN_FUNC_CALL;
 
     init_display();
     connect_to_wifi();
@@ -211,7 +235,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     //tcp2uart.begin();
     dht.setup(13, DHTesp::DHT11);
     sensors.begin(); // one wire sensors
-    RF433::init();
+    RF433::init(14);
     
     NTP::NTPConnect();
     tmElements_t now2;
@@ -225,17 +249,22 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     TimeAlarmsFromJson::SetFunctionTable(nameToFunctionList, 3);
     TimeAlarmsFromJson::LoadJson("/schedule/list.json");
     
-
+#if defined(ESP8266)
     if (AWS_IOT::setup_readFiles()) {
         AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
     }
     else
         DEBUG_UART.println(F("AWS_IOT error cannot setup AWS IoT without the cert and key files!!!"));
-    
+#endif
+
     ThingSpeak::loadSettings();
     initWebServerHandlers();
     FSBrowser::setup(webserver);
     webserver.begin();
+#if defined(ESP8266)
+    //std::string ret = NPF::searchPatternInhtmlFromUrl();
+    // DEBUG_UART.println(ret.c_str());
+#endif
 DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
 }
@@ -253,6 +282,9 @@ void loop() {
         temp_dht = dht.getTemperature();
         humidity_dht = dht.getHumidity();
         sensors.requestTemperatures(); // Send the command to get temperatures
+        
+        //sensors.getTempC("00000000");
+        
         temp_ds = sensors.getTempCByIndex(0);
       
         display.setCursor(0,0);
@@ -269,6 +301,7 @@ void loop() {
     if (WiFi.status() != WL_CONNECTED)
     {
         connect_to_wifi();
+#if defined(ESP8266)
         AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
     }
     else if (AWS_IOT::canConnect)
@@ -279,6 +312,9 @@ void loop() {
             AWS_IOT::pubSubClient.loop();
         
     }
+#else
+    }
+#endif
 
     if (update_display == 1) {
         update_display = 0;
@@ -306,7 +342,31 @@ void initWebServerHandlers(void)
         }
     });
     webserver.on(F("/info"), srv_handle_info);
-    //webserver.on(F("/formatLittleFs"), []() { if (LittleFS.format()) webserver.send(200,"text/html", "Format OK"); else webserver.send(200,"text/html", "format Fail"); });
+    webserver.on(F("/formatLittleFs"), []() {
+        LITTLEFS_BEGIN_FUNC_CALL;
+        if (LittleFS.format())
+            webserver.send(200,"text/html", "Format OK");
+        else
+            webserver.send(200,"text/html", "format Fail"); 
+        });
+    webserver.on(F("/mkdir"), []() {
+        if (!webserver.hasArg("dir")) { webserver.send(200,"text/html", "Error: dir argument missing"); }
+        else
+        {
+            String path = webserver.arg("dir");
+            
+            if (LittleFS.mkdir(path.c_str()) == false) {
+                webserver.send(200,"text/html", "Error: could not create dir:" + path);
+            }
+            else
+            {
+                webserver.send(200,"text/html", "create new dir OK");
+            }
+
+        }
+
+    });
+#if defined(ESP8266)
     webserver.on(F("/aws_iot/refresh"), []() {
         if (AWS_IOT::setup_readFiles()) {
             webserver.send(200,F("text/plain"), F("AWS_IOT setup_readFiles OK"));
@@ -318,6 +378,7 @@ void initWebServerHandlers(void)
             webserver.send(200,F("text/plain"), F("AWS_IOT setup_readFiles Fail"));
         }
         });
+#endif
     webserver.on(F("/thingspeak/refresh"), []() {
         if (ThingSpeak::loadSettings())
             webserver.send(200,F("text/plain"), F("Thingspeak loadSettings OK"));
@@ -331,7 +392,10 @@ void initWebServerHandlers(void)
             webserver.send(200,F("text/plain"), F("schedule load json error"));
     });
     webserver.on(F("/esp/free_heap"), []() {
-        std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap()) + ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
+        std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
+#if defined(ESP8266)
+        ret += ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
+#endif
         webserver.send(200,F("text/plain"), ret.c_str());
     });
     webserver.on(F("/esp/last_reset_reason"), []() {
@@ -465,6 +529,7 @@ void printESP_info(void) {
 };*/
 const char* getResetReason()
 {
+#if defined(ESP8266)
     rst_info *info = system_get_rst_info();
     uint32 reason = info->reason;
     if (reason == rst_reason::REASON_DEFAULT_RST)
@@ -482,19 +547,57 @@ const char* getResetReason()
     else if (reason == rst_reason::REASON_EXT_SYS_RST)
         return "external system reset";
     else
+#endif
         return "undefined reset cause";
+}
+
+void listDir(const char *dirname, uint8_t levels) {
+  DEBUG_UART.printf("Listing directory: %s\r\n", dirname);
+
+  File root = LittleFS.open(dirname);
+  if (!root) {
+    DEBUG_UART.println("- failed to open directory");
+    return;
+  }
+  if (!root.isDirectory()) {
+    DEBUG_UART.println(" - not a directory");
+    return;
+  }
+
+  File file = root.openNextFile();
+  while (file) {
+    if (file.isDirectory()) {
+      DEBUG_UART.print("  DIR : ");
+      DEBUG_UART.println(file.name());
+      if (levels) {
+        listDir(file.name(), levels - 1);
+      }
+    } else {
+      DEBUG_UART.print("  FILE: ");
+      DEBUG_UART.print(file.name());
+      DEBUG_UART.print("\tSIZE: ");
+      DEBUG_UART.println(file.size());
+    }
+    file = root.openNextFile();
+  }
+  DEBUG_UART.println();
 }
 
 void srv_handle_info()
 {
-    uint32_t realSize = ESP.getFlashChipRealSize();
     uint32_t ideSize = ESP.getFlashChipSize();
+#if defined(ESP8266)
+    uint32_t realSize = ESP.getFlashChipRealSize();
+#else
+    uint32_t realSize = ideSize;
+#endif
     FlashMode_t ideMode = ESP.getFlashChipMode();
     String srv_return_msg = "";
 
     srv_return_msg.concat(F("<!DOCTYPE html PUBLIC\"ISO/IEC 15445:2000//DTD HTML//EN\"><html><head><title></title></head><body>"));
-
+#if defined(ESP8266)
     srv_return_msg.concat(F("Flash real id:   ")); srv_return_msg.concat(ESP.getFlashChipId());
+#endif
     srv_return_msg.concat(F("<br>Flash real size: ")); srv_return_msg.concat(realSize);
 
     srv_return_msg.concat(F("<br>Flash ide  size: ")); srv_return_msg.concat(ideSize);
@@ -508,10 +611,13 @@ void srv_handle_info()
     {
         srv_return_msg.concat(F("<br>Flash Chip configuration ok.\r\n"));
     }
+#if defined(ESP8266)
     srv_return_msg.concat(F("<br> ESP8266 Chip id = ")); srv_return_msg.concat(ESP.getChipId());
+#endif
     srv_return_msg.concat(F("<br><br>"));
-    if (LittleFS.begin()) {
+    if (LITTLEFS_BEGIN_FUNC_CALL) {
         srv_return_msg.concat(F("<br>LittleFS mounted OK"));
+#if defined(ESP8266)
         FSInfo fsi;
         if (LittleFS.info(fsi)) {
             srv_return_msg.concat(F("<br>LittleFS blocksize = ")); srv_return_msg.concat(fsi.blockSize); 
@@ -521,16 +627,39 @@ void srv_handle_info()
             srv_return_msg.concat(F("<br>LittleFS totalBytes = ")); srv_return_msg.concat(fsi.totalBytes); 
             srv_return_msg.concat(F("<br>LittleFS usedBytes = ")); srv_return_msg.concat(fsi.usedBytes); 
         }
-        else srv_return_msg.concat(F("<br>LittleFS info not implemented"));
+        else
+#else
+            srv_return_msg.concat(F("<br>LittleFS info not implemented"));
+#endif
 
         String str = "<br><br>Files:<br>";
+        
+#if defined(ESP8266)
         Dir dir = LittleFS.openDir("/");
+        
         while (dir.next()) {
             str += dir.fileName();
             str += " / ";
             str += dir.fileSize();
             str += "<br>";
         }
+#elif defined(ESP32)
+    listDir("/", 10);
+    File root = LittleFS.open("/");
+    File file = root.openNextFile();
+
+    while (file) {
+        str.concat(file.path());
+        str.concat(file.name());
+        str.concat(" / ");
+        str.concat(file.size());
+        if (file.isDirectory())
+            str.concat(" (dir) ");
+        str.concat("<br>");
+        file = root.openNextFile(); 
+    }
+    
+#endif
         srv_return_msg.concat(str);
     }
     else

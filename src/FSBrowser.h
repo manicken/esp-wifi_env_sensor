@@ -37,10 +37,19 @@
 
 ////////////////////////////////
 
-#include <ESP8266WiFi.h>
+
 #include <WiFiClient.h>
+#if defined(ESP8266)
+#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+#include <fs_WebServer.h>
+#include "mimetable.h"
+
+#include <mdns.h>
+#endif
 #include <SPI.h>
 
 const char TEXT_PLAIN[] PROGMEM = "text/plain";
@@ -75,8 +84,10 @@ SPIFFSConfig fileSystemConfig = SPIFFSConfig();
 #elif defined USE_LITTLEFS
 #include <LittleFS.h>
 const char* fsName = "LittleFS";
-FS* fileSystem = &LittleFS;
+#define fileSystem LittleFS
+#ifdef ESP8266
 LittleFSConfig fileSystemConfig = LittleFSConfig();
+#endif
 #elif defined USE_SDFS
 #include <SDFS.h>
 const char* fsName = "SDFS";
@@ -88,23 +99,20 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 #endif
 
 
-#define DBG_OUTPUT_PORT Serial1
+#define DBG_OUTPUT_PORT Serial
 
 
-
+#ifdef ESP8266
     ESP8266WebServer *server = nullptr;
-
+#elif defined(ESP32)
+    fs_WebServer *server = nullptr;
+#endif
     
 
 bool fsOK = false;
 String unsupportedFiles = String();
 
 File uploadFile;
-
-
-////////////////////////////////
-// Utils to return HTTP codes, and determine content-type
-
 
 void replyOK() {
   server->send(200, FPSTR(TEXT_PLAIN), "");
@@ -151,7 +159,9 @@ String checkForUnsupportedPath(String filename) {
 */
 void handleStatus() {
   DBG_OUTPUT_PORT.println("handleStatus");
+  #ifdef ESP8266
   FSInfo fs_info;
+  #endif
   String json;
   json.reserve(128);
 
@@ -159,11 +169,13 @@ void handleStatus() {
   json += fsName;
   json += "\", \"isOk\":";
   if (fsOK) {
-    fileSystem->info(fs_info);
+    #ifdef ESP8266
+    fileSystem.info(fs_info);
     json += F("\"true\", \"totalBytes\":\"");
     json += fs_info.totalBytes;
     json += F("\", \"usedBytes\":\"");
     json += fs_info.usedBytes;
+    #endif
     json += "\"";
   } else {
     json += "\"false\"";
@@ -186,10 +198,17 @@ void handleFileList() {
   if (!server->hasArg("dir")) { return replyBadRequest(F("DIR ARG MISSING")); }
 
   String path = server->arg("dir");
-  if (path != "/" && !fileSystem->exists(path)) { return replyBadRequest("BAD PATH"); }
+  if (path != "/" && !fileSystem.exists(path)) { return replyBadRequest("BAD PATH"); }
 
   DBG_OUTPUT_PORT.println(String("handleFileList: ") + path);
-  Dir dir = fileSystem->openDir(path);
+
+#if defined(ESP8266)
+  Dir dir = fileSystem.openDir(path);
+  File file;
+#elif defined(ESP32)
+  File dir = fileSystem.open(path);
+  File file;
+#endif
   path.clear();
 
   // use HTTP/1.1 Chunked response to avoid building a huge temporary string
@@ -201,8 +220,12 @@ void handleFileList() {
   // use the same string for every line
   String output;
   output.reserve(64);
-  
+
+#if defined(ESP8266)
   while (dir.next()) {
+#elif defined(ESP32)
+  while (file = dir.openNextFile()) {
+#endif
 #ifdef USE_SPIFFS
     String error = checkForUnsupportedPath(dir.fileName());
     if (error.length() > 0) {
@@ -220,21 +243,26 @@ void handleFileList() {
     }
 
     output += "{\"type\":\"";
-    if (dir.isDirectory()) {
+    if (file.isDirectory()) {
       output += "dir";
     } else {
       output += F("file\",\"size\":\"");
-      output += dir.fileSize();
+#if defined(ESP8266)
+  #define FS_FILE_SIZE_FUNC fileSize
+  #define FS_FILE_NAME_FUNC fileName
+#elif defined(ESP32)
+  #define FS_FILE_SIZE_FUNC size
+  #define FS_FILE_NAME_FUNC name
+#endif
+      output += dir.FS_FILE_SIZE_FUNC();
     }
-
     output += F("\",\"name\":\"");
     // Always return names without leading "/"
-    if (dir.fileName()[0] == '/') {
-      output += &(dir.fileName()[1]);
+    if (dir.FS_FILE_NAME_FUNC()[0] == '/') {
+      output += &(dir.FS_FILE_NAME_FUNC()[1]);
     } else {
-      output += dir.fileName();
+      output += dir.FS_FILE_NAME_FUNC();
     }
-
     output += "\"}";
   }
 
@@ -261,15 +289,16 @@ bool handleFileRead(String path) {
   if (server->hasArg("download")) {
     contentType = F("application/octet-stream");
   } else {
+
     contentType = mime::getContentType(path);
   }
 
-  if (!fileSystem->exists(path)) {
+  if (!fileSystem.exists(path)) {
     // File not found, try gzip version
     path = path + ".gz";
   }
-  if (fileSystem->exists(path)) {
-    File file = fileSystem->open(path, "r");
+  if (fileSystem.exists(path)) {
+    File file = fileSystem.open(path, "r");
     if (server->streamFile(file, contentType) != file.size()) { DBG_OUTPUT_PORT.println("Sent less data than expected!"); }
     file.close();
     return true;
@@ -284,7 +313,7 @@ bool handleFileRead(String path) {
    return the path of the closest parent still existing
 */
 String lastExistingParent(String path) {
-  while (!path.isEmpty() && !fileSystem->exists(path)) {
+  while (!path.isEmpty() && !fileSystem.exists(path)) {
     if (path.lastIndexOf('/') > 0) {
       path = path.substring(0, path.lastIndexOf('/'));
     } else {
@@ -317,7 +346,7 @@ void handleFileCreate() {
 #endif
 
   if (path == "/") { return replyBadRequest("BAD PATH"); }
-  if (fileSystem->exists(path)) { return replyBadRequest(F("PATH FILE EXISTS")); }
+  if (fileSystem.exists(path)) { return replyBadRequest(F("PATH FILE EXISTS")); }
 
   String src = server->arg("src");
   if (src.isEmpty()) {
@@ -326,12 +355,13 @@ void handleFileCreate() {
     if (path.endsWith("/")) {
       // Create a folder
       path.remove(path.length() - 1);
-      if (!fileSystem->mkdir(path)) { return replyServerError(F("MKDIR FAILED")); }
+      if (!fileSystem.mkdir(path)) { return replyServerError(F("MKDIR FAILED")); }
     } else {
       // Create a file
-      File file = fileSystem->open(path, "w");
+      File file = fileSystem.open(path, "w");
       if (file) {
-        file.write((const char*)0);
+        file.write(0);
+        //file.write((const char*)0);
         file.close();
       } else {
         return replyServerError(F("CREATE FAILED"));
@@ -342,13 +372,13 @@ void handleFileCreate() {
   } else {
     // Source specified: rename
     if (src == "/") { return replyBadRequest("BAD SRC"); }
-    if (!fileSystem->exists(src)) { return replyBadRequest(F("SRC FILE NOT FOUND")); }
+    if (!fileSystem.exists(src)) { return replyBadRequest(F("SRC FILE NOT FOUND")); }
 
     DBG_OUTPUT_PORT.println(String("handleFileCreate: ") + path + " from " + src);
 
     if (path.endsWith("/")) { path.remove(path.length() - 1); }
     if (src.endsWith("/")) { src.remove(src.length() - 1); }
-    if (!fileSystem->rename(src, path)) { return replyServerError(F("RENAME FAILED")); }
+    if (!fileSystem.rename(src, path)) { return replyServerError(F("RENAME FAILED")); }
     replyOKWithMsg(lastExistingParent(src));
   }
 }
@@ -364,23 +394,28 @@ void handleFileCreate() {
    Please don't do this on a production system.
 */
 void deleteRecursive(String path) {
-  File file = fileSystem->open(path, "r");
+  File file = fileSystem.open(path, "r");
   bool isDir = file.isDirectory();
   file.close();
 
   // If it's a plain file, delete it
   if (!isDir) {
-    fileSystem->remove(path);
+    fileSystem.remove(path);
     return;
   }
 
   // Otherwise delete its contents first
-  Dir dir = fileSystem->openDir(path);
+  #if defined(ESP8266)
+  Dir dir = fileSystem.openDir(path);
 
   while (dir.next()) { deleteRecursive(path + '/' + dir.fileName()); }
+#elif defined(ESP32)
+  File dir = fileSystem.open(path);
 
+  while (dir.openNextFile()) { deleteRecursive(path + '/' + dir.name()); }
+#endif
   // Then delete the folder itself
-  fileSystem->rmdir(path);
+  fileSystem.rmdir(path);
 }
 
 
@@ -398,7 +433,7 @@ void handleFileDelete() {
   if (path.isEmpty() || path == "/") { return replyBadRequest("BAD PATH"); }
 
   DBG_OUTPUT_PORT.println(String("handleFileDelete: ") + path);
-  if (!fileSystem->exists(path)) { return replyNotFound(FPSTR(FILE_NOT_FOUND)); }
+  if (!fileSystem.exists(path)) { return replyNotFound(FPSTR(FILE_NOT_FOUND)); }
   deleteRecursive(path);
 
   replyOKWithMsg(lastExistingParent(path));
@@ -417,7 +452,7 @@ void handleFileUpload() {
     // Make sure paths always start with "/"
     if (!filename.startsWith("/")) { filename = "/" + filename; }
     DBG_OUTPUT_PORT.println(String("handleFileUpload Name: ") + filename);
-    uploadFile = fileSystem->open(filename, "w");
+    uploadFile = fileSystem.open(filename, "w");
     if (!uploadFile) { return replyServerError(F("CREATE FAILED")); }
     DBG_OUTPUT_PORT.println(String("Upload: START, filename: ") + filename);
   } else if (upload.status == UPLOAD_FILE_WRITE) {
@@ -479,6 +514,8 @@ void handleFileUploadFailsafe(String dir, String dest){ // upload a new file to 
   //DBG_OUTPUT_PORT.println("handleFileUploadFailsafe: ");
   //DBG_OUTPUT_PORT.println("dir:" + dir);
   //DBG_OUTPUT_PORT.println("dest: " + dest);
+  if (LittleFS.exists(dir.c_str()) == false)
+      LittleFS.mkdir(dir.c_str());
   HTTPUpload& upload = server->upload();
   if(upload.status == UPLOAD_FILE_START){
     DBG_OUTPUT_PORT.println("UPLOAD_FILE_START");
@@ -540,8 +577,11 @@ void handleFailsafeUploadPage() {
     server->client().stop();
 }
 
-
+#if defined(ESP8266)
 void setup(ESP8266WebServer &srv) {
+#elif defined(ESP32)
+void setup(fs_WebServer &srv) {
+#endif
     server = &srv;
   ////////////////////////////////
   // SERIAL INIT
@@ -552,10 +592,16 @@ void setup(ESP8266WebServer &srv) {
   ////////////////////////////////
   // FILESYSTEM INIT
 
+#if defined (ESP8266)
   fileSystemConfig.setAutoFormat(false);
-  fileSystem->setConfig(fileSystemConfig);
-  fsOK = fileSystem->begin();
+  fileSystem.setConfig(fileSystemConfig);
+  fsOK = fileSystem.begin();
   DBG_OUTPUT_PORT.println(fsOK ? F("Filesystem initialized.") : F("Filesystem init failed!"));
+#elif defined (ESP32)
+  fsOK = fileSystem.begin(false, "", 10, "spiffs");
+#endif
+  
+  
 
 #ifdef USE_SPIFFS
   // Debug: dump on console contents of filesystem with no filter and check filenames validity
@@ -597,7 +643,7 @@ void setup(ESP8266WebServer &srv) {
 
   server->on("/edit/upload", HTTP_GET, handleFailsafeUploadPage);//[this](){this->handleFailsafeUpload(); });                 // if the client requests the upload page
 
-  server->on("/edit/upload", HTTP_POST, [](){ DBG_OUTPUT_PORT.println("send OK"); server->send(200); }, []() { handleFileUploadFailsafe("/edit/", "/edit/upload"); });                      // if the client posts to the upload page
+  server->on("/edit/upload", HTTP_POST, [](){ DBG_OUTPUT_PORT.println("send OK"); server->send(200); }, []() { handleFileUploadFailsafe("/edit", "/edit/upload"); });                      // if the client posts to the upload page
 
   // Upload file
   // - first callback is called after the request has ended with all parsed arguments
@@ -619,4 +665,4 @@ void loop(void) {
   MDNS.update();
 }*/
 
-};
+}

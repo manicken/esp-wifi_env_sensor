@@ -19,9 +19,15 @@ namespace FAN {
 
     void init()
     {
+#ifdef ESP8266
         ESP.rtcUserMemoryRead(0, &value, 4);
+#endif
         analogWriteResolution(resolution);
+#if defined(ESP8266)
         analogWriteFreq(freq);
+#elif defined(ESP32)
+        analogWriteFrequency(freq);
+#endif
         if (inv_out)
             value = getInvValue(value);
         analogWrite(pin, value);
@@ -41,7 +47,9 @@ namespace FAN {
     void SetFanSpeed(uint32_t val)
     {
         //Serial1.printf("from json:%d", val);
+#ifdef ESP8266
         ESP.rtcUserMemoryWrite(0, &val, 4);
+#endif
         
         if (inv_out)
             value = getInvValue(val);
@@ -66,7 +74,11 @@ namespace FAN {
         }
         if (json.containsKey("freq")) {
             freq = json["freq"];
+#if defined(ESP8266)
             analogWriteFreq(freq);
+#elif defined(ESP32)
+            analogWriteFrequency(freq);
+#endif
         }
         if (json.containsKey("bits")) {
             resolution = json["bits"];

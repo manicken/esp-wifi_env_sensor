@@ -1,0 +1,4 @@
+{
+   "cmd":"OTA_update",
+   "url":"https://github.com/manicken/esp-ota-files/raw/main/db_kitchen_env.bin"
+   }

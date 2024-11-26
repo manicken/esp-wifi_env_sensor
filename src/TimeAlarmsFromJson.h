@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <LittleFS.h>
 #include "LittleFS_ext.h"
+#include "NTP.h"
 
 class AsStringParameter : public OnTickExtParameters
 {
@@ -95,7 +96,7 @@ namespace TimeAlarmsFromJson
         if (jsonStatus != DeserializationError::Ok) {
             //free(buff);
             delete[] buff;
-            DEBUG_UART.printf(F("LoadJson DeserializationError: ")); DEBUG_UART.println((int)jsonStatus.code());
+            DEBUG_UART.printf("LoadJson DeserializationError: "); DEBUG_UART.println((int)jsonStatus.code());
             return false;
         }
         size_t itemCount = jsonDoc.size();
@@ -242,7 +243,7 @@ namespace TimeAlarmsFromJson
     bool GetJsonBaseVars(JsonVariant &json, JsonBaseVars &vars)
     {
         if (json.containsKey("func") == false) return false;
-        vars.funcName = (std::string)json["func"];
+        vars.funcName = (std::string)json["func"].as<std::string>();
         if(json.containsKey("h")) vars.h = json["h"]; else vars.h = 0;
         if(json.containsKey("m")) vars.m = json["m"]; else vars.m = 0;
         if(json.containsKey("s")) vars.s = json["s"]; else vars.s = 0;

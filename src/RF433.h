@@ -4,6 +4,8 @@
 #include <stdlib.h>
 
 namespace RF433 {
+    uint8_t pin = 14;
+
     #define RF433_FC_SHORT 470   // fixed code short
     #define RF433_FC_LONG  1410  // fixed code long
     #define RF433_FC_SYNC  14500 // fixed code sync
@@ -16,8 +18,8 @@ namespace RF433 {
     #define RF433_FC_REPEATS 5
     #define RF433_LC_REPEATS 5
 
-    #define RF433_Set() digitalWrite(14, HIGH)
-    #define RF433_Clear() digitalWrite(14, LOW)
+    #define RF433_Set() digitalWrite(pin, HIGH)
+    #define RF433_Clear() digitalWrite(pin, LOW)
     #define U8 uint8_t
     #define U32 uint32_t
 
@@ -35,9 +37,10 @@ namespace RF433 {
     void Send433LC_Sync(void);
     void Send433LC_Start(void);
 
-    void init()
+    void init(uint8_t _pin)
     {
-        pinMode(14, OUTPUT);
+        pin = _pin;
+        pinMode(pin, OUTPUT);
     }
     U8 Get1AsciiHex(U8 value ) // converts only the lower nibble
     {
@@ -338,13 +341,14 @@ namespace RF433 {
         if (!json.containsKey("uid")) return;
         std::string uid = json["uid"];
         if (json.containsKey("grp_btn")) // grp_btn can be '1' or '0'
-            grp_btn = (std::string)json["grp_btn"];
+            
+            grp_btn = (std::string)json["grp_btn"].as<std::string>();
         else
             grp_btn = "0";
         if (!json.containsKey("state")) return;
         std::string state = json["state"];
         if (json.containsKey("btn")) // can be any number 1-4
-            btn = (std::string)json["btn"];
+            btn = (std::string)json["btn"].as<std::string>();
         else
             btn = "0";
         Serial1.println("slc sending");

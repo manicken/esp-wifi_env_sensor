@@ -2,8 +2,13 @@
 #define OTA_H
 
 #include <Arduino.h>
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+#include <HTTPUpdate.h>
+#endif
 #include <ArduinoOTA.h>
 
 namespace OTA{
@@ -30,7 +35,7 @@ namespace OTA{
     void Download_Update(const char *url)
     {
         //EEPROM.put(SPI_FLASH_SEC_SIZE, "hello");
-
+#if defined (ESP8266)
         DEBUG_UART.println(F("checking for updates"));
         //String updateUrl = "http://espOtaServer/esp_ota/" + String(ESP.getChipId(), HEX) + ".bin";
         t_httpUpdate_return ret = ESPhttpUpdate.update(wifiClient, url);
@@ -49,6 +54,7 @@ namespace OTA{
             DEBUG_UART.println(F("OK"));
             break;
         }
+#endif
     }
 
     void setup_PushedOTA()

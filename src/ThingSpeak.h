@@ -1,7 +1,11 @@
-
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+
+#if defined(ESP8266)
 #include <ESP8266HTTPClient.h>
+#elif defined(ESP32)
+#include <HTTPClient.h>
+#endif
 #include "LittleFS_ext.h"
 
 namespace ThingSpeak
@@ -13,12 +17,10 @@ namespace ThingSpeak
     #define TS_FILES_PATH                 F("/thingspeak")
     #define TS_CONFIG_JSON_FILE           F("/thingspeak/cfg.json")
     #define TS_JSON_FIELD_API_KEY         F("api_key")
-    #define TS_JSON_FIELD_UPDATE_RATE_SEC F("update_rate_sec")
     #define TS_JSON_FIELD_TEMP_FIELD      F("temp_field")
     #define TS_JSON_FIELD_HUMIDITY_FIELD  F("humidity_field")
 
     std::string api_key = "";
-    int32_t update_rate_sec = 15;
     std::string temp_field = "";
     std::string humidity_field = "";
 
@@ -35,35 +37,44 @@ namespace ThingSpeak
     {
         canPost = false;
         DynamicJsonDocument jsonDoc(256);
+        
         char jsonBuffer[256];
 
-        if (!LittleFS.exists(TS_FILES_PATH))
+       if (!LittleFS.exists(TS_FILES_PATH))
+        {
             LittleFS.mkdir(TS_FILES_PATH);
-
-        if(LittleFS.exists(TS_CONFIG_JSON_FILE)) {
-            LittleFS_ext::load_from_file(TS_CONFIG_JSON_FILE, jsonBuffer);
-            deserializeJson(jsonDoc, jsonBuffer);
+            DEBUG_UART.println("ThingSpeak ERROR - dir did not exist");
+            return false;
         }
-        else {
+
+        if( LittleFS.exists(TS_CONFIG_JSON_FILE) == false) {
+            DEBUG_UART.println("ThingSpeak ERROR - cfg file did not exist");
+            return false;
+        }
+
+        LittleFS_ext::load_from_file(TS_CONFIG_JSON_FILE, jsonBuffer);
+        DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
+        if (error)
+        {
+            DEBUG_UART.print("ThingSpeak ERROR - cfg Deserialization failed: ");
+            DEBUG_UART.println(error.c_str());
             return false;
         }
 
         if (jsonDoc.containsKey(TS_JSON_FIELD_API_KEY))
-            api_key = (std::string)jsonDoc[TS_JSON_FIELD_API_KEY];
+            api_key = (std::string)jsonDoc[TS_JSON_FIELD_API_KEY].as<std::string>();
         else {
+            DEBUG_UART.println("ThingSpeak ERROR - cfg api_key missing");
             return false;
         }
 
-        if (jsonDoc.containsKey(TS_JSON_FIELD_UPDATE_RATE_SEC))
-            update_rate_sec = jsonDoc[TS_JSON_FIELD_UPDATE_RATE_SEC];
-        
         if (jsonDoc.containsKey(TS_JSON_FIELD_TEMP_FIELD))
-            temp_field = (std::string)jsonDoc[TS_JSON_FIELD_TEMP_FIELD];
+            temp_field = (std::string)jsonDoc[TS_JSON_FIELD_TEMP_FIELD].as<std::string>();
         else
             temp_field = "field1";
 
         if (jsonDoc.containsKey(TS_JSON_FIELD_HUMIDITY_FIELD))
-            humidity_field = (std::string)jsonDoc[TS_JSON_FIELD_HUMIDITY_FIELD];
+            humidity_field = (std::string)jsonDoc[TS_JSON_FIELD_HUMIDITY_FIELD].as<std::string>();
         else
             humidity_field = "field2";
 

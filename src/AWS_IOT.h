@@ -78,7 +78,7 @@ namespace AWS_IOT {
         }
 
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_MQTT_HOST))
-            mqtt_host = (std::string)jsonDoc[AWS_IOT_JSON_FIELD_MQTT_HOST];
+            mqtt_host = (std::string)jsonDoc[AWS_IOT_JSON_FIELD_MQTT_HOST].as<std::string>();
         else {
             //DEBUG_UART.println("AWS IOT error: " AWS_IOT_JSON_FIELD_MQTT_HOST " field in json missing");
             canConnect = false;
@@ -86,7 +86,7 @@ namespace AWS_IOT {
         }
 
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_THINGNAME))
-            thingName = (std::string)jsonDoc[AWS_IOT_JSON_FIELD_THINGNAME];
+            thingName = (std::string)jsonDoc[AWS_IOT_JSON_FIELD_THINGNAME].as<std::string>();
         else {
             //DEBUG_UART.println("AWS IOT error: " AWS_IOT_JSON_FIELD_THINGNAME " field in json missing");
             canConnect = false;
@@ -100,17 +100,17 @@ namespace AWS_IOT {
         file_path_private_key = std::string(AWS_IOT_FILES_DIR) + "/";
         
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_CA_CERT_FILE))
-            file_path_ca_cert.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_CA_CERT_FILE]);
+            file_path_ca_cert.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_CA_CERT_FILE].as<std::string>());
         else
             file_path_ca_cert.append(AWS_IOT_FILE_DEFAULT_CA_CERT);
         
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_DEVICE_CERT_FILE))
-            file_path_device_cert.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_DEVICE_CERT_FILE]);
+            file_path_device_cert.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_DEVICE_CERT_FILE].as<std::string>());
         else
             file_path_device_cert.append(AWS_IOT_FILE_DEFAULT_CA_CERT);
 
         if (jsonDoc.containsKey(AWS_IOT_JSON_FIELD_PRIVATE_KEY_FILE))
-            file_path_private_key.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_PRIVATE_KEY_FILE]);
+            file_path_private_key.append((std::string)jsonDoc[AWS_IOT_JSON_FIELD_PRIVATE_KEY_FILE].as<std::string>());
         else
             file_path_private_key.append(AWS_IOT_FILE_DEFAULT_PRIVATE_KEY);
 
