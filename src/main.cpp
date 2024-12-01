@@ -55,6 +55,8 @@
 #include "TimeAlarmsFromJson.h"
 //#include "NordPoolFetcher.h"
 
+#include "GPIO_manager.h"
+
 //#include <sstream>
 //#include "TCP2UART.h"
 
@@ -260,6 +262,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     ThingSpeak::loadSettings();
     initWebServerHandlers();
     FSBrowser::setup(webserver);
+    GPIO_manager::setup(webserver);
     webserver.begin();
 #if defined(ESP8266)
     //std::string ret = NPF::searchPatternInhtmlFromUrl();
