@@ -28,7 +28,7 @@ namespace LittleFS_ext
             *buff = (char)this_file.read();
             buff++;
         }
-        
+        *buff = 0x00;
         this_file.close();
         return true;
     }

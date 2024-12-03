@@ -56,6 +56,7 @@
 //#include "NordPoolFetcher.h"
 
 #include "GPIO_manager.h"
+#include "DeviceManager.h"
 
 //#include <sstream>
 //#include "TCP2UART.h"
@@ -263,6 +264,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     initWebServerHandlers();
     FSBrowser::setup(webserver);
     GPIO_manager::setup(webserver);
+    DeviceManager::setup(webserver);
     webserver.begin();
 #if defined(ESP8266)
     //std::string ret = NPF::searchPatternInhtmlFromUrl();
@@ -692,7 +694,6 @@ void srv_handle_info()
     File file = root.openNextFile();
 
     while (file) {
-        str.concat(file.path());
         str.concat(file.name());
         str.concat(" / ");
         str.concat(file.size());

@@ -91,6 +91,6 @@ namespace ExtPeripherals
                 RF433::init(pin);
             }
         }
-
+        return true;
     }
 }
