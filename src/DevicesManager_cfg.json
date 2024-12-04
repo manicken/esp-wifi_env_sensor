@@ -1,0 +1,10 @@
+{
+	"0":{"type":"1wire","pin":32,"romid":"286164351B71C140","description":"temp ute1"},
+	"1":{"type":"1wire","pin":32,"romid":"286164351B6891C5","description":"temp ute2"},
+	"2":{"type":"1wire","pin":25,"romid":"286164351B756BAA","description":"temp inne"},
+	"3":{"type":"1wire","pin":26,"romid":"28871743d4bd0a46","description":"temp jord"},
+	"4":{"type":"DHT11","pin":27,"description":"fuktighet inne"},
+	"5":{"type":"DHT22","pin":18,"description":"fuktighet ute"},
+	"6":{"type":"FAN","pin":19,"description":"främre takfläkt"},
+  "7":{"type":"RF433","pin":37,"description":"till fjärrstyrning"}
+}
