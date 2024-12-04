@@ -211,7 +211,8 @@ namespace DeviceManager
         server = &srv;
         srv.on(DEVICE_MANAGER_URL_RELOAD_JSON, HTTP_GET, reloadJSON);
         srv.on(DEVICE_MANAGER_URL_GET_VALUE, HTTP_GET, htmlGetValue);
-        srv.on(DEVICE_MANAGER_URL_GET_ALL_1WIRE_TEMPS, HTTP_GET, htmlGetAllOneWireTemperatures);
+        srv.on(DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS, HTTP_GET, htmlGetAllOneWireTemperatures);
+        srv.on(DEVICE_MANAGER_URL_LIST_ALL_1WIRE_DEVICES, HTTP_GET, htmlGetListOfOneWireDevicesOnBusPin);
         GPIO_manager::setup(srv);
         readJson();
     }
@@ -366,5 +367,42 @@ namespace DeviceManager
     void setValue(uint32_t uid, uint32_t value)
     {
         
+    }
+    void htmlGetListOfOneWireDevicesOnBusPin()
+    {
+        uint8_t pin = 32;
+        if (server->hasArg("pin"))
+            pin = std::stoi(server->arg("pin").c_str());
+        OneWire _1wire;
+        _1wire.begin(pin);
+        byte i = 0;
+        byte done = 0;
+        byte addr[8];
+        String returnStr;
+        char hexString[3];
+
+        while(!done)
+        {
+            if (_1wire.search(addr) != 1)
+            {
+                returnStr.concat("<br>No more addresses.<br>");
+                _1wire.reset_search();
+                done = 1;
+            }
+            else
+            {
+                returnStr.concat("<br>Unique ID = ");
+                for( i = 0; i < 7; i++) 
+                {
+                    sprintf(hexString, "%02X", addr[i]);
+                    returnStr.concat(hexString);
+                    returnStr.concat(":");
+                }
+                sprintf(hexString, "%02X", addr[7]);
+                    returnStr.concat(hexString);
+                returnStr.concat("<br>");
+            }
+        }
+        server->send(200,F("text/html"), returnStr);
     }
 }

@@ -33,8 +33,9 @@ namespace DeviceManager
     #define DEVICE_MANAGER_FILES_PATH                 F("/DeviceManager")
     #define DEVICE_MANAGER_CONFIG_JSON_FILE           F("/DeviceManager/cfg.json")
     #define DEVICE_MANAGER_URL_RELOAD_JSON            F("/DeviceManager/reloadJson")
+    #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_DEVICES  F("/DeviceManager/listAll1wireDevices")
     #define DEVICE_MANAGER_URL_GET_VALUE              F("/DeviceManager/getValue")
-    #define DEVICE_MANAGER_URL_GET_ALL_1WIRE_TEMPS    F("/DeviceManager/getAll1wireTemps")
+    #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS    F("/DeviceManager/getAll1wireTemps")
 
     enum class DeviceType : int
     {
@@ -80,4 +81,5 @@ namespace DeviceManager
     bool getValue(uint32_t uid, float* value, uint8_t* resolution);
     void setValue(uint32_t uid, float value);
     void setValue(uint32_t uid, uint32_t value);
+    void htmlGetListOfOneWireDevicesOnBusPin();
 }
