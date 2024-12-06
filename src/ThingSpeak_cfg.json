@@ -1,0 +1,14 @@
+{
+    "comment":"here every property name represents the channel api key, and the value represents a property list of field nr vs. device uid",
+    "channel1_write_key":{
+        "0":"0",
+        "1":"1",
+        "2":"2"
+    },
+    "channel2_write_key":{
+        "0":"0",
+        "1":"1",
+        "2":"2"
+    }
+}
+

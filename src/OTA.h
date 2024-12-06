@@ -13,7 +13,11 @@
 
 namespace OTA{
 
+#if defined(ESP8266)
     #define DEBUG_UART Serial1
+#elif defined(ESP32)
+    #define DEBUG_UART Serial
+#endif
 
     WiFiClient wifiClient;
     

@@ -36,6 +36,7 @@ namespace DeviceManager
     #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_DEVICES  F("/DeviceManager/listAll1wireDevices")
     #define DEVICE_MANAGER_URL_GET_VALUE              F("/DeviceManager/getValue")
     #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS    F("/DeviceManager/getAll1wireTemps")
+    #define DEVICE_MANAGER_URL_PRINT_DEVICES          F("/DeviceManager/printDevices")
 
     enum class DeviceType : int
     {
@@ -75,10 +76,10 @@ namespace DeviceManager
 
     Device* getDeviceInfo(uint32_t uid);
     int getTotalCountOfOneWireDevices();
-    bool contains(uint8_t *array, size_t arraySize, uint8_t value);
+    bool contains(int *array, size_t arraySize, uint8_t value);
     bool getAllOneWireTemperatures();
     void htmlGetAllOneWireTemperatures();
-    bool getValue(uint32_t uid, float* value, uint8_t* resolution);
+    bool getValue(uint32_t uid, float* value);
     void setValue(uint32_t uid, float value);
     void setValue(uint32_t uid, uint32_t value);
     void htmlGetListOfOneWireDevicesOnBusPin();

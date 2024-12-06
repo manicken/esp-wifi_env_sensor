@@ -8,98 +8,260 @@
 #endif
 #include "LittleFS_ext.h"
 
+#include "DeviceManager.h"
+
+#define TS_DEBUG_PRINT_AFTER_JSON_READ
+#define THINGSPEAK_DEBUG_OUTPUT_ONLY
+
 namespace ThingSpeak
 {
+    std::string lastError;
+
+    #ifdef ESP8266
+    ESP8266WebServer *server = nullptr;
     #define DEBUG_UART Serial1
+#elif defined(ESP32)
+    fs_WebServer *server = nullptr;
+    #define DEBUG_UART Serial
+#endif
      
     const char TS_ROOT_URL[] = "http://api.thingspeak.com/update?api_key=";
 
-    #define TS_FILES_PATH                 F("/thingspeak")
-    #define TS_CONFIG_JSON_FILE           F("/thingspeak/cfg.json")
-    #define TS_JSON_FIELD_API_KEY         F("api_key")
-    #define TS_JSON_FIELD_TEMP_FIELD      F("temp_field")
-    #define TS_JSON_FIELD_HUMIDITY_FIELD  F("humidity_field")
+    #define TS_FILES_PATH                  F("/thingspeak")
+    #define TS_CONFIG_JSON_FILE            F("/thingspeak/cfg.json")
+    #define TS_CONFIG_JSON_FILE_URL_RELOAD F("/thingspeak/refresh")
+    #define TS_URL_SEND_DATA               F("/thingspeak/sendData")
+    //#define TS_JSON_FIELD_API_KEY         F("api_key")
+    //#define TS_JSON_FIELD_TEMP_FIELD      F("temp_field")
+    //#define TS_JSON_FIELD_HUMIDITY_FIELD  F("humidity_field")
 
-    std::string api_key = "";
-    std::string temp_field = "";
-    std::string humidity_field = "";
+    #define TS_CHANNEL_MAX_FIELDS 8
+    struct Channel
+    {
+        std::string api_write_key = "";
+        /**
+         * here each index in the array represents a field index,
+         * and each value represents that "device" uid that it will get it's value from, 
+         * a value of -1 represents a unused field and will get ignored when uploading data
+         */
+        int uids[TS_CHANNEL_MAX_FIELDS];
+
+        Channel() {
+            for (int i=0;i<TS_CHANNEL_MAX_FIELDS;i++) uids[i] = -1;
+        }
+    };
+
+    Channel* channels = nullptr;
+    int channelCount = 0;
 
     WiFiClient wifiClient;
     
     HTTPClient http;
     
-
     bool canPost = false;
 
-    std::string urlApi;
-
-    bool loadSettings()
+    bool isInteger(const char* str)
     {
-        canPost = false;
-        DynamicJsonDocument jsonDoc(256);
-        
-        char jsonBuffer[256];
+        if (str == nullptr || *str == '\0') return false; // Null or empty string is not valid
 
-       if (!LittleFS.exists(TS_FILES_PATH))
+        // Handle leading sign
+        if (*str == '+' || *str == '-') str++;
+
+        // Check the rest of the string
+        while (*str != '\0')
+        {
+            if (!isdigit(*str)) return false;
+            str++;
+        }
+
+        return true; // All characters are digits
+    }
+
+    bool readJson()
+    {
+        if (!LittleFS.exists(TS_FILES_PATH))
         {
             LittleFS.mkdir(TS_FILES_PATH);
-            DEBUG_UART.println("ThingSpeak ERROR - dir did not exist");
+            lastError = "dir did not exist";
             return false;
         }
-
-        if( LittleFS.exists(TS_CONFIG_JSON_FILE) == false) {
-            DEBUG_UART.println("ThingSpeak ERROR - cfg file did not exist");
+        if (LittleFS.exists(TS_CONFIG_JSON_FILE) == false) {
+            lastError = "cfg file did not exist";
             return false;
         }
-
-        LittleFS_ext::load_from_file(TS_CONFIG_JSON_FILE, jsonBuffer);
+        int size = LittleFS_ext::getFileSize(TS_CONFIG_JSON_FILE);
+        char jsonBuffer[size + 1]; // +1 for null char
+        if (LittleFS_ext::load_from_file(TS_CONFIG_JSON_FILE, jsonBuffer) == false)
+        {
+            lastError = "could not load json file";
+            return false;
+        }
+        DynamicJsonDocument jsonDoc(1024);
         DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
         if (error)
         {
-            DEBUG_UART.print("ThingSpeak ERROR - cfg Deserialization failed: ");
-            DEBUG_UART.println(error.c_str());
+            lastError = "deserialization failed: " + std::string(error.c_str());
             return false;
         }
-
-        if (jsonDoc.containsKey(TS_JSON_FIELD_API_KEY))
-            api_key = (std::string)jsonDoc[TS_JSON_FIELD_API_KEY].as<std::string>();
-        else {
-            DEBUG_UART.println("ThingSpeak ERROR - cfg api_key missing");
+        if (!jsonDoc.is<JsonObject>()) {
+            lastError = "jsonDoc is not a valid JsonObject\n";
             return false;
         }
+        channelCount = jsonDoc.size();
+        if (channels != nullptr) { delete[] channels; channels = nullptr; }// free(channels);
+        //channels = (Channel*)malloc(sizeof(Channel) * channelCount);
+        channels = new Channel[channelCount];
+        if (channels == nullptr){ lastError="could not allocate memory"; return false; }
+        int currChIndex = 0;
+        lastError = "";
+        for (JsonPair ckv : jsonDoc.as<JsonObject>()) {
+            if (currChIndex >= channelCount) { // this should not happen
+                lastError += "currChIndex exceeds channel array size\n";
+                return false;
+            }
+            Channel &channel = channels[currChIndex++];
+            const char* api_key_str = ckv.key() ? ckv.key().c_str() : nullptr;
+            if (api_key_str == nullptr) {
+                lastError+="could not get api_key_str @ currChIndex:" + std::to_string(currChIndex);
+                continue;
+            }
+            channel.api_write_key = std::string(api_key_str);
+            if (ckv.value() == nullptr) {
+                lastError+="json object value is null @ currChIndex:" + std::to_string(currChIndex) + "\n";
+                continue;
+            }
+            if (ckv.value().is<JsonObject>() == false) {
+                lastError+="json object don't contain a json object @ currChIndex:" + std::to_string(currChIndex) + "\n";
+                continue;
+            }
+            int currIndex = -1; // debug use only
+            for (JsonPair fkv : ckv.value().as<JsonObject>()) {
+                currIndex++; // debug use only
+                const char* fieldIndexStr = fkv.key() ? fkv.key().c_str() : nullptr;
+                if (fieldIndexStr == nullptr) {
+                    lastError+="fieldIndex is not a string @ currIndex:" + std::to_string(currIndex) + "\n";
+                    continue;
+                }
+                if (isInteger(fieldIndexStr) == false) {
+                    lastError+="fieldIndex is not a integer @ currIndex:" + std::to_string(currIndex) + "\n";
+                    continue;
+                }
+                int fieldIndex = atoi(fieldIndexStr);
+                if (fieldIndex < 1 || fieldIndex > (TS_CHANNEL_MAX_FIELDS)) {
+                    lastError += "fieldIndex out of bounds: " + std::to_string(fieldIndex) + "\n";
+                    continue;
+                }
+                if (fkv.value().is<const char*>() == false) {
+                    lastError+="uid is not a string value @ fieldIndex key:" + std::to_string(fieldIndex) + "\n";
+                    continue;
+                }
+                const char* uidStr = fkv.value().as<const char*>();
+                if (uidStr == nullptr) {
+                    lastError+="uid could not convert to a string value @ fieldIndex key:" + std::to_string(fieldIndex) + "\n";
+                    continue;
+                }
+                if (isInteger(uidStr) == false) {
+                    lastError+="uidStr is not a integer @ fieldIndex:" + std::to_string(fieldIndex) + "\n";
+                    continue;
+                }
+                int uid = atoi(uidStr);
+                channel.uids[fieldIndex-1] = uid;
+            }
+        }
 
-        if (jsonDoc.containsKey(TS_JSON_FIELD_TEMP_FIELD))
-            temp_field = (std::string)jsonDoc[TS_JSON_FIELD_TEMP_FIELD].as<std::string>();
-        else
-            temp_field = "field1";
-
-        if (jsonDoc.containsKey(TS_JSON_FIELD_HUMIDITY_FIELD))
-            humidity_field = (std::string)jsonDoc[TS_JSON_FIELD_HUMIDITY_FIELD].as<std::string>();
-        else
-            humidity_field = "field2";
+#ifdef TS_DEBUG_PRINT_AFTER_JSON_READ
+        for (int ci=0;ci<channelCount;ci++)
+        {
+            DEBUG_UART.println("channel api_key:" + String(channels[ci].api_write_key.c_str()));
+            DEBUG_UART.println("channel fields:");
+            for (int fi=0;fi<TS_CHANNEL_MAX_FIELDS;fi++)
+            {
+                DEBUG_UART.println("field:" + String(fi+1) + ", uid:" + String(channels[ci].uids[fi]));
+            }
+            
+        }
+#endif
 
         canPost = true;
-        urlApi = TS_ROOT_URL + api_key + "&" + temp_field + "=";
-
         return true;
     }
+    std::string floatToString(float value) {
+        char buffer[32]; // Adjust size based on needs
+        snprintf(buffer, sizeof(buffer), "%.6f", value); // Format as float with 6 decimals
 
-    void SendData(float temp, float humidity)
+        std::string result(buffer);
+
+        // Remove trailing zeros
+        result.erase(result.find_last_not_of('0') + 1, std::string::npos);
+        if (result.back() == '.') {
+            result.pop_back(); // Remove decimal point if no fractional part
+        }
+
+        return result;
+    }
+
+bool sendDataBackToWebbrowser = false;
+
+    void SendData()
     {
-        urlApi += std::to_string(temp) + "&" + humidity_field + "=" + std::to_string(humidity);
+        DEBUG_UART.println("TS SendData");
+        if (channels == nullptr) return;
+        if (DeviceManager::getAllOneWireTemperatures() == false) return;
 
-        //DEBUG_UART.print(F("\r\nGET request"));
-        //DEBUG_UART.println(urlApi.c_str());
-        
-        http.begin(wifiClient, urlApi.c_str());
-        
-        int httpCode = http.GET();
-        if (httpCode > 0) DEBUG_UART.println(F("[OK]\r\n"));
-        else DEBUG_UART.println(F("[FAIL]\r\n"));
+        for (int ci=0;ci<channelCount;ci++)
+        {
+            std::string fieldData = "";
+            for (int fi=0;fi<8;fi++)
+            {
+                if (channels[ci].uids[fi] == -1) continue;
+                float value = 0;
+                if (DeviceManager::getValue(channels[ci].uids[fi], &value) == false) continue;
+                fieldData += "&field" + std::to_string(fi+1) + "=" + floatToString(value);
+            }
+            if (fieldData.length() == 0) continue;
+            std::string urlApi = TS_ROOT_URL + channels[ci].api_write_key + fieldData;
+#ifndef THINGSPEAK_DEBUG_OUTPUT_ONLY
+            http.begin(wifiClient, urlApi.c_str());
+            
+            int httpCode = http.GET();
+            if (httpCode > 0) DEBUG_UART.println(F("[OK]\r\n"));
+            else DEBUG_UART.println(F("[FAIL]\r\n"));
 
-        http.end();
+            http.end();
+#else
+            DEBUG_UART.println(urlApi.c_str());
+            
+#endif
+            if (sendDataBackToWebbrowser) {
+                sendDataBackToWebbrowser = false;
+                server->send(200, "text/html", urlApi.c_str()); // in case the request is from a url to test
+            }
+        }
 
-        urlApi.clear();
-        urlApi = TS_ROOT_URL + api_key + "&" + temp_field + "=";
+    }
+
+    void reloadJson()
+    {
+        if (readJson())
+            server->send(200,F("text/plain"), F("Thingspeak loadSettings OK"));
+        else
+            server->send(200,F("text/plain"), F("Thingspeak loadSettings error"));
+    }
+
+    void htmlSendDataTest()
+    {
+        sendDataBackToWebbrowser = true;
+        SendData();
+    }
+
+   #ifdef ESP8266
+    void setup(ESP8266WebServer &srv) {
+#elif defined(ESP32)
+    void setup(fs_WebServer &srv) {
+#endif
+        server = &srv;
+        srv.on(TS_CONFIG_JSON_FILE_URL_RELOAD, reloadJson);
+        srv.on(TS_URL_SEND_DATA, htmlSendDataTest);
+        readJson();
     }
 }

@@ -18,7 +18,11 @@
 
 namespace AWS_IOT {
 
+#if defined(ESP8266)
     #define DEBUG_UART Serial1
+#elif defined(ESP32)
+    #define DEBUG_UART Serial
+#endif
     #define AWS_IOT_FILES_DIR                   "/aws_iot"
     #define AWS_IOT_CONFIG_JSON_FILE            F("/aws_iot/cfg.json")
     #define AWS_IOT_JSON_FIELD_MQTT_HOST        F("mqtt_host")

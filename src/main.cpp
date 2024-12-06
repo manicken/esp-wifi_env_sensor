@@ -71,7 +71,11 @@
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(128, 32, &Wire, -1); // -1 = no reset pin
 
-#define DEBUG_UART Serial
+#if defined(ESP8266)
+    #define DEBUG_UART Serial1
+#elif defined(ESP32)
+    #define DEBUG_UART Serial
+#endif
 
 //TCP2UART tcp2uart;
 
@@ -111,14 +115,47 @@ unsigned long deltaTime_displayUpdate = 0;
 unsigned long deltaTime_sendToWebUpdate = 0;
 unsigned long deltaTime_sendToAwsIot = 0;
 
-DHTesp dht;
-float temp_dht = 0;
-float humidity_dht = 0;
+const int ledPin = 2;
+int ledState = LOW;             // ledState used to set the LED
+unsigned long previousMillis = 0;        // will store last time LED was updated
+unsigned long currentMillis = 0;
+unsigned long currentInterval = 0;
+unsigned long ledBlinkOnInterval = 100;
+unsigned long ledBlinkOffInterval = 2000;
 
-#define ONE_WIRE_BUS 12
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
-float temp_ds = 0;
+void blinkLedTask(void)
+{
+    currentMillis = millis();
+    currentInterval = currentMillis - previousMillis;
+    
+    if (ledState == LOW)
+    {
+        if (currentInterval > ledBlinkOffInterval)
+        {
+            previousMillis = currentMillis;
+            ledState = HIGH;
+            digitalWrite(ledPin, HIGH);
+        }
+    }
+    else
+    {
+        if (currentInterval > ledBlinkOnInterval)
+        {
+            previousMillis = currentMillis;
+            ledState = LOW;
+            digitalWrite(ledPin, LOW);
+        }
+    }
+}
+
+//DHTesp dht;
+//float temp_dht = 0;
+//float humidity_dht = 0;
+
+//#define ONE_WIRE_BUS 12
+//OneWire oneWire(ONE_WIRE_BUS);
+//DallasTemperature sensors(&oneWire);
+//float temp_ds = 0;
 
 time_t startTime = 0;
 
@@ -143,7 +180,7 @@ void Timer_SendEnvData()
 {
     DEBUG_UART.println("Timer_SendEnvData");
     if (ThingSpeak::canPost)
-        ThingSpeak::SendData(temp_ds, humidity_dht);
+        ThingSpeak::SendData();//temp_ds, humidity_dht);
 }
 void Alarm_SetFanSpeed(const OnTickExtParameters *param)
 {
@@ -235,8 +272,8 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     connect_to_wifi();
     OTA::setup();
     //tcp2uart.begin();
-    dht.setup(13, DHTesp::DHT11);
-    sensors.begin(); // one wire sensors
+    //dht.setup(13, DHTesp::DHT11);
+    //sensors.begin(); // one wire sensors
     RF433::init(14);
     
     NTP::NTPConnect();
@@ -259,10 +296,10 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
         DEBUG_UART.println(F("AWS_IOT error cannot setup AWS IoT without the cert and key files!!!"));
 #endif
 
-    ThingSpeak::loadSettings();
     initWebServerHandlers();
     FSBrowser::setup(webserver);
     DeviceManager::setup(webserver);
+    ThingSpeak::setup(webserver);
     webserver.begin();
 #if defined(ESP8266)
     //std::string ret = NPF::searchPatternInhtmlFromUrl();
@@ -270,25 +307,31 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
 #endif
 DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
+
+    pinMode(2, OUTPUT);
 }
 
 void loop() {
     //tcp2uart.BridgeMainTask();
     
-    ArduinoOTA.handle();
+    //ArduinoOTA.handle();
     webserver.handleClient();
+    
     TimeAlarmsFromJson::HandleAlarms();
-    currTime = millis();
+    //currTime = millis();
 
+    blinkLedTask();
+/*
     if (millis() - deltaTime_displayUpdate >= 1000) {
         deltaTime_displayUpdate = millis();
-        temp_dht = dht.getTemperature();
-        humidity_dht = dht.getHumidity();
-        sensors.requestTemperatures(); // Send the command to get temperatures
+        
+        //temp_dht = dht.getTemperature();
+        //humidity_dht = dht.getHumidity();
+        //sensors.requestTemperatures(); // Send the command to get temperatures
         
         //sensors.getTempC("00000000");
         
-        temp_ds = sensors.getTempCByIndex(0);
+        //temp_ds = sensors.getTempCByIndex(0);
       
         display.setCursor(0,0);
         display.print(temp_dht);
@@ -299,7 +342,9 @@ void loop() {
         display.print(temp_ds);
         
         update_display = 1;
+        
     }
+    */
     
     if (WiFi.status() != WL_CONNECTED)
     {
@@ -319,10 +364,10 @@ void loop() {
     }
 #endif
 
-    if (update_display == 1) {
+    /*if (update_display == 1) {
         update_display = 0;
         display.display();
-    }
+    }*/
 }
 
 
@@ -383,12 +428,7 @@ void initWebServerHandlers(void)
         }
     });
 #endif
-    webserver.on(F("/thingspeak/refresh"), []() {
-        if (ThingSpeak::loadSettings())
-            webserver.send(200,F("text/plain"), F("Thingspeak loadSettings OK"));
-        else
-            webserver.send(200,F("text/plain"), F("Thingspeak loadSettings error"));
-    });
+    
     webserver.on(F("/schedule/refresh"), []() {
         if (TimeAlarmsFromJson::LoadJson(F("/schedule/list.json")))
             webserver.send(200,F("text/plain"), F("schedule load json OK"));

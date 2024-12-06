@@ -2,8 +2,12 @@
 
 namespace DeviceManager
 {
+    std::string lastError;
+
     Device *devices = nullptr;
     uint32_t deviceCount = 0;
+    int oneWireBusCount = 0;
+    uint8_t *oneWireBusPins = nullptr;
 
 #ifdef ESP8266
     ESP8266WebServer *server = nullptr;
@@ -17,7 +21,8 @@ namespace DeviceManager
 
     Device::~Device() {
         if (romid != nullptr)
-            free(romid);
+            delete[] romid;
+            romid = nullptr;
     }
 
     char ConvertOneNibble(uint8_t value)
@@ -46,19 +51,35 @@ namespace DeviceManager
 
     bool convertHexToBytes(const char* hexString, uint8_t* byteArray, size_t arraySize)
     {
-        if (!hexString || !byteArray || strlen(hexString) != 16 || arraySize < 8) {
-            return false; // Invalid input
+        if (!hexString || !byteArray ) {
+            DEBUG_UART.println("convertHexToBytes - Invalid input 1");
+            return false; // Invalid input 1
         }
-
-        for (size_t i = 0; i < 8; ++i) {
-            char highNibble = hexString[i * 2];
-            char lowNibble = hexString[i * 2 + 1];
+        size_t hexStrLen = strlen(hexString);
+        int incr = 0;
+        if (hexStrLen == arraySize*2) // no deliminator between hex-byte numbers
+            incr = 2;
+        else if (hexStrLen == (arraySize*3)-1)// any desired deliminator between hex-byte numbers
+            incr = 3;
+        else {
+            DEBUG_UART.println("convertHexToBytes - hexStrLen mismatch:" + String(hexStrLen));
+            return false; // Invalid input 2
+        }
+        size_t byteIndex = 0;
+        for (size_t i = 0; i < hexStrLen; i+=incr) {
+            if (byteIndex >= arraySize) {
+                DEBUG_UART.println("Exceeded array size");
+                return false; // Exceeded array size
+            }
+            char highNibble = hexString[i];
+            char lowNibble = hexString[i + 1];
 
             if (!std::isxdigit(highNibble) || !std::isxdigit(lowNibble)) {
+                DEBUG_UART.println("Non-hex character found");
                 return false; // Non-hex character found
             }
 
-            byteArray[i] = (uint8_t)((std::isdigit(highNibble) ? highNibble - '0' : std::toupper(highNibble) - 'A' + 10) << 4 |
+            byteArray[byteIndex++] = (uint8_t)((std::isdigit(highNibble) ? highNibble - '0' : std::toupper(highNibble) - 'A' + 10) << 4 |
                                     (std::isdigit(lowNibble) ? lowNibble - '0' : std::toupper(lowNibble) - 'A' + 10));
         }
 
@@ -67,71 +88,63 @@ namespace DeviceManager
 
     bool readJson()
     {
-        DEBUG_UART.println("readJson func start");
-
+        lastError = "";
         if (!LittleFS.exists(DEVICE_MANAGER_FILES_PATH))
         {
             LittleFS.mkdir(DEVICE_MANAGER_FILES_PATH);
-            DEBUG_UART.println("Device Manager ERROR - dir did not exist");
+            lastError = "dir did not exist";
             return false;
         }
-
         if (LittleFS.exists(DEVICE_MANAGER_CONFIG_JSON_FILE) == false) {
-            DEBUG_UART.println("Device Manager ERROR - cfg file did not exist");
+            lastError = "cfg file did not exist";
             return false;
         }
-
-        DEBUG_UART.println("loading..");
         int size = LittleFS_ext::getFileSize(DEVICE_MANAGER_CONFIG_JSON_FILE);
-        DEBUG_UART.print("File size:"); DEBUG_UART.println(size);
-
         char jsonBuffer[size + 1]; // +1 for null char
         if (LittleFS_ext::load_from_file(DEVICE_MANAGER_CONFIG_JSON_FILE, jsonBuffer) == false)
         {
-            DEBUG_UART.println("error could not load file:");
-            DEBUG_UART.println(DEVICE_MANAGER_CONFIG_JSON_FILE);
+            lastError = "error could not load json file";
             return false;
         }
-
-        DEBUG_UART.println("[OK]");
-        DynamicJsonDocument jsonDoc(1024);
+        DynamicJsonDocument jsonDoc(size);
         DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
-        DEBUG_UART.println("deserializing..");
-
         if (error)
         {
-            DEBUG_UART.print("Device Manager ERROR - cfg Deserialization failed: ");
-            DEBUG_UART.println(error.c_str());
+            lastError = "deserialization failed: " + std::string(error.c_str());
+            return false;
+        }
+        if (!jsonDoc.is<JsonObject>()) {
+            lastError = "jsonDoc is not a valid JsonObject\n";
             return false;
         }
         deviceCount = jsonDoc.size();
-        DEBUG_UART.println("[OK]");
-        DEBUG_UART.print("item count:"); DEBUG_UART.println(deviceCount);
-        
-        if (devices != nullptr) free(devices);
-        devices = (Device*)malloc(sizeof(Device) * deviceCount);
+        if (devices != nullptr) { delete[] devices; devices = nullptr;}
+        //devices = (Device*)malloc(sizeof(Device) * deviceCount);
+        devices = new Device[deviceCount];
+        if (devices == nullptr){ lastError="could not allocate memory"; return false; }
 
         int currIndex = 0;
+        lastError = "";
         for (JsonPair kv : jsonDoc.as<JsonObject>()) {
             Device &device = devices[currIndex++];
             const char* uid = kv.key().c_str();
             
             if (!kv.value().is<JsonObject>()) {
-                DEBUG_UART.println("item is not JSON object");
+                lastError += "item is not JSON object @ index:" + std::to_string(currIndex) + "\n";
                 device.type = DeviceType::Unknown;
                 continue;
             }
 
             JsonObject item = kv.value().as<JsonObject>();
             if (!item.containsKey("type") || !item.containsKey("pin")) {
-                DEBUG_UART.println("item missing required keys");
+                lastError += "item missing required keys @ index:" + std::to_string(currIndex) + "\n";
                 device.type = DeviceType::Unknown;
                 continue;
             }
 
             const char* type = item["type"].as<const char*>();
             if (!item["pin"].is<int>()) {
-                DEBUG_UART.println("pin is not an integer");
+                lastError += "pin is not an integer @ index:" + std::to_string(currIndex) + "\n";
                 device.type = DeviceType::Unknown;
                 continue;
             }
@@ -148,25 +161,74 @@ namespace DeviceManager
             else if (strncmp(type, "RF433", 5) == 0) device.type = DeviceType::RF433;
             else device.type = DeviceType::Unknown;
 
-            DEBUG_UART.print("Type:"); DEBUG_UART.println((int)device.type);
+            //DEBUG_UART.print("Type:"); DEBUG_UART.println((int)device.type);
 
             if (item.containsKey("romid")) {
                 const char* romidStr = item["romid"].as<const char*>();
-                device.romid = (uint8_t*)malloc(8);
-                if (convertHexToBytes(romidStr, device.romid, 8) == false) { free(device.romid); device.romid = nullptr;}
+                device.romid = new uint8_t[8]();
+                if (convertHexToBytes(romidStr, device.romid, 8) == false) { delete[] device.romid; device.romid = nullptr;}
                 //device.romid = strdup(romid);
-                DEBUG_UART.print("RomId:"); DEBUG_UART.println(ByteArrayToString(device.romid, 8).c_str());
+                //DEBUG_UART.print("RomId:"); DEBUG_UART.println(ByteArrayToString(device.romid, 8).c_str());
             } else {
                 device.romid = nullptr;
             }
 
-            if (item.containsKey("description")) {
+            /*if (item.containsKey("description")) {
                 const char* descr = item["description"].as<const char*>();
                 DEBUG_UART.print("Description:"); DEBUG_UART.println(descr);
-            }
+            }*/
         }
 
+        // the following makes a list of unique onewire bus pins
+        // without the use of vector
+        int oneWireDeviceCount = getTotalCountOfOneWireDevices();
+        if (oneWireDeviceCount == 0) {
+            
+            return false;
+        }
+        int oneWireBusPins_temp[oneWireDeviceCount];
+        for (int i=0;i<oneWireDeviceCount;i++)
+            oneWireBusPins_temp[i] = -1;
+        int cbi = 0; // current bus index
+        for (int i=0;i<deviceCount;i++)
+        {
+            if (devices[i].type != DeviceType::OneWire) continue;
+
+            if (contains(oneWireBusPins_temp, cbi, devices[i].pin) == false)
+                oneWireBusPins_temp[cbi++] = devices[i].pin;
+        }
+        oneWireBusCount = 0;
+        for (int i=0;i<oneWireDeviceCount;i++)
+            if (oneWireBusPins_temp[i] != -1) oneWireBusCount++;
+        if (oneWireBusPins != nullptr) delete[] oneWireBusPins;
+        oneWireBusPins = new uint8_t[oneWireBusCount];
+        int currOneWireBusPin = 0;
+        for (int i=0;i<oneWireDeviceCount;i++)
+            if (oneWireBusPins_temp[i] != -1) oneWireBusPins[currOneWireBusPin++] = oneWireBusPins_temp[i];
+
         return true;
+    }
+
+    void HtmlDebugPrintDevices()
+    {
+        String ret = "Devices:<br>";
+        if (devices != nullptr) {
+            for (int di=0;di<deviceCount;di++)
+            {
+                Device &device = devices[di];
+                int type = (int)device.type;
+                ret.concat("type="); ret.concat(type);
+                ret.concat(", pin="); ret.concat(device.pin);
+                ret.concat(", uid="); ret.concat(device.uid);
+                ret.concat(", fvalue="); ret.concat(device.fvalue);
+                if (device.romid != nullptr) { ret.concat(", romId="); ret.concat(ByteArrayToString(device.romid, 8).c_str()); }
+                ret.concat("<br>");
+            }
+        }
+        else {
+            ret = "No devices.";
+        }
+        server->send(200, "text/html", ret);
     }
 
     void reloadJSON()
@@ -178,8 +240,10 @@ namespace DeviceManager
         server->sendContent("LOAD JSON start<br>");
         if (readJson())
             server->sendContent("LOAD JSON ok<br>");
-        else
-            server->sendContent("LOAD JSON fail<br>");
+        else {
+            String message = "LOAD JSON fail<br>" + String(lastError.c_str());
+            server->sendContent(message);
+        }
         server->chunkedResponseFinalize();
     }
     void htmlGetValue()
@@ -190,8 +254,7 @@ namespace DeviceManager
         }
         uint32_t uid = atoi(server->arg("uid").c_str());
         float value = 0;
-        uint8_t res = 0;
-        if (getValue(uid, &value, &res) == false) 
+        if (getValue(uid, &value) == false) 
         {
             server->send(200, "text/html", "could not get value");
             return;
@@ -199,7 +262,6 @@ namespace DeviceManager
         String ret = "";
         ret.concat("value:");
         ret.concat(value);
-        ret.concat(", @ "); ret.concat(res);
         server->send(200, "text/html", ret);
     }
 
@@ -213,8 +275,13 @@ namespace DeviceManager
         srv.on(DEVICE_MANAGER_URL_GET_VALUE, HTTP_GET, htmlGetValue);
         srv.on(DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS, HTTP_GET, htmlGetAllOneWireTemperatures);
         srv.on(DEVICE_MANAGER_URL_LIST_ALL_1WIRE_DEVICES, HTTP_GET, htmlGetListOfOneWireDevicesOnBusPin);
+        srv.on(DEVICE_MANAGER_URL_PRINT_DEVICES, HTTP_GET, HtmlDebugPrintDevices);
         GPIO_manager::setup(srv);
-        readJson();
+        if (readJson() == false)
+        {
+            String message = "Device Manager - LOAD JSON fail<br>" + String(lastError.c_str());
+            DEBUG_UART.println(message);
+        }
     }
 
     Device* getDeviceInfo(uint32_t uid)
@@ -250,34 +317,17 @@ namespace DeviceManager
 #endif
     bool getAllOneWireTemperatures()
     {
-        int oneWireDeviceCount = getTotalCountOfOneWireDevices();
-        if (oneWireDeviceCount == 0) {
-            
-            return false;
-        }
-        int busses[oneWireDeviceCount];
-        for (int i=0;i<oneWireDeviceCount;i++)
-            busses[i] = -1;
-        int cbi = 0; // current bus index
-        for (int i=0;i<deviceCount;i++)
-        {
-            if (devices[i].type != DeviceType::OneWire) continue;
-
-            if (contains(busses, cbi, devices[i].pin) == false)
-                busses[cbi++] = devices[i].pin;
-        }
         dTemp.setWaitForConversion(false);
 #ifdef BUSSES_DEV_PRINT
         getAllOneWireTemperatures_busses_debug_print = "unique busses @ pins:[";// development test print
 #endif
-        for (int i=0;i<oneWireDeviceCount;i++)
+        for (int i=0;i<oneWireBusCount;i++)
         {
-            if (busses[i] == -1) continue;
-            oneWire.begin(busses[i]);
+            oneWire.begin(oneWireBusPins[i]);
             dTemp.requestTemperatures();
 #ifdef BUSSES_DEV_PRINT
-            getAllOneWireTemperatures_busses_debug_print.concat(busses[i]);
-            if (i<oneWireDeviceCount-1)
+            getAllOneWireTemperatures_busses_debug_print.concat(oneWireBusPins[i]);
+            if (i<oneWireBusCount-1)
                 getAllOneWireTemperatures_busses_debug_print.concat(",");
 #endif
         }
@@ -286,6 +336,8 @@ namespace DeviceManager
         for (int i=0;i<deviceCount;i++)
         {
             if (devices[i].type != DeviceType::OneWire) continue;
+            if (devices[i].romid == nullptr) continue;
+
             oneWire.begin(devices[i].pin);
             devices[i].fvalue = dTemp.getTempC(devices[i].romid);
         }
@@ -317,7 +369,7 @@ namespace DeviceManager
     then each value can be stored into the internal device list, and later be retreived one by one 
     by the higher layer (thingspeak for example)
     */
-    bool getValue(uint32_t uid, float* value, uint8_t* resolution)
+    bool getValue(uint32_t uid, float* value)
     {
         Device* device = getDeviceInfo(uid);
         if (device == nullptr) {
@@ -326,37 +378,32 @@ namespace DeviceManager
             return false;
         }
         if (device->type == DeviceType::OneWire) {
-            oneWire.begin(device->pin);
-            DallasTemperature::request_t req = dTemp.requestTemperaturesByAddress(device->romid);
-            if (resolution!=nullptr) *resolution = dTemp.getResolution(device->romid);
-            if (req.result == false) { if (value!=nullptr) *value = 0; DEBUG_UART.println("dallas req.result == false"); return false; }
-            if (value!=nullptr) *value = dTemp.getTempC(device->romid);
-            else return false;
+            // this don't do anything as
+            // it's ensured that getAllOneWireTemperatures has been executed beforehand
+            // calling this function "getValue"
         }
         else if (device->type == DeviceType::DHT11) {
             dht.setup(device->pin, DHTesp::DHT11);
-            if (value!=nullptr) *value = dht.getHumidity();
-            else return false;
+            device->fvalue = dht.getHumidity();
         }
         else if (device->type == DeviceType::DHT22) {
             dht.setup(device->pin, DHTesp::DHT22);
-            if (value!=nullptr) *value = dht.getHumidity();
-            else return false;
+            device->fvalue = dht.getHumidity();
         }
         else if (device->type == DeviceType::DHT_AM2302) {
             dht.setup(device->pin, DHTesp::AM2302);
-            if (value!=nullptr) *value = dht.getHumidity();
-            else return false;
+            device->fvalue = dht.getHumidity();
         }
         else if (device->type == DeviceType::DHT_RHT03) {
             dht.setup(device->pin, DHTesp::RHT03);
-            if (value!=nullptr) *value = dht.getHumidity();
-            else return false;
+            device->fvalue = dht.getHumidity();
         } 
         else {
             if (value!=nullptr) *value = 0;
             return false;
         }
+        if (value==nullptr) return false;
+        *value = device->fvalue;
         return true;
     }
 

@@ -36,7 +36,11 @@ namespace TimeAlarmsFromJson
         {"sun", timeDayOfWeek_t::dowSunday}
     };
 
+#if defined(ESP8266)
     #define DEBUG_UART Serial1
+#elif defined(ESP32)
+    #define DEBUG_UART Serial
+#endif
 
     typedef struct NameToFunction {
         std::string name;
@@ -67,6 +71,8 @@ namespace TimeAlarmsFromJson
 
     void HandleAlarms() {
         if (Scheduler != nullptr) Scheduler->delay(0);
+        else
+            Serial.println("Scheduler is null");
     }
 
     bool LoadJson(String filePath)
@@ -160,7 +166,7 @@ namespace TimeAlarmsFromJson
             else {
                 id = Scheduler->timerRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
-            DEBUG_UART.printf("added timer repeat %d:%d:%d  %lld   %lld\r\n", vars.h, vars.m, vars.s, Scheduler->read(id), now());
+            DEBUG_UART.printf("added timer repeat %d:%d:%d  %lld   %lld   %lld   %lld\r\n", vars.h, vars.m, vars.s, Scheduler->read(id), now(), Scheduler->getNextTrigger(), Scheduler->getNextTrigger(id));
         }
         else if (mode == "daily")
         {
