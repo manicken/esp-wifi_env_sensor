@@ -56,6 +56,7 @@
 //#include "NordPoolFetcher.h"
 
 #include "DeviceManager.h"
+#include "Time_ext.h"
 
 //#include <sstream>
 //#include "TCP2UART.h"
@@ -165,7 +166,6 @@ void printESP_info(void);
 void srv_handle_info(void);
 const char* getResetReason(void);
 void initWebServerHandlers(void);
-std::string GetTimeAsString(time_t time);
 
 void Timer_SyncTime() {
     DEBUG_UART.println("Timer_SyncTime");
@@ -317,7 +317,9 @@ void loop() {
     //ArduinoOTA.handle();
     webserver.handleClient();
     
-    TimeAlarmsFromJson::HandleAlarms();
+    
+    //TimeAlarmsFromJson::HandleAlarms();
+    TimeAlarmsFromJson::Scheduler->delay(10);
     //currTime = millis();
 
     blinkLedTask();
@@ -429,12 +431,7 @@ void initWebServerHandlers(void)
     });
 #endif
     
-    webserver.on(F("/schedule/refresh"), []() {
-        if (TimeAlarmsFromJson::LoadJson(F("/schedule/list.json")))
-            webserver.send(200,F("text/plain"), F("schedule load json OK"));
-        else
-            webserver.send(200,F("text/plain"), F("schedule load json error"));
-    });
+    
     webserver.on(F("/esp/free_heap"), []() {
         std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
 #if defined(ESP8266)
@@ -443,18 +440,22 @@ void initWebServerHandlers(void)
         webserver.send(200,F("text/plain"), ret.c_str());
     });
     webserver.on(F("/esp/last_reset_reason"), []() {
-        std::string resetInfo = "Last Reset at: " + GetTimeAsString(startTime);
+        std::string resetInfo = "Last Reset at: " + Time_ext::GetTimeAsString(startTime);
         resetInfo += "\nReason: " + std::string(getResetReason());
         
         webserver.send(200, F("text/plain"), resetInfo.c_str());
     });
+
+    // Scheduler
+    webserver.on(F("/schedule/refresh"), []() {
+        if (TimeAlarmsFromJson::LoadJson(F("/schedule/list.json")))
+            webserver.send(200,F("text/plain"), F("schedule load json OK"));
+        else
+            webserver.send(200,F("text/plain"), F("schedule load json error"));
+    });
     webserver.on(F("/schedule/getMaxNumberOfAlarms"), []() {
         std::string ret = std::to_string(dtNBR_ALARMS);
         webserver.send(200, F("text/plain"), ret.c_str());
-    });
-    webserver.on(F("/schedule/getTime"), []() {
-        std::string nowstr = GetTimeAsString(now());
-        webserver.send(200,F("text/plain"), nowstr.c_str());
     });
     webserver.on(F("/schedule/getFunctionNames"), []() {
         int item_Count = sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]);
@@ -472,6 +473,12 @@ void initWebServerHandlers(void)
         std::string ret = TimeAlarmsFromJson::GetShortFormDowListAsJson();
         webserver.send(200,F("text/plain"), ret.c_str());
     });
+    webserver.on(F("/schedule/getTime"), []() {
+        std::string nowstr = "{\n\"now\":\"" + Time_ext::GetTimeAsString(now()) + "\",\n";
+        nowstr += "\"next trigger\":\"" + Time_ext::GetTimeAsString(TimeAlarmsFromJson::Scheduler->getNextTrigger()) + "\"\n}";
+        webserver.send(200,F("text/json"), nowstr.c_str());
+    });
+
     webserver.onNotFound([]() {                              // If the client requests any URI
         String uri = webserver.uri();
         if (uri.indexOf('.') == -1) // if it's a folder, try to find index.htm or index.html
@@ -720,22 +727,3 @@ void srv_handle_info()
     //server.sendContent("");
 }
 
-std::string formatNumber(int num) {
-    return (num < 10) ? "0" + std::to_string(num) : std::to_string(num);
-}
-
-std::string formatTime(int hour, int minute, int second) {
-    return formatNumber(hour) + ":" + formatNumber(minute) + ":" + formatNumber(second);
-}
-
-std::string GetTimeAsString(time_t time)
-{
-    tmElements_t now2;
-    breakTime(time, now2);
-    std::string nowstr = std::to_string(now2.Year + 1970) + "-" +
-                    std::to_string(now2.Month) + "-" +
-                    std::to_string(now2.Day) + " " +
-                    formatTime(now2.Hour, now2.Minute, now2.Second);
-                    
-    return nowstr;
-}

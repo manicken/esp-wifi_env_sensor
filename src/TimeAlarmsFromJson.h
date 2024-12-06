@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <LittleFS.h>
 #include "LittleFS_ext.h"
+#include "Time_ext.h"
 #include "NTP.h"
 
 class AsStringParameter : public OnTickExtParameters
@@ -118,13 +119,16 @@ namespace TimeAlarmsFromJson
             if (jsonDoc[i].containsKey("disabled") == false) nrOfActiveAlarms++; 
         }
         if (Scheduler != nullptr) {
-            if (Scheduler->getCurrentNrOfAlarms() < nrOfActiveAlarms) {
+            //if (Scheduler->getCurrentNrOfAlarms() < nrOfActiveAlarms) {
                 delete Scheduler; // delete old instance
-                Scheduler = new TimeAlarmsClass(nrOfActiveAlarms);
-            }
+               // Scheduler = new TimeAlarmsClass(nrOfActiveAlarms);
+            //}
+            //else
+            //    Scheduler->clear()
         }
-        else // this happens only the very first time LoadJson is called
-            Scheduler = new TimeAlarmsClass(nrOfActiveAlarms);
+        //else // this happens only the very first time LoadJson is called
+            
+        Scheduler = new TimeAlarmsClass(nrOfActiveAlarms);
 
         // sync time with NTP server
         NTP::NTPConnect();
@@ -166,7 +170,9 @@ namespace TimeAlarmsFromJson
             else {
                 id = Scheduler->timerRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
-            DEBUG_UART.printf("added timer repeat %d:%d:%d  %lld   %lld   %lld   %lld\r\n", vars.h, vars.m, vars.s, Scheduler->read(id), now(), Scheduler->getNextTrigger(), Scheduler->getNextTrigger(id));
+
+            DEBUG_UART.printf("added timer repeat %d:%d:%d  now:%s   Scheduler->read(id):%s   Scheduler->getNextTrigger():%s   Scheduler->getNextTrigger(id):%s\r\n", vars.h, vars.m, vars.s, Time_ext::GetTimeAsString(now()).c_str(), Time_ext::GetTimeAsString(Scheduler->read(id)).c_str() , Time_ext::GetTimeAsString(Scheduler->getNextTrigger()).c_str(), Time_ext::GetTimeAsString(Scheduler->getNextTrigger(id)).c_str());
+        
         }
         else if (mode == "daily")
         {
@@ -181,7 +187,8 @@ namespace TimeAlarmsFromJson
                 id = Scheduler->alarmRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
             
-            DEBUG_UART.printf("added alarm daily %d:%d:%d  %lld  %lld  %lld\r\n", vars.h, vars.m, vars.s, Scheduler->read(id), Scheduler->getNextTrigger(id), now());
+            DEBUG_UART.printf("added timer daily %d:%d:%d  now:%s   Scheduler->read(id):%s   Scheduler->getNextTrigger():%s   Scheduler->getNextTrigger(id):%s\r\n", vars.h, vars.m, vars.s, Time_ext::GetTimeAsString(now()), Time_ext::GetTimeAsString(Scheduler->read(id)) , Time_ext::GetTimeAsString(Scheduler->getNextTrigger()), Time_ext::GetTimeAsString(Scheduler->getNextTrigger(id)));
+        
         }
         else if (mode == "weekly")
         {
