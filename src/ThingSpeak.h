@@ -204,7 +204,7 @@ bool sendDataBackToWebbrowser = false;
 
     void SendData()
     {
-        DEBUG_UART.println("TS SendData");
+        //DEBUG_UART.println("TS SendData");
         if (channels == nullptr) return;
         if (DeviceManager::getAllOneWireTemperatures() == false) return;
 

@@ -72,8 +72,8 @@ namespace TimeAlarmsFromJson
 
     void HandleAlarms() {
         if (Scheduler != nullptr) Scheduler->delay(0);
-        else
-            Serial.println("Scheduler is null");
+        //else // this happens when there are no file loaded, i.e. when a schedule file is not found
+        //    Serial.println("Scheduler is null");
     }
 
     bool LoadJson(String filePath)

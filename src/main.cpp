@@ -104,7 +104,8 @@ ESP8266WebServer webserver(HTTP_PORT);
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin()
 #elif ESP32
 fs_WebServer webserver(HTTP_PORT);
-#define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(false, "", 10, "spiffs")
+#define AUTOFORMAT_ON_FAIL true
+#define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "", 10, "spiffs")
 #endif
 
 uint32_t test = 1234567890;
@@ -318,8 +319,8 @@ void loop() {
     webserver.handleClient();
     
     
-    //TimeAlarmsFromJson::HandleAlarms();
-    TimeAlarmsFromJson::Scheduler->delay(10);
+    TimeAlarmsFromJson::HandleAlarms();
+    //TimeAlarmsFromJson::Scheduler->delay(0);
     //currTime = millis();
 
     blinkLedTask();
