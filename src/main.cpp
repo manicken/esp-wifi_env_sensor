@@ -52,7 +52,7 @@
 #include "FSBrowser.h"
 #include "RF433.h"
 #include "FAN.h"
-#include "TimeAlarmsFromJson.h"
+#include "Scheduler.h"
 //#include "NordPoolFetcher.h"
 
 #include "DeviceManager.h"
@@ -202,7 +202,7 @@ void Alarm_SendToRF433(const OnTickExtParameters *param)
     }
 }
 
-TimeAlarmsFromJson::NameToFunction nameToFunctionList[4] = {
+Scheduler::NameToFunction nameToFunctionList[4] = {
 //   name         , onTick            , onTickExt
     {"ntp_sync"   , &Timer_SyncTime   , nullptr           },
     {"sendEnvData", &Timer_SendEnvData, nullptr           },
@@ -258,7 +258,9 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
         }
     }
 }
-
+/**************************************************************************/
+/**************************************************************************/
+/**************************************************************************/
 void setup() {
 
     FAN::init();
@@ -277,17 +279,9 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     //sensors.begin(); // one wire sensors
     RF433::init(14);
     
-    NTP::NTPConnect();
-    tmElements_t now2;
-    breakTime(time(nullptr), now2);
-    int year = (int)now2.Year + 1970;
-    setTime(now2.Hour+1, now2.Minute, now2.Second, now2.Day, now2.Month, year);
-    startTime = now();
+    Scheduler::setup(webserver, nameToFunctionList, sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]));
 
-    size_t nameToFunctionList_Count = sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]);
-    DEBUG_UART.printf("nameToFunctionList_Count:%d\r\n", nameToFunctionList_Count);
-    TimeAlarmsFromJson::SetFunctionTable(nameToFunctionList, 3);
-    TimeAlarmsFromJson::LoadJson("/schedule/list.json");
+    startTime = now();
     
 #if defined(ESP8266)
     if (AWS_IOT::setup_readFiles()) {
@@ -315,12 +309,12 @@ DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
 void loop() {
     //tcp2uart.BridgeMainTask();
     
-    //ArduinoOTA.handle();
+    ArduinoOTA.handle();
     webserver.handleClient();
     
     
-    TimeAlarmsFromJson::HandleAlarms();
-    //TimeAlarmsFromJson::Scheduler->delay(0);
+    Scheduler::HandleAlarms();
+
     //currTime = millis();
 
     blinkLedTask();
@@ -376,7 +370,6 @@ void loop() {
 
 void initWebServerHandlers(void)
 {
-
     webserver.on("/",  []() {
         if (LittleFS.exists(F("index.html"))) FSBrowser::handleFileRead(F("index.html"));
         else if (LittleFS.exists(F("index.htm"))) FSBrowser::handleFileRead(F("index.htm"));
@@ -431,8 +424,7 @@ void initWebServerHandlers(void)
         }
     });
 #endif
-    
-    
+
     webserver.on(F("/esp/free_heap"), []() {
         std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
 #if defined(ESP8266)
@@ -445,39 +437,6 @@ void initWebServerHandlers(void)
         resetInfo += "\nReason: " + std::string(getResetReason());
         
         webserver.send(200, F("text/plain"), resetInfo.c_str());
-    });
-
-    // Scheduler
-    webserver.on(F("/schedule/refresh"), []() {
-        if (TimeAlarmsFromJson::LoadJson(F("/schedule/list.json")))
-            webserver.send(200,F("text/plain"), F("schedule load json OK"));
-        else
-            webserver.send(200,F("text/plain"), F("schedule load json error"));
-    });
-    webserver.on(F("/schedule/getMaxNumberOfAlarms"), []() {
-        std::string ret = std::to_string(dtNBR_ALARMS);
-        webserver.send(200, F("text/plain"), ret.c_str());
-    });
-    webserver.on(F("/schedule/getFunctionNames"), []() {
-        int item_Count = sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]);
-
-        std::string jsonStr = "{";
-
-        for (int i=0;i<item_Count;i++) {
-            jsonStr += "\"" +  nameToFunctionList[i].name + "\":\"" + ((nameToFunctionList[i].onTickExt!=nullptr)?"p":"") + "\"";
-            if (i < (item_Count-1)) jsonStr += ",";
-        }
-        jsonStr += "}";
-        webserver.send(200,F("text/plain"), jsonStr.c_str());
-    });
-    webserver.on(F("/schedule/getShortDows"), []() {
-        std::string ret = TimeAlarmsFromJson::GetShortFormDowListAsJson();
-        webserver.send(200,F("text/plain"), ret.c_str());
-    });
-    webserver.on(F("/schedule/getTime"), []() {
-        std::string nowstr = "{\n\"now\":\"" + Time_ext::GetTimeAsString(now()) + "\",\n";
-        nowstr += "\"next trigger\":\"" + Time_ext::GetTimeAsString(TimeAlarmsFromJson::Scheduler->getNextTrigger()) + "\"\n}";
-        webserver.send(200,F("text/json"), nowstr.c_str());
     });
 
     webserver.onNotFound([]() {                              // If the client requests any URI
@@ -569,7 +528,7 @@ void printESP_info(void) {
     DEBUG_UART.println();
 }*/
 
-/*
+#if defined(ESP8266)
     enum rst_reason {
     REASON_DEFAULT_RST      = 0,    normal startup by power on 
     REASON_WDT_RST          = 1,    hardware watch dog reset 
@@ -578,7 +537,8 @@ void printESP_info(void) {
     REASON_SOFT_RESTART     = 4,    software restart ,system_restart , GPIO status won’t change 
     REASON_DEEP_SLEEP_AWAKE = 5,    wake up from deep-sleep 
     REASON_EXT_SYS_RST      = 6     external system reset
-};*/
+};
+#endif
 const char* getResetReason()
 {
 #if defined(ESP8266)
@@ -599,40 +559,24 @@ const char* getResetReason()
     else if (reason == rst_reason::REASON_EXT_SYS_RST)
         return "external system reset";
     else
-#endif
         return "undefined reset cause";
-}
-
-void listDir(const char *dirname, uint8_t levels) {
-  DEBUG_UART.printf("Listing directory: %s\r\n", dirname);
-
-  File root = LittleFS.open(dirname);
-  if (!root) {
-    DEBUG_UART.println("- failed to open directory");
-    return;
-  }
-  if (!root.isDirectory()) {
-    DEBUG_UART.println(" - not a directory");
-    return;
-  }
-
-  File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
-      DEBUG_UART.print("  DIR : ");
-      DEBUG_UART.println(file.name());
-      if (levels) {
-        listDir(file.path(), levels - 1);
-      }
-    } else {
-      DEBUG_UART.print("  FILE: ");
-      DEBUG_UART.print(file.name());
-      DEBUG_UART.print("\tSIZE: ");
-      DEBUG_UART.println(file.size());
+#elif defined(ESP32)
+    esp_reset_reason_t reset_reason = esp_reset_reason();
+    switch (reset_reason) {
+        case ESP_RST_POWERON: return "Power-on reset";
+        case ESP_RST_EXT: return "External reset";
+        case ESP_RST_SW: return "Software reset";
+        case ESP_RST_PANIC: return "Software reset due to panic";
+        case ESP_RST_INT_WDT: return "Interrupt watchdog reset";
+        case ESP_RST_TASK_WDT: return "Task watchdog reset";
+        case ESP_RST_WDT: return "Other watchdog reset";
+        case ESP_RST_DEEPSLEEP: return "Reset after deep sleep";
+        case ESP_RST_BROWNOUT: return "Brownout reset";
+        case ESP_RST_SDIO: return "SDIO reset";
+        default: return "Unknown reset reason";
     }
-    file = root.openNextFile();
-  }
-  DEBUG_UART.println();
+#endif
+        
 }
 
 void srv_handle_info()
@@ -687,39 +631,13 @@ void srv_handle_info()
             srv_return_msg.concat(F("<br>LittleFS info not implemented"));
 #endif
 
-        String str = "<br><br>Files:<br>";
+        srv_return_msg.concat("<br><br>Files:<br>");
         
-#if defined(ESP8266)
-        Dir dir = LittleFS.openDir("/");
-        
-        while (dir.next()) {
-            str += dir.fileName();
-            str += " / ";
-            str += dir.fileSize();
-            str += "<br>";
-        }
-#elif defined(ESP32)
-    listDir("/", 10);
-    File root = LittleFS.open("/");
-    File file = root.openNextFile();
-
-    while (file) {
-        str.concat(file.name());
-        str.concat(" / ");
-        str.concat(file.size());
-        if (file.isDirectory())
-            str.concat(" (dir) ");
-        str.concat("<br>");
-        file = root.openNextFile(); 
-    }
-    
-#endif
-        srv_return_msg.concat(str);
+        //LittleFS_ext::listDir(DEBUG_UART,"/", 0);
+        LittleFS_ext::listDir(srv_return_msg, true, "/", 0);
     }
     else
         srv_return_msg.concat(F("<br>LittleFS Fail to mount"));
-
-    
 
     srv_return_msg.concat(F("</body></html>"));
     webserver.send(200, "text/html", srv_return_msg);
