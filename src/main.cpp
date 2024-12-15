@@ -58,6 +58,14 @@
 #include "DeviceManager.h"
 #include "Time_ext.h"
 
+#define MAIN_URLS_JSON_CMD              F("/json_cmd")
+#define MAIN_URLS_INFO                  F("/info")
+#define MAIN_URLS_FORMAT_LITTLE_FS      F("/formatLittleFs")
+#define MAIN_URLS_MKDIR                 F("/mkdir")
+#define MAIN_URLS_AWS_IOT_REFRESH       F("/aws_iot/refresh")
+#define MAIN_URLS_ESP_FREE_HEAP         F("/esp/free_heap")
+#define MAIN_URLS_ESP_LAST_RESET_REASON F("/esp/last_reset_reason")
+
 //#include <sstream>
 //#include "TCP2UART.h"
 
@@ -183,6 +191,7 @@ void Timer_SendEnvData()
     if (ThingSpeak::canPost)
         ThingSpeak::SendData();//temp_ds, humidity_dht);
 }
+#ifdef TIME_ALARMS_EXT
 void Alarm_SetFanSpeed(const OnTickExtParameters *param)
 {
     DEBUG_UART.println("\nAlarm_SetFanSpeed");
@@ -201,6 +210,10 @@ void Alarm_SendToRF433(const OnTickExtParameters *param)
         RF433::DecodeFromJSON(casted_param->jsonStr);
     }
 }
+#else // use dummy functions when ext lib not available
+void Alarm_SendToRF433(){DEBUG_UART.println("\nAlarm_SendToRF433");}
+void Alarm_SetFanSpeed(){DEBUG_UART.println("\nAlarm_SetFanSpeed");}
+#endif
 
 Scheduler::NameToFunction nameToFunctionList[4] = {
 //   name         , onTick            , onTickExt
@@ -375,7 +388,7 @@ void initWebServerHandlers(void)
         else if (LittleFS.exists(F("index.htm"))) FSBrowser::handleFileRead(F("index.htm"));
         else webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
-    webserver.on(F("/json_cmd"), HTTP_POST, [](){ webserver.send(200); }, [](){
+    webserver.on(MAIN_URLS_JSON_CMD, HTTP_POST, [](){ webserver.send(200); }, [](){
         HTTPUpload& upload = webserver.upload();
         if (upload.status == UPLOAD_FILE_START) {
             
@@ -386,15 +399,15 @@ void initWebServerHandlers(void)
             AWS_IOT_messageReceived(nullptr, upload.buf, upload.currentSize);
         }
     });
-    webserver.on(F("/info"), srv_handle_info);
-    webserver.on(F("/formatLittleFs"), []() {
+    webserver.on(MAIN_URLS_INFO, srv_handle_info);
+    webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, []() {
         LITTLEFS_BEGIN_FUNC_CALL;
         if (LittleFS.format())
             webserver.send(200,"text/html", "Format OK");
         else
             webserver.send(200,"text/html", "format Fail"); 
     });
-    webserver.on(F("/mkdir"), []() {
+    webserver.on(MAIN_URLS_MKDIR, []() {
         if (!webserver.hasArg("dir")) { webserver.send(200,"text/html", "Error: dir argument missing"); }
         else
         {
@@ -411,8 +424,8 @@ void initWebServerHandlers(void)
         }
 
     });
-#if defined(ESP8266)
-    webserver.on(F("/aws_iot/refresh"), []() {
+#if defined(ESP8266) 
+    webserver.on(MAIN_URLS_AWS_IOT_REFRESH, []() {
         if (AWS_IOT::setup_readFiles()) {
             webserver.send(200,F("text/plain"), F("AWS_IOT setup_readFiles OK"));
             AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
@@ -425,14 +438,14 @@ void initWebServerHandlers(void)
     });
 #endif
 
-    webserver.on(F("/esp/free_heap"), []() {
+    webserver.on(MAIN_URLS_ESP_FREE_HEAP, []() {
         std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
 #if defined(ESP8266)
         ret += ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
 #endif
         webserver.send(200,F("text/plain"), ret.c_str());
     });
-    webserver.on(F("/esp/last_reset_reason"), []() {
+    webserver.on(MAIN_URLS_ESP_LAST_RESET_REASON, []() {
         std::string resetInfo = "Last Reset at: " + Time_ext::GetTimeAsString(startTime);
         resetInfo += "\nReason: " + std::string(getResetReason());
         
