@@ -5,6 +5,9 @@ namespace DeviceManager
     std::string lastError;
 
     Device *devices = nullptr;
+
+    BaseDevice **devices_ = nullptr; // proposed new structure
+
     uint32_t deviceCount = 0;
     int oneWireBusCount = 0;
     uint8_t *oneWireBusPins = nullptr;

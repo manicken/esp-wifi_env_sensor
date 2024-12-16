@@ -50,6 +50,29 @@ namespace DeviceManager
         RF433 = 433
     };
 
+    // proposed new structure
+    struct BaseDevice {
+        uint32_t uid;
+        DeviceType type;
+        uint8_t pin;
+    };
+    struct OneWireDevice : public BaseDevice {
+        uint8_t* romid;
+        ~OneWireDevice();
+    };
+    struct OneWireTempDevice : public OneWireDevice {
+        float value;
+    };
+    struct DHTdevice : public BaseDevice {
+        float value;
+    };
+    struct FANdevice : public BaseDevice {
+        float frequency;
+        uint8_t bits;
+        uint8_t invOut;
+    };
+    // end of proposed new structure
+
     struct Device {
         uint32_t uid;
         DeviceType type;
