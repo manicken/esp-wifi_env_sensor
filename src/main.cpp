@@ -191,7 +191,7 @@ void Timer_SendEnvData()
     if (ThingSpeak::canPost)
         ThingSpeak::SendData();//temp_ds, humidity_dht);
 }
-#ifdef TIME_ALARMS_EXT
+
 void Alarm_SetFanSpeed(const OnTickExtParameters *param)
 {
     DEBUG_UART.println("\nAlarm_SetFanSpeed");
@@ -210,10 +210,6 @@ void Alarm_SendToRF433(const OnTickExtParameters *param)
         RF433::DecodeFromJSON(casted_param->jsonStr);
     }
 }
-#else // use dummy functions when ext lib not available
-void Alarm_SendToRF433(){DEBUG_UART.println("\nAlarm_SendToRF433");}
-void Alarm_SetFanSpeed(){DEBUG_UART.println("\nAlarm_SetFanSpeed");}
-#endif
 
 Scheduler::NameToFunction nameToFunctionList[4] = {
 //   name         , onTick            , onTickExt

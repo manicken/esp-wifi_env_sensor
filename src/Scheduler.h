@@ -20,10 +20,6 @@
 #define DEBUG_UART Serial
 #endif
 
-// TIME_ALARMS_EXT should be defined in my special version of TimeAlarmsClass
-// this is a failsafe when using standard TimeAlarmsClass
-
-#ifdef TIME_ALARMS_EXT
 class AsStringParameter : public OnTickExtParameters
 {
 public:
@@ -35,7 +31,6 @@ public:
     }
     std::string jsonStr;
 };
-#endif
 
 namespace Scheduler
 {
@@ -71,11 +66,7 @@ namespace Scheduler
     typedef struct NameToFunction {
         std::string name;
         OnTick_t onTick; // function pointer for simple non parameter callback
-#ifdef TIME_ALARMS_EXT
         OnTickExt_t onTickExt; // function pointer for ext parameter based callbacks
-#else
-        OnTick_t onTickExt; // failsafe function pointer for simple non parameter callback
-#endif
     } Name2Func;
     
     int FuncCount = 0;
@@ -95,11 +86,7 @@ namespace Scheduler
     void ParseItem(JsonVariant json);
     void SetFunctionTable(NameToFunction* list, int count);
     OnTick_t GetFunction(std::string name);
-#ifdef TIME_ALARMS_EXT
     OnTickExt_t GetFunctionExt(std::string name);
-#else
-    OnTick_t GetFunctionExt(std::string name);
-#endif
     bool GetJsonBaseVars(JsonVariant &json, JsonBaseVars &vars);
     timeDayOfWeek_t GetTimerAlarmsDOW(std::string sDOW);
 
@@ -160,11 +147,8 @@ namespace Scheduler
             //    Scheduler->clear()
         }
         //else // this happens only the very first time LoadJson is called
-#ifdef TIME_ALARMS_EXT
+
         Scheduler = new TimeAlarmsClass(nrOfActiveAlarms);
-#else
-        Scheduler = new TimeAlarmsClass(); // this defaults to 12 nr of alarms possible
-#endif
 
         // sync time with NTP server
         NTP::NTPConnect();
@@ -200,12 +184,8 @@ namespace Scheduler
             if (GetJsonBaseVars(json, vars) == false) return;
             AlarmID_t id=-1;
             if(json.containsKey("params")) {
-#ifdef TIME_ALARMS_EXT
                 AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
                 id = Scheduler->timerRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
-#else
-                id = Scheduler->timerRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName));
-#endif
             }
             else {
                 id = Scheduler->timerRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
@@ -220,12 +200,8 @@ namespace Scheduler
             if (GetJsonBaseVars(json, vars) == false) return;
             AlarmID_t id=-1;
             if(json.containsKey("params")) {
-#ifdef TIME_ALARMS_EXT
                 AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
                 id = Scheduler->alarmRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
-#else
-                id = Scheduler->alarmRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName));
-#endif
             }
             else {
                 id = Scheduler->alarmRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
@@ -243,12 +219,8 @@ namespace Scheduler
             timeDayOfWeek_t dow = GetTimerAlarmsDOW(json["D"]);
 
             if(json.containsKey("params")) {
-#ifdef TIME_ALARMS_EXT
                 AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
                 Scheduler->alarmRepeat(dow, vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
-#else
-                Scheduler->alarmRepeat(dow, vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName));
-#endif
             }
             else {
                 Scheduler->alarmRepeat(dow, vars.h,vars.m,vars.s, GetFunction(vars.funcName));
@@ -268,13 +240,9 @@ namespace Scheduler
             if(json.containsKey("s")) tm.Second = json["s"]; else tm.Second = 0;
             time_t dateTime = makeTime(tm);
             if(json.containsKey("params")) {
-#ifdef TIME_ALARMS_EXT
                 JsonVariant jsonVar = json["params"].as<JsonVariant>();
                 AsStringParameter *params = new AsStringParameter(jsonVar);
                 Scheduler->triggerOnce(dateTime, GetFunctionExt(funcName), params);
-#else
-                Scheduler->triggerOnce(dateTime, GetFunctionExt(funcName));
-#endif
             }
             else {
                 Scheduler->triggerOnce(dateTime, GetFunction(funcName));
@@ -290,17 +258,14 @@ namespace Scheduler
         }
         return nullptr;
     }
-#ifdef TIME_ALARMS_EXT
     OnTickExt_t GetFunctionExt(std::string name) {
-#else
-    OnTick_t GetFunctionExt(std::string name) {
         for (int i = 0; i < FuncCount; i++) {
             if (nameToFuncList[i].name == name)
                 return nameToFuncList[i].onTickExt;
         }
         return nullptr;
     }
-#endif
+
     bool GetJsonBaseVars(JsonVariant &json, JsonBaseVars &vars)
     {
         if (json.containsKey("func") == false) return false;
@@ -375,11 +340,8 @@ namespace Scheduler
             std::string jsonStr = "{";
 
             for (int i=0;i<FuncCount;i++) {
-#ifdef TIME_ALARMS_EXT
                 jsonStr += "\"" +  nameToFuncList[i].name + "\":\"" + ((nameToFuncList[i].onTickExt!=nullptr)?"p":"") + "\"";
-#else
-                jsonStr += "\"" +  nameToFuncList[i].name + "\":\"" + "\"";
-#endif
+
                 if (i < (FuncCount-1)) jsonStr += ",";
             }
             jsonStr += "}";
