@@ -30,24 +30,25 @@ namespace DeviceManager
 {
     #define BUSSES_DEV_PRINT
 
-    #define DEVICE_MANAGER_FILES_PATH                 F("/DeviceManager")
-    #define DEVICE_MANAGER_CONFIG_JSON_FILE           F("/DeviceManager/cfg.json")
-    #define DEVICE_MANAGER_URL_RELOAD_JSON            F("/DeviceManager/reloadJson")
+    #define DEVICE_MANAGER_FILES_PATH                  F("/DeviceManager")
+    #define DEVICE_MANAGER_CONFIG_JSON_FILE            F("/DeviceManager/cfg.json")
+    #define DEVICE_MANAGER_URL_RELOAD_JSON             F("/DeviceManager/reloadJson")
     #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_DEVICES  F("/DeviceManager/listAll1wireDevices")
-    #define DEVICE_MANAGER_URL_GET_VALUE              F("/DeviceManager/getValue")
+    #define DEVICE_MANAGER_URL_GET_VALUE               F("/DeviceManager/getValue")
     #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS    F("/DeviceManager/getAll1wireTemps")
-    #define DEVICE_MANAGER_URL_PRINT_DEVICES          F("/DeviceManager/printDevices")
+    #define DEVICE_MANAGER_URL_PRINT_DEVICES           F("/DeviceManager/printDevices")
 
-    enum class DeviceType : int
+    enum class DeviceType : int32_t
     {
-        Unknown = -1,
-        OneWire = 1,
-        DHT11 = 11,
-        DHT22 = 22,
-        DHT_AM2302 = 2302,
-        DHT_RHT03 = 3,
-        FAN = 0,
-        RF433 = 433
+        Unknown = -1, //static_cast<int>(0xFFFFFFFF),
+        OneWireBus = 0x1B,
+        OneWireTemp = 0x10,
+        DHT11 = 0x11,
+        DHT22 = 0x22,
+        DHT_AM2302 = 0x2302,
+        DHT_RHT03 = 0x3,
+        FAN = 0xF,
+        TX433 = 0x433
     };
 
     // proposed new structure
@@ -57,7 +58,10 @@ namespace DeviceManager
         uint8_t pin;
     };
     struct OneWireDevice : public BaseDevice {
+    protected:
         uint8_t* romid;
+        OneWireDevice() {}
+    public:
         ~OneWireDevice();
     };
     struct OneWireTempDevice : public OneWireDevice {
@@ -71,6 +75,19 @@ namespace DeviceManager
         uint8_t bits;
         uint8_t invOut;
     };
+    struct TX433device : public BaseDevice {
+
+    };
+    void NewStuctureTest()
+    {
+        BaseDevice *owtd_ptr = new OneWireTempDevice();
+        if (owtd_ptr->type == DeviceType::OneWireTemp) {
+            OneWireTempDevice& owtd = static_cast<OneWireTempDevice&>(*owtd_ptr);
+        }
+        delete owtd_ptr;
+
+        /// check https://chatgpt.com/c/6761deb2-23d4-800b-b837-347563ee25a9
+    }
     // end of proposed new structure
 
     struct Device {

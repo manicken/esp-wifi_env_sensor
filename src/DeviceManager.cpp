@@ -22,6 +22,12 @@ namespace DeviceManager
     OneWire oneWire;
     DallasTemperature dTemp(&oneWire);
 
+    OneWireDevice::~OneWireDevice() {
+        if (romid != nullptr)
+            delete[] romid;
+            romid = nullptr;
+    }
+
     Device::~Device() {
         if (romid != nullptr)
             delete[] romid;
@@ -155,13 +161,13 @@ namespace DeviceManager
             device.uid = atoi(uid);
             device.pin = item["pin"].as<int>();
 
-            if (strncmp(type, "1wire", 7) == 0) device.type = DeviceType::OneWire;
+            if (strncmp(type, "1wire", 7) == 0) device.type = DeviceType::OneWireTemp;
             else if (strncmp(type, "DHT11", 5) == 0) device.type = DeviceType::DHT11;
             else if (strncmp(type, "DHT22", 5) == 0) device.type = DeviceType::DHT22;
             else if (strncmp(type, "DHT_AM2302", 10) == 0) device.type = DeviceType::DHT_AM2302;
             else if (strncmp(type, "DHT_RHT03", 9) == 0) device.type = DeviceType::DHT_RHT03;
             else if (strncmp(type, "FAN", 3) == 0) device.type = DeviceType::FAN;
-            else if (strncmp(type, "RF433", 5) == 0) device.type = DeviceType::RF433;
+            else if (strncmp(type, "RF433", 5) == 0) device.type = DeviceType::TX433;
             else device.type = DeviceType::Unknown;
 
             //DEBUG_UART.print("Type:"); DEBUG_UART.println((int)device.type);
@@ -195,7 +201,7 @@ namespace DeviceManager
         int cbi = 0; // current bus index
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i].type != DeviceType::OneWire) continue;
+            if (devices[i].type != DeviceType::OneWireTemp) continue;
 
             if (contains(oneWireBusPins_temp, cbi, devices[i].pin) == false)
                 oneWireBusPins_temp[cbi++] = devices[i].pin;
@@ -285,6 +291,8 @@ namespace DeviceManager
             String message = "Device Manager - LOAD JSON fail<br>" + String(lastError.c_str());
             DEBUG_UART.println(message);
         }
+        
+        
     }
 
     Device* getDeviceInfo(uint32_t uid)
@@ -301,7 +309,7 @@ namespace DeviceManager
         int count = 0;
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i].type == DeviceType::OneWire)
+            if (devices[i].type == DeviceType::OneWireTemp)
                 count++;
         }
         return count;
@@ -338,7 +346,7 @@ namespace DeviceManager
 
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i].type != DeviceType::OneWire) continue;
+            if (devices[i].type != DeviceType::OneWireTemp) continue;
             if (devices[i].romid == nullptr) continue;
 
             oneWire.begin(devices[i].pin);
@@ -356,7 +364,7 @@ namespace DeviceManager
         ret.concat("]<br>Device temperatures:<br>");
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i].type != DeviceType::OneWire) continue;
+            if (devices[i].type != DeviceType::OneWireTemp) continue;
             ret.concat("romid:"); ret.concat(ByteArrayToString(devices[i].romid, 8).c_str());
             ret.concat(", uid:"); ret.concat(devices[i].uid);
             ret.concat(", pin:"); ret.concat(devices[i].pin);
@@ -380,7 +388,7 @@ namespace DeviceManager
             DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");
             return false;
         }
-        if (device->type == DeviceType::OneWire) {
+        if (device->type == DeviceType::OneWireTemp) {
             // this don't do anything as
             // it's ensured that getAllOneWireTemperatures has been executed beforehand
             // calling this function "getValue"

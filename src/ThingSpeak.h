@@ -200,7 +200,7 @@ namespace ThingSpeak
         return result;
     }
 
-bool sendDataBackToWebbrowser = false;
+    bool sendDataBackToWebbrowser = false;
 
     void SendData()
     {
