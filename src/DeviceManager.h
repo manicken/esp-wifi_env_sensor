@@ -39,6 +39,7 @@ namespace DeviceManager
     #define DEVICE_MANAGER_URL_PRINT_DEVICES           F("/DeviceManager/printDevices")
 
     #define DEVICE_MANAGER_JSON_NAME_TYPE               "type"
+    #define DEVICE_MANAGER_JSON_NAME_DHT_TYPE           "dht"
     #define DEVICE_MANAGER_JSON_NAME_PIN                "pin"
     #define DEVICE_MANAGER_JSON_NAME_BUS                "bus"
     #define DEVICE_MANAGER_JSON_NAME_UID                "uid" // device item uid
@@ -46,6 +47,7 @@ namespace DeviceManager
     #define DEVICE_MANAGER_JSON_NAME_DESCRIPTION        "note"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_BUS  "1WB"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_TEMP "1WT"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT           "DHT"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT11         "DHT11"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT22         "DHT22"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302    "AM2302"
@@ -74,52 +76,143 @@ namespace DeviceManager
 
     enum class DHT_Type: int32_t
     {
+        Unknown = -1,
         DHT11 = 0x11,
         DHT22 = 0x22,
-        DHT_AM2302 = 0x2302,
-        DHT_RHT03 = 0x3,
+        AM2302 = 0x2302,
+        RHT03 = 0x3,
     };
 
-    // proposed new structure
-    struct BaseDevice {
+    struct OneWireBus
+    {
+        uint32_t uid;
+        uint8_t pin;
+        String ToString()
+        {
+            String str = "";
+            str.concat("uid="); str.concat(uid);
+            str.concat(", pin="); str.concat(pin);
+            return str;
+        }
+    };
+
+    struct Device {
+    protected:
+        Device() {}
+    public:
         uint32_t uid;
         DeviceType type;
         uint8_t pin;
+
+        virtual String ToString() {
+            String str;
+            str.concat("uid="); str.concat(uid);
+            str.concat(", type="); str.concat((int)type);
+            str.concat(", pin="); str.concat(pin);
+            return str;
+        }
+        
     };
-    struct OneWireDevice : public BaseDevice {
+    struct OneWireDevice : public Device {
     protected:
-        uint8_t* romid;
         OneWireDevice() {}
     public:
+        uint8_t* romid;
+        bool IsValid() { return romid != nullptr; }
         ~OneWireDevice();
     };
     struct OneWireTempDevice : public OneWireDevice {
         float value;
+        
+        OneWireTempDevice(uint32_t _uid, uint8_t _pin, const char* romid_hexstr)
+        {
+            romid = new uint8_t[8]();
+            if (convertHexToBytes(romid_hexstr, romid, 8) == false) { delete[] romid; romid = nullptr;}
+            // note later usage must allways check beforehand if romid is nullptr before use
+            type = DeviceType::OneWireTemp;
+            uid = _uid;
+            pin = _pin;
+            value = 0;
+        }
+        String ToString() override
+        {
+            String str = Device::ToString();
+            str.concat("romid="); 
+            if (romid != nullptr)
+                str.concat(ByteArrayToString(romid, 8).c_str());
+            else
+                str.concat("nullptr");
+            str.concat("value="); str.concat(value);
+        }
     };
-    struct DHTdevice : public BaseDevice {
+    struct DHTdevice : public Device {
         DHT_Type dhtType;
         float value;
+        DHTdevice(const char* dhtTypeStr, uint32_t _uid, uint8_t _pin) {
+            type = DeviceType::DHT;
+            if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT11, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT11)-1) == 0)
+                dhtType = DHT_Type::DHT11;
+            else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT22, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT22)-1) == 0)
+                dhtType = DHT_Type::DHT22;
+            else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302)-1) == 0)
+                dhtType = DHT_Type::AM2302;
+            else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03)-1) == 0)
+                dhtType = DHT_Type::RHT03;
+            else
+                dhtType = DHT_Type::Unknown;
+
+            uid = _uid;
+            pin = _pin;
+            value = 0;
+        }
+        String ToString() override
+        {
+            String str = Device::ToString();
+            str.concat("dhtType="); str.concat((int)dhtType);
+            str.concat("value="); str.concat(value);
+        }
     };
-    struct FANdevice : public BaseDevice {
+    struct PWMdevice : public Device {
         float frequency;
         uint8_t bits;
         uint8_t invOut;
+        PWMdevice(uint32_t _uid, uint8_t _pin, float _frequency, uint8_t _bits, uint8_t _invOut)
+        {
+            type = DeviceType::PWM;
+            uid = _uid;
+            pin = _pin;
+            frequency = _frequency;
+            bits = _bits;
+            invOut = _invOut;
+        }
+        String ToString() override
+        {
+            String str = Device::ToString();
+            
+            str.concat("frequency="); str.concat(frequency);
+            str.concat(", bits="); str.concat(bits);
+            str.concat(", invOut="); str.concat(invOut);
+            return str;
+        }
     };
-    struct TX433device : public BaseDevice {
-
+    struct TX433device : public Device {
+        TX433device(uint32_t _uid, uint8_t _pin)
+        {
+            type = DeviceType::TX433;
+            uid = _uid;
+            pin = _pin;
+        }
     };
     void NewStuctureTest()
     {
-        BaseDevice *owtd_ptr = new OneWireTempDevice();
+        Device *owtd_ptr = new OneWireTempDevice(0,0, "00:00:00:00:00:00:00:00");
+        
         if (owtd_ptr->type == DeviceType::OneWireTemp) {
             OneWireTempDevice& owtd = static_cast<OneWireTempDevice&>(*owtd_ptr);
         }
         delete owtd_ptr;
-
-        /// check https://chatgpt.com/c/6761deb2-23d4-800b-b837-347563ee25a9
     }
-    // end of proposed new structure
-
+/*
     struct Device {
         uint32_t uid;
         DeviceType type;
@@ -131,7 +224,7 @@ namespace DeviceManager
             int32_t intvalue;
         };
         ~Device();
-    };
+    };*/
     std::string ByteArrayToString(uint8_t* byteArray, size_t arraySize);
     bool convertHexToBytes(const char* hexString, uint8_t* byteArray, size_t arraySize);
 
@@ -145,7 +238,7 @@ namespace DeviceManager
     void reloadJSON();
 
     Device* getDeviceInfo(uint32_t uid);
-    int getTotalCountOfOneWireDevices();
+    int getTotalCountOfOneWireTempDevices();
     bool contains(int *array, size_t arraySize, uint8_t value);
     bool getAllOneWireTemperatures();
     void htmlGetAllOneWireTemperatures();
