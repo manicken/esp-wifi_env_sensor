@@ -4,9 +4,9 @@ namespace DeviceManager
 {
     std::string lastError;
 
-    //Device *devices = nullptr; // old structure
+    Device *devices = nullptr;
 
-    BaseDevice **devices = nullptr; // proposed new structure
+    BaseDevice **devices_ = nullptr; // proposed new structure
 
     uint32_t deviceCount = 0;
     int oneWireBusCount = 0;
@@ -95,15 +95,6 @@ namespace DeviceManager
         return true; // Conversion successful
     }
 
-    bool isValid_JsonDeviceItem(JsonVariant jsonItem, const char*& type) {
-        if (jsonItem == nullptr) return false;
-        if (!jsonItem.is<JsonObject>()) return false;
-        if (!jsonItem.containsKey("type")) return false;
-        if (!jsonItem["type"].is<const char*>()) return false;
-        
-        type = jsonItem["type"].as<const char*>();
-        return type != nullptr;
-    }
     bool readJson()
     {
         lastError = "";
@@ -131,34 +122,18 @@ namespace DeviceManager
             lastError = "deserialization failed: " + std::string(error.c_str());
             return false;
         }
-        if (!jsonDoc.is<JsonArray>()) {
-            lastError = "jsonDoc root is not a JsonArray\n";
+        if (!jsonDoc.is<JsonObject>()) {
+            lastError = "jsonDoc is not a valid JsonObject\n";
             return false;
         }
-        
-        if (devices != nullptr) { 
-            for (int i=0;i<deviceCount;i++) {
-                if (devices[i] != nullptr) {
-                    delete devices[i];
-                    devices[i] = nullptr;
-                }
-            }
-            delete[] devices;
-            devices = nullptr;
-        }
         deviceCount = jsonDoc.size();
-        devices = new BaseDevice*[deviceCount];
+        if (devices != nullptr) { delete[] devices; devices = nullptr;}
+        //devices = (Device*)malloc(sizeof(Device) * deviceCount);
+        devices = new Device[deviceCount];
         if (devices == nullptr){ lastError="could not allocate memory"; return false; }
 
         int currIndex = 0;
         lastError = "";
-        JsonArray jsonItems = jsonDoc.as<JsonArray>();
-        // first seach for all 1-wire bus definitions
-        for (int di=0;di<deviceCount;di++) {
-            const char* type = nullptr;
-            if (isValid_JsonDeviceItem(jsonItems[di], type) == false) continue;
-            if (strncmp(type, "1wirebus"))
-        }
         for (JsonPair kv : jsonDoc.as<JsonObject>()) {
             Device &device = devices[currIndex++];
             const char* uid = kv.key().c_str();

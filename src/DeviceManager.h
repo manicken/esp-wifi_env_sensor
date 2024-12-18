@@ -38,17 +38,46 @@ namespace DeviceManager
     #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS    F("/DeviceManager/getAll1wireTemps")
     #define DEVICE_MANAGER_URL_PRINT_DEVICES           F("/DeviceManager/printDevices")
 
+    #define DEVICE_MANAGER_JSON_NAME_TYPE               "type"
+    #define DEVICE_MANAGER_JSON_NAME_PIN                "pin"
+    #define DEVICE_MANAGER_JSON_NAME_BUS                "bus"
+    #define DEVICE_MANAGER_JSON_NAME_UID                "uid" // device item uid
+    #define DEVICE_MANAGER_JSON_NAME_ROMID              "romid" // used for one-wire devices
+    #define DEVICE_MANAGER_JSON_NAME_DESCRIPTION        "note"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_BUS  "1WB"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_TEMP "1WT"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT11         "DHT11"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT22         "DHT22"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302    "AM2302"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03     "RTH03"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_PWM           "PWM" // used for fan:s, servos, etc.
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_TX433         "TX433" // transmitter on RF @ 433MHz
+    // future types
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_ADC           "ADC"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DAC           "DAC"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DIN           "DIN"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DOUT          "DOUT"
+
     enum class DeviceType : int32_t
     {
         Unknown = -1, //static_cast<int>(0xFFFFFFFF),
         OneWireBus = 0x1B,
         OneWireTemp = 0x10,
+        DHT = 0x444854, // ascii hex for DHT
+        PWM = 0xF,
+        TX433 = 0x433,
+        ADC = 0xA1, 
+        DAC = 0xA0, // future ???
+        DIN = 0xD1, // digital input
+        DOUT = 0xD0 // digital output
+    };
+
+    enum class DHT_Type: int32_t
+    {
         DHT11 = 0x11,
         DHT22 = 0x22,
         DHT_AM2302 = 0x2302,
         DHT_RHT03 = 0x3,
-        FAN = 0xF,
-        TX433 = 0x433
     };
 
     // proposed new structure
@@ -68,6 +97,7 @@ namespace DeviceManager
         float value;
     };
     struct DHTdevice : public BaseDevice {
+        DHT_Type dhtType;
         float value;
     };
     struct FANdevice : public BaseDevice {
