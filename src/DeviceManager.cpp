@@ -1,13 +1,9 @@
 #include "DeviceManager.h"
+#include <cstdlib> // For std::strtoul
 
 namespace DeviceManager
 {
     std::string lastError;
-
-    Device **devices = nullptr;
-    uint32_t deviceCount = 0;
-    OneWireBus *oneWireBusses = nullptr;
-    int oneWireBusCount = 0;
 
 #ifdef ESP8266
     ESP8266WebServer *server = nullptr;
@@ -19,10 +15,145 @@ namespace DeviceManager
     OneWire oneWire;
     DallasTemperature dTemp(&oneWire);
 
+    /**************** OneWireBus ****************/
+    OneWireBus *oneWireBusses = nullptr;
+    int oneWireBusCount = 0;
+
+    String OneWireBus::ToString() {
+        String str = "";
+        str.concat("uid="); str.concat(uid);
+        str.concat(", pin="); str.concat(pin);
+        return str;
+    }
+    int getOneWireBusPin(int busUid)
+    {
+        if (oneWireBusCount == 0) return -1;
+        if (oneWireBusses == nullptr) return -1;
+        for (int i=0;i<oneWireBusCount;i++)
+        {
+            if (oneWireBusses[i].uid != busUid) continue;
+            return oneWireBusses[i].pin;
+        }
+        return -1;
+    }
+
+    /**************** Device (base class) ****************/
+    Device **devices = nullptr;
+    uint32_t deviceCount = 0;
+
+    String DeviceTypeToString(DeviceType type)
+    {
+        if (type == DeviceType::OneWireBus) return "OneWireBus";
+        else if (type == DeviceType::OneWireTemp) return "OneWireTemp";
+        else if (type == DeviceType::ADC) return "ADC";
+        else if (type == DeviceType::DAC) return "DAC";
+        else if (type == DeviceType::DHT) return "DHT";
+        else if (type == DeviceType::DIN) return "DIN";
+        else if (type == DeviceType::DOUT) return "DOUT";
+        else if (type == DeviceType::PWM) return "PWM";
+        else if (type == DeviceType::TX433) return "TX433";
+        else return "Unknown";
+    }
+
+    String Device::ToString() {
+        String str;
+        str.concat("uid="); str.concat(uid);
+        str.concat(", type="); str.concat(DeviceTypeToString(type));
+        str.concat(", pin="); str.concat(pin);
+        return str;
+    }
+
+    /**************** OneWireDevice ****************/
+    bool OneWireDevice::IsValid() {
+        return romid != nullptr; 
+    }
     OneWireDevice::~OneWireDevice() {
         if (romid != nullptr)
             delete[] romid;
             romid = nullptr;
+    }
+
+    /**************** OneWireTempDevice ****************/
+    OneWireTempDevice::OneWireTempDevice(uint32_t _uid, uint8_t _pin, const char* romid_hexstr)
+    {
+        romid = new uint8_t[8]();
+        if (convertHexToBytes(romid_hexstr, romid, 8) == false) { delete[] romid; romid = nullptr;}
+        // note later usage must allways check beforehand if romid is nullptr before use
+        type = DeviceType::OneWireTemp;
+        uid = _uid;
+        pin = _pin;
+        value = 0;
+    }
+    String OneWireTempDevice::ToString() {
+        String str = Device::ToString();
+        str.concat(", romid="); 
+        if (romid != nullptr)
+            str.concat(ByteArrayToString(romid, 8).c_str());
+        else
+            str.concat("nullptr");
+        str.concat(", value="); str.concat(value);
+        return str;
+    }
+
+    /**************** DHTdevice ****************/
+    DHTdevice::DHTdevice(const char* dhtTypeStr, uint32_t _uid, uint8_t _pin) {
+        type = DeviceType::DHT;
+        if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT11, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT11)-1) == 0)
+            dhtType = DHT_Type::DHT11;
+        else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT22, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT22)-1) == 0)
+            dhtType = DHT_Type::DHT22;
+        else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302)-1) == 0)
+            dhtType = DHT_Type::AM2302;
+        else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03)-1) == 0)
+            dhtType = DHT_Type::RHT03;
+        else
+            dhtType = DHT_Type::Unknown;
+
+        uid = _uid;
+        pin = _pin;
+        value = 0;
+    }
+    String DHTtypeToString(DHT_Type type)
+    {
+        if (type == DHT_Type::DHT11) return "DHT11";
+        else if (type == DHT_Type::DHT22) return "DHT22";
+        else if (type == DHT_Type::AM2302) return "AM2302";
+        else if (type == DHT_Type::RHT03) return "RHT03";
+        else return "unknown";
+    }
+    String DHTdevice::ToString()
+    {
+        String str = Device::ToString();
+        str.concat(", dhtType="); str.concat(DHTtypeToString(dhtType));
+        str.concat(", value="); str.concat(value);
+        return str;
+    }
+    
+    /**************** PWMdevice ****************/
+    PWMdevice::PWMdevice(uint32_t _uid, uint8_t _pin, float _frequency, uint8_t _bits, uint8_t _invOut)
+    {
+        type = DeviceType::PWM;
+        uid = _uid;
+        pin = _pin;
+        frequency = _frequency;
+        bits = _bits;
+        invOut = _invOut;
+    }
+    String PWMdevice::ToString()
+    {
+        String str = Device::ToString();
+        str.concat(", frequency="); str.concat(frequency);
+        str.concat(", bits="); str.concat(bits);
+        str.concat(", invOut="); str.concat(invOut);
+        return str;
+    }
+
+    /**************** TX433device ****************/
+    TX433device::TX433device(uint32_t _uid, uint8_t _pin)
+    {
+        type = DeviceType::TX433;
+        uid = _uid;
+        pin = _pin;
     }
 
     char ConvertOneNibble(uint8_t value)
@@ -86,66 +217,91 @@ namespace DeviceManager
         return true; // Conversion successful
     }
 
-    bool isValid_JsonDevice_Item(JsonVariant jsonItem, const char*& type) {
+    /**************************************************************/
+    /********************** JSON helpers **************************/
+    /**************************************************************/
+    bool isValid_JsonOneWireBus_Item(JsonVariant jsonItem)
+    {
         // TODO use lastError
-        if (jsonItem == nullptr) return false;
-        if (!jsonItem.is<JsonObject>()) return false;
-        if (!jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_TYPE)) return false;
-        if (!jsonItem[DEVICE_MANAGER_JSON_NAME_TYPE].is<const char*>()) return false;
+        if (jsonItem == nullptr) { return false; } // failsafe 
+        if (jsonItem.is<JsonObject>() == false) { return false; } // failsafe
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_PIN) == false) { return false; }
+        if (jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].is<int>() == false) { return false; }
+        return true;
+    }
+    bool isValid_JsonDevice_Item(JsonVariant jsonItem, const char*& type, uint32_t *uid) {
+        // TODO use lastError
+        if (jsonItem == nullptr) { lastError += "@isValid_JsonDevice_Item: jsonItem == nullptr"; return false; }
+        if (!jsonItem.is<JsonObject>()) { return false; }
+        if (!jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_TYPE)) { return false; }
+        if (!jsonItem[DEVICE_MANAGER_JSON_NAME_TYPE].is<const char*>()) { return false; }
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_UID) == false) { return false; }
+        // allow uid to be both a integer-number or as a string interprented as a "8 nibble ascii hex number"(32bit value)
+        if (jsonItem[DEVICE_MANAGER_JSON_NAME_UID].is<int>()) { 
+            if (uid!=nullptr) *uid = jsonItem[DEVICE_MANAGER_JSON_NAME_UID].as<int>();
+        }
+        else if (jsonItem[DEVICE_MANAGER_JSON_NAME_UID].is<const char*>()){
+            const char* uid_asciiHexString = jsonItem[DEVICE_MANAGER_JSON_NAME_UID].as<const char*>();
+            if (uid_asciiHexString == nullptr) { return false; }
+            char* endptr = nullptr;
+            if (uid!=nullptr) { 
+                *uid = static_cast<uint32_t>(std::strtoul(uid_asciiHexString, &endptr, 16));
+                if (endptr == uid_asciiHexString) {
+                    lastError += "Error @ isValid_JsonDevice_Item: No valid conversion could be performed (invalid input).\n";
+                } else if (*endptr != '\0') {
+                    lastError += "Warning @ isValid_JsonDevice_Item: Additional characters after number: ";
+                    lastError += std::string(endptr);
+                    lastError += "\n";
+                }
+            }
+
+        }
+        else {
+            if (uid!=nullptr) *uid = 0;
+            lastError += "@isValid_JsonDevice_Item: uid is either a number or a valid ascii hex number\n";
+            return false;
+        }
         
         type = jsonItem[DEVICE_MANAGER_JSON_NAME_TYPE].as<const char*>();
         return type != nullptr;
     }
-    bool isValid_JsonOneWireBus_Item(JsonVariant jsonItem)
-    {
-        // TODO use lastError
-        if (jsonItem == nullptr) return false; // failsafe
-        if (jsonItem.is<JsonObject>() == false) return false; // failsafe
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_UID) == false) return false;
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_PIN) == false) return false;
-        if (jsonItem[DEVICE_MANAGER_JSON_NAME_UID].is<int>() == false) return false;
-        if (jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].is<int>() == false) return false;
-        return true;
-    }
-    bool isValid_JsonOneWireTemp_Item(JsonVariant jsonItem, const char*& romid)
-    {
-        // TODO use lastError
-        if (jsonItem == nullptr) return false; // failsafe
-        if (jsonItem.is<JsonObject>() == false) return false; // failsafe
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_UID) == false) return false;
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_BUS) == false) return false;
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_ROMID) == false) return false;
-        if (jsonItem[DEVICE_MANAGER_JSON_NAME_UID].is<int>() == false) return false;
-        if (jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].is<int>() == false) return false;
-
-        romid = jsonItem[DEVICE_MANAGER_JSON_NAME_ROMID].as<const char*>();
-        return romid != nullptr;
-    }
     bool isValid_JsonDHT_Item(JsonVariant jsonItem, const char*& dhtType)
     {
         // TODO use lastError
-        if (jsonItem == nullptr) return false; // failsafe
-        if (jsonItem.is<JsonObject>() == false) return false; // failsafe
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_UID) == false) return false;
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_PIN) == false) return false;
-        if (jsonItem[DEVICE_MANAGER_JSON_NAME_UID].is<int>() == false) return false;
-        if (jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].is<int>() == false) return false;
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_DHT_TYPE) == false) return false;
+        if (jsonItem == nullptr) { return false; } // failsafe
+        if (jsonItem.is<JsonObject>() == false) { return false; } // failsafe
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_PIN) == false) { return false; }
+        if (jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].is<int>() == false) { return false; }
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_DHT_TYPE) == false) { return false; }
 
         dhtType = jsonItem[DEVICE_MANAGER_JSON_NAME_DHT_TYPE].as<const char*>();
         return dhtType != nullptr;
     }
-
-    int getOneWireBusPin(int busUid)
+    bool isValid_JsonOneWireTemp_Item(JsonVariant jsonItem, const char*& romid, uint32_t *bus)
     {
-        if (oneWireBusCount == 0) return -1;
-        if (oneWireBusses == nullptr) return -1;
-        for (int i=0;i<oneWireBusCount;i++)
-        {
-            if (oneWireBusses[i].uid != busUid) continue;
-            return oneWireBusses[i].pin;
+        // TODO use lastError
+        if (jsonItem == nullptr) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem == nullptr\n"; return false; } // failsafe
+        if (jsonItem.is<JsonObject>() == false) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem.is<JsonObject>() == false\n"; return false; } // failsafe
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_BUS) == false) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_BUS) == false\n"; return false; }
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_ROMID) == false) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_ROMID) == false\n"; return false; }
+
+        // allow uid to be both a integer-number or as a string interprented as a "8 nibble ascii hex number"(32bit value)
+        if (jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].is<int>()) { 
+            if (bus!=nullptr) *bus = jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].as<int>();
         }
-        return -1;
+        else if (jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].is<const char*>()){
+            const char* bus_asciiHexString = jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].as<const char*>();
+            if (bus_asciiHexString == nullptr) { lastError += "isValid_JsonOneWireTemp_Item: bus_asciiHexString == nullptr\n"; return false; }
+            if (bus!=nullptr) *bus = static_cast<uint32_t>(std::strtoul(bus_asciiHexString, nullptr, 16));
+        }
+        else {
+            if (bus!=nullptr) *bus = 0;
+            lastError += "isValid_JsonOneWireTemp_Item: bus uid is either a number or a ascii hex value\n";
+            return false;
+        }
+
+        romid = jsonItem[DEVICE_MANAGER_JSON_NAME_ROMID].as<const char*>();
+        return romid != nullptr;
     }
 
     bool readJson()
@@ -168,13 +324,14 @@ namespace DeviceManager
             lastError = "error could not load json file";
             return false;
         }
-        DynamicJsonDocument jsonDoc(size);
+        DynamicJsonDocument jsonDoc(size*2);
         DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
         if (error)
         {
             lastError = "deserialization failed: " + std::string(error.c_str());
             return false;
         }
+        DEBUG_UART.print("jsonDoc.memoryUsage="); DEBUG_UART.print(jsonDoc.memoryUsage()); DEBUG_UART.print(" of "); DEBUG_UART.println(jsonDoc.capacity());
         if (!jsonDoc.is<JsonArray>()) {
             lastError = "jsonDoc root is not a JsonArray\n";
             return false;
@@ -215,19 +372,20 @@ namespace DeviceManager
         int currIndex = 0;
         for (int di = 0; di < jsonItemCount && currIndex < oneWireBusCount; di++) {
             const char* type = nullptr;
-            if (isValid_JsonDevice_Item(jsonItems[di], type) == false) continue;
+            uint32_t uid = 0;
+            if (isValid_JsonDevice_Item(jsonItems[di], type, &uid) == false) { lastError += "isValid_JsonDevice_Item == false\n"; continue; }
             if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_BUS, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_BUS)-1) == 0)
             {
                 if (isValid_JsonOneWireBus_Item(jsonItems[di]) == false) continue;
                 // here isValid_JsonOneWireBusItem have verified that the values can be retreived safely
-                oneWireBusses[currIndex].uid = jsonItems[di][DEVICE_MANAGER_JSON_NAME_UID].as<int>();
+                oneWireBusses[currIndex].uid = uid;
                 oneWireBusses[currIndex].pin = jsonItems[di][DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
                 currIndex++;
             }
         }
 
         // *** third add all endpoint devices ***
-        // cleanup
+        // cleanup of prev device list if existent
         if (devices != nullptr) { 
             for (int i=0;i<deviceCount;i++) {
                 if (devices[i] != nullptr) {
@@ -241,31 +399,57 @@ namespace DeviceManager
         deviceCount = newDeviceCount;
         devices = new Device*[deviceCount];
         if (devices == nullptr) { lastError="could not allocate memory for device list"; return false; }
+        // Initialize all pointers to nullptr
+        for (int di=0;di<deviceCount;di++)
+            devices[di] = nullptr;
+
         currIndex = 0;
         for (int di = 0; di < jsonItemCount && currIndex < deviceCount; di++) {
             const char* type = nullptr;
-            if (isValid_JsonDevice_Item(jsonItems[di], type) == false) continue;
+            uint32_t uid = 0;
+            JsonVariant jsonItem = jsonItems[di];
+            if (isValid_JsonDevice_Item(jsonItem, type, &uid) == false) continue;
+
             if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_TEMP, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_TEMP)-1) == 0)
             {
                 const char* romid = nullptr;
-                if (isValid_JsonOneWireTemp_Item(jsonItems[di], romid) == false) { devices[currIndex++] = nullptr; continue; }
+                uint32_t busUid = 0;
+                if (isValid_JsonOneWireTemp_Item(jsonItem, romid, &busUid) == false) { devices[currIndex++] = nullptr; lastError+="not valid JsonOneWireTemp Item\n"; continue; }
                 // here isValid_JsonOneWireTempItem have verified that the values can be retreived safely
-                int busUid = jsonItems[di][DEVICE_MANAGER_JSON_NAME_BUS].as<int>();
+
                 int pin = getOneWireBusPin(busUid);
-                if (pin == -1) { devices[currIndex++] = nullptr; continue; }
-                int uid = jsonItems[di][DEVICE_MANAGER_JSON_NAME_UID].as<int>();
-                
+                if (pin == -1) { devices[currIndex++] = nullptr; lastError += "could not get onewire bus pin\n"; continue; }
                 devices[currIndex++] = new OneWireTempDevice(uid, pin, romid);
             }
             else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_DHT, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT)-1) == 0)
             {
                 const char* dhtTypeStr = nullptr;
-                if (isValid_JsonDHT_Item(jsonItems[di], dhtTypeStr) == false) { devices[currIndex++] = nullptr; continue; }
+                if (isValid_JsonDHT_Item(jsonItem, dhtTypeStr) == false) { devices[currIndex++] = nullptr; continue; }
                 // here isValid_JsonDHT_Item have verified that the values can be retreived safely
-                int uid = jsonItems[di][DEVICE_MANAGER_JSON_NAME_UID].as<int>();
-                int pin = jsonItems[di][DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
+                int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
 
                 devices[currIndex++] = new DHTdevice(dhtTypeStr, uid, pin);
+            }
+            else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_PWM, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_PWM)-1) == 0)
+            {
+                // TODO add isValid_JsonPWM_Item function
+                int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
+                int freq = jsonItem[DEVICE_MANAGER_JSON_NAME_PWM_FREQ].as<int>();
+                int bits = jsonItem[DEVICE_MANAGER_JSON_NAME_PWM_BITS].as<int>();
+                int invOut = jsonItem[DEVICE_MANAGER_JSON_NAME_PWM_INV_OUT].as<int>();
+                devices[currIndex++] = new PWMdevice(uid, pin, freq, bits, invOut);
+            }
+            else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_TX433, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_TX433)-1) == 0)
+            {
+                // TODO add isValid_JsonTX433_Item function
+                int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
+                devices[currIndex++] = new TX433device(uid, pin);
+            }
+            else
+            {
+                lastError += "invalid device type: ";
+                lastError += type;
+                lastError += "\n";
             }
         }
 
@@ -283,6 +467,7 @@ namespace DeviceManager
             for (int owbi=0;owbi<oneWireBusCount;owbi++)
             {
                 ret.concat("index="); ret.concat(owbi);
+                ret.concat(", ");
                 ret.concat(oneWireBusses[owbi].ToString());
                 ret.concat("<br>");
             }
@@ -423,10 +608,10 @@ namespace DeviceManager
 #endif
         for (int i=0;i<oneWireBusCount;i++)
         {
-            oneWire.begin(oneWireBusPins[i]);
+            oneWire.begin(oneWireBusses[i].pin);
             dTemp.requestTemperatures();
 #ifdef BUSSES_DEV_PRINT
-            getAllOneWireTemperatures_busses_debug_print.concat(oneWireBusPins[i]);
+            getAllOneWireTemperatures_busses_debug_print.concat(oneWireBusses[i].pin);
             if (i<oneWireBusCount-1)
                 getAllOneWireTemperatures_busses_debug_print.concat(",");
 #endif
@@ -435,11 +620,13 @@ namespace DeviceManager
 
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i].type != DeviceType::OneWireTemp) continue;
-            if (devices[i].romid == nullptr) continue;
+            if (devices[i] == nullptr) continue;
+            if (devices[i]->type != DeviceType::OneWireTemp) continue;
+            OneWireTempDevice& owtd = static_cast<OneWireTempDevice&>(*devices[i]);
+            if (owtd.romid == nullptr) continue;
 
-            oneWire.begin(devices[i].pin);
-            devices[i].fvalue = dTemp.getTempC(devices[i].romid);
+            oneWire.begin(owtd.pin);
+            owtd.value = dTemp.getTempC(owtd.romid);
         }
         return true;
     }
@@ -453,22 +640,15 @@ namespace DeviceManager
         ret.concat("]<br>Device temperatures:<br>");
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i].type != DeviceType::OneWireTemp) continue;
-            ret.concat("romid:"); ret.concat(ByteArrayToString(devices[i].romid, 8).c_str());
-            ret.concat(", uid:"); ret.concat(devices[i].uid);
-            ret.concat(", pin:"); ret.concat(devices[i].pin);
-            ret.concat(", temp:"); ret.concat(devices[i].fvalue);
+            if (devices[i] == nullptr) continue;
+            if (devices[i]->type != DeviceType::OneWireTemp) continue;
+            OneWireTempDevice& owtd = static_cast<OneWireTempDevice&>(*devices[i]);
+            ret.concat(owtd.ToString());
             ret.concat("<br>");
         }
         server->send(200, "text/html", ret);
     }
-    /*
-    TODO make it so that multiple devices can start to get it's value at the same time, thus make it non blocking for a lot of devices
-    even 8 ds18b20 takes 6 sec to convert all
-    this can be solved by start a conversion on all 1wire busses that is defined in the device list (json) at once
-    then each value can be stored into the internal device list, and later be retreived one by one 
-    by the higher layer (thingspeak for example)
-    */
+
     bool getValue(uint32_t uid, float* value)
     {
         if (value == nullptr) return false; // no point of doing anything if value ptr is null

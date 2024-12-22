@@ -151,20 +151,28 @@ namespace ThingSpeak
                     lastError += "fieldIndex out of bounds: " + std::to_string(fieldIndex) + "\n";
                     continue;
                 }
-                if (fkv.value().is<const char*>() == false) {
-                    lastError+="uid is not a string value @ fieldIndex key:" + std::to_string(fieldIndex) + "\n";
+                uint32_t uid = 0;
+                if (fkv.value().is<int>()) {
+                    uid = fkv.value().as<int>();
+                }
+                else if (fkv.value().is<const char*>()) {
+                    const char* uid_asciiHexString = fkv.value().as<const char*>();
+                    if (uid_asciiHexString == nullptr) { lastError+="uid could not convert to a string @ fieldIndex key:" + std::to_string(fieldIndex) + "\n"; return false; }
+                    char* endptr = nullptr;
+                    uid = static_cast<uint32_t>(std::strtoul(uid_asciiHexString, &endptr, 16));
+                    if (endptr == uid_asciiHexString) {
+                        lastError += "Error @ thingspead readjson: No valid conversion could be performed (invalid input).\n";
+                    } else if (*endptr != '\0') {
+                        lastError += "Warning @ thingspead readjson: Additional characters after number: ";
+                        lastError += std::string(endptr);
+                        lastError += "\n";
+                    }
+                }
+                else {
+                    lastError+="uid is either a number of a ascii hex string value @ fieldIndex key:" + std::to_string(fieldIndex) + "\n";
                     continue;
                 }
-                const char* uidStr = fkv.value().as<const char*>();
-                if (uidStr == nullptr) {
-                    lastError+="uid could not convert to a string value @ fieldIndex key:" + std::to_string(fieldIndex) + "\n";
-                    continue;
-                }
-                if (isInteger(uidStr) == false) {
-                    lastError+="uidStr is not a integer @ fieldIndex:" + std::to_string(fieldIndex) + "\n";
-                    continue;
-                }
-                int uid = atoi(uidStr);
+                
                 channel.uids[fieldIndex-1] = uid;
             }
         }

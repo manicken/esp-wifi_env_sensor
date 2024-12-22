@@ -60,6 +60,11 @@ namespace DeviceManager
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DIN           "DIN"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DOUT          "DOUT"
 
+    #define DEVICE_MANAGER_JSON_NAME_PWM_FREQ           "freq"
+    #define DEVICE_MANAGER_JSON_NAME_PWM_BITS           "bits"
+    #define DEVICE_MANAGER_JSON_NAME_PWM_FREQ           "freq"
+    #define DEVICE_MANAGER_JSON_NAME_PWM_INV_OUT        "invOut"
+
     enum class DeviceType : int32_t
     {
         Unknown = -1, //static_cast<int>(0xFFFFFFFF),
@@ -87,144 +92,55 @@ namespace DeviceManager
     {
         uint32_t uid;
         uint8_t pin;
-        String ToString()
-        {
-            String str = "";
-            str.concat("uid="); str.concat(uid);
-            str.concat(", pin="); str.concat(pin);
-            return str;
-        }
+        String ToString();
     };
 
     struct Device {
-    protected:
+      protected:
         Device() {}
-    public:
+      public:
         uint32_t uid;
         DeviceType type;
         uint8_t pin;
 
-        virtual String ToString() {
-            String str;
-            str.concat("uid="); str.concat(uid);
-            str.concat(", type="); str.concat((int)type);
-            str.concat(", pin="); str.concat(pin);
-            return str;
-        }
-        
+        virtual String ToString();
     };
+    
     struct OneWireDevice : public Device {
-    protected:
+      protected:
         OneWireDevice() {}
-    public:
+      public:
         uint8_t* romid;
-        bool IsValid() { return romid != nullptr; }
+        bool IsValid();
         ~OneWireDevice();
     };
+
     struct OneWireTempDevice : public OneWireDevice {
         float value;
         
-        OneWireTempDevice(uint32_t _uid, uint8_t _pin, const char* romid_hexstr)
-        {
-            romid = new uint8_t[8]();
-            if (convertHexToBytes(romid_hexstr, romid, 8) == false) { delete[] romid; romid = nullptr;}
-            // note later usage must allways check beforehand if romid is nullptr before use
-            type = DeviceType::OneWireTemp;
-            uid = _uid;
-            pin = _pin;
-            value = 0;
-        }
-        String ToString() override
-        {
-            String str = Device::ToString();
-            str.concat("romid="); 
-            if (romid != nullptr)
-                str.concat(ByteArrayToString(romid, 8).c_str());
-            else
-                str.concat("nullptr");
-            str.concat("value="); str.concat(value);
-        }
+        OneWireTempDevice(uint32_t _uid, uint8_t _pin, const char* romid_hexstr);
+        String ToString() override;
     };
+
     struct DHTdevice : public Device {
         DHT_Type dhtType;
         float value;
-        DHTdevice(const char* dhtTypeStr, uint32_t _uid, uint8_t _pin) {
-            type = DeviceType::DHT;
-            if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT11, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT11)-1) == 0)
-                dhtType = DHT_Type::DHT11;
-            else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT22, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT22)-1) == 0)
-                dhtType = DHT_Type::DHT22;
-            else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT_AM2302)-1) == 0)
-                dhtType = DHT_Type::AM2302;
-            else if (strncmp(dhtTypeStr, DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03)-1) == 0)
-                dhtType = DHT_Type::RHT03;
-            else
-                dhtType = DHT_Type::Unknown;
-
-            uid = _uid;
-            pin = _pin;
-            value = 0;
-        }
-        String ToString() override
-        {
-            String str = Device::ToString();
-            str.concat("dhtType="); str.concat((int)dhtType);
-            str.concat("value="); str.concat(value);
-        }
+        DHTdevice(const char* dhtTypeStr, uint32_t _uid, uint8_t _pin);
+        String ToString() override;
     };
+
     struct PWMdevice : public Device {
         float frequency;
         uint8_t bits;
         uint8_t invOut;
-        PWMdevice(uint32_t _uid, uint8_t _pin, float _frequency, uint8_t _bits, uint8_t _invOut)
-        {
-            type = DeviceType::PWM;
-            uid = _uid;
-            pin = _pin;
-            frequency = _frequency;
-            bits = _bits;
-            invOut = _invOut;
-        }
-        String ToString() override
-        {
-            String str = Device::ToString();
-            
-            str.concat("frequency="); str.concat(frequency);
-            str.concat(", bits="); str.concat(bits);
-            str.concat(", invOut="); str.concat(invOut);
-            return str;
-        }
+        PWMdevice(uint32_t _uid, uint8_t _pin, float _frequency, uint8_t _bits, uint8_t _invOut);
+        String ToString() override;
     };
+
     struct TX433device : public Device {
-        TX433device(uint32_t _uid, uint8_t _pin)
-        {
-            type = DeviceType::TX433;
-            uid = _uid;
-            pin = _pin;
-        }
+        TX433device(uint32_t _uid, uint8_t _pin);
     };
-    void NewStuctureTest()
-    {
-        Device *owtd_ptr = new OneWireTempDevice(0,0, "00:00:00:00:00:00:00:00");
-        
-        if (owtd_ptr->type == DeviceType::OneWireTemp) {
-            OneWireTempDevice& owtd = static_cast<OneWireTempDevice&>(*owtd_ptr);
-        }
-        delete owtd_ptr;
-    }
-/*
-    struct Device {
-        uint32_t uid;
-        DeviceType type;
-        uint8_t pin;
-        uint8_t* romid; // only used for oneWire
-        union {
-            float fvalue;
-            uint32_t uintvalue;
-            int32_t intvalue;
-        };
-        ~Device();
-    };*/
+
     std::string ByteArrayToString(uint8_t* byteArray, size_t arraySize);
     bool convertHexToBytes(const char* hexString, uint8_t* byteArray, size_t arraySize);
 
@@ -233,6 +149,12 @@ namespace DeviceManager
 #elif defined(ESP32)
     void setup(fs_WebServer &srv);
 #endif
+
+    // JSON helpers
+    bool isValid_JsonOneWireBus_Item(JsonVariant jsonItem);
+    bool isValid_JsonDevice_Item(JsonVariant jsonItem, const char*& type, uint32_t *uid = nullptr);
+    bool isValid_JsonOneWireTemp_Item(JsonVariant jsonItem, const char*& romid, uint32_t *bus);
+    bool isValid_JsonDHT_Item(JsonVariant jsonItem, const char*& dhtType);
 
     bool readJson();
     void reloadJSON();
