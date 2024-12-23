@@ -54,6 +54,7 @@ namespace DeviceManager
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DHT_RHT03     "RTH03"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_PWM           "PWM" // used for fan:s, servos, etc.
     #define DEVICE_MANAGER_JSON_NAME_TYPE_TX433         "TX433" // transmitter on RF @ 433MHz
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_NEO_PIXEL     "NEOPIX"
     // future types
     #define DEVICE_MANAGER_JSON_NAME_TYPE_ADC           "ADC"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DAC           "DAC"
@@ -139,6 +140,16 @@ namespace DeviceManager
 
     struct TX433device : public Device {
         TX433device(uint32_t _uid, uint8_t _pin);
+    };
+
+    enum class NEOPIXEL_Type {
+        WS2811 = 0x2811,
+        WS2812 = 0x2812,
+
+    };
+    struct NEOPIXELdevice : public Device {
+        NEOPIXEL_Type subType;
+        NEOPIXELdevice(uint32_t _uid, uint8_t _pin, NEOPIXEL_Type _subType);
     };
 
     std::string ByteArrayToString(uint8_t* byteArray, size_t arraySize);
