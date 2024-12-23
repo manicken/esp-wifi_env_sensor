@@ -14,6 +14,7 @@ namespace DeviceManager
     DHTesp dht;
     OneWire oneWire;
     DallasTemperature dTemp(&oneWire);
+    
 
     /**************** OneWireBus ****************/
     OneWireBus *oneWireBusses = nullptr;
