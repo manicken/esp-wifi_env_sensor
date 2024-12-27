@@ -11,10 +11,11 @@
 #include "DeviceManager.h"
 
 //#define TS_DEBUG_PRINT_AFTER_JSON_READ
-//#define THINGSPEAK_DEBUG_OUTPUT_ONLY
 
 namespace ThingSpeak
 {
+    int debug_dont_send_to_server = 0;
+    int debug_output = 0;
     std::string lastError;
 
     #ifdef ESP8266
@@ -27,6 +28,7 @@ namespace ThingSpeak
      
     const char TS_ROOT_URL[] = "http://api.thingspeak.com/update?api_key=";
 
+    #define TS_ACTIVITY_LED_PIN            5
     #define TS_FILES_PATH                  F("/thingspeak")
     #define TS_CONFIG_JSON_FILE            F("/thingspeak/cfg.json")
     #define TS_CONFIG_JSON_FILE_URL_RELOAD F("/thingspeak/refresh")
@@ -125,6 +127,17 @@ namespace ThingSpeak
                 lastError+="could not get api_key_str @ currChIndex:" + std::to_string(currChIndex);
                 continue;
             }
+            if (strncmp(api_key_str, "debug", 5) == 0) {
+                if (ckv.value() == nullptr) continue; // no error print here
+                if (ckv.value().is<JsonObject>() == false) continue; // no error print here
+                JsonVariant debug = ckv.value();
+                if (debug.containsKey("dont_send_to_server")) debug_dont_send_to_server = 1;
+                else debug_dont_send_to_server = 0;
+                if (debug.containsKey("debug_output")) debug_output = 1;
+                else debug_output = 0;
+
+                continue;
+            }
             channel.api_write_key = std::string(api_key_str);
             if (ckv.value() == nullptr) {
                 lastError+="json object value is null @ currChIndex:" + std::to_string(currChIndex) + "\n";
@@ -212,12 +225,15 @@ namespace ThingSpeak
 
     void SendData()
     {
+        digitalWrite(TS_ACTIVITY_LED_PIN, HIGH); // TODO move this and make it more customaziable
         //DEBUG_UART.println("TS SendData");
         if (channels == nullptr) return;
         if (DeviceManager::getAllOneWireTemperatures() == false) return;
 
         for (int ci=0;ci<channelCount;ci++)
         {
+            if (channels[ci].api_write_key.size() == 0) continue;
+
             std::string fieldData = "";
             for (int fi=0;fi<8;fi++)
             {
@@ -228,23 +244,25 @@ namespace ThingSpeak
             }
             if (fieldData.length() == 0) continue;
             std::string urlApi = TS_ROOT_URL + channels[ci].api_write_key + fieldData;
-#ifndef THINGSPEAK_DEBUG_OUTPUT_ONLY
-            http.begin(wifiClient, urlApi.c_str());
-            
-            int httpCode = http.GET();
-            if (httpCode > 0) DEBUG_UART.println(F("[OK]\r\n"));
-            else DEBUG_UART.println(F("[FAIL]\r\n"));
 
-            http.end();
-#else
-            DEBUG_UART.println(urlApi.c_str());
-            
-#endif
+            if (debug_dont_send_to_server == 0) {
+                http.begin(wifiClient, urlApi.c_str());
+                
+                int httpCode = http.GET();
+                if (httpCode > 0) DEBUG_UART.println(F("[OK]\r\n"));
+                else DEBUG_UART.println(F("[FAIL]\r\n"));
+
+                http.end();
+            }
+            if (debug_output == 1) {
+                DEBUG_UART.println(urlApi.c_str());
+            }
             if (sendDataBackToWebbrowser) {
                 sendDataBackToWebbrowser = false;
                 server->send(200, "text/html", urlApi.c_str()); // in case the request is from a url to test
             }
         }
+        digitalWrite(TS_ACTIVITY_LED_PIN, LOW); // TODO move this and make it more customaziable
 
     }
 
@@ -271,5 +289,6 @@ namespace ThingSpeak
         srv.on(TS_CONFIG_JSON_FILE_URL_RELOAD, reloadJson);
         srv.on(TS_URL_SEND_DATA, htmlSendDataTest);
         readJson();
+        pinMode(TS_ACTIVITY_LED_PIN, OUTPUT);
     }
 }

@@ -159,8 +159,12 @@ void Timer_SyncTime() {
 void Timer_SendEnvData()
 {
     DEBUG_UART.println("Timer_SendEnvData");
-    if (ThingSpeak::canPost)
+
+    if (ThingSpeak::canPost) {
+        
         ThingSpeak::SendData();//temp_ds, humidity_dht);
+
+    }
 }
 
 void Alarm_SetFanSpeed(const OnTickExtParameters *param)
@@ -242,6 +246,8 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
 /**************************************************************************/
 /**************************************************************************/
 void setup() {
+
+    
 
     FAN::init();
 DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
