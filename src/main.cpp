@@ -58,6 +58,8 @@
 #include "DeviceManager.h"
 #include "Time_ext.h"
 
+#include "HearbeatLed.h"
+
 #define MAIN_URLS_JSON_CMD              F("/json_cmd")
 #define MAIN_URLS_INFO                  F("/info")
 #define MAIN_URLS_FORMAT_LITTLE_FS      F("/formatLittleFs")
@@ -125,38 +127,7 @@ unsigned long deltaTime_displayUpdate = 0;
 unsigned long deltaTime_sendToWebUpdate = 0;
 unsigned long deltaTime_sendToAwsIot = 0;
 
-const int ledPin = 2;
-int ledState = LOW;             // ledState used to set the LED
-unsigned long previousMillis = 0;        // will store last time LED was updated
-unsigned long currentMillis = 0;
-unsigned long currentInterval = 0;
-unsigned long ledBlinkOnInterval = 100;
-unsigned long ledBlinkOffInterval = 2000;
 
-void blinkLedTask(void)
-{
-    currentMillis = millis();
-    currentInterval = currentMillis - previousMillis;
-    
-    if (ledState == LOW)
-    {
-        if (currentInterval > ledBlinkOffInterval)
-        {
-            previousMillis = currentMillis;
-            ledState = HIGH;
-            digitalWrite(ledPin, HIGH);
-        }
-    }
-    else
-    {
-        if (currentInterval > ledBlinkOnInterval)
-        {
-            previousMillis = currentMillis;
-            ledState = LOW;
-            digitalWrite(ledPin, LOW);
-        }
-    }
-}
 
 //DHTesp dht;
 //float temp_dht = 0;
@@ -312,7 +283,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
 DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
 
-    pinMode(2, OUTPUT);
+    HeartbeatLed::init();
 }
 
 void loop() {
@@ -326,7 +297,7 @@ void loop() {
 
     //currTime = millis();
 
-    blinkLedTask();
+    HeartbeatLed::task();
 /*
     if (millis() - deltaTime_displayUpdate >= 1000) {
         deltaTime_displayUpdate = millis();

@@ -1,37 +1,16 @@
-
-// when type is 1wire and romid is missing, it could define which 1wire busses that exists
-// so that one can predefine which pins that should be used for 1wire devices
-// this could be used to scan for and list all available 1wire devices
-// and also when adding new 1wire devices, it can be used for autodetection of newly added devices
-// or to list device romid:s that are not yet added to the DeviceManager list
-{
-	"-1":{"type":"1wire","pin":25},
-	"-2":{"type":"1wire","pin":26},
-	"-3":{"type":"1wire","pin":32},
-	"0":{"type":"1wire","pin":32,"romid":"28:61:64:35:1B:71:C1:40","description":"temp ute1"},
-	"1":{"type":"1wire","pin":32,"romid":"28:61:64:35:1B:68:91:C5","description":"temp ute2"},
-	"2":{"type":"1wire","pin":25,"romid":"28:61:64:35:1B:75:6B:AA","description":"temp inne1"},
-	"3":{"type":"1wire","pin":26,"romid":"28:87:17:43:d4:bd:0a:46","description":"temp jord 10cm"},
-	"4":{"type":"1wire","pin":26,"romid":"28:F0:5F:43:D4:CD:3C:59","description":"temp jord 30cm"},
-	"5":{"type":"DHT11","pin":27,"description":"fuktighet inne"},
-	"6":{"type":"DHT11","pin":18,"description":"fuktighet ute"},
-	"7":{"type":"1wire","pin":25,"romid":"28:61:64:35:18:27:D4:DB","description":"temp inne2"},
-	"8":{"type":"FAN","pin":19,"description":"främre takfläkt"},
-  "9":{"type":"RF433","pin":37,"description":"till fjärrstyrning"}
-}
-// there should also be a temp correction value
-// also the "one wire temp" type should be: 1WT (1-wire temp)
-// RF433 should be TX433RF for clarification
-{
-	"251":{"type":"1wire","pin":25,"tempCorr":-0.5,"romid":"28:61:64:35:18:20:9E:8D","description":"temp inne uppe"},
-	  "252":{"type":"1wire","pin":25,"romid":"28:61:64:35:18:27:D4:DB","description":"temp inne nere"},
-	  "261":{"type":"1wire","pin":26,"romid":"28:87:17:43:d4:bd:0a:46","description":"temp ute fram"},
-	  "262":{"type":"1wire","pin":26,"romid":"28:F0:5F:43:D4:CD:3C:59","description":"temp ute bak"},
-	  "263":{"type":"1wire","pin":26,"romid":"28:61:64:35:18:21:D5:2F","description":"temp inne mitten"},
-	  "321":{"type":"1wire","pin":32,"romid":"28:61:64:35:18:18:C3:F0","description":"temp inne jord 10cm"},
-	  "322":{"type":"1wire","pin":32,"romid":"28:61:64:35:18:1F:79:D2","description":"temp inne jord 30cm"},
-	  "27":{"type":"DHT11","pin":27,"description":"fuktighet inne"},
-	  "18":{"type":"DHT11","pin":18,"description":"fuktighet ute"},
-	  "19":{"type":"FAN","pin":19,"description":"främre takfläkt"},
-	"37":{"type":"RF433","pin":37,"description":"till fjärrstyrning"}
-  }
+[
+	{"uid":"1B1","type":"1WB","pin":25},
+	{"uid":"1B2","type":"1WB","pin":26},
+	{"uid":"1B3","type":"1WB","pin":32},
+	{"uid":"1D1","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:20:9E:8D","note":"temp inne uppe"},
+	{"uid":"1D2","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:27:D4:DB","note":"temp inne nere"},
+	{"uid":"1D3","type":"1WT","bus":"1B2","romid":"28:87:17:43:d4:bd:0a:46","note":"temp ute fram"},
+	{"uid":"1D4","type":"1WT","bus":"1B2","romid":"28:F0:5F:43:D4:CD:3C:59","note":"temp ute bak"},
+	{"uid":"1D5","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:21:D5:2F","note":"temp inne mitten"},
+	{"uid":"1D6","type":"1WT","bus":"1B3","romid":"28:61:64:35:18:18:C3:F0","note":"temp inne jord 10cm"},
+	{"uid":"1D7","type":"1WT","bus":"1B3","romid":"28:61:64:35:18:1F:79:D2","note":"temp inne jord 30cm"},
+	{"uid":27,"type":"DHT","dht":"DHT11","pin":27,"note":"fuktighet inne"},
+	{"uid":18,"type":"DHT","dht":"DHT11","pin":18,"note":"fuktighet ute"},
+	{"uid":19,"type":"PWM","pin":19,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
+	{"uid":37,"type":"TX433","pin":37,"note":"till fjärrstyrning"}
+  ]

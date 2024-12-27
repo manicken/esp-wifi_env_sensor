@@ -10,8 +10,8 @@
 
 #include "DeviceManager.h"
 
-#define TS_DEBUG_PRINT_AFTER_JSON_READ
-#define THINGSPEAK_DEBUG_OUTPUT_ONLY
+//#define TS_DEBUG_PRINT_AFTER_JSON_READ
+//#define THINGSPEAK_DEBUG_OUTPUT_ONLY
 
 namespace ThingSpeak
 {
