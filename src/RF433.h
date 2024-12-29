@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 namespace RF433 {
-    uint8_t pin = 14;
+    uint8_t pin = 18;
 
     #define RF433_FC_SHORT 470   // fixed code short
     #define RF433_FC_LONG  1410  // fixed code long

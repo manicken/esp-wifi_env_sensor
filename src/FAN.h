@@ -5,7 +5,7 @@
 
 namespace FAN {
 
-    uint8_t pin = 15;
+    uint8_t pin = 19;
     uint32_t freq = 25000;
     uint32_t value = 1;
     uint8_t resolution = 8;
