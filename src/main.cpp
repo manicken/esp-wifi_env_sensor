@@ -60,6 +60,8 @@
 
 #include "HearbeatLed.h"
 
+#include <SD_MMC.h>
+
 #define MAIN_URLS_JSON_CMD              F("/json_cmd")
 #define MAIN_URLS_INFO                  F("/info")
 #define MAIN_URLS_FORMAT_LITTLE_FS      F("/formatLittleFs")
@@ -246,7 +248,6 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
 /**************************************************************************/
 /**************************************************************************/
 void setup() {
-
     
 
     FAN::init();
@@ -286,10 +287,52 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     //std::string ret = NPF::searchPatternInhtmlFromUrl();
     // DEBUG_UART.println(ret.c_str());
 #endif
-DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
-    DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
+
 
     HeartbeatLed::init();
+    pinMode(23, OUTPUT);
+    digitalWrite(23, HIGH); // enable pullup on IO2(SD_D0), IO12(SD_D2)
+    delay(10);
+    log_e("SD-card initialialize...");
+    //DEBUG_UART.println("SD-card initialialize...");
+    
+    if (SD_MMC.begin("/sdcard", false, false, 40000)) {
+        DEBUG_UART.println("SD-card initialized OK");
+        DEBUG_UART.print("SD card size:"); DEBUG_UART.println(SD_MMC.cardSize());
+        DEBUG_UART.print("SD card type:"); 
+        if (SD_MMC.cardType() == sdcard_type_t::CARD_SD) DEBUG_UART.println("CARD_SD");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_MMC) DEBUG_UART.println("CARD_MMC");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_NONE) DEBUG_UART.println("CARD_NONE");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_SDHC) DEBUG_UART.println("CARD_SDHC");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_UNKNOWN) DEBUG_UART.println("CARD_UNKNOWN");
+
+        DEBUG_UART.print("SD card totalBytes:"); DEBUG_UART.println(SD_MMC.totalBytes());
+        DEBUG_UART.print("SD card usedBytes:"); DEBUG_UART.println(SD_MMC.usedBytes());
+        File test = SD_MMC.open("/test.csv", "rw", true);
+        test.println("10,20,30,40,50");
+        test.close();
+        test = SD_MMC.open("/test.csv", "a");
+        test.println("11,21,31,41,51");
+        test.close();
+        File root = SD_MMC.open("/");
+
+        File file;
+        while (file = root.openNextFile())
+        {
+            DEBUG_UART.print("Name:"); DEBUG_UART.print(file.name());
+            DEBUG_UART.print(", Size:"); DEBUG_UART.print(file.size());
+            DEBUG_UART.print(", Dir:"); DEBUG_UART.print(file.isDirectory()?"true":"false");
+            DEBUG_UART.println();
+        }
+    }
+    else
+    {
+        log_e("could not initialize/find any connected sd-card.");
+    }
+
+    // make sure that the following are allways at the end of this function
+    DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
+    DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
 }
 
 void loop() {
