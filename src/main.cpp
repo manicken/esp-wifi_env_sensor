@@ -1,6 +1,9 @@
 /* 
  
 */
+
+//#define USE_DISPLAY
+
 // basic
 #include <EEPROM.h>
 #include "SPI.h"
@@ -14,10 +17,10 @@
 #include <WiFiManager.h>
 // OTA
 #include "OTA.h"
-#if defined(ESP8266)
+
 // Amazon AWS IoT
 #include "AWS_IOT.h"
-#endif
+
 
 // Thingspeak
 #include "ThingSpeak.h"
@@ -37,14 +40,18 @@
 #include <WebServer.h>
 #endif
 
+#if defined(USE_DISPLAY)
 // Display
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 //#include <Fonts/FreeMono9pt7b.h>
+#endif
 
 // other addons
+#if defined(ESP32)
 #include <SD_MMC.h>
+#endif
 #include <LittleFS.h>
 //#define ARDUINOJSON_ENABLE_PROGMEM 0
 #include <ArduinoJson.h>
@@ -67,7 +74,7 @@
 #define MAIN_URLS_INFO                  F("/info")
 #define MAIN_URLS_FORMAT_LITTLE_FS      F("/formatLittleFs")
 #define MAIN_URLS_MKDIR                 F("/mkdir")
-#define MAIN_URLS_AWS_IOT_REFRESH       F("/aws_iot/refresh")
+
 #define MAIN_URLS_ESP_FREE_HEAP         F("/esp/free_heap")
 #define MAIN_URLS_ESP_LAST_RESET_REASON F("/esp/last_reset_reason")
 
@@ -79,11 +86,6 @@
 //#include "secrets/db_toilet/secrets.h"
 //#include "secrets/db_bedroom/secrets.h"
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
-
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(128, 32, &Wire, -1); // -1 = no reset pin
 
 #if defined(ESP8266)
     #define DEBUG_UART Serial1
@@ -97,17 +99,8 @@ Adafruit_SSD1306 display(128, 32, &Wire, -1); // -1 = no reset pin
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
 
-#define LED_PIN 5                       // 0 = GPIO0, 2=GPIO2
-#define LED_COUNT 50
-
 #define WIFI_TIMEOUT 30000              // checks WiFi every ...ms. Reset after this time, if WiFi cannot reconnect.
 #define HTTP_PORT 80
-
-#define DOGM_LCD_CS 0
-#define DOGM_LCD_RS 5
-
-#define PULSE_INPUT_A 12
-#define PULSE_INPUT_B 13
 
 unsigned long auto_last_change = 0;
 unsigned long last_wifi_check_time = 0;
@@ -121,29 +114,23 @@ fs_WebServer webserver(HTTP_PORT);
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "/LittleFS", 10, "spiffs")
 #endif
 
-uint32_t test = 1234567890;
-
-uint8_t update_display = 0;
-
 unsigned long currTime = 0;
-unsigned long deltaTime_displayUpdate = 0;
-unsigned long deltaTime_sendToWebUpdate = 0;
-unsigned long deltaTime_sendToAwsIot = 0;
-
-
-
-//DHTesp dht;
-//float temp_dht = 0;
-//float humidity_dht = 0;
-
-//#define ONE_WIRE_BUS 12
-//OneWire oneWire(ONE_WIRE_BUS);
-//DallasTemperature sensors(&oneWire);
-//float temp_ds = 0;
-
 time_t startTime = 0;
 
+
+#if defined(USE_DISPLAY)
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+
+#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1); // -1 = no reset pin
+uint8_t update_display = 0;
+unsigned long deltaTime_displayUpdate = 0;
 void init_display(void);
+#endif
+
+
+
 void connect_to_wifi(void);
 void printESP_info(void);
 void srv_handle_info(void);
@@ -220,7 +207,7 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
         {
 #if defined(ESP8266)
             DEBUG_UART.println("sending to AWS IOT");
-            AWS_IOT::publishMessage(humidity_dht, temp_ds);
+            //AWS_IOT::publishMessage(humidity_dht, temp_ds);
 #endif
         }
         else if (cmd == "RF433")
@@ -245,6 +232,52 @@ void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
         }
     }
 }
+#if defined(ESP32)
+#define INIT_SDMMC_PRINT_INFO
+#define INIT_SDMMC_PRINT_DIR
+bool InitSD_MMC()
+{
+    pinMode(23, OUTPUT);
+    digitalWrite(23, HIGH); // enable pullup on IO2(SD_D0), IO12(SD_D2)
+    delay(10);
+    log_e("SD-card initialialize...");
+
+    if (SD_MMC.begin("/sdcard", false, false, 20000)) {
+        DEBUG_UART.println("SD-card initialized OK");
+#if defined(INIT_SDMMC_PRINT_INFO)
+        DEBUG_UART.print("SD card size:"); DEBUG_UART.println(SD_MMC.cardSize());
+        DEBUG_UART.print("SD card type:"); 
+        if (SD_MMC.cardType() == sdcard_type_t::CARD_SD) DEBUG_UART.println("CARD_SD");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_MMC) DEBUG_UART.println("CARD_MMC");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_NONE) DEBUG_UART.println("CARD_NONE");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_SDHC) DEBUG_UART.println("CARD_SDHC");
+        else if (SD_MMC.cardType() == sdcard_type_t::CARD_UNKNOWN) DEBUG_UART.println("CARD_UNKNOWN");
+
+        DEBUG_UART.print("SD card totalBytes:"); DEBUG_UART.println(SD_MMC.totalBytes());
+        DEBUG_UART.print("SD card usedBytes:"); DEBUG_UART.println(SD_MMC.usedBytes());
+#endif
+#if defined(INIT_SDMMC_PRINT_DIR)
+        FS* fileSystem = &SD_MMC;
+        File root = fileSystem->open("/");
+
+        File file;
+        while (file = root.openNextFile())
+        {
+            DEBUG_UART.print("Name:"); DEBUG_UART.print(file.name());
+            DEBUG_UART.print(", Size:"); DEBUG_UART.print(file.size());
+            DEBUG_UART.print(", Dir:"); DEBUG_UART.print(file.isDirectory()?"true":"false");
+            DEBUG_UART.println();
+        }
+#endif
+        return true;
+    }
+    else
+    {
+        log_e("could not initialize/find any connected sd-card.");
+        return false;
+    }
+}
+#endif
 /**************************************************************************/
 /**************************************************************************/
 /**************************************************************************/
@@ -259,80 +292,39 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
     DEBUG_UART.println(getResetReason());
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true;
-
-    pinMode(23, OUTPUT);
-    digitalWrite(23, HIGH); // enable pullup on IO2(SD_D0), IO12(SD_D2)
-    delay(10);
-    log_e("SD-card initialialize...");
-    //DEBUG_UART.println("SD-card initialialize...");
-    
-    if (SD_MMC.begin("/sdcard", false, false, 20000)) {
-        FSBrowser::fsOK = true;
-        DEBUG_UART.println("SD-card initialized OK");
-        DEBUG_UART.print("SD card size:"); DEBUG_UART.println(SD_MMC.cardSize());
-        DEBUG_UART.print("SD card type:"); 
-        if (SD_MMC.cardType() == sdcard_type_t::CARD_SD) DEBUG_UART.println("CARD_SD");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_MMC) DEBUG_UART.println("CARD_MMC");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_NONE) DEBUG_UART.println("CARD_NONE");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_SDHC) DEBUG_UART.println("CARD_SDHC");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_UNKNOWN) DEBUG_UART.println("CARD_UNKNOWN");
-
-        DEBUG_UART.print("SD card totalBytes:"); DEBUG_UART.println(SD_MMC.totalBytes());
-        DEBUG_UART.print("SD card usedBytes:"); DEBUG_UART.println(SD_MMC.usedBytes());
-        
-        FS* fileSystem = &SD_MMC;
-        File root = fileSystem->open("/");
-
-        File file;
-        while (file = root.openNextFile())
-        {
-            DEBUG_UART.print("Name:"); DEBUG_UART.print(file.name());
-            DEBUG_UART.print(", Size:"); DEBUG_UART.print(file.size());
-            DEBUG_UART.print(", Dir:"); DEBUG_UART.print(file.isDirectory()?"true":"false");
-            DEBUG_UART.println();
-        }
-    }
-    else
-    {
-        log_e("could not initialize/find any connected sd-card.");
-    }
-
+#if defined(ESP32)
+    if (InitSD_MMC()) FSBrowser::fsOK = true;
+#endif
+#if defined(USE_DISPLAY)
     init_display();
+#endif
+    WiFi.setSleep(false);
     connect_to_wifi();
     OTA::setup();
     //tcp2uart.begin();
-    //dht.setup(13, DHTesp::DHT11);
-    //sensors.begin(); // one wire sensors
-    //RF433::init(14);
     
     Scheduler::setup(webserver, nameToFunctionList, sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]));
+#if defined(ESP32)
     File test = SD_MMC.open("/StartTimes.log", "a", true);
-        test.println(Time_ext::GetTimeAsString(now()).c_str());
-        test.close();
-    startTime = now();
-    
-#if defined(ESP8266)
-    if (AWS_IOT::setup_readFiles()) {
-        AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
-    }
-    else
-        DEBUG_UART.println(F("AWS_IOT error cannot setup AWS IoT without the cert and key files!!!"));
+    test.println(Time_ext::GetTimeAsString(now()).c_str());
+    test.close();
 #endif
-
+    startTime = now();
+#if defined(AWS_IOT_H)
+    AWS_IOT::setup(webserver, AWS_IOT_messageReceived);
+#endif
     initWebServerHandlers();
     FSBrowser::setup(webserver);
     DeviceManager::setup(webserver);
     ThingSpeak::setup(webserver);
     webserver.begin();
-#if defined(ESP8266)
-    //std::string ret = NPF::searchPatternInhtmlFromUrl();
-    // DEBUG_UART.println(ret.c_str());
+
+#if defined(NORD_POOL_FETCHER_H)
+    std::string ret = NPF::searchPatternInhtmlFromUrl();
+    DEBUG_UART.println(ret.c_str());
 #endif
-
-
     HeartbeatLed::init();
     
-
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
@@ -350,7 +342,8 @@ void loop() {
     //currTime = millis();
 
     HeartbeatLed::task();
-/*
+
+#if defined(USE_DISPLAY)
     if (millis() - deltaTime_displayUpdate >= 1000) {
         deltaTime_displayUpdate = millis();
         
@@ -373,38 +366,40 @@ void loop() {
         update_display = 1;
         
     }
-    */
+#endif
     
-    if (WiFi.status() != WL_CONNECTED)
+    if (WiFi.status() != wl_status_t:: WL_CONNECTED)
     {
-        connect_to_wifi();
-#if defined(ESP8266)
-        AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
+        WiFi.begin();
+        //connect_to_wifi();
+#if defined(AWS_IOT_H)
+        AWS_IOT::setup_and_connect();
     }
     else if (AWS_IOT::canConnect)
     {
         if (!AWS_IOT::pubSubClient.connected())
-            AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
+            AWS_IOT::setup_and_connect();
         else
             AWS_IOT::pubSubClient.loop();
         
     }
 #else
-    }
+    
 #endif
-
-    /*if (update_display == 1) {
+#if defined(USE_DISPLAY)
+    if (update_display == 1) {
         update_display = 0;
         display.display();
-    }*/
+    }
+#endif
 }
 
 
 void initWebServerHandlers(void)
 {
     webserver.on("/",  []() {
-        if (LittleFS.exists(F("index.html"))) FSBrowser::handleFileRead(F("index.html"));
-        else if (LittleFS.exists(F("index.htm"))) FSBrowser::handleFileRead(F("index.htm"));
+        if (LittleFS.exists(F("/index.html"))) FSBrowser::handleFileRead(F("/LittleFS/index.html"));
+        else if (LittleFS.exists(F("/index.htm"))) FSBrowser::handleFileRead(F("/LittleFS/index.htm"));
         else webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
     webserver.on(MAIN_URLS_JSON_CMD, HTTP_POST, [](){ webserver.send(200); }, [](){
@@ -443,19 +438,6 @@ void initWebServerHandlers(void)
         }
 
     });
-#if defined(ESP8266) 
-    webserver.on(MAIN_URLS_AWS_IOT_REFRESH, []() {
-        if (AWS_IOT::setup_readFiles()) {
-            webserver.send(200,F("text/plain"), F("AWS_IOT setup_readFiles OK"));
-            AWS_IOT::setup_and_connect(AWS_IOT_messageReceived);
-            
-        }
-        else
-        {
-            webserver.send(200,F("text/plain"), F("AWS_IOT setup_readFiles Fail"));
-        }
-    });
-#endif
 
     webserver.on(MAIN_URLS_ESP_FREE_HEAP, []() {
         std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
@@ -470,6 +452,7 @@ void initWebServerHandlers(void)
         
         webserver.send(200, F("text/plain"), resetInfo.c_str());
     });
+#if defined(ESP32)
     webserver.on("/sdcard_listfiles", []() {
         
         //if (SD_MMC.begin("/sdcard", true, false, 20000)) {
@@ -491,23 +474,38 @@ void initWebServerHandlers(void)
             webserver.send(200, F("text/plain"), ret.c_str());
        // }else {webserver.send(200, F("text/plain"), "could not open sd card a second time");}
     });
+#endif
+
+//webserver.serveStatic("/", LittleFS, "/"); // also serves if any index.html or index.htm is found
 
     webserver.onNotFound([]() {                              // If the client requests any URI
         String uri = webserver.uri();
-        if (uri.indexOf('.') == -1) // if it's a folder, try to find index.htm or index.html
+        bool isDir = false;
+        //DEBUG_UART.println("webserver on not found:" + uri);
+        if (uri.startsWith("/LittleFS") == false && uri.startsWith("/sdcard") == false)
         {
-            if (uri.endsWith("/") == false)
-                uri += "/";
-            if (LittleFS.exists(uri + "/index.html"))
-                uri += "index.html";
-            else if (LittleFS.exists(uri + "/index.htm"))
-                uri += "index.htm";
+            File fileToCheck = LittleFS.open(uri);
+            if (!fileToCheck) {
+                webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
+                return;
+            }
+
+            if (fileToCheck.isDirectory()) // if it's a folder, try to find index.htm or index.html
+            {
+                if (LittleFS.exists(uri + "/index.html"))
+                    uri += "/index.html";
+                else if (LittleFS.exists(uri + "/index.htm"))
+                    uri += "/index.htm";
+            }
+            fileToCheck.close();
+            uri = "/LittleFS" + uri; // default to LittleFS
         }
+
         if (!FSBrowser::handleFileRead(uri))                  // send it if it exists
             webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
 }
-
+#if defined(USE_DISPLAY)
 void init_display(void)
 {
     if (display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
@@ -529,29 +527,38 @@ void init_display(void)
             //DEBUG_UART.println(F("oled addr is 0x3D"));
     }
 }
+#endif
 
 void connect_to_wifi(void)
 {
     WiFiManager wifiManager;
     DEBUG_UART.println(F("trying to connect to saved wifi"));
+#if defined(USE_DISPLAY)
     display.setCursor(0, 0);
     display.println(F("WiFi connecting..."));
     display.display();
+#endif
     if (wifiManager.autoConnect() == true) { // using ESP.getChipId() internally
+#if defined(USE_DISPLAY)
         display.setCursor(0, 9);
         display.println("OK");
         display.setCursor(0, 17);
         display.println(WiFi.localIP());
         display.display();
         delay(2000);
+#endif
     } else {
+#if defined(USE_DISPLAY)
         display.setCursor(0, 9);
         display.println("FAIL");
         display.display();
         delay(2000);
+#endif
     }
+#if defined(USE_DISPLAY)
     display.clearDisplay();
     display.display();
+#endif
 }
 
 /*
@@ -581,17 +588,17 @@ void printESP_info(void) {
     DEBUG_UART.println();
 }*/
 
-#if defined(ESP8266)
+/*#if defined(ESP8266)
     enum rst_reason {
-    REASON_DEFAULT_RST      = 0,    normal startup by power on 
-    REASON_WDT_RST          = 1,    hardware watch dog reset 
-    REASON_EXCEPTION_RST    = 2,    exception reset, GPIO status won’t change 
-    REASON_SOFT_WDT_RST     = 3,    software watch dog reset, GPIO status won’t change 
-    REASON_SOFT_RESTART     = 4,    software restart ,system_restart , GPIO status won’t change 
-    REASON_DEEP_SLEEP_AWAKE = 5,    wake up from deep-sleep 
-    REASON_EXT_SYS_RST      = 6     external system reset
+    REASON_DEFAULT_RST      = 0,    //normal startup by power on 
+    REASON_WDT_RST          = 1,    //hardware watch dog reset 
+    REASON_EXCEPTION_RST    = 2,    //exception reset, GPIO status won’t change 
+    REASON_SOFT_WDT_RST     = 3,    //software watch dog reset, GPIO status won’t change 
+    REASON_SOFT_RESTART     = 4,    //software restart ,system_restart , GPIO status won’t change 
+    REASON_DEEP_SLEEP_AWAKE = 5,    //wake up from deep-sleep 
+    REASON_EXT_SYS_RST      = 6     //external system reset
 };
-#endif
+#endif*/
 const char* getResetReason()
 {
 #if defined(ESP8266)

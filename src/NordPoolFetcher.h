@@ -1,3 +1,6 @@
+#ifndef NORD_POOL_FETCHER_H
+#define NORD_POOL_FETCHER_H
+
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
@@ -5,8 +8,8 @@
 #elif defined(ESP32)
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <WiFiClientSecureBearSSL.h>
-//#include <WiFiClientSecure.h>
+//#include <WiFiClientSecureBearSSL.h>
+#include <WiFiClientSecure.h>
 #endif
 
 #include <iostream>
@@ -49,8 +52,11 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 )CERT";
 
 // Create a list of certificates with the server certificate
+#if defined(ESP8266)
 X509List cert(IRG_Root_X1);
-
+#elif defined(ESP32)
+char *cert = nullptr;
+#endif
     std::string searchPatternInhtmlFromUrl() {
         std::string startPattern = "const data = {", endPattern = "};";
         std::string host = "www.elbruk.se";
@@ -61,9 +67,13 @@ X509List cert(IRG_Root_X1);
         char buffer[chunkSize];
         Serial1.println("before instance wificlient secure");
         WiFiClientSecure client;
+#if defined(ESP8266)
         client.setBufferSizes(4096,256);
         Serial1.println("before setTrustacnchors");
         client.setTrustAnchors(&cert);
+#elif defined(ESP32)
+
+#endif
         //client.setInsecure();
         client.setTimeout(10000);
         //BearSSL::WiFiClientSecure client;// = new BearSSL::WiFiClientSecure();
@@ -173,3 +183,5 @@ X509List cert(IRG_Root_X1);
     http.end();
     }*/
 }
+
+#endif

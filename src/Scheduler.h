@@ -82,7 +82,7 @@ namespace Scheduler
     std::string GetShortFormDowListAsJson();
 
 #ifdef ESP8266
-    void setup(ESP8266WebServer &srv);
+    void setup(ESP8266WebServer &srv, NameToFunction* funcDefList, int funcDefListCount);
 #elif defined(ESP32)
     void setup(fs_WebServer &srv, NameToFunction* funcDefList, int funcDefListCount);
 #endif

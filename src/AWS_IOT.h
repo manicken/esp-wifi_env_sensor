@@ -10,6 +10,19 @@
 #include "NTP.h"
 #include "LittleFS_ext.h"
 
+#if defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+#define DEBUG_UART Serial1
+#elif defined(ESP32)
+#include <WiFi.h>
+#include <fs_WebServer.h>
+#include "mimetable.h"
+#include <mdns.h>
+#define DEBUG_UART Serial
+#endif
+
 // the following are not used when having config and files on internal filesystem
 //#include "secrets/db_kitchen/secrets.h"
 //#include "secrets/db_toilet/secrets.h"
@@ -18,13 +31,9 @@
 
 namespace AWS_IOT {
 
-#if defined(ESP8266)
-    #define DEBUG_UART Serial1
-#elif defined(ESP32)
-    #define DEBUG_UART Serial
-#endif
     #define AWS_IOT_FILES_DIR                   "/aws_iot"
     #define AWS_IOT_CONFIG_JSON_FILE            F("/aws_iot/cfg.json")
+    #define AWS_IOT_URL_REFRESH                 F("/aws_iot/refresh")
     #define AWS_IOT_JSON_FIELD_MQTT_HOST        F("mqtt_host")
     #define AWS_IOT_JSON_FIELD_THINGNAME        F("thingName")
     #define AWS_IOT_JSON_FIELD_CA_CERT_FILE     F("ca_cert_file")
@@ -34,6 +43,13 @@ namespace AWS_IOT {
     #define AWS_IOT_FILE_DEFAULT_CA_CERT        "RootCA1.pem"
     #define AWS_IOT_FILE_DEFAULT_DEVICE_CERT    "device.crt"
     #define AWS_IOT_FILE_DEFAULT_PRIVATE_KEY    "private.key"
+
+
+#ifdef ESP8266
+    ESP8266WebServer *server = nullptr;
+#elif defined(ESP32)
+    fs_WebServer *server = nullptr;
+#endif
 
     std::string mqtt_host = "";
     std::string thingName = "";
@@ -45,9 +61,15 @@ namespace AWS_IOT {
     std::string file_path_private_key = "";
 
     WiFiClientSecure wifiClientSecure;
+#if defined(ESP8266)
     BearSSL::X509List *ca_cert;
     BearSSL::X509List *device_cert;
     BearSSL::PrivateKey *private_key;
+#elif defined(ESP32)
+    char *ca_cert = nullptr;
+    char *device_cert = nullptr;
+    char *private_key = nullptr;
+#endif
 
     PubSubClient pubSubClient(wifiClientSecure);
     
@@ -123,24 +145,42 @@ namespace AWS_IOT {
         if (!LittleFS.exists(file_path_private_key.c_str())){/*DEBUG_UART.printf("AWS_IOT error: cannot find private_key file: %s\n",file_path_private_key.c_str());*/ return false; }
     //DEBUG_UART.printf("free5b:%ld\n",ESP.getFreeHeap());
         File fs = LittleFS.open(file_path_ca_cert.c_str(), "r");
+#if defined(ESP8266)
         ca_cert = new BearSSL::X509List(fs, fs.available());
+#elif defined(ESP32)
+        if (ca_cert != nullptr) delete[] ca_cert;
+        ca_cert = new char[fs.size()];
+        fs.readBytes(ca_cert, fs.size());
+#endif
         fs.close();
     //DEBUG_UART.printf("free5c:%ld\n",ESP.getFreeHeap());
         fs = LittleFS.open(file_path_device_cert.c_str(), "r");
+#if defined(ESP8266)
         device_cert = new BearSSL::X509List(fs, fs.available());
+#elif defined(ESP32)
+        if (device_cert != nullptr) delete[] device_cert;
+        device_cert = new char[fs.size()];
+        fs.readBytes(device_cert, fs.size());
+#endif
         fs.close();
     //DEBUG_UART.printf("free5d:%ld\n",ESP.getFreeHeap());
         fs = LittleFS.open(file_path_private_key.c_str(), "r");
+#if defined(ESP8266)
         private_key = new BearSSL::PrivateKey(fs, fs.available());
+#elif defined(ESP32)
+        if (private_key != nullptr) delete[] private_key;
+        private_key = new char[fs.size()];
+        fs.readBytes(private_key, fs.size());
+#endif
         fs.close();
     //DEBUG_UART.printf("free5e:%ld\n",ESP.getFreeHeap());
         canConnect = true;
         return true;
     }
 
-    void setup_and_connect(std::function<void(char*, uint8_t*, unsigned int)> messageReceivedCallback)
+    bool setup_and_connect()
     {
-        if (canConnect == false) return;
+        if (canConnect == false) return false;
         //DEBUG_UART.printf("free5f:%ld\n",ESP.getFreeHeap());
         NTP::NTPConnect();
         //DEBUG_UART.printf("free5g:%ld\n",ESP.getFreeHeap());
@@ -150,14 +190,23 @@ namespace AWS_IOT {
         //DEBUG_UART.print("pub topic: ");
         //DEBUG_UART.println(publish_topic.c_str());
         //DEBUG_UART.printf("free5h:%ld\n",ESP.getFreeHeap());
+#if defined(ESP8266)
         wifiClientSecure.setBufferSizes(8192,256);
         wifiClientSecure.setTrustAnchors(ca_cert);
         //DEBUG_UART.printf("free5i:%ld\n",ESP.getFreeHeap());
+
         wifiClientSecure.setClientRSACert(device_cert, private_key);
+#elif defined(ESP32)
+        if (ca_cert == nullptr || device_cert == nullptr || private_key == nullptr) {
+            return false;
+        }
+        wifiClientSecure.setCACert(ca_cert);
+        wifiClientSecure.setCertificate(device_cert);
+        wifiClientSecure.setPrivateKey(private_key);
+#endif
         //DEBUG_UART.printf("free5j:%ld\n",ESP.getFreeHeap());
         pubSubClient.setServer(mqtt_host.c_str(), 8883);
         //DEBUG_UART.printf("free5k:%ld\n",ESP.getFreeHeap());
-        pubSubClient.setCallback(messageReceivedCallback);
         //DEBUG_UART.printf("free5m:%ld\n",ESP.getFreeHeap());
         
         DEBUG_UART.print(F("Connecting to AWS IOT using"));
@@ -171,13 +220,14 @@ namespace AWS_IOT {
         //DEBUG_UART.printf("free5n:%ld\n",ESP.getFreeHeap());
         if (!pubSubClient.connected()) {
             DEBUG_UART.println("AWS IoT Timeout!");
-            return;
+            return false;
         }
         // Subscribe to a topic
         //DEBUG_UART.printf("free5p:%ld\n",ESP.getFreeHeap());
         pubSubClient.subscribe(subscribe_topic.c_str());
         //DEBUG_UART.printf("free5r:%ld\n",ESP.getFreeHeap());
         DEBUG_UART.println("AWS IoT Connected!");
+        return true;
     }
 
     void publishMessage(float h, float t)
@@ -197,6 +247,45 @@ namespace AWS_IOT {
         serializeJson(jsonDoc, jsonBuffer); // print to client
         
         pubSubClient.publish(publish_topic.c_str(), jsonBuffer);
+    }
+
+    bool setup_readFiles_and_connect(String &str)
+    {
+        str += "setup_readFiles ";
+        if (setup_readFiles())
+        {
+            str += "OK\n";
+            str += "setup_and_connect ";
+            if (setup_and_connect()) {
+                str += "OK\n";
+                return true;
+            }
+            else {
+                str += "FAIL\n";
+                return false;
+            }
+        }
+        else {
+            str += "FAIL\n";
+            return false;
+        }
+    }
+
+    #ifdef ESP8266
+    void setup(ESP8266WebServer &srv, std::function<void(char*, uint8_t*, unsigned int)> messageReceivedCallback) {
+#elif defined(ESP32)
+    void setup(fs_WebServer &srv, std::function<void(char*, uint8_t*, unsigned int)> messageReceivedCallback) {
+#endif
+        server = &srv;
+        pubSubClient.setCallback(messageReceivedCallback);
+        server->on(AWS_IOT_URL_REFRESH, []() {
+            String ret = "AWS_IOT:\n";
+            setup_readFiles_and_connect(ret);
+            server->send(200,F("text/plain"), ret);
+        });
+        String ret = "AWS_IOT:\n";
+        setup_readFiles_and_connect(ret);
+        DEBUG_UART.println(ret);
     }
 }
 

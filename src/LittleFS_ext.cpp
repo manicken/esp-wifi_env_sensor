@@ -55,7 +55,7 @@ namespace LittleFS_ext
         printStream.printf("Listing directory: %s\r\n", dirname);
         level+=2;
 
-        File root = LittleFS.open(dirname);
+        File root = LittleFS.open(dirname, "r");
         if (!root) {
             printStream.println(" - failed to open directory");
             return;
@@ -66,12 +66,17 @@ namespace LittleFS_ext
         }
 
         File file = root.openNextFile();
+        
         while (file) {
             if (file.isDirectory()) {
                 printStream.printf(GetNrSpaces(level, false).c_str());
                 printStream.print("DIR : ");
                 printStream.println(file.name());
+#if defined(ESP32)
                 listDir(printStream, file.path(), level + 2);
+#elif defined(ESP8266)
+                listDir(printStream, file.fullName(), level + 2);
+#endif
                 
             } else {
                 printStream.printf(GetNrSpaces(level, false).c_str());
@@ -91,7 +96,7 @@ namespace LittleFS_ext
         if (isHtml) str.concat("<br>"); else str.concat("\r\n");
         level+=2;
 
-        File root = LittleFS.open(dirname);
+        File root = LittleFS.open(dirname, "r");
         if (!root) {
             str.concat(" - failed to open directory");
             if (isHtml) str.concat("<br>"); else str.concat("\r\n");
@@ -110,8 +115,11 @@ namespace LittleFS_ext
                 str.concat("DIR : ");
                 str.concat(file.name());
                 if (isHtml) str.concat("<br>"); else str.concat("\r\n");
-
+#if defined(ESP32)
                 listDir(str, isHtml, file.path(), level + 2);
+#elif defined(ESP8266)
+                listDir(str, isHtml, file.fullName(), level + 2);
+#endif
             } else {
                 str.concat(GetNrSpaces(level, isHtml));
                 str.concat("FILE: ");

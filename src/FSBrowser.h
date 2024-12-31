@@ -97,8 +97,10 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 // fileSystemConfig.setCSPin(chipSelectPin);
 #elif defined(LITTLEFS_AND_SDMCC)
 #include <LittleFS.h>
+#if defined(ESP32)
 #include <SD_MMC.h>
-const char* fsName = "Virtual";
+#endif
+const char* fsName = "LittleFS"; // the main storage
 FS* fileSystem = nullptr;
 #else
 #error Please select a filesystem first by uncommenting one of the "#define USE_xxx" lines at the beginning of the sketch.
@@ -178,7 +180,7 @@ void handleStatus() {
   json += "\", \"isOk\":";
   if (fsOK) {
     #ifdef ESP8266
-    fileSystem.info(fs_info);
+    fileSystem->info(fs_info);
     json += F("\"true\", \"totalBytes\":\"");
     json += fs_info.totalBytes;
     json += F("\", \"usedBytes\":\"");
@@ -216,6 +218,7 @@ void handleStatus() {
 bool selectFileSystemAndFixPath(String &path)
 {
   //DBG_OUTPUT_PORT.println(String("before selectFileSystemAndFixPath: ") + path);
+#if defined(ESP32)
   if (path.startsWith("/sdcard")) {
     fileSystem = &SD_MMC;
     path = path.substring(sizeof("/sdcard")-1);
@@ -223,7 +226,9 @@ bool selectFileSystemAndFixPath(String &path)
     //DBG_OUTPUT_PORT.println(String("sdcard new Path: ") + path);
     return true;
   }
-  else if (path.startsWith("/LittleFS")) {
+  else 
+#endif
+  if (path.startsWith("/LittleFS")) {
     fileSystem = &LittleFS;
     path = path.substring(sizeof("/LittleFS")-1);
     if (path.length() == 0) path = "/";
@@ -249,13 +254,9 @@ void handleFileList() {
 
   DBG_OUTPUT_PORT.println(String("handleFileList: ") + path);
 
-#if defined(ESP8266)
-  Dir dir = fileSystem.openDir(path);
+  File dir = fileSystem->open(path, "r");
   File file;
-#elif defined(ESP32)
-  File dir = fileSystem->open(path);
-  File file;
-#endif
+
   path.clear();
 
   // use HTTP/1.1 Chunked response to avoid building a huge temporary string
@@ -268,11 +269,8 @@ void handleFileList() {
   String output;
   output.reserve(64);
 
-#if defined(ESP8266)
-  while (dir.next()) {
-#elif defined(ESP32)
+
   while (file = dir.openNextFile()) {
-#endif
 #ifdef USE_SPIFFS
     String error = checkForUnsupportedPath(dir.fileName());
     if (error.length() > 0) {
@@ -295,14 +293,14 @@ void handleFileList() {
     } else {
       output += F("file\",\"size\":\"");
 
-      output += file.FS_FILE_SIZE_FUNC();
+      output += file.size();
     }
     output += F("\",\"name\":\"");
     // Always return names without leading "/"
-    if (file.FS_FILE_NAME_FUNC()[0] == '/') {
-      output += &(file.FS_FILE_NAME_FUNC()[1]);
+    if (file.name()[0] == '/') {
+      output += &(file.name()[1]);
     } else {
-      output += file.FS_FILE_NAME_FUNC();
+      output += file.name();
     }
     output += "\"}";
   }
@@ -323,8 +321,6 @@ bool handleFileRead(String path) {
     replyServerError(FPSTR(FS_INIT_ERROR));
     return true;
   }
-
-  if (path.endsWith("/")) { path += "index.htm"; }
 
   String contentType;
   if (server->hasArg("download")) {
@@ -465,7 +461,7 @@ void deleteRecursive(String path) {
 
   // Otherwise delete its contents first
   #if defined(ESP8266)
-  Dir dir = fileSystem.openDir(path);
+  Dir dir = fileSystem->openDir(path);
 
   while (dir.next()) { deleteRecursive(path + '/' + dir.fileName()); }
 #elif defined(ESP32)
@@ -535,45 +531,6 @@ void handleFileUpload() {
   }
 }
 
-
-/*
-   The "Not Found" handler catches all URI not explicitly declared in code
-   First try to find and return the requested file from the filesystem,
-   and if it fails, return a 404 page with debug information
-*/
-/*
-void handleNotFound() {
-  if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
-
-  String uri = ESP8266WebServer::urlDecode(server->uri());  // required to read paths with blanks
-
-  if (handleFileRead(uri)) { return; }
-
-  // Dump debug data
-  String message;
-  message.reserve(100);
-  message = F("Error: File not found\n\nURI: ");
-  message += uri;
-  message += F("\nMethod: ");
-  message += (server->method() == HTTP_GET) ? "GET" : "POST";
-  message += F("\nArguments: ");
-  message += server->args();
-  message += '\n';
-  for (uint8_t i = 0; i < server->args(); i++) {
-    message += F(" NAME:");
-    message += server->argName(i);
-    message += F("\n VALUE:");
-    message += server->arg(i);
-    message += '\n';
-  }
-  message += "path=";
-  message += server->arg("path");
-  message += '\n';
-  DBG_OUTPUT_PORT.print(message);
-
-  return replyNotFound(message);
-}
-*/
 File fsUploadFile;
 /// @brief 
 /// @param dir directory to upload file to
