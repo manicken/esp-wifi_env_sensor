@@ -11,12 +11,13 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+#define WEBSERVER_TYPE ESP8266WebServer
 #elif defined(ESP32)
 #include <WiFi.h>
 #include <fs_WebServer.h>
 #include "mimetable.h"
-
 #include <mdns.h>
+#define WEBSERVER_TYPE fs_WebServer
 #endif
 
 /*
@@ -60,10 +61,6 @@ namespace GPIO_manager
     } gpio_pin;
 
     void sendList();
-#if defined(ESP8266)
-    void setup(ESP8266WebServer &srv);
-#elif defined(ESP32)
-    void setup(fs_WebServer &srv);
-#endif
+    void setup(WEBSERVER_TYPE &srv);
 
 }

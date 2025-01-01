@@ -40,18 +40,35 @@
 
 
 #include <WiFiClient.h>
+#include <SPI.h>
+
 #if defined(ESP8266)
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+
+#define WEBSERVER_TYPE ESP8266WebServer
+#define DBG_OUTPUT_PORT Serial1
+
+#define FS_FILE_SIZE_FUNC fileSize
+#define FS_FILE_NAME_FUNC fileName
+
 #elif defined(ESP32)
+
 #include <WiFi.h>
 #include <fs_WebServer.h>
 #include "mimetable.h"
-
 #include <mdns.h>
+
+#define WEBSERVER_TYPE fs_WebServer
+#define DBG_OUTPUT_PORT Serial
+
+#define FS_FILE_SIZE_FUNC size
+#define FS_FILE_NAME_FUNC name
+
 #endif
-#include <SPI.h>
+
 
 const char TEXT_PLAIN[] PROGMEM = "text/plain";
 const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
@@ -79,84 +96,74 @@ namespace FSBrowser {
 
 #if defined USE_SPIFFS
 #include <FS.h>
-const char* fsName = "SPIFFS";
-FS* fileSystem = &SPIFFS;
-SPIFFSConfig fileSystemConfig = SPIFFSConfig();
+    const char* fsName = "SPIFFS";
+    FS* fileSystem = &SPIFFS;
+    SPIFFSConfig fileSystemConfig = SPIFFSConfig();
 #elif defined USE_LITTLEFS
 #include <LittleFS.h>
-const char* fsName = "LittleFS";
-FS* fileSystem = &LittleFS;
+    const char* fsName = "LittleFS";
+    FS* fileSystem = &LittleFS;
 #ifdef ESP8266
-LittleFSConfig fileSystemConfig = LittleFSConfig();
+    LittleFSConfig fileSystemConfig = LittleFSConfig();
 #endif
 #elif defined USE_SDFS
 #include <SDFS.h>
-const char* fsName = "SDFS";
-FS* fileSystem = &SDFS;
-SDFSConfig fileSystemConfig = SDFSConfig();
-// fileSystemConfig.setCSPin(chipSelectPin);
+    const char* fsName = "SDFS";
+    FS* fileSystem = &SDFS;
+    SDFSConfig fileSystemConfig = SDFSConfig();
+    // fileSystemConfig.setCSPin(chipSelectPin);
 #elif defined(LITTLEFS_AND_SDMCC)
 #include <LittleFS.h>
 #if defined(ESP32)
 #include <SD_MMC.h>
 #endif
-const char* fsName = "LittleFS"; // the main storage
-FS* fileSystem = nullptr;
+    const char* fsName = "LittleFS"; // the main storage
+    FS* fileSystem = nullptr;
 #else
 #error Please select a filesystem first by uncommenting one of the "#define USE_xxx" lines at the beginning of the sketch.
 #endif
 
+    WEBSERVER_TYPE *server = nullptr;
 
+    bool fsOK = false;
+    String unsupportedFiles = String();
 
-#define DBG_OUTPUT_PORT Serial
+    File uploadFile;
 
+    void replyOK() {
+        server->send(200, FPSTR(TEXT_PLAIN), "");
+    }
 
-#ifdef ESP8266
-    ESP8266WebServer *server = nullptr;
-#elif defined(ESP32)
-    fs_WebServer *server = nullptr;
-#endif
-    
+    void replyOKWithMsg(String msg) {
+        server->send(200, FPSTR(TEXT_PLAIN), msg);
+    }
 
-bool fsOK = false;
-String unsupportedFiles = String();
+    void replyNotFound(String msg) {
+        server->send(404, FPSTR(TEXT_PLAIN), msg);
+    }
 
-File uploadFile;
+    void replyBadRequest(String msg) {
+        DBG_OUTPUT_PORT.println(msg);
+        server->send(400, FPSTR(TEXT_PLAIN), msg + "\r\n");
+    }
 
-void replyOK() {
-  server->send(200, FPSTR(TEXT_PLAIN), "");
-}
-
-void replyOKWithMsg(String msg) {
-  server->send(200, FPSTR(TEXT_PLAIN), msg);
-}
-
-void replyNotFound(String msg) {
-  server->send(404, FPSTR(TEXT_PLAIN), msg);
-}
-
-void replyBadRequest(String msg) {
-  DBG_OUTPUT_PORT.println(msg);
-  server->send(400, FPSTR(TEXT_PLAIN), msg + "\r\n");
-}
-
-void replyServerError(String msg) {
-  DBG_OUTPUT_PORT.println(msg);
-  server->send(500, FPSTR(TEXT_PLAIN), msg + "\r\n");
-}
+    void replyServerError(String msg) {
+        DBG_OUTPUT_PORT.println(msg);
+        server->send(500, FPSTR(TEXT_PLAIN), msg + "\r\n");
+    }
 
 #ifdef USE_SPIFFS
 /*
    Checks filename for character combinations that are not supported by FSBrowser (alhtough valid on SPIFFS).
    Returns an empty String if supported, or detail of error(s) if unsupported
 */
-String checkForUnsupportedPath(String filename) {
-  String error = String();
-  if (!filename.startsWith("/")) { error += F("!NO_LEADING_SLASH! "); }
-  if (filename.indexOf("//") != -1) { error += F("!DOUBLE_SLASH! "); }
-  if (filename.endsWith("/")) { error += F("!TRAILING_SLASH! "); }
-  return error;
-}
+    String checkForUnsupportedPath(String filename) {
+        String error = String();
+        if (!filename.startsWith("/")) { error += F("!NO_LEADING_SLASH! "); }
+        if (filename.indexOf("//") != -1) { error += F("!DOUBLE_SLASH! "); }
+        if (filename.endsWith("/")) { error += F("!TRAILING_SLASH! "); }
+        return error;
+    }
 #endif
 
 
@@ -166,474 +173,445 @@ String checkForUnsupportedPath(String filename) {
 /*
    Return the FS type, status and size info
 */
-void handleStatus() {
-  DBG_OUTPUT_PORT.println("handleStatus");
-  #ifdef ESP8266
-  FSInfo fs_info;
-  #endif
-  
-  String json;
-  json.reserve(128);
+    void handleStatus() {
+        DBG_OUTPUT_PORT.println("handleStatus");
+        #ifdef ESP8266
+        FSInfo fs_info;
+        #endif
+        
+        String json;
+        json.reserve(128);
 
-  json = "{\"type\":\"";
-  json += fsName;
-  json += "\", \"isOk\":";
-  if (fsOK) {
-    #ifdef ESP8266
-    fileSystem->info(fs_info);
-    json += F("\"true\", \"totalBytes\":\"");
-    json += fs_info.totalBytes;
-    json += F("\", \"usedBytes\":\"");
-    json += fs_info.usedBytes;
-    #elif defined(ESP32)
-    json += F("\"true\", \"totalBytes\":\"");
-    json += LittleFS.totalBytes();
-    json += F("\", \"usedBytes\":\"");
-    json += LittleFS.usedBytes();
-    #endif
-    json += "\"";
-  } else {
-    json += "\"false\"";
-  }
-  json += F(",\"unsupportedFiles\":\"");
-  json += unsupportedFiles;
-  json += "\"}";
-
-  server->send(200, "application/json", json);
-}
-
-
-/*
-   Return the list of files in the directory specified by the "dir" query string parameter.
-   Also demonstrates the use of chunked responses.
-*/
-#if defined(ESP8266)
-  #define FS_FILE_SIZE_FUNC fileSize
-  #define FS_FILE_NAME_FUNC fileName
+        json = "{\"type\":\"";
+        json += fsName;
+        json += "\", \"isOk\":";
+        if (fsOK) {
+#ifdef ESP8266
+            fileSystem->info(fs_info);
+            json += F("\"true\", \"totalBytes\":\"");
+            json += fs_info.totalBytes;
+            json += F("\", \"usedBytes\":\"");
+            json += fs_info.usedBytes;
 #elif defined(ESP32)
-  #define FS_FILE_SIZE_FUNC size
-  #define FS_FILE_NAME_FUNC name
+            json += F("\"true\", \"totalBytes\":\"");
+            json += LittleFS.totalBytes();
+            json += F("\", \"usedBytes\":\"");
+            json += LittleFS.usedBytes();
 #endif
+            json += "\"";
+        } else {
+            json += "\"false\"";
+        }
+        json += F(",\"unsupportedFiles\":\"");
+        json += unsupportedFiles;
+        json += "\"}";
 
-bool selectFileSystemAndFixPath(String &path)
-{
-  //DBG_OUTPUT_PORT.println(String("before selectFileSystemAndFixPath: ") + path);
-#if defined(ESP32)
-  if (path.startsWith("/sdcard")) {
-    fileSystem = &SD_MMC;
-    path = path.substring(sizeof("/sdcard")-1);
-    if (path.length() == 0) path = "/";
-    //DBG_OUTPUT_PORT.println(String("sdcard new Path: ") + path);
-    return true;
-  }
-  else 
-#endif
-  if (path.startsWith("/LittleFS")) {
-    fileSystem = &LittleFS;
-    path = path.substring(sizeof("/LittleFS")-1);
-    if (path.length() == 0) path = "/";
-    //DBG_OUTPUT_PORT.println(String("LittleFS new Path: ") + path);
-    return true;
-  }
-  DEBUG_UART.println("selectFileSystemAndFixPath error - invalid filesystem" + path);
-  return false;
-}
-
-void handleFileList() {
-  if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
-
-  if (!server->hasArg("dir")) { return replyBadRequest(F("DIR ARG MISSING")); }
-
-  String path = server->arg("dir");
-  if (selectFileSystemAndFixPath(path) == false)
-  {
-    server->send(200, F("text/json"), F("[{\"type\":\"dir\",\"name\":\"sdcard\"},{\"type\":\"dir\",\"name\":\"LittleFS\"}]"));
-    return;
-  }
-  if (path != "/" && !fileSystem->exists(path)) { return replyBadRequest("BAD PATH"); }
-
-  DBG_OUTPUT_PORT.println(String("handleFileList: ") + path);
-
-  File dir = fileSystem->open(path, "r");
-  File file;
-
-  path.clear();
-
-  // use HTTP/1.1 Chunked response to avoid building a huge temporary string
-  if (!server->chunkedResponseModeStart(200, "text/json")) {
-    server->send(505, F("text/html"), F("HTTP1.1 required"));
-    return;
-  }
-
-  // use the same string for every line
-  String output;
-  output.reserve(64);
-
-
-  while (file = dir.openNextFile()) {
-#ifdef USE_SPIFFS
-    String error = checkForUnsupportedPath(dir.fileName());
-    if (error.length() > 0) {
-      DBG_OUTPUT_PORT.println(String("Ignoring ") + error + dir.fileName());
-      continue;
-    }
-#endif
-    if (output.length()) {
-      // send string from previous iteration
-      // as an HTTP chunk
-      server->sendContent(output);
-      output = ',';
-    } else {
-      output = '[';
+        server->send(200, "application/json", json);
     }
 
-    output += "{\"type\":\"";
-    if (file.isDirectory()) {
-      output += "dir";
-    } else {
-      output += F("file\",\"size\":\"");
 
-      output += file.size();
-    }
-    output += F("\",\"name\":\"");
-    // Always return names without leading "/"
-    if (file.name()[0] == '/') {
-      output += &(file.name()[1]);
-    } else {
-      output += file.name();
-    }
-    output += "\"}";
-  }
-
-  // send last string
-  output += "]";
-  server->sendContent(output);
-  server->chunkedResponseFinalize();
-}
-
-
-/*
-   Read the given file from the filesystem and stream it back to the client
-*/
-bool handleFileRead(String path) {
-  DBG_OUTPUT_PORT.println(String("handleFileRead: ") + path);
-  if (!fsOK) {
-    replyServerError(FPSTR(FS_INIT_ERROR));
-    return true;
-  }
-
-  String contentType;
-  if (server->hasArg("download")) {
-    contentType = F("application/octet-stream");
-  } else {
-
-    contentType = mime::getContentType(path);
-  }
-
-  if (selectFileSystemAndFixPath(path) == false)
-  {
-    return false;
-  }
-  
-
-  if (!fileSystem->exists(path)) {
-    // File not found, try gzip version
-    path = path + ".gz";
-  }
-  if (fileSystem->exists(path)) {
-    File file = fileSystem->open(path, "r");
-    if (server->streamFile(file, contentType) != file.size()) { DBG_OUTPUT_PORT.println("Sent less data than expected!"); }
-    file.close();
-    return true;
-  }
-
-  return false;
-}
-
-
-/*
-   As some FS (e.g. LittleFS) delete the parent folder when the last child has been removed,
-   return the path of the closest parent still existing
-*/
-String lastExistingParent(String path) {
-  if (selectFileSystemAndFixPath(path) == false)
-  {
-    return "";
-  }
-  while (!path.isEmpty() && !fileSystem->exists(path)) {
-    if (path.lastIndexOf('/') > 0) {
-      path = path.substring(0, path.lastIndexOf('/'));
-    } else {
-      path = String();  // No slash => the top folder does not exist
-    }
-  }
-  DBG_OUTPUT_PORT.println(String("Last existing parent: ") + path);
-  return path;
-}
-
-/*
-   Handle the creation/rename of a new file
-   Operation      | req.responseText
-   ---------------+--------------------------------------------------------------
-   Create file    | parent of created file
-   Create folder  | parent of created folder
-   Rename file    | parent of source file
-   Move file      | parent of source file, or remaining ancestor
-   Rename folder  | parent of source folder
-   Move folder    | parent of source folder, or remaining ancestor
-*/
-void handleFileCreate() {
-  if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
-
-  String path = server->arg("path");
-  if (path.isEmpty()) { return replyBadRequest(F("PATH ARG MISSING")); }
-
-#ifdef USE_SPIFFS
-  if (checkForUnsupportedPath(path).length() > 0) { return replyServerError(F("INVALID FILENAME")); }
-#endif
-
-  if (selectFileSystemAndFixPath(path) == false)
-  {
-    return;
-  }
-  if (path == "/") { return replyBadRequest("BAD PATH"); }
-  if (fileSystem->exists(path)) { return replyBadRequest(F("PATH FILE EXISTS")); }
-
-  String src = server->arg("src");
-  if (src.isEmpty()) {
-    // No source specified: creation
-    DBG_OUTPUT_PORT.println(String("handleFileCreate: ") + path);
-    if (path.endsWith("/")) {
-      // Create a folder
-      path.remove(path.length() - 1);
-      if (!fileSystem->mkdir(path)) { return replyServerError(F("MKDIR FAILED")); }
-    } else {
-      // Create a file
-      File file = fileSystem->open(path, "w");
-      if (file) {
-        file.write(0);
-        //file.write((const char*)0);
-        file.close();
-      } else {
-        return replyServerError(F("CREATE FAILED"));
-      }
-    }
-    if (path.lastIndexOf('/') > -1) { path = path.substring(0, path.lastIndexOf('/')); }
-    replyOKWithMsg(path);
-  } else {
-    // Source specified: rename
-    if (src == "/") { return replyBadRequest("BAD SRC"); }
-    if (!fileSystem->exists(src)) { return replyBadRequest(F("SRC FILE NOT FOUND")); }
-
-    DBG_OUTPUT_PORT.println(String("handleFileCreate: ") + path + " from " + src);
-
-    if (path.endsWith("/")) { path.remove(path.length() - 1); }
-    if (src.endsWith("/")) { src.remove(src.length() - 1); }
-    if (!fileSystem->rename(src, path)) { return replyServerError(F("RENAME FAILED")); }
-    replyOKWithMsg(lastExistingParent(src));
-  }
-}
-
-
-/*
-   Delete the file or folder designed by the given path.
-   If it's a file, delete it.
-   If it's a folder, delete all nested contents first then the folder itself
-
-   IMPORTANT NOTE: using recursion is generally not recommended on embedded devices and can lead to crashes (stack overflow errors).
-   This use is just for demonstration purpose, and FSBrowser might crash in case of deeply nested filesystems.
-   Please don't do this on a production system.
-*/
-void deleteRecursive(String path) {
-  //if (selectFileSystemAndFixPath(path) == false)
-  //{
-  //  return;
-  //}
-  File file = fileSystem->open(path, "r");
-  bool isDir = file.isDirectory();
-  file.close();
-
-  // If it's a plain file, delete it
-  if (!isDir) {
-    fileSystem->remove(path);
-    return;
-  }
-
-  // Otherwise delete its contents first
-  #if defined(ESP8266)
-  Dir dir = fileSystem->openDir(path);
-
-  while (dir.next()) { deleteRecursive(path + '/' + dir.fileName()); }
-#elif defined(ESP32)
-  File dir = fileSystem->open(path);
-
-  while (dir.openNextFile()) { deleteRecursive(path + '/' + dir.name()); }
-#endif
-  // Then delete the folder itself
-  fileSystem->rmdir(path);
-}
-
-
-/*
-   Handle a file deletion request
-   Operation      | req.responseText
-   ---------------+--------------------------------------------------------------
-   Delete file    | parent of deleted file, or remaining ancestor
-   Delete folder  | parent of deleted folder, or remaining ancestor
-*/
-void handleFileDelete() {
-  if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
-  String path = server->arg(0);
-  if (selectFileSystemAndFixPath(path) == false)
-  {
-    return;
-  }
-  
-  if (path.isEmpty() || path == "/") { return replyBadRequest("BAD PATH"); }
-
-  DBG_OUTPUT_PORT.println(String("handleFileDelete: ") + path);
-  if (!fileSystem->exists(path)) { return replyNotFound(FPSTR(FILE_NOT_FOUND)); }
-  deleteRecursive(path);
-
-  replyOKWithMsg(lastExistingParent(path));
-}
-
-/*
-   Handle a file upload request
-*/
-void handleFileUpload() {
-  if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
-  if (server->uri() != "/edit") { return; }
-  HTTPUpload& upload = server->upload();
-  if (upload.status == UPLOAD_FILE_START) {
-    String filename = upload.filename;
-
-    if (selectFileSystemAndFixPath(filename) == false)
+    /*
+      Return the list of files in the directory specified by the "dir" query string parameter.
+      Also demonstrates the use of chunked responses.
+    */
+    bool selectFileSystemAndFixPath(String &path)
     {
-      return;
-    }
-    
-    // Make sure paths always start with "/"
-    if (!filename.startsWith("/")) { filename = "/" + filename; }
-    DBG_OUTPUT_PORT.println(String("handleFileUpload Name: ") + filename);
-    uploadFile = fileSystem->open(filename, "w");
-    if (!uploadFile) { return replyServerError(F("CREATE FAILED")); }
-    DBG_OUTPUT_PORT.println(String("Upload: START, filename: ") + filename);
-  } else if (upload.status == UPLOAD_FILE_WRITE) {
-    if (uploadFile) {
-      size_t bytesWritten = uploadFile.write(upload.buf, upload.currentSize);
-      if (bytesWritten != upload.currentSize) { return replyServerError(F("WRITE FAILED")); }
-    }
-    DBG_OUTPUT_PORT.println(String("Upload: WRITE, Bytes: ") + upload.currentSize);
-  } else if (upload.status == UPLOAD_FILE_END) {
-    if (uploadFile) { uploadFile.close(); }
-    DBG_OUTPUT_PORT.println(String("Upload: END, Size: ") + upload.totalSize);
-  }
-}
-
-File fsUploadFile;
-/// @brief 
-/// @param dir directory to upload file to
-/// @param dest destination url when completed 
-void handleFileUploadFailsafe(String dir, String dest){ // upload a new file to the SPIFFS
-  //DBG_OUTPUT_PORT.println("handleFileUploadFailsafe: ");
-  //DBG_OUTPUT_PORT.println("dir:" + dir);
-  //DBG_OUTPUT_PORT.println("dest: " + dest);
-  if (LittleFS.exists(dir.c_str()) == false)
-      LittleFS.mkdir(dir.c_str());
-  HTTPUpload& upload = server->upload();
-  if(upload.status == UPLOAD_FILE_START){
-    DBG_OUTPUT_PORT.println("UPLOAD_FILE_START");
-    String filename = upload.filename;
-    if(!filename.startsWith("/")) filename = "/"+filename;
-    Serial.print("handleFileUpload Name: "); Serial.println(filename);
-    fsUploadFile = LittleFS.open(dir + filename, "w");            // Open the file for writing in SPIFFS (create if it doesn't exist)
-    filename = String();
-  } else if(upload.status == UPLOAD_FILE_WRITE){
-    //DBG_OUTPUT_PORT.println("UPLOAD_FILE_WRITE");
-    if(fsUploadFile)
-      fsUploadFile.write(upload.buf, upload.currentSize); // Write the received bytes to the file
-  } else if(upload.status == UPLOAD_FILE_END){
-    DBG_OUTPUT_PORT.println("UPLOAD_FILE_END");
-    if(fsUploadFile) {                                    // If the file was successfully created
-      fsUploadFile.close();                               // Close the file again
-      Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
-      server->sendHeader("Location",dest);      // Redirect the client to the success page
-      server->send(303);
-    } else {
-      server->send(500, "text/plain", "500: couldn't create file");
-    }
-  }
-}
-
-/*
-   This specific handler returns the index.htm (or a gzipped version) from the /edit folder.
-   If the file is not present but the flag INCLUDE_FALLBACK_INDEX_HTM has been set, falls back to the version
-   embedded in the program code.
-   Otherwise, fails with a 404 page with debug information
-*/
-void handleGetEdit() {
-  if (handleFileRead(F("/LittleFS/edit/index.htm"))) { return; }
-
-    server->sendHeader("Location","/edit/upload");      // Redirect the client to the upload page
-      server->send(303);
-      return;
-
-#ifdef INCLUDE_FALLBACK_INDEX_HTM
-  server.sendHeader(F("Content-Encoding"), "gzip");
-  server.send(200, "text/html", index_htm_gz, index_htm_gz_len);
-#else
-  replyNotFound(FPSTR(FILE_NOT_FOUND));
+        //DBG_OUTPUT_PORT.println(String("before selectFileSystemAndFixPath: ") + path);
+#if defined(ESP32)
+        if (path.startsWith("/sdcard")) {
+            fileSystem = &SD_MMC;
+            path = path.substring(sizeof("/sdcard")-1);
+            if (path.length() == 0) path = "/";
+            //DBG_OUTPUT_PORT.println(String("sdcard new Path: ") + path);
+            return true;
+        }
+        else 
 #endif
-}
-void handleNotFound()
-{
+        if (path.startsWith("/LittleFS")) {
+            fileSystem = &LittleFS;
+            path = path.substring(sizeof("/LittleFS")-1);
+            if (path.length() == 0) path = "/";
+            //DBG_OUTPUT_PORT.println(String("LittleFS new Path: ") + path);
+            return true;
+        }
+        DEBUG_UART.println("selectFileSystemAndFixPath error - invalid filesystem" + path);
+        return false;
+    }
 
-}
-void handleFailsafeUploadPage() {
-    server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    server->sendHeader("Pragma", "no-cache");
-    server->sendHeader("Expires", "-1");
-    server->setContentLength(CONTENT_LENGTH_UNKNOWN); // *** BEGIN ***
+    void handleFileList() {
+        if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
 
-    server->send(200,"text/html", "");
-    server->sendContent_P(upload_html);
-    server->sendContent("");
-    server->client().stop();
-}
+        if (!server->hasArg("dir")) { return replyBadRequest(F("DIR ARG MISSING")); }
 
-#if defined(ESP8266)
-void setup(ESP8266WebServer &srv) {
-#elif defined(ESP32)
-void setup(fs_WebServer &srv) {
+        String path = server->arg("dir");
+        if (selectFileSystemAndFixPath(path) == false)
+        {
+            server->send(200, F("text/json"), F("[{\"type\":\"dir\",\"name\":\"sdcard\"},{\"type\":\"dir\",\"name\":\"LittleFS\"}]"));
+            return;
+        }
+        if (path != "/" && !fileSystem->exists(path)) { return replyBadRequest("BAD PATH"); }
+
+        DBG_OUTPUT_PORT.println(String("handleFileList: ") + path);
+
+        File dir = fileSystem->open(path, "r");
+        File file;
+
+        path.clear();
+
+        // use HTTP/1.1 Chunked response to avoid building a huge temporary string
+        if (!server->chunkedResponseModeStart(200, "text/json")) {
+            server->send(505, F("text/html"), F("HTTP1.1 required"));
+            return;
+        }
+
+        // use the same string for every line
+        String output;
+        output.reserve(64);
+
+
+        while (file = dir.openNextFile()) {
+#ifdef USE_SPIFFS
+            String error = checkForUnsupportedPath(dir.fileName());
+            if (error.length() > 0) {
+                DBG_OUTPUT_PORT.println(String("Ignoring ") + error + dir.fileName());
+                continue;
+            }
 #endif
-    server = &srv;
+            if (output.length()) {
+                // send string from previous iteration
+                // as an HTTP chunk
+                server->sendContent(output);
+                output = ',';
+            } else {
+                output = '[';
+            }
 
-  // Filesystem status 
-  server->on("/status", HTTP_GET, handleStatus);//[this](){this->handleStatus(); });
+            output += "{\"type\":\"";
+            if (file.isDirectory()) {
+                output += "dir";
+            } else {
+                output += F("file\",\"size\":\"");
 
-  // List directory
-  server->on("/list", HTTP_GET, handleFileList);//[this](){this->handleFileList(); });
+                output += file.size();
+            }
+            output += F("\",\"name\":\"");
+            // Always return names without leading "/"
+            if (file.name()[0] == '/') {
+                output += &(file.name()[1]);
+            } else {
+                output += file.name();
+            }
+            output += "\"}";
+        }
 
-  // Load editor
-  server->on("/edit", HTTP_GET, handleGetEdit);//[this](){this->handleGetEdit(); });
-
-  // Create file
-  server->on("/edit", HTTP_PUT, handleFileCreate);//[this](){this->handleFileCreate(); });
-
-  // Delete file
-  server->on("/edit", HTTP_DELETE, handleFileDelete);//[this](){this->handleFileDelete(); });
+        // send last string
+        output += "]";
+        server->sendContent(output);
+        server->chunkedResponseFinalize();
+    }
 
 
-  server->on("/edit/upload", HTTP_GET, handleFailsafeUploadPage);//[this](){this->handleFailsafeUpload(); });                 // if the client requests the upload page
+    /*
+      Read the given file from the filesystem and stream it back to the client
+    */
+    bool handleFileRead(String path) {
+        DBG_OUTPUT_PORT.println(String("handleFileRead: ") + path);
+        if (!fsOK) {
+            replyServerError(FPSTR(FS_INIT_ERROR));
+            return true;
+        }
 
-  server->on("/edit/upload", HTTP_POST, [](){ DBG_OUTPUT_PORT.println("send OK"); server->send(200); }, []() { handleFileUploadFailsafe("/edit", "/edit/upload"); });                      // if the client posts to the upload page
+        String contentType;
+        if (server->hasArg("download")) {
+            contentType = F("application/octet-stream");
+        } else {
+            contentType = mime::getContentType(path);
+        }
 
-  // Upload file
-  // - first callback is called after the request has ended with all parsed arguments
-  // - second callback handles file upload at that location
-  server->on("/edit", HTTP_POST, [](){ server->send(200); }, handleFileUpload);//[this](){this->replyOK();}, [this](){this->handleFileUpload();});
+        if (selectFileSystemAndFixPath(path) == false)
+        {
+            return false;
+        }
+        
 
-}
+        if (!fileSystem->exists(path)) {
+            // File not found, try gzip version
+            path = path + ".gz";
+        }
+        if (fileSystem->exists(path)) {
+            File file = fileSystem->open(path, "r");
+            if (server->streamFile(file, contentType) != file.size()) { DBG_OUTPUT_PORT.println("Sent less data than expected!"); }
+            file.close();
+            return true;
+        }
 
+        return false;
+    }
+
+
+    /*
+      As some FS (e.g. LittleFS) delete the parent folder when the last child has been removed,
+      return the path of the closest parent still existing
+    */
+    String lastExistingParent(String path) {
+        if (selectFileSystemAndFixPath(path) == false)
+        {
+            return "";
+        }
+        while (!path.isEmpty() && !fileSystem->exists(path)) {
+            if (path.lastIndexOf('/') > 0) {
+                path = path.substring(0, path.lastIndexOf('/'));
+            } else {
+                path = String();  // No slash => the top folder does not exist
+            }
+        }
+        DBG_OUTPUT_PORT.println(String("Last existing parent: ") + path);
+        return path;
+    }
+
+    /*
+      Handle the creation/rename of a new file
+      Operation      | req.responseText
+      ---------------+--------------------------------------------------------------
+      Create file    | parent of created file
+      Create folder  | parent of created folder
+      Rename file    | parent of source file
+      Move file      | parent of source file, or remaining ancestor
+      Rename folder  | parent of source folder
+      Move folder    | parent of source folder, or remaining ancestor
+    */
+    void handleFileCreate() {
+        if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
+
+        String path = server->arg("path");
+        if (path.isEmpty()) { return replyBadRequest(F("PATH ARG MISSING")); }
+
+#ifdef USE_SPIFFS
+        if (checkForUnsupportedPath(path).length() > 0) { return replyServerError(F("INVALID FILENAME")); }
+#endif
+
+        if (selectFileSystemAndFixPath(path) == false)
+        {
+            return;
+        }
+        if (path == "/") { return replyBadRequest("BAD PATH"); }
+        if (fileSystem->exists(path)) { return replyBadRequest(F("PATH FILE EXISTS")); }
+
+        String src = server->arg("src");
+        if (src.isEmpty()) {
+            // No source specified: creation
+            DBG_OUTPUT_PORT.println(String("handleFileCreate: ") + path);
+            if (path.endsWith("/")) {
+                // Create a folder
+                path.remove(path.length() - 1);
+                if (!fileSystem->mkdir(path)) { return replyServerError(F("MKDIR FAILED")); }
+            } else {
+                // Create a file
+                File file = fileSystem->open(path, "w");
+                if (file) {
+                    file.write(0);
+                    //file.write((const char*)0);
+                    file.close();
+                } else {
+                    return replyServerError(F("CREATE FAILED"));
+                }
+            }
+            if (path.lastIndexOf('/') > -1) {
+                path = path.substring(0, path.lastIndexOf('/'));
+            }
+            replyOKWithMsg(path);
+        } else {
+            // Source specified: rename
+            if (src == "/") { return replyBadRequest("BAD SRC"); }
+            if (!fileSystem->exists(src)) { return replyBadRequest(F("SRC FILE NOT FOUND")); }
+
+            DBG_OUTPUT_PORT.println(String("handleFileCreate: ") + path + " from " + src);
+
+            if (path.endsWith("/")) { path.remove(path.length() - 1); }
+            if (src.endsWith("/")) { src.remove(src.length() - 1); }
+            if (!fileSystem->rename(src, path)) { return replyServerError(F("RENAME FAILED")); }
+            replyOKWithMsg(lastExistingParent(src));
+        }
+    }
+
+
+    /*
+      Delete the file or folder designed by the given path.
+      If it's a file, delete it.
+      If it's a folder, delete all nested contents first then the folder itself
+
+      IMPORTANT NOTE: using recursion is generally not recommended on embedded devices and can lead to crashes (stack overflow errors).
+      This use is just for demonstration purpose, and FSBrowser might crash in case of deeply nested filesystems.
+      Please don't do this on a production system.
+    */
+    void deleteRecursive(String path) {
+        //if (selectFileSystemAndFixPath(path) == false)
+        //{
+        //  return;
+        //}
+        File file = fileSystem->open(path, "r");
+        bool isDir = file.isDirectory();
+        file.close();
+
+        // If it's a plain file, delete it
+        if (!isDir) {
+            fileSystem->remove(path);
+            return;
+        }
+
+        // Otherwise delete its contents first
+        File dir = fileSystem->open(path);
+
+        while (dir.openNextFile()) { deleteRecursive(path + '/' + dir.name()); }
+
+        // Then delete the folder itself
+        fileSystem->rmdir(path);
+    }
+
+
+    /*
+      Handle a file deletion request
+      Operation      | req.responseText
+      ---------------+--------------------------------------------------------------
+      Delete file    | parent of deleted file, or remaining ancestor
+      Delete folder  | parent of deleted folder, or remaining ancestor
+    */
+    void handleFileDelete() {
+        if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
+        String path = server->arg(0);
+        if (selectFileSystemAndFixPath(path) == false)
+        {
+            return;
+        }
+        
+        if (path.isEmpty() || path == "/") { return replyBadRequest("BAD PATH"); }
+
+        DBG_OUTPUT_PORT.println(String("handleFileDelete: ") + path);
+        if (!fileSystem->exists(path)) { return replyNotFound(FPSTR(FILE_NOT_FOUND)); }
+        deleteRecursive(path);
+
+        replyOKWithMsg(lastExistingParent(path));
+    }
+
+    /*
+      Handle a file upload request
+    */
+    void handleFileUpload() {
+        if (!fsOK) { return replyServerError(FPSTR(FS_INIT_ERROR)); }
+        if (server->uri() != "/edit") { return; }
+        HTTPUpload& upload = server->upload();
+        if (upload.status == UPLOAD_FILE_START) {
+            String filename = upload.filename;
+
+            if (selectFileSystemAndFixPath(filename) == false)
+            {
+                return;
+            }
+            
+            // Make sure paths always start with "/"
+            if (!filename.startsWith("/")) { filename = "/" + filename; }
+            DBG_OUTPUT_PORT.println(String("handleFileUpload Name: ") + filename);
+            uploadFile = fileSystem->open(filename, "w");
+            if (!uploadFile) { return replyServerError(F("CREATE FAILED")); }
+            DBG_OUTPUT_PORT.println(String("Upload: START, filename: ") + filename);
+        } else if (upload.status == UPLOAD_FILE_WRITE) {
+            if (uploadFile) {
+                size_t bytesWritten = uploadFile.write(upload.buf, upload.currentSize);
+                if (bytesWritten != upload.currentSize) { return replyServerError(F("WRITE FAILED")); }
+            }
+            DBG_OUTPUT_PORT.println(String("Upload: WRITE, Bytes: ") + upload.currentSize);
+        } else if (upload.status == UPLOAD_FILE_END) {
+            if (uploadFile) { uploadFile.close(); }
+            DBG_OUTPUT_PORT.println(String("Upload: END, Size: ") + upload.totalSize);
+        }
+    }
+
+    File fsUploadFile;
+    /// @brief 
+    /// @param dir directory to upload file to
+    /// @param dest destination url when completed 
+    void handleFileUploadFailsafe(String dir, String dest){ // upload a new file to the SPIFFS
+        //DBG_OUTPUT_PORT.println("handleFileUploadFailsafe: ");
+        //DBG_OUTPUT_PORT.println("dir:" + dir);
+        //DBG_OUTPUT_PORT.println("dest: " + dest);
+        if (LittleFS.exists(dir.c_str()) == false)
+            LittleFS.mkdir(dir.c_str());
+        HTTPUpload& upload = server->upload();
+        if(upload.status == UPLOAD_FILE_START){
+            DBG_OUTPUT_PORT.println("UPLOAD_FILE_START");
+            String filename = upload.filename;
+            if(!filename.startsWith("/")) filename = "/"+filename;
+            Serial.print("handleFileUpload Name: "); Serial.println(filename);
+            fsUploadFile = LittleFS.open(dir + filename, "w");            // Open the file for writing in SPIFFS (create if it doesn't exist)
+            filename = String();
+        } else if(upload.status == UPLOAD_FILE_WRITE){
+            //DBG_OUTPUT_PORT.println("UPLOAD_FILE_WRITE");
+            if(fsUploadFile)
+                fsUploadFile.write(upload.buf, upload.currentSize); // Write the received bytes to the file
+        } else if(upload.status == UPLOAD_FILE_END){
+            DBG_OUTPUT_PORT.println("UPLOAD_FILE_END");
+            if(fsUploadFile) {                                    // If the file was successfully created
+                fsUploadFile.close();                               // Close the file again
+                Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
+                server->sendHeader("Location",dest);      // Redirect the client to the success page
+                server->send(303);
+            } else {
+                server->send(500, "text/plain", "500: couldn't create file");
+            }
+        }
+    }
+
+    /*
+      This specific handler returns the index.htm (or a gzipped version) from the /edit folder.
+      If the file is not present but the flag INCLUDE_FALLBACK_INDEX_HTM has been set, falls back to the version
+      embedded in the program code.
+      Otherwise, fails with a 404 page with debug information
+    */
+    void handleGetEdit() {
+        if (handleFileRead(F("/LittleFS/edit/index.htm"))) { return; }
+
+        server->sendHeader("Location","/edit/upload");      // Redirect the client to the upload page
+        server->send(303);
+    }
+
+    void handleFailsafeUploadPage() {
+        server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        server->sendHeader("Pragma", "no-cache");
+        server->sendHeader("Expires", "-1");
+        server->setContentLength(CONTENT_LENGTH_UNKNOWN); // *** BEGIN ***
+
+        server->send(200,"text/html", "");
+        server->sendContent_P(upload_html);
+        server->sendContent("");
+        server->client().stop();
+    }
+
+    void setup(WEBSERVER_TYPE &srv) {
+        server = &srv;
+
+        // Filesystem status 
+        server->on("/status", HTTP_GET, handleStatus);//[this](){this->handleStatus(); });
+
+        // List directory
+        server->on("/list", HTTP_GET, handleFileList);//[this](){this->handleFileList(); });
+
+        // Load editor
+        server->on("/edit", HTTP_GET, handleGetEdit);//[this](){this->handleGetEdit(); });
+
+        // Create file
+        server->on("/edit", HTTP_PUT, handleFileCreate);//[this](){this->handleFileCreate(); });
+
+        // Delete file
+        server->on("/edit", HTTP_DELETE, handleFileDelete);//[this](){this->handleFileDelete(); });
+
+
+        server->on("/edit/upload", HTTP_GET, handleFailsafeUploadPage);//[this](){this->handleFailsafeUpload(); });                 // if the client requests the upload page
+
+        server->on("/edit/upload", HTTP_POST, [](){ DBG_OUTPUT_PORT.println("send OK"); server->send(200); }, []() { handleFileUploadFailsafe("/edit", "/edit/upload"); });                      // if the client posts to the upload page
+
+        // Upload file
+        // - first callback is called after the request has ended with all parsed arguments
+        // - second callback handles file upload at that location
+        server->on("/edit", HTTP_POST, [](){ server->send(200); }, handleFileUpload);//[this](){this->replyOK();}, [this](){this->handleFileUpload();});
+    }
 }

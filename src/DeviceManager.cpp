@@ -1,15 +1,12 @@
 #include "DeviceManager.h"
 #include <cstdlib> // For std::strtoul
+#include "ConvertHelper.h"
 
 namespace DeviceManager
 {
     std::string lastError;
 
-#ifdef ESP8266
-    ESP8266WebServer *server = nullptr;
-#elif defined(ESP32)
-    fs_WebServer *server = nullptr;
-#endif
+    WEBSERVER_TYPE *webserver = nullptr;
 
     DHTesp dht;
     OneWire oneWire;
@@ -78,7 +75,7 @@ namespace DeviceManager
     OneWireTempDevice::OneWireTempDevice(uint32_t _uid, uint8_t _pin, const char* romid_hexstr)
     {
         romid = new uint8_t[8]();
-        if (convertHexToBytes(romid_hexstr, romid, 8) == false) { delete[] romid; romid = nullptr;}
+        if (Convert::convertHexToBytes(romid_hexstr, romid, 8) == false) { delete[] romid; romid = nullptr;}
         // note later usage must allways check beforehand if romid is nullptr before use
         type = DeviceType::OneWireTemp;
         uid = _uid;
@@ -89,7 +86,7 @@ namespace DeviceManager
         String str = Device::ToString();
         str.concat(", romid="); 
         if (romid != nullptr)
-            str.concat(ByteArrayToString(romid, 8).c_str());
+            str.concat(Convert::ByteArrayToString(romid, 8).c_str());
         else
             str.concat("nullptr");
         str.concat(", value="); str.concat(value);
@@ -155,67 +152,6 @@ namespace DeviceManager
         type = DeviceType::TX433;
         uid = _uid;
         pin = _pin;
-    }
-
-    char ConvertOneNibble(uint8_t value)
-    {
-        if (value>9) return (value - 10) + 'A';
-        else return value + '0';
-    }
-
-    std::string ByteToHexString(uint8_t value)
-    {
-        std::string hexString(2,'0');
-        hexString[0] = ConvertOneNibble((value >> 4) & 0x0F);
-        hexString[1] = ConvertOneNibble(value & 0x0F);
-        return hexString;
-    }
-
-    std::string ByteArrayToString(uint8_t* byteArray, size_t arraySize)
-    {
-        std::string str = "";
-        for (int i=0;i<arraySize;i++) {
-            str.append(ByteToHexString(byteArray[i]));
-            if (i<(arraySize-1)) str.append(":");
-        }
-        return str;
-    }
-
-    bool convertHexToBytes(const char* hexString, uint8_t* byteArray, size_t arraySize)
-    {
-        if (!hexString || !byteArray ) {
-            DEBUG_UART.println("convertHexToBytes - Invalid input 1");
-            return false; // Invalid input 1
-        }
-        size_t hexStrLen = strlen(hexString);
-        int incr = 0;
-        if (hexStrLen == arraySize*2) // no deliminator between hex-byte numbers
-            incr = 2;
-        else if (hexStrLen == (arraySize*3)-1)// any desired deliminator between hex-byte numbers
-            incr = 3;
-        else {
-            DEBUG_UART.println("convertHexToBytes - hexStrLen mismatch:" + String(hexStrLen));
-            return false; // Invalid input 2
-        }
-        size_t byteIndex = 0;
-        for (size_t i = 0; i < hexStrLen; i+=incr) {
-            if (byteIndex >= arraySize) {
-                DEBUG_UART.println("Exceeded array size");
-                return false; // Exceeded array size
-            }
-            char highNibble = hexString[i];
-            char lowNibble = hexString[i + 1];
-
-            if (!std::isxdigit(highNibble) || !std::isxdigit(lowNibble)) {
-                DEBUG_UART.println("Non-hex character found");
-                return false; // Non-hex character found
-            }
-
-            byteArray[byteIndex++] = (uint8_t)((std::isdigit(highNibble) ? highNibble - '0' : std::toupper(highNibble) - 'A' + 10) << 4 |
-                                    (std::isdigit(lowNibble) ? lowNibble - '0' : std::toupper(lowNibble) - 'A' + 10));
-        }
-
-        return true; // Conversion successful
     }
 
     /**************************************************************/
@@ -512,49 +448,46 @@ namespace DeviceManager
                 ret.concat("<br>");
             }
         }
-        server->send(200, "text/html", ret);
+        webserver->send(200, "text/html", ret);
     }
 
     void reloadJSON()
     {
-        if (!server->chunkedResponseModeStart(200, "text/html")) {
-            server->send(505, F("text/html"), F("HTTP1.1 required"));
+        if (!webserver->chunkedResponseModeStart(200, "text/html")) {
+            webserver->send(505, F("text/html"), F("HTTP1.1 required"));
             return;
         }
-        server->sendContent("LOAD JSON start<br>");
+        webserver->sendContent("LOAD JSON start<br>");
         if (readJson())
-            server->sendContent("LOAD JSON ok<br>");
+            webserver->sendContent("LOAD JSON ok<br>");
         else {
             String message = "LOAD JSON fail<br>" + String(lastError.c_str());
-            server->sendContent(message);
+            webserver->sendContent(message);
         }
-        server->chunkedResponseFinalize();
+        webserver->chunkedResponseFinalize();
     }
     void htmlGetValue()
     {
-        if (server->hasArg("uid") == false) {
-            server->send(200, "text/html", "uid parameter missing");
+        if (webserver->hasArg("uid") == false) {
+            webserver->send(200, "text/html", "uid parameter missing");
             return;
         }
-        uint32_t uid = atoi(server->arg("uid").c_str());
+        uint32_t uid = atoi(webserver->arg("uid").c_str());
         float value = 0;
         if (getValue(uid, &value) == false) 
         {
-            server->send(200, "text/html", "could not get value");
+            webserver->send(200, "text/html", "could not get value");
             return;
         }
         String ret = "";
         ret.concat("value:");
         ret.concat(value);
-        server->send(200, "text/html", ret);
+        webserver->send(200, "text/html", ret);
     }
 
-#ifdef ESP8266
-    void setup(ESP8266WebServer &srv) {
-#elif defined(ESP32)
-    void setup(fs_WebServer &srv) {
-#endif
-        server = &srv;
+    void setup(WEBSERVER_TYPE &srv) {
+
+        webserver = &srv;
         srv.on(DEVICE_MANAGER_URL_RELOAD_JSON, HTTP_GET, reloadJSON);
         srv.on(DEVICE_MANAGER_URL_GET_VALUE, HTTP_GET, htmlGetValue);
         srv.on(DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS, HTTP_GET, htmlGetAllOneWireTemperatures);
@@ -647,7 +580,7 @@ namespace DeviceManager
             ret.concat(owtd.ToString());
             ret.concat("<br>");
         }
-        server->send(200, "text/html", ret);
+        webserver->send(200, "text/html", ret);
     }
 
     bool getValue(uint32_t uid, float* value)
@@ -703,8 +636,8 @@ namespace DeviceManager
     void htmlGetListOfOneWireDevicesOnBusPin()
     {
         uint8_t pin = 32;
-        if (server->hasArg("pin"))
-            pin = std::stoi(server->arg("pin").c_str());
+        if (webserver->hasArg("pin"))
+            pin = std::stoi(webserver->arg("pin").c_str());
         OneWire _1wire;
         _1wire.begin(pin);
         byte i = 0;
@@ -735,6 +668,6 @@ namespace DeviceManager
                 returnStr.concat("<br>");
             }
         }
-        server->send(200,F("text/html"), returnStr);
+        webserver->send(200,F("text/html"), returnStr);
     }
 }

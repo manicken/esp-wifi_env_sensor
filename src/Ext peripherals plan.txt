@@ -1,9 +1,0 @@
-ExtPeripherals:
- do contain the GPIO assigments for the external modules such as sensors and output devices
-
-Sensors:
- should contain the different sensor tables and to define the names, also which type of sensor it is and to which ExtPeripheral it's connected to
-
-TODO
-
-a external class that binds ExtPeripherals and Sensors together

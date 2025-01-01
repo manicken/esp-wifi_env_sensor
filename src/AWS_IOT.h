@@ -15,12 +15,14 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #define DEBUG_UART Serial1
+#define WEBSERVER_TYPE ESP8266WebServer
 #elif defined(ESP32)
 #include <WiFi.h>
 #include <fs_WebServer.h>
 #include "mimetable.h"
 #include <mdns.h>
 #define DEBUG_UART Serial
+#define WEBSERVER_TYPE fs_WebServer
 #endif
 
 // the following are not used when having config and files on internal filesystem
@@ -44,12 +46,7 @@ namespace AWS_IOT {
     #define AWS_IOT_FILE_DEFAULT_DEVICE_CERT    "device.crt"
     #define AWS_IOT_FILE_DEFAULT_PRIVATE_KEY    "private.key"
 
-
-#ifdef ESP8266
-    ESP8266WebServer *server = nullptr;
-#elif defined(ESP32)
-    fs_WebServer *server = nullptr;
-#endif
+    WEBSERVER_TYPE *webserver = nullptr;
 
     std::string mqtt_host = "";
     std::string thingName = "";
@@ -73,8 +70,6 @@ namespace AWS_IOT {
 
     PubSubClient pubSubClient(wifiClientSecure);
     
-    
-
     bool canConnect = false;
     
     bool setup_readFiles()
@@ -271,17 +266,13 @@ namespace AWS_IOT {
         }
     }
 
-    #ifdef ESP8266
-    void setup(ESP8266WebServer &srv, std::function<void(char*, uint8_t*, unsigned int)> messageReceivedCallback) {
-#elif defined(ESP32)
-    void setup(fs_WebServer &srv, std::function<void(char*, uint8_t*, unsigned int)> messageReceivedCallback) {
-#endif
-        server = &srv;
+    void setup(WEBSERVER_TYPE &srv, std::function<void(char*, uint8_t*, unsigned int)> messageReceivedCallback) {
+        webserver = &srv;
         pubSubClient.setCallback(messageReceivedCallback);
-        server->on(AWS_IOT_URL_REFRESH, []() {
+        webserver->on(AWS_IOT_URL_REFRESH, []() {
             String ret = "AWS_IOT:\n";
             setup_readFiles_and_connect(ret);
-            server->send(200,F("text/plain"), ret);
+            webserver->send(200,F("text/plain"), ret);
         });
         String ret = "AWS_IOT:\n";
         setup_readFiles_and_connect(ret);

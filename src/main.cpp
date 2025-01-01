@@ -57,6 +57,7 @@
 #include <ArduinoJson.h>
 #include <TimeLib.h>
 #include <TimeAlarms.h>
+#include "Info.h"
 #include "FSBrowser.h"
 #include "RF433.h"
 #include "FAN.h"
@@ -71,21 +72,14 @@
 
 
 #define MAIN_URLS_JSON_CMD              F("/json_cmd")
-#define MAIN_URLS_INFO                  F("/info")
+
 #define MAIN_URLS_FORMAT_LITTLE_FS      F("/formatLittleFs")
 #define MAIN_URLS_MKDIR                 F("/mkdir")
 
-#define MAIN_URLS_ESP_FREE_HEAP         F("/esp/free_heap")
-#define MAIN_URLS_ESP_LAST_RESET_REASON F("/esp/last_reset_reason")
+
 
 //#include <sstream>
 //#include "TCP2UART.h"
-
-// the following are not used when having config and files on internal filesystem
-//#include "secrets/db_kitchen/secrets.h"
-//#include "secrets/db_toilet/secrets.h"
-//#include "secrets/db_bedroom/secrets.h"
-
 
 #if defined(ESP8266)
     #define DEBUG_UART Serial1
@@ -115,7 +109,7 @@ fs_WebServer webserver(HTTP_PORT);
 #endif
 
 unsigned long currTime = 0;
-time_t startTime = 0;
+
 
 
 #if defined(USE_DISPLAY)
@@ -130,11 +124,8 @@ void init_display(void);
 #endif
 
 
-
 void connect_to_wifi(void);
-void printESP_info(void);
-void srv_handle_info(void);
-const char* getResetReason(void);
+
 void initWebServerHandlers(void);
 
 void Timer_SyncTime() {
@@ -290,7 +281,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
-    DEBUG_UART.println(getResetReason());
+    DEBUG_UART.println(Info::getResetReason());
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true;
 #if defined(ESP32)
     if (InitSD_MMC()) FSBrowser::fsOK = true;
@@ -309,7 +300,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     test.println(Time_ext::GetTimeAsString(now()).c_str());
     test.close();
 #endif
-    startTime = now();
+    Info::startTime = now();
 #if defined(AWS_IOT_H)
     AWS_IOT::setup(webserver, AWS_IOT_messageReceived);
 #endif
@@ -317,6 +308,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     FSBrowser::setup(webserver);
     DeviceManager::setup(webserver);
     ThingSpeak::setup(webserver);
+    Info::setup(webserver);
     webserver.begin();
 
 #if defined(NORD_POOL_FETCHER_H)
@@ -332,15 +324,10 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
 
 void loop() {
     //tcp2uart.BridgeMainTask();
-    
     ArduinoOTA.handle();
     webserver.handleClient();
-    
-    
     Scheduler::HandleAlarms();
-
     //currTime = millis();
-
     HeartbeatLed::task();
 
 #if defined(USE_DISPLAY)
@@ -370,21 +357,24 @@ void loop() {
     
     if (WiFi.status() != wl_status_t:: WL_CONNECTED)
     {
-        WiFi.begin();
+        DEBUG_UART.println("WiFi connection lost.");
+        wl_status_t status = WiFi.begin();
+        if (status == wl_status_t::WL_CONNECTED) DEBUG_UART.println("reconnect OK");
+        else DEBUG_UART.println("reconnect fail");
+        
         //connect_to_wifi();
 #if defined(AWS_IOT_H)
         AWS_IOT::setup_and_connect();
     }
     else if (AWS_IOT::canConnect)
     {
-        if (!AWS_IOT::pubSubClient.connected())
-            AWS_IOT::setup_and_connect();
-        else
+        if (AWS_IOT::pubSubClient.connected())
             AWS_IOT::pubSubClient.loop();
-        
+        else
+            AWS_IOT::setup_and_connect();
     }
 #else
-    
+    }
 #endif
 #if defined(USE_DISPLAY)
     if (update_display == 1) {
@@ -393,7 +383,6 @@ void loop() {
     }
 #endif
 }
-
 
 void initWebServerHandlers(void)
 {
@@ -413,7 +402,7 @@ void initWebServerHandlers(void)
             AWS_IOT_messageReceived(nullptr, upload.buf, upload.currentSize);
         }
     });
-    webserver.on(MAIN_URLS_INFO, srv_handle_info);
+    
     webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, []() {
         LITTLEFS_BEGIN_FUNC_CALL;
         if (LittleFS.format())
@@ -438,20 +427,6 @@ void initWebServerHandlers(void)
         }
 
     });
-
-    webserver.on(MAIN_URLS_ESP_FREE_HEAP, []() {
-        std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
-#if defined(ESP8266)
-        ret += ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
-#endif
-        webserver.send(200,F("text/plain"), ret.c_str());
-    });
-    webserver.on(MAIN_URLS_ESP_LAST_RESET_REASON, []() {
-        std::string resetInfo = "Last Reset at: " + Time_ext::GetTimeAsString(startTime);
-        resetInfo += "\nReason: " + std::string(getResetReason());
-        
-        webserver.send(200, F("text/plain"), resetInfo.c_str());
-    });
 #if defined(ESP32)
     webserver.on("/sdcard_listfiles", []() {
         
@@ -475,9 +450,6 @@ void initWebServerHandlers(void)
        // }else {webserver.send(200, F("text/plain"), "could not open sd card a second time");}
     });
 #endif
-
-//webserver.serveStatic("/", LittleFS, "/"); // also serves if any index.html or index.htm is found
-
     webserver.onNotFound([]() {                              // If the client requests any URI
         String uri = webserver.uri();
         bool isDir = false;
@@ -561,148 +533,5 @@ void connect_to_wifi(void)
 #endif
 }
 
-/*
-// called from setup() function
-void printESP_info(void) { 
-    uint32_t realSize = ESP.getFlashChipRealSize();
-    uint32_t ideSize = ESP.getFlashChipSize();
-    FlashMode_t ideMode = ESP.getFlashChipMode();
 
-    DEBUG_UART.print(F("Flash real id:   ")); DEBUG_UART.printf("%08X\r\n", ESP.getFlashChipId());
-    DEBUG_UART.print(F("Flash real size: ")); DEBUG_UART.printf("%u 0\r\n\r\n", realSize);
-
-    DEBUG_UART.print(F("Flash ide  size: ")); DEBUG_UART.printf("%u\r\n", ideSize);
-    DEBUG_UART.print(F("Flash ide speed: ")); DEBUG_UART.printf("%u\r\n", ESP.getFlashChipSpeed());
-    DEBUG_UART.print(F("Flash ide mode:  ")); DEBUG_UART.printf("%s\r\n", (ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN"));
-
-    if(ideSize != realSize)
-    {
-        DEBUG_UART.println(F("Flash Chip configuration wrong!\r\n"));
-    }
-    else
-    {
-        DEBUG_UART.println(F("Flash Chip configuration ok.\r\n"));
-    }
-    DEBUG_UART.printf(" ESP8266 Chip id = %08X\n", ESP.getChipId());
-    DEBUG_UART.println();
-    DEBUG_UART.println();
-}*/
-
-/*#if defined(ESP8266)
-    enum rst_reason {
-    REASON_DEFAULT_RST      = 0,    //normal startup by power on 
-    REASON_WDT_RST          = 1,    //hardware watch dog reset 
-    REASON_EXCEPTION_RST    = 2,    //exception reset, GPIO status won’t change 
-    REASON_SOFT_WDT_RST     = 3,    //software watch dog reset, GPIO status won’t change 
-    REASON_SOFT_RESTART     = 4,    //software restart ,system_restart , GPIO status won’t change 
-    REASON_DEEP_SLEEP_AWAKE = 5,    //wake up from deep-sleep 
-    REASON_EXT_SYS_RST      = 6     //external system reset
-};
-#endif*/
-const char* getResetReason()
-{
-#if defined(ESP8266)
-    rst_info *info = system_get_rst_info();
-    uint32 reason = info->reason;
-    if (reason == rst_reason::REASON_DEFAULT_RST)
-        return "normal startup by power on";
-    else if (reason == rst_reason::REASON_WDT_RST)
-        return "hardware watch dog reset";
-    else if (reason == rst_reason::REASON_EXCEPTION_RST)
-        return "exception reset";
-    else if (reason == rst_reason::REASON_SOFT_WDT_RST)
-        return "software watch dog reset";
-    else if (reason == rst_reason::REASON_SOFT_RESTART)
-        return "software restart/system_restart";
-    else if (reason == rst_reason::REASON_DEEP_SLEEP_AWAKE)
-        return "wake up from deep-sleep";
-    else if (reason == rst_reason::REASON_EXT_SYS_RST)
-        return "external system reset";
-    else
-        return "undefined reset cause";
-#elif defined(ESP32)
-    esp_reset_reason_t reset_reason = esp_reset_reason();
-    switch (reset_reason) {
-        case ESP_RST_POWERON: return "Power-on reset";
-        case ESP_RST_EXT: return "External reset";
-        case ESP_RST_SW: return "Software reset";
-        case ESP_RST_PANIC: return "Software reset due to panic";
-        case ESP_RST_INT_WDT: return "Interrupt watchdog reset";
-        case ESP_RST_TASK_WDT: return "Task watchdog reset";
-        case ESP_RST_WDT: return "Other watchdog reset";
-        case ESP_RST_DEEPSLEEP: return "Reset after deep sleep";
-        case ESP_RST_BROWNOUT: return "Brownout reset";
-        case ESP_RST_SDIO: return "SDIO reset";
-        default: return "Unknown reset reason";
-    }
-#endif
-        
-}
-
-void srv_handle_info()
-{
-    uint32_t ideSize = ESP.getFlashChipSize();
-#if defined(ESP8266)
-    uint32_t realSize = ESP.getFlashChipRealSize();
-#else
-    uint32_t realSize = ideSize;
-#endif
-    FlashMode_t ideMode = ESP.getFlashChipMode();
-    String srv_return_msg = "";
-
-    srv_return_msg.concat(F("<!DOCTYPE html PUBLIC\"ISO/IEC 15445:2000//DTD HTML//EN\"><html><head><title></title></head><body>"));
-#if defined(ESP8266)
-    srv_return_msg.concat(F("Flash real id:   ")); srv_return_msg.concat(ESP.getFlashChipId());
-#endif
-    srv_return_msg.concat(F("<br>Flash real size: ")); srv_return_msg.concat(realSize);
-
-    srv_return_msg.concat(F("<br>Flash ide  size: ")); srv_return_msg.concat(ideSize);
-    srv_return_msg.concat(F("<br>Flash ide speed: ")); srv_return_msg.concat(ESP.getFlashChipSpeed());
-    srv_return_msg.concat(F("<br>Flash ide mode:  ")); srv_return_msg.concat((ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN"));
-    if(ideSize != realSize)
-    {
-        srv_return_msg.concat(F("<br>Flash Chip configuration wrong!\r\n"));
-    }
-    else
-    {
-        srv_return_msg.concat(F("<br>Flash Chip configuration ok.\r\n"));
-    }
-#if defined(ESP8266)
-    srv_return_msg.concat(F("<br> ESP8266 Chip id = ")); srv_return_msg.concat(ESP.getChipId());
-#endif
-    srv_return_msg.concat(F("<br><br>"));
-    if (LITTLEFS_BEGIN_FUNC_CALL) {
-        srv_return_msg.concat(F("<br>LittleFS mounted OK"));
-#if defined(ESP8266)
-        FSInfo fsi;
-        if (LittleFS.info(fsi)) {
-            srv_return_msg.concat(F("<br>LittleFS blocksize = ")); srv_return_msg.concat(fsi.blockSize); 
-            srv_return_msg.concat(F("<br>LittleFS maxOpenFiles = ")); srv_return_msg.concat(fsi.maxOpenFiles); 
-            srv_return_msg.concat(F("<br>LittleFS maxPathLength = ")); srv_return_msg.concat(fsi.maxPathLength); 
-            srv_return_msg.concat(F("<br>LittleFS pageSize = ")); srv_return_msg.concat(fsi.pageSize); 
-            srv_return_msg.concat(F("<br>LittleFS totalBytes = ")); srv_return_msg.concat(fsi.totalBytes); 
-            srv_return_msg.concat(F("<br>LittleFS usedBytes = ")); srv_return_msg.concat(fsi.usedBytes); 
-        }
-        else
-#elif defined(ESP32)
-        srv_return_msg.concat(F("<br>LittleFS totalBytes = ")); srv_return_msg.concat(LittleFS.totalBytes());
-        srv_return_msg.concat(F("<br>LittleFS usedBytes = ")); srv_return_msg.concat(LittleFS.usedBytes()); 
-#else
-            srv_return_msg.concat(F("<br>LittleFS info not implemented"));
-#endif
-
-        srv_return_msg.concat("<br><br>Files:<br>");
-        
-        //LittleFS_ext::listDir(DEBUG_UART,"/", 0);
-        LittleFS_ext::listDir(srv_return_msg, true, "/", 0);
-    }
-    else
-        srv_return_msg.concat(F("<br>LittleFS Fail to mount"));
-
-    srv_return_msg.concat(F("</body></html>"));
-    webserver.send(200, "text/html", srv_return_msg);
-    //server.sendContent(srv_return_msg);
-
-    //server.sendContent("");
-}
 

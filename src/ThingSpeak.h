@@ -3,12 +3,19 @@
 
 #if defined(ESP8266)
 #include <ESP8266HTTPClient.h>
+#include <ESP8266WebServer.h>
+#define WEBSERVER_TYPE ESP8266WebServer
+#define DEBUG_UART Serial1
 #elif defined(ESP32)
 #include <HTTPClient.h>
+#include <fs_WebServer.h>
+#define WEBSERVER_TYPE fs_WebServer
+#define DEBUG_UART Serial
 #endif
 #include "LittleFS_ext.h"
 
 #include "DeviceManager.h"
+#include "ConvertHelper.h"
 
 //#define TS_DEBUG_PRINT_AFTER_JSON_READ
 
@@ -18,13 +25,7 @@ namespace ThingSpeak
     int debug_output = 0;
     std::string lastError;
 
-    #ifdef ESP8266
-    ESP8266WebServer *server = nullptr;
-    #define DEBUG_UART Serial1
-#elif defined(ESP32)
-    fs_WebServer *server = nullptr;
-    #define DEBUG_UART Serial
-#endif
+    WEBSERVER_TYPE *webserver = nullptr;
      
     const char TS_ROOT_URL[] = "http://api.thingspeak.com/update?api_key=";
 
@@ -61,23 +62,6 @@ namespace ThingSpeak
     HTTPClient http;
     
     bool canPost = false;
-
-    bool isInteger(const char* str)
-    {
-        if (str == nullptr || *str == '\0') return false; // Null or empty string is not valid
-
-        // Handle leading sign
-        if (*str == '+' || *str == '-') str++;
-
-        // Check the rest of the string
-        while (*str != '\0')
-        {
-            if (!isdigit(*str)) return false;
-            str++;
-        }
-
-        return true; // All characters are digits
-    }
 
     bool readJson()
     {
@@ -155,7 +139,7 @@ namespace ThingSpeak
                     lastError+="fieldIndex is not a string @ currIndex:" + std::to_string(currIndex) + "\n";
                     continue;
                 }
-                if (isInteger(fieldIndexStr) == false) {
+                if (Convert::isInteger(fieldIndexStr) == false) {
                     lastError+="fieldIndex is not a integer @ currIndex:" + std::to_string(currIndex) + "\n";
                     continue;
                 }
@@ -206,20 +190,7 @@ namespace ThingSpeak
         canPost = true;
         return true;
     }
-    std::string floatToString(float value) {
-        char buffer[32]; // Adjust size based on needs
-        snprintf(buffer, sizeof(buffer), "%.6f", value); // Format as float with 6 decimals
-
-        std::string result(buffer);
-
-        // Remove trailing zeros
-        result.erase(result.find_last_not_of('0') + 1, std::string::npos);
-        if (result.back() == '.') {
-            result.pop_back(); // Remove decimal point if no fractional part
-        }
-
-        return result;
-    }
+    
 
     bool sendDataBackToWebbrowser = false;
 
@@ -240,7 +211,7 @@ namespace ThingSpeak
                 if (channels[ci].uids[fi] == -1) continue;
                 float value = 0;
                 if (DeviceManager::getValue(channels[ci].uids[fi], &value) == false) continue;
-                fieldData += "&field" + std::to_string(fi+1) + "=" + floatToString(value);
+                fieldData += "&field" + std::to_string(fi+1) + "=" + Convert::floatToString(value);
             }
             if (fieldData.length() == 0) continue;
             std::string urlApi = TS_ROOT_URL + channels[ci].api_write_key + fieldData;
@@ -259,7 +230,7 @@ namespace ThingSpeak
             }
             if (sendDataBackToWebbrowser) {
                 sendDataBackToWebbrowser = false;
-                server->send(200, "text/html", urlApi.c_str()); // in case the request is from a url to test
+                webserver->send(200, "text/html", urlApi.c_str()); // in case the request is from a url to test
             }
         }
         digitalWrite(TS_ACTIVITY_LED_PIN, LOW); // TODO move this and make it more customaziable
@@ -269,9 +240,9 @@ namespace ThingSpeak
     void reloadJson()
     {
         if (readJson())
-            server->send(200,F("text/plain"), F("Thingspeak loadSettings OK"));
+            webserver->send(200,F("text/plain"), F("Thingspeak loadSettings OK"));
         else
-            server->send(200,F("text/plain"), F("Thingspeak loadSettings error"));
+            webserver->send(200,F("text/plain"), F("Thingspeak loadSettings error"));
     }
 
     void htmlSendDataTest()
@@ -280,12 +251,8 @@ namespace ThingSpeak
         SendData();
     }
 
-   #ifdef ESP8266
-    void setup(ESP8266WebServer &srv) {
-#elif defined(ESP32)
-    void setup(fs_WebServer &srv) {
-#endif
-        server = &srv;
+    void setup(WEBSERVER_TYPE &srv) {
+        webserver = &srv;
         srv.on(TS_CONFIG_JSON_FILE_URL_RELOAD, reloadJson);
         srv.on(TS_URL_SEND_DATA, htmlSendDataTest);
         readJson();

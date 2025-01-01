@@ -2,11 +2,7 @@
 
 namespace GPIO_manager
 {
-    #ifdef ESP8266
-    ESP8266WebServer *server = nullptr;
-#elif defined(ESP32)
-    fs_WebServer *server = nullptr;
-#endif
+    WEBSERVER_TYPE *webserver = nullptr;
     
 #if defined(ESP8266)
     const gpio_pin available_gpio_list[] {
@@ -66,13 +62,8 @@ namespace GPIO_manager
     const uint8_t available_gpio_list_lenght = sizeof(available_gpio_list)/sizeof(available_gpio_list[0]);
     const uint8_t PinModeStrings_lenght = sizeof(PinModeStrings)/sizeof(PinModeStrings[0]);
 
-
-    #if defined(ESP8266)
-    void setup(ESP8266WebServer &srv) {
-#elif defined(ESP32)
-    void setup(fs_WebServer &srv) {
-#endif
-        server = &srv;
+    void setup(WEBSERVER_TYPE &srv) {
+        webserver = &srv;
         srv.on(GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST, HTTP_GET, sendList);
     }
 
@@ -120,6 +111,6 @@ namespace GPIO_manager
         }
         srv_return_msg.concat("}");
         srv_return_msg.concat("}");
-        server->send(200, "text/json", srv_return_msg);
+        webserver->send(200, "text/json", srv_return_msg);
     }
 }

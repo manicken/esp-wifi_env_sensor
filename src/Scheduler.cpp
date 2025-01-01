@@ -32,11 +32,8 @@ AsStringParameter::AsStringParameter(JsonVariant json):OnTickExtParameters(0,1)
 
 namespace Scheduler
 {
-#ifdef ESP8266
-    ESP8266WebServer *server = nullptr;
-#elif defined(ESP32)
-    fs_WebServer *server = nullptr;
-#endif
+    WEBSERVER_TYPE *webserver = nullptr;
+
     int FuncCount = 0;
     NameToFunction* nameToFuncList = nullptr;
 
@@ -271,12 +268,9 @@ namespace Scheduler
         return ret;
     }
 
-#ifdef ESP8266
-    void setup(ESP8266WebServer &srv, NameToFunction* funcDefList, int funcDefListCount) {
-#elif defined(ESP32)
-    void setup(fs_WebServer &srv, NameToFunction* funcDefList, int funcDefListCount) {
-#endif
-        server = &srv;
+    void setup(WEBSERVER_TYPE &srv, NameToFunction* funcDefList, int funcDefListCount) {
+
+        webserver = &srv;
         FuncCount = funcDefListCount;
         nameToFuncList = funcDefList;
         NTP::NTPConnect();
@@ -290,13 +284,13 @@ namespace Scheduler
         
         srv.on(SCHEDULER_URL_REFRESH, []() {
         if (LoadJson(SCHEDULER_CFG_FILE_PATH))
-            server->send(200,F("text/plain"), F("schedule load json OK"));
+            webserver->send(200,F("text/plain"), F("schedule load json OK"));
         else
-            server->send(200,F("text/plain"), F("schedule load json error"));
+            webserver->send(200,F("text/plain"), F("schedule load json error"));
         });
         srv.on(SCHEDULER_URL_GET_MAX_NUMBER_OF_ALARMS, []() {
             std::string ret = std::to_string(dtNBR_ALARMS);
-            server->send(200, F("text/plain"), ret.c_str());
+            webserver->send(200, F("text/plain"), ret.c_str());
         });
         srv.on(SCHEDULER_URL_GET_FUNCTION_NAMES, []() {
 
@@ -308,16 +302,16 @@ namespace Scheduler
                 if (i < (FuncCount-1)) jsonStr += ",";
             }
             jsonStr += "}";
-            server->send(200,F("text/plain"), jsonStr.c_str());
+            webserver->send(200,F("text/plain"), jsonStr.c_str());
         });
         srv.on(SCHEDULER_URL_GET_SHORT_DOWS, []() {
             std::string ret = GetShortFormDowListAsJson();
-            server->send(200,F("text/plain"), ret.c_str());
+            webserver->send(200,F("text/plain"), ret.c_str());
         });
         srv.on(SCHEDULER_URL_GET_TIME, []() {
             std::string nowstr = "{\n\"now\":\"" + Time_ext::GetTimeAsString(now()) + "\",\n";
             nowstr += "\"next trigger\":\"" + Time_ext::GetTimeAsString(Scheduler->getNextTrigger()) + "\"\n}";
-            server->send(200,F("text/json"), nowstr.c_str());
+            webserver->send(200,F("text/json"), nowstr.c_str());
         });
         LoadJson(SCHEDULER_CFG_FILE_PATH);
     }
