@@ -1,16 +1,15 @@
 [
 	{"uid":"1B1","type":"1WB","pin":25},
 	{"uid":"1B2","type":"1WB","pin":26},
-	{"uid":"1B3","type":"1WB","pin":32},
+	{"uid":"1B3","type":"1WB","pin":27},
 	{"uid":"1D1","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:20:9E:8D","note":"temp inne uppe"},
 	{"uid":"1D2","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:27:D4:DB","note":"temp inne nere"},
-	{"uid":"1D3","type":"1WT","bus":"1B2","romid":"28:87:17:43:d4:bd:0a:46","note":"temp ute fram"},
-	{"uid":"1D4","type":"1WT","bus":"1B2","romid":"28:F0:5F:43:D4:CD:3C:59","note":"temp ute bak"},
+	{"uid":"1D3","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:18:C3:F0","note":"temp ute fram"},
+	{"uid":"1D4","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:1F:79:D2","note":"temp ute bak"},
 	{"uid":"1D5","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:21:D5:2F","note":"temp inne mitten"},
-	{"uid":"1D6","type":"1WT","bus":"1B3","romid":"28:61:64:35:18:18:C3:F0","note":"temp inne jord 10cm"},
-	{"uid":"1D7","type":"1WT","bus":"1B3","romid":"28:61:64:35:18:1F:79:D2","note":"temp inne jord 30cm"},
-	{"uid":27,"type":"DHT","dht":"DHT11","pin":27,"note":"fuktighet inne"},
-	{"uid":18,"type":"DHT","dht":"DHT11","pin":18,"note":"fuktighet ute"},
-	{"uid":19,"type":"PWM","pin":19,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
-	{"uid":37,"type":"TX433","pin":37,"note":"till fjärrstyrning"}
+	{"uid":"1D6","type":"1WT","bus":"1B3","romid":"28:87:17:43:d4:bd:0a:46","note":"temp ute jord"},
+	{"uid":"1D7","type":"1WT","bus":"1B3","romid":"28:F0:5F:43:D4:CD:3C:59","note":"temp inne jord"},
+	{"uid":"D11","type":"DHT","dht":"DHT11","pin":18,"note":"fuktighet inne"},
+	{"uid":"FA1","type":"PWM","pin":22,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
+	{"uid":433,"type":"TX433","pin":18,"note":"till fjärrstyrning"}
   ]

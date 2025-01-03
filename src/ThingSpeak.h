@@ -111,7 +111,7 @@ namespace ThingSpeak
                 lastError+="could not get api_key_str @ currChIndex:" + std::to_string(currChIndex);
                 continue;
             }
-            if (strncmp(api_key_str, "debug", 5) == 0) {
+            if (strncmp(api_key_str, "debug", sizeof("debug")-1) == 0) {
                 if (ckv.value() == nullptr) continue; // no error print here
                 if (ckv.value().is<JsonObject>() == false) continue; // no error print here
                 JsonVariant debug = ckv.value();
@@ -120,6 +120,9 @@ namespace ThingSpeak
                 if (debug.containsKey("debug_output")) debug_output = 1;
                 else debug_output = 0;
 
+                continue;
+            }
+            else if (strncmp(api_key_str, "comment", sizeof("comment")-1) == 0) {
                 continue;
             }
             channel.api_write_key = std::string(api_key_str);

@@ -33,7 +33,8 @@ namespace Info
     void printESP_info(void);
     void srv_handle_info(void);
     
-    const char* getResetReason(void);
+    bool resetReason_is_crash();
+    const char* getResetReasonStr();
 
     void setup(WEBSERVER_TYPE &srv) {
         webserver = &srv;
@@ -41,7 +42,7 @@ namespace Info
         webserver->on(INFO_URL, srv_handle_info);
         webserver->on(INFO_URL_ESP_LAST_RESET_REASON, []() {
             std::string resetInfo = "Last Reset at: " + Time_ext::GetTimeAsString(startTime);
-            resetInfo += "\nReason: " + std::string(getResetReason());
+            resetInfo += "\nReason: " + std::string(getResetReasonStr());
             
             webserver->send(200, F("text/plain"), resetInfo.c_str());
         });
@@ -81,7 +82,36 @@ void printESP_info(void) {
     DEBUG_UART.println();
 }*/
 
-const char* getResetReason()
+bool resetReason_is_crash(bool includeWatchdogs)
+{
+    #if defined(ESP8266)
+    rst_info *info = system_get_rst_info();
+    uint32 reason = info->reason;
+    if (reason == rst_reason::REASON_EXCEPTION_RST)
+        return true;
+    if (includeWatchdogs) {
+        switch (reason) {
+            case rst_reason::REASON_WDT_RST: return true;
+            case rst_reason::REASON_SOFT_WDT_RST: return true;
+            default: return false;
+        }
+    }
+#elif defined(ESP32)
+    esp_reset_reason_t reason = esp_reset_reason();
+    if (reason == ESP_RST_PANIC) return true;
+    if (includeWatchdogs) {
+        switch (reason) {
+            case ESP_RST_INT_WDT: return true;
+            case ESP_RST_TASK_WDT: return true;
+            case ESP_RST_WDT: return true;
+            default: return false;
+        }
+    }
+#endif
+    return false;
+}
+
+const char* getResetReasonStr()
 {
 #if defined(ESP8266)
     rst_info *info = system_get_rst_info();

@@ -269,11 +269,34 @@ bool InitSD_MMC()
     }
 }
 #endif
+
+void failsafeLoop()
+{
+    // blink rapid to alert a crash
+    HeartbeatLed::HEARTBEATLED_OFF_INTERVAL = 300;
+    HeartbeatLed::HEARTBEATLED_ON_INTERVAL = 300;
+    connect_to_wifi();
+    OTA::setup();
+    DEBUG_UART.begin(115200);
+    DEBUG_UART.println();
+    DEBUG_UART.println(F("************************************"));
+    DEBUG_UART.println(F("* Now entering failsafe OTA loop.. *"));
+    DEBUG_UART.println(F("************************************"));
+
+    while (1)
+    {
+        ArduinoOTA.handle();
+        HeartbeatLed::task();
+    }
+}
 /**************************************************************************/
 /**************************************************************************/
 /**************************************************************************/
 void setup() {
-    
+    if (Info::resetReason_is_crash(false)) {
+        failsafeLoop();
+        
+    }
 #if defined(ESP8266)
     FAN::init();
 #endif
@@ -281,7 +304,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
-    DEBUG_UART.println(Info::getResetReason());
+    DEBUG_UART.println(Info::getResetReasonStr());
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true;
 #if defined(ESP32)
     if (InitSD_MMC()) FSBrowser::fsOK = true;
@@ -315,7 +338,7 @@ DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     std::string ret = NPF::searchPatternInhtmlFromUrl();
     DEBUG_UART.println(ret.c_str());
 #endif
-    HeartbeatLed::init();
+    HeartbeatLed::setup(webserver);
     
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
@@ -450,6 +473,12 @@ void initWebServerHandlers(void)
        // }else {webserver.send(200, F("text/plain"), "could not open sd card a second time");}
     });
 #endif
+    webserver.on("/crashTest", []() {
+        webserver.send(200, F("text/plain"), "The system will now crash!!!, and luckily go into failsafe OTA upload mode.");
+        int *ptr = nullptr; // Null pointer
+        *ptr = 42;          // Dereference the null pointer (causes a crash)
+    });
+    
     webserver.onNotFound([]() {                              // If the client requests any URI
         String uri = webserver.uri();
         bool isDir = false;
@@ -476,6 +505,7 @@ void initWebServerHandlers(void)
         if (!FSBrowser::handleFileRead(uri))                  // send it if it exists
             webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
+    
 }
 #if defined(USE_DISPLAY)
 void init_display(void)
@@ -533,5 +563,44 @@ void connect_to_wifi(void)
 #endif
 }
 
+/*
+#include <esp_core_dump.h>
+#include <esp_log.h>
+void print_core_dump() {
+    esp_err_t err;
+    size_t core_dump_size = 0;
 
+    // Get core dump size
+    err = esp_core_dump_image_get(&core_dump_size, NULL);
+    if (err != ESP_OK || core_dump_size == 0) {
+        ESP_LOGE("CORE_DUMP", "Failed to get core dump size or no core dump available.");
+        return;
+    }
+
+    // Allocate buffer to read the core dump
+    uint8_t *core_dump_buffer = (uint8_t *)malloc(core_dump_size);
+    if (!core_dump_buffer) {
+        ESP_LOGE("CORE_DUMP", "Failed to allocate buffer for core dump.");
+        return;
+    }
+
+    // Retrieve core dump
+    err = esp_core_dump_image_get(&core_dump_size, core_dump_buffer);
+    if (err != ESP_OK) {
+        ESP_LOGE("CORE_DUMP", "Failed to retrieve core dump.");
+        free(core_dump_buffer);
+        return;
+    }
+
+    // Print core dump to serial
+    ESP_LOGI("CORE_DUMP", "Core dump size: %d bytes", core_dump_size);
+    for (size_t i = 0; i < core_dump_size; i++) {
+        printf("%02X", core_dump_buffer[i]);
+        if ((i + 1) % 16 == 0) printf("\n");
+    }
+
+    free(core_dump_buffer);
+    printf("\nCore dump printed successfully.\n");
+}
+*/
 
