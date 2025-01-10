@@ -33,7 +33,7 @@ namespace ThingSpeak
     #define TS_FILES_PATH                  F("/thingspeak")
     #define TS_CONFIG_JSON_FILE            F("/thingspeak/cfg.json")
     #define TS_CONFIG_JSON_FILE_URL_RELOAD F("/thingspeak/refresh")
-    #define TS_URL_SEND_DATA               F("/thingspeak/sendData")
+    #define TS_URL_GET_DATA                F("/thingspeak/getDataUrl")
     //#define TS_JSON_FIELD_API_KEY         F("api_key")
     //#define TS_JSON_FIELD_TEMP_FIELD      F("temp_field")
     //#define TS_JSON_FIELD_HUMIDITY_FIELD  F("humidity_field")
@@ -219,7 +219,7 @@ namespace ThingSpeak
             if (fieldData.length() == 0) continue;
             std::string urlApi = TS_ROOT_URL + channels[ci].api_write_key + fieldData;
 
-            if (debug_dont_send_to_server == 0) {
+            if (debug_dont_send_to_server == 0 && sendDataBackToWebbrowser == false) {
                 http.begin(wifiClient, urlApi.c_str());
                 
                 int httpCode = http.GET();
@@ -257,7 +257,7 @@ namespace ThingSpeak
     void setup(WEBSERVER_TYPE &srv) {
         webserver = &srv;
         srv.on(TS_CONFIG_JSON_FILE_URL_RELOAD, reloadJson);
-        srv.on(TS_URL_SEND_DATA, htmlSendDataTest);
+        srv.on(TS_URL_GET_DATA, htmlSendDataTest);
         readJson();
         pinMode(TS_ACTIVITY_LED_PIN, OUTPUT);
     }

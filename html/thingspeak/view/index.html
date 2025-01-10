@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div>
+  <canvas id="myChart"></canvas>
+</div>
+<div id="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/schedule/helpers.js"></script>
+<script src="helpers.js"></script>
+<!--
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8hammerjs@2.0.8"></script>
+<script src="path/to/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script>
+-->
+<script>
+
+  window.addEventListener('load', documentLoaded);
+  
+  function documentLoaded()
+  {
+    document.getElementById('status').innerHTML = "loading data...";
+    
+    var channelId = "2777767";
+    var options = {
+      api_read_key: undefined,
+      resultCount: 8000,
+      average: 60,
+    }
+    var url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?`;
+    if (options.resultCount != undefined) url += `results=${options.resultCount}`;
+    if (options.api_read_key != undefined) url += `&api_key=${options.api_read_key}`;
+    if (options.average != undefined) url += `&average=${options.average}`;
+    console.log(url);
+    
+    getFile(url, function(contents) {
+      var data = JSON.parse(contents);
+      var labels = [];
+      var dataSets = [];
+      for (var fi=0;fi<8;fi++) {
+        dataSets.push({label:data.channel["field"+(fi+1)], data:[], borderWidth:1, lineTension:0.5});
+      }
+      for (var i=0;i<data.feeds.length;i++) {
+        labels.push(data.feeds[i].created_at);
+        for (var fi=0;fi<8;fi++) {
+          dataSets[fi].data.push(data.feeds[i]["field"+(fi+1)]);
+        }
+      }
+      dataSets[7].hidden = true; // hide hydro by default
+      setData(labels,dataSets);
+      document.getElementById('status').innerHTML = "";
+    }, function(){
+      document.getElementById('status').innerHTML = "fail to get data from thingspeak";
+    });
+  }
+  
+  function setData(labels,dataSets)
+  {
+    const ctx = document.getElementById('myChart');
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: dataSets
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+</script>
+</body>
+</html>
