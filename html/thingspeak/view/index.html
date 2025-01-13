@@ -19,7 +19,7 @@
     
     }
     .MenuItem button {
-      background-color:#AAA;
+      background-color:#9c85af;
       padding:10px;
       font-size:16px;
       border-radius: 10px;
@@ -28,12 +28,13 @@
 </header>
 <body>
 <div class="Menu">
-    <div class="MenuItem"><a href="/index.html"><button type="button" style="width:170px;">back to MainMenus</button></a></div>
-    <div class="MenuItem"><input id="StartDate" style="width:200px; font-weight:bold;"></input></div>
-    <div class="MenuItem"><input id="EndDate" style="width:200px; font-weight:bold;"></input></div>
-    <div class="MenuItem"><select style="width:200px; font-weight:bold;"></select></div>
-    <div class="MenuItem"><select style="width:200px; font-weight:bold;"></select></div>
-    <!--<input type="text" id="fname" name="fname"><br><br>-->
+    
+    <div class="MenuItem"><select id="RangeType" style="width:200px; height:42px; font-weight:bold;" onChange="rangeTypeChanged()"></select></div>
+    <div class="MenuItem"><button type="button" id="rangeBackButton" style="width:42px;" onclick="rangeBack()">&#60;</button></div>
+    <div class="MenuItem"><button type="button" id="rangeForwardButton" style="width:42px;" onclick="rangeForward()">&#62;</button></div>
+    <div class="MenuItem"><input id="StartDate" style="width:200px; height:42px; font-weight:bold;"></input></div>
+    <div class="MenuItem"><input id="EndDate" style="width:200px; height:42px; font-weight:bold;"></input></div>
+    <div class="MenuItem"><a href="/index.html"><button type="button" style="width:170px; background-color:#a3a3a3">back to MainMenus</button></a></div>
   </div>
 <div>
   <canvas id="myChart"></canvas>
@@ -47,20 +48,90 @@
 <script src="path/to/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script>
 -->
 <script>
-
+  var RangeTypeDef = {
+    Custom:0,
+    Hour:1,
+    Day:2,
+    Week:3,
+    Month:4,
+  }
   window.addEventListener('load', documentLoaded);
   
+  var SelectedRangeType = 0;
+  function rangeTypeChanged()
+  {
+    SelectedRangeType = document.getElementById("RangeType").value;
+    if (SelectedRangeType == 0) { // custom range
+      document.getElementById("rangeBackButton").hidden = true;
+      document.getElementById("rangeForwardButton").hidden = true;
+    }
+    else { // all other options
+      document.getElementById("rangeBackButton").hidden = false;
+      document.getElementById("rangeForwardButton").hidden = false;
+    }
+    //console.log("Range type changed:" + SelectedRangeType);
+  }
+
+  function changeHour(d,amount) {d.setHours(d.getHours()+amount)};
+  function changeDay(d,amount) {d.setDate(d.getDate()+amount)};
+  function changeMonth(d,amount) {d.setMonth(d.getMonth()+amount)};
+  function changeWeek(d,amount) {d.setDate(d.setDate()+amount*7)}; // TODO fix this function to actually work for weeks
+  /** @param {Date} d
+   * @param {RangeTypeDef} rtd
+   */
+  function changeDateTime(d,rd,dir){
+    if (rd.type == RangeTypeDef.Day) changeDay(d, rd.amount*dir);
+    else if (rd.type == RangeTypeDef.Hour) changeHour(d, rd.amount*dir);
+    else if (rd.type == RangeTypeDef.Week) changeWeek(d, rd.amount*dir);
+    else if (rd.type == RangeTypeDef.Month) changeMonth(d, rd.amount*dir);
+  }
+
+  var RangeDefs = [
+    {label:"Custom Range",  type:RangeTypeDef.Custom, amount:0},
+    {label:"Last hour",     type:RangeTypeDef.Hour,   amount:1},
+    {label:"Last 6 hours",  type:RangeTypeDef.Hour,   amount:6},
+    {label:"Last 12 hours", type:RangeTypeDef.Hour,   amount:12},
+    {label:"Last 24 hours", type:RangeTypeDef.Hour,   amount:24},
+    {label:"Day",           type:RangeTypeDef.Day,    amount:1},
+    {label:"Last 7 days",   type:RangeTypeDef.Day,    amount:7},
+    {label:"Week",          type:RangeTypeDef.Week,   amount:1},
+    {label:"Last 30 days",  type:RangeTypeDef.Day,    amount:30},
+    {label:"Month",         type:RangeTypeDef.Month,  amount:1},
+  ];
+  function getRangeTypeStrings()
+  {
+    var ret = [];
+    for (var i=0;i<RangeDefs.length;i++)
+      ret.push(RangeDefs[i].label);
+    return ret;
+  }
+
   function documentLoaded()
   {
-    var testA = {test1:"1", test2:"2",test3:"3"};
-    var testB = {...testA, test4:"4"};
-    testA.test1 = "0";
-    console.log(testB);
-
+      document.getElementById("rangeBackButton").hidden = true;
+      document.getElementById("rangeForwardButton").hidden = true;
+      document.getElementById("RangeType").innerHTML = getOptionsHtml(getRangeTypeStrings(), false, 0);
+      DateTimeTest = new Date();
       setupDateTimePicker();
       readData();
-    
   }
+  /** @type {Date} */
+  var DateTimeTest;
+
+  function rangeBack()
+  {
+    changeDateTime(DateTimeTest, RangeDefs[SelectedRangeType], -1);
+    //changeHour(DateTimeTest, -1);
+    console.log("range back", DateTimeTest.toJSON());
+  }
+
+  function rangeForward()
+  {
+    changeDateTime(DateTimeTest, RangeDefs[SelectedRangeType], 1);
+    //changeHour(DateTimeTest, 1);
+    console.log("range forward", DateTimeTest.toJSON());
+  }
+
   var startDateTime = undefined;
   var endDateTime = undefined;
 
@@ -161,10 +232,13 @@
           var data = JSON.parse(contents);
           var labels = [];
           var dataSets = [];
+          var dataCount = data.feeds.length;
           for (var fi=0;fi<8;fi++) {
-              dataSets.push({label:data.channel["field"+(fi+1)], data:[], borderWidth:2, lineTension:0.3});//, borderColor: '#ff8800', backgroundColor:'#88FF00'});
+              var fieldName = "field"+(fi+1);
+              var label = data.channel[fieldName] + ` (${data.feeds[dataCount-1][fieldName]})`;
+              dataSets.push({label:label, data:[], borderWidth:2, lineTension:0.3});//, borderColor: '#ff8800', backgroundColor:'#88FF00'});
           }
-          for (var i=0;i<data.feeds.length;i++) {
+          for (var i=0;i<dataCount;i++) {
             var dateTime = new Date(data.feeds[i].created_at);
             labels.push(getDateTime_urlFormat(dateTime).replace("%20", " "));
             for (var fi=0;fi<8;fi++) {
