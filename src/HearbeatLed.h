@@ -12,11 +12,23 @@
 
 namespace HeartbeatLed
 {
+
+#if defined (ESP32WROVER_IE_F8R8)
+    #define HEARTBEATLED_PIN 0
     #define HEARTBEATLED_ACTIVESTATE LOW
     #define HEARTBEATLED_INACTIVESTATE HIGH
-    #define HEARTBEATLED_PIN 0
-    unsigned long HEARTBEATLED_ON_INTERVAL = 100;
-    unsigned long HEARTBEATLED_OFF_INTERVAL = 4000;
+    #define HEARTBEATLED_DEFAULT_ON_INTERVAL 100
+    #define HEARTBEATLED_DEFAULT_OFF_INTERVAL 4000
+#elif defined (ESP32DEV)
+    #define HEARTBEATLED_PIN 2
+    #define HEARTBEATLED_ACTIVESTATE HIGH
+    #define HEARTBEATLED_INACTIVESTATE LOW
+    #define HEARTBEATLED_DEFAULT_ON_INTERVAL 100
+    #define HEARTBEATLED_DEFAULT_OFF_INTERVAL 4000
+#endif
+
+    unsigned long HEARTBEATLED_ON_INTERVAL = HEARTBEATLED_DEFAULT_ON_INTERVAL;
+    unsigned long HEARTBEATLED_OFF_INTERVAL = HEARTBEATLED_DEFAULT_OFF_INTERVAL;
     int ledState = LOW;             // ledState used to set the LED
     unsigned long previousMillis = 0;        // will store last time LED was updated
     unsigned long currentMillis = 0;

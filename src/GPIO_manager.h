@@ -8,15 +8,10 @@
 
 #include <WiFiClient.h>
 #if defined(ESP8266)
-#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #define WEBSERVER_TYPE ESP8266WebServer
 #elif defined(ESP32)
-#include <WiFi.h>
 #include <fs_WebServer.h>
-#include "mimetable.h"
-#include <mdns.h>
 #define WEBSERVER_TYPE fs_WebServer
 #endif
 

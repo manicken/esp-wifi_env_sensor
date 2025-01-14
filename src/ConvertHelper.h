@@ -18,4 +18,6 @@ namespace Convert
 
     bool contains(int *array, size_t arraySize, uint8_t value);
 
+    uint64_t reverseMACaddress(uint64_t addr);
+
 } // namespace Convert

@@ -5,19 +5,18 @@
 #include "Time_ext.h"
 
 #if defined(ESP8266)
-#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #define WEBSERVER_TYPE ESP8266WebServer
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin()
+#define WIFI_getChipId() ESP.getChipId()
+#define WIFI_CHIPID_PREFIX "ESP_"
 #elif defined(ESP32)
-#include <WiFi.h>
 #include <fs_WebServer.h>
-#include "mimetable.h"
-#include <mdns.h>
 #define WEBSERVER_TYPE fs_WebServer
 #define AUTOFORMAT_ON_FAIL true
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "/LittleFS", 10, "spiffs")
+#define WIFI_getChipId() ESP.getEfuseMac()
+#define WIFI_CHIPID_PREFIX "ESP32_"
 #endif
 
 #define INFO_URL                       F("/info")
@@ -151,6 +150,17 @@ const char* getResetReasonStr()
         
 }
 
+uint64_t reverseBytes(uint64_t value) {
+    return ((value & 0x00000000000000FF) << 56) |
+           ((value & 0x000000000000FF00) << 40) |
+           ((value & 0x0000000000FF0000) << 24) |
+           ((value & 0x00000000FF000000) << 8)  |
+           ((value & 0x000000FF00000000) >> 8)  |
+           ((value & 0x0000FF0000000000) >> 24) |
+           ((value & 0x00FF000000000000) >> 40) |
+           ((value & 0xFF00000000000000) >> 56);
+}
+
 void srv_handle_info()
 {
     uint32_t ideSize = ESP.getFlashChipSize();
@@ -164,8 +174,15 @@ void srv_handle_info()
 
     srv_return_msg.concat(F("<!DOCTYPE html PUBLIC\"ISO/IEC 15445:2000//DTD HTML//EN\"><html><head><title></title></head><body>"));
 #if defined(ESP8266)
-    srv_return_msg.concat(F("Flash real id:   ")); srv_return_msg.concat(ESP.getFlashChipId());
+    srv_return_msg.concat(F("<br>Flash real id:   ")); srv_return_msg.concat(ESP.getFlashChipId());
+#elif defined(ESP32)
+    srv_return_msg.concat(F("<br>Flash real id:  (ESP32 don't have this function)"));
 #endif
+    uint64_t macAddrBigEndian = Convert::reverseMACaddress(WIFI_getChipId());
+    String hostString = String(macAddrBigEndian & 0xFFFFFF,HEX);
+    hostString.toUpperCase();
+    srv_return_msg.concat(F("<br>Chip short id:   "));srv_return_msg.concat(WIFI_CHIPID_PREFIX); srv_return_msg.concat(hostString);
+
     srv_return_msg.concat(F("<br>Flash real size: ")); srv_return_msg.concat(realSize);
 
     srv_return_msg.concat(F("<br>Flash ide  size: ")); srv_return_msg.concat(ideSize);

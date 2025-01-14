@@ -96,4 +96,16 @@ namespace Convert
         return true; // Conversion successful
     }
 
+    uint64_t reverseMACaddress(uint64_t addr)
+    {
+        uint8_t* macAddrPtr = reinterpret_cast<uint8_t*>(&addr);
+        uint64_t macAddrBigEndian = (macAddrPtr[0] * 0x10000000000) + 
+                                    (macAddrPtr[1] * 0x00100000000) + 
+                                    (macAddrPtr[2] * 0x00001000000) + 
+                                    (macAddrPtr[3] * 0x00000010000) + 
+                                    (macAddrPtr[4] * 0x00000000100) + 
+                                    (macAddrPtr[5]);
+        return macAddrBigEndian;
+    }
+
 }
