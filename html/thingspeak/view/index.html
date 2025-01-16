@@ -24,6 +24,9 @@
       font-size:16px;
       border-radius: 10px;
     }
+    .info {
+      border:1px solid black;
+    }
   </style>
 </header>
 <body>
@@ -39,9 +42,9 @@
 <div>
   <canvas id="myChart"></canvas>
 </div>
-<div id="status"></div>
-<div id="log"></div>
-
+<div class="info" id="status"></div>
+<div class="info" id="log"></div>
+<div class="info" id="log2"></div>
 
 <!--
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8hammerjs@2.0.8"></script>
@@ -111,25 +114,34 @@
       document.getElementById("rangeBackButton").hidden = true;
       document.getElementById("rangeForwardButton").hidden = true;
       document.getElementById("RangeType").innerHTML = getOptionsHtml(getRangeTypeStrings(), false, 0);
-      DateTimeTest = new Date();
+      
       setupDateTimePicker();
       readData();
   }
   /** @type {Date} */
-  var DateTimeTest;
+  var DateTimeTestStart = new Date();
+  var DateTimeTestEnd = new Date();
 
+  function addToLog2(str)
+  {
+    document.getElementById('log2').innerHTML += str + "<br>";
+  }
   function rangeBack()
   {
-    changeDateTime(DateTimeTest, RangeDefs[SelectedRangeType], -1);
-    //changeHour(DateTimeTest, -1);
-    console.log("range back", DateTimeTest.toJSON());
+    DateTimeTestEnd = new Date(DateTimeTestStart);
+    changeDateTime(DateTimeTestStart, RangeDefs[SelectedRangeType], -1);
+    var log = "range back - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
+    addToLog2(log);
+    readData({start:DateTimeTestStart, end:DateTimeTestEnd});
   }
 
   function rangeForward()
   {
-    changeDateTime(DateTimeTest, RangeDefs[SelectedRangeType], 1);
-    //changeHour(DateTimeTest, 1);
-    console.log("range forward", DateTimeTest.toJSON());
+    DateTimeTestStart = new Date(DateTimeTestEnd);
+    changeDateTime(DateTimeTestEnd, RangeDefs[SelectedRangeType], 1);
+    var log = "range forward - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
+    addToLog2(log);
+    readData({start:DateTimeTestStart, end:DateTimeTestEnd});
   }
 
   var startDateTime = undefined;

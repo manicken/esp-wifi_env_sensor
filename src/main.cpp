@@ -175,13 +175,20 @@ bool InitSD_MMC()
 
 void Start_MDNS()
 {
+    DEBUG_UART.println("\n\n***** STARTING mDNS service ********");
     if (MDNS.begin(MainConfig::mDNS_name)) {
+        mdns_instance_name_set("ESP32 development board");
         MDNS.addService("http", "tcp", 80);
+        
+        if (mdns_service_add("_esp32devices", "http", "tcp", 80, NULL, 0) != ESP_OK)
+            DEBUG_UART.println("Failed adding service view");
+       // MDNS.addServiceTxt("http", "tcp", "path", "/");
         DEBUG_UART.println("MDNS started with name:" + MainConfig::mDNS_name);
     }
     else {
         DEBUG_UART.println("MDNS could not start");
     }
+    DEBUG_UART.println("\n");
 }
 
 void failsafeLoop()
@@ -403,6 +410,7 @@ void initWebServerHandlers(void)
     
     webserver.onNotFound([]() {                              // If the client requests any URI
         String uri = webserver.uri();
+        DEBUG_UART.println("onNotFound - hostHeader:" + webserver.hostHeader());
         bool isDir = false;
         //DEBUG_UART.println("webserver on not found:" + uri);
         if (uri.startsWith("/LittleFS") == false && uri.startsWith("/sdcard") == false)
@@ -483,11 +491,6 @@ void connect_to_wifi(void)
     display.clearDisplay();
     display.display();
 #endif
-}
-
-void ReadMainConfigJson()
-{
-
 }
 
 /*
