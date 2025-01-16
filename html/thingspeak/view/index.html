@@ -67,13 +67,24 @@
     if (SelectedRangeType == 0) { // custom range
       document.getElementById("rangeBackButton").hidden = true;
       document.getElementById("rangeForwardButton").hidden = true;
+      document.getElementById("StartDate").removeAttribute("disabled");
+      document.getElementById("EndDate").removeAttribute("disabled");
     }
     else { // all other options
       document.getElementById("rangeBackButton").hidden = false;
       document.getElementById("rangeForwardButton").hidden = false;
+      document.getElementById("StartDate").setAttribute("disabled","disabled");
+      document.getElementById("EndDate").setAttribute("disabled","disabled");
+      DateTimeTestEnd = new Date();
+      DateTimeTestStart = new Date(DateTimeTestEnd);
+      changeDateTime(DateTimeTestStart, RangeDefs[SelectedRangeType], -1);
+      updateRangeInputBoxes();
+      readData({start:DateTimeTestStart, end:DateTimeTestEnd});
     }
     //console.log("Range type changed:" + SelectedRangeType);
   }
+
+  
 
   function changeHour(d,amount) {d.setHours(d.getHours()+amount)};
   function changeDay(d,amount) {d.setDate(d.getDate()+amount)};
@@ -122,6 +133,11 @@
   var DateTimeTestStart = new Date();
   var DateTimeTestEnd = new Date();
 
+  function updateRangeInputBoxes()
+  {
+    flatpickr_startDate.setDate(DateTimeTestStart);
+    flatpickr_endDate.setDate(DateTimeTestEnd);
+  }
   function addToLog2(str)
   {
     document.getElementById('log2').innerHTML += str + "<br>";
@@ -130,8 +146,9 @@
   {
     DateTimeTestEnd = new Date(DateTimeTestStart);
     changeDateTime(DateTimeTestStart, RangeDefs[SelectedRangeType], -1);
-    var log = "range back - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
-    addToLog2(log);
+    //var log = "range back - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
+    //addToLog2(log);
+    updateRangeInputBoxes();
     readData({start:DateTimeTestStart, end:DateTimeTestEnd});
   }
 
@@ -139,13 +156,16 @@
   {
     DateTimeTestStart = new Date(DateTimeTestEnd);
     changeDateTime(DateTimeTestEnd, RangeDefs[SelectedRangeType], 1);
-    var log = "range forward - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
-    addToLog2(log);
+    //var log = "range forward - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
+    //addToLog2(log);
+    updateRangeInputBoxes();
     readData({start:DateTimeTestStart, end:DateTimeTestEnd});
   }
 
   var startDateTime = undefined;
   var endDateTime = undefined;
+  var flatpickr_startDate = undefined;
+  var flatpickr_endDate = undefined;
 
   function setupDateTimePicker()
   {
@@ -156,7 +176,7 @@
           defaultDate: "today",
           time_24hr: true,
       };
-      flatpickr("#StartDate", {
+      flatpickr_startDate = flatpickr("#StartDate", {
           ...options,
           onChange: function(selectedDates, dateStr, instance){
               // ...
@@ -170,7 +190,7 @@
               
           },
       });
-      flatpickr("#EndDate", {
+      flatpickr_endDate = flatpickr("#EndDate", {
           ...options,
           onChange: function(selectedDates, dateStr, instance){
               // ...
