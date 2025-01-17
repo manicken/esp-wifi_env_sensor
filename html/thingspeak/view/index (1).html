@@ -88,11 +88,11 @@
       document.getElementById("rangeForwardButton").hidden = false;
       document.getElementById("StartDate").setAttribute("disabled","disabled");
       document.getElementById("EndDate").setAttribute("disabled","disabled");
-      endDateTime = new Date();
-      startDateTime = new Date(endDateTime);
-      changeDateTime(startDateTime, RangeDefs[SelectedRangeType], -1);
+      DateTimeTestEnd = new Date();
+      DateTimeTestStart = new Date(DateTimeTestEnd);
+      changeDateTime(DateTimeTestStart, RangeDefs[SelectedRangeType], -1);
       updateRangeInputBoxes();
-      readData({start:startDateTime, end:endDateTime});
+      readData({start:DateTimeTestStart, end:DateTimeTestEnd});
     }
     //console.log("Range type changed:" + SelectedRangeType);
   }
@@ -154,26 +154,26 @@
       {
         document.getElementById("backToMenu").hidden = true;
         
-        document.getElementById("rangeBackButton").style.width = "100px";
-        document.getElementById("rangeBackButton").style.height = "100px";
+        document.getElementById("rangeBackButton").style.width = "84px";
+        document.getElementById("rangeBackButton").style.height = "84px";
         document.getElementById("rangeBackButton").style.fontSize  = "50px";
         
-        document.getElementById("rangeForwardButton").style.width = "100px";
-        document.getElementById("rangeForwardButton").style.height = "100px";
+        document.getElementById("rangeForwardButton").style.width = "84px";
+        document.getElementById("rangeForwardButton").style.height = "84px";
         document.getElementById("rangeForwardButton").style.fontSize = "50px";
         
         document.getElementById("StartDate").style.width = "290px";
         document.getElementById("StartDate").style.height = "84px";
-        document.getElementById("StartDate").style.fontSize = "20px";
+        document.getElementById("StartDate").style.fontSize = "25px";
         
         document.getElementById("EndDate").style.width = "290px";
         document.getElementById("EndDate").style.height = "84px";
-        document.getElementById("EndDate").style.fontSize = "20px";
+        document.getElementById("EndDate").style.fontSize = "25px";
         
         
-        document.getElementById("RangeType").style.width = "200px";
+        document.getElementById("RangeType").style.width = "320px";
         document.getElementById("RangeType").style.height = "84px";
-        document.getElementById("RangeType").style.fontSize  = "35px";
+        document.getElementById("RangeType").style.fontSize  = "30px";
 
       }
       
@@ -191,11 +191,14 @@
       }
       rangeTypeChanged();
   }
+  /** @type {Date} */
+  var DateTimeTestStart = new Date();
+  var DateTimeTestEnd = new Date();
 
   function updateRangeInputBoxes()
   {
-    flatpickr_startDate.setDate(startDateTime);
-    flatpickr_endDate.setDate(endDateTime);
+    flatpickr_startDate.setDate(DateTimeTestStart);
+    flatpickr_endDate.setDate(DateTimeTestEnd);
   }
   function addToLog2(str)
   {
@@ -203,28 +206,26 @@
   }
   function rangeBack()
   {
-    endDateTime = new Date(startDateTime);
-    changeDateTime(startDateTime, RangeDefs[SelectedRangeType], -1);
-    //var log = "range back - start:" + startDateTime.toJSON() + ", end:" + endDateTime.toJSON();
+    DateTimeTestEnd = new Date(DateTimeTestStart);
+    changeDateTime(DateTimeTestStart, RangeDefs[SelectedRangeType], -1);
+    //var log = "range back - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
     //addToLog2(log);
     updateRangeInputBoxes();
-    readData({start:startDateTime, end:endDateTime});
+    readData({start:DateTimeTestStart, end:DateTimeTestEnd});
   }
 
   function rangeForward()
   {
-    startDateTime = new Date(endDateTime);
-    changeDateTime(endDateTime, RangeDefs[SelectedRangeType], 1);
-    //var log = "range forward - start:" + startDateTime.toJSON() + ", end:" + endDateTime.toJSON();
+    DateTimeTestStart = new Date(DateTimeTestEnd);
+    changeDateTime(DateTimeTestEnd, RangeDefs[SelectedRangeType], 1);
+    //var log = "range forward - start:" + DateTimeTestStart.toJSON() + ", end:" + DateTimeTestEnd.toJSON();
     //addToLog2(log);
     updateRangeInputBoxes();
-    readData({start:startDateTime, end:endDateTime});
+    readData({start:DateTimeTestStart, end:DateTimeTestEnd});
   }
-/** @type {Date} */
-  var startDateTime = new Date();
-  /** @type {Date} */
-  var endDateTime = new Date();
-  
+
+  var startDateTime = undefined;
+  var endDateTime = undefined;
   var flatpickr_startDate = undefined;
   var flatpickr_endDate = undefined;
 
@@ -232,7 +233,7 @@
   {
       var options = {
           enableTime: true,
-         // dateFormat: "Y-m-d H:i",
+          dateFormat: "Y-m-d H:i",
           //maxDate: "today",
           defaultDate: "today",
           time_24hr: true,
