@@ -213,6 +213,7 @@ void failsafeLoop()
 /**************************************************************************/
 /**************************************************************************/
 /**************************************************************************/
+WS2812FX ws2812fx = WS2812FX(40, 22, NEO_RGB + NEO_KHZ800);
 void setup() {
     if (Info::resetReason_is_crash(false)) {
         failsafeLoop();
@@ -261,6 +262,13 @@ void setup() {
     HeartbeatLed::setup(webserver);
 
     Start_MDNS();
+
+    
+    ws2812fx.init();
+    ws2812fx.setBrightness(127);
+    ws2812fx.setMode(12);
+    ws2812fx.setSpeed(3048);
+    ws2812fx.start();
     
 #if defined(ESP32)
     File test = SD_MMC.open("/StartTimes.log", "a", true);
@@ -273,6 +281,7 @@ void setup() {
 }
 
 void loop() {
+    ws2812fx.service();
     //tcp2uart.BridgeMainTask();
     ArduinoOTA.handle();
     webserver.handleClient();

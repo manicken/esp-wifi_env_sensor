@@ -46,6 +46,8 @@
 //#include <Fonts/FreeMono9pt7b.h>
 #endif
 
+#include <WS2812FX.h>
+
 // other addons
 #if defined(ESP32)
 #include <SD_MMC.h>
