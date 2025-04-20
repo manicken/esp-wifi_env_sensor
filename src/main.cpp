@@ -2,6 +2,9 @@
  
 */
 #include "main.h"
+#include "UART2websocket.h"
+
+
 
 unsigned long auto_last_change = 0;
 unsigned long last_wifi_check_time = 0;
@@ -28,6 +31,7 @@ unsigned long deltaTime_displayUpdate = 0;
 void init_display(void);
 #endif
 
+UART2websocket uart2ws;
 
 void Timer_SyncTime() {
     DEBUG_UART.println("Timer_SyncTime");
@@ -176,7 +180,7 @@ bool InitSD_MMC()
 void Start_MDNS()
 {
     DEBUG_UART.println("\n\n***** STARTING mDNS service ********");
-    if (MDNS.begin(MainConfig::mDNS_name)) {
+    if (MDNS.begin(MainConfig::mDNS_name.c_str())) {
         mdns_instance_name_set("ESP32 development board");
         MDNS.addService("http", "tcp", 80);
         
@@ -275,6 +279,8 @@ void setup() {
     test.println(Time_ext::GetTimeAsString(now()).c_str());
     test.close();
 #endif
+    uart2ws.setup();
+
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
@@ -288,6 +294,7 @@ void loop() {
     Scheduler::HandleAlarms();
     //currTime = millis();
     HeartbeatLed::task();
+    uart2ws.task_loop();
 #if defined(ESP8266)
     MDNS.update(); // this is only required on esp8266
 #endif
