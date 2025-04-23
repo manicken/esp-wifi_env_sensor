@@ -70,6 +70,7 @@ private:
     void SetRequestData(REGO600::Request req);
     void SendNextRequest();
     void CalcAndSetTxChecksum();
+    uint16_t GetValueFromUartRxBuff();
 };
 const REGO600::Request RequestsWholeLCD[];
 const REGO600::Request RequestsAllTemperatures[];

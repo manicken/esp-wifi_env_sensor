@@ -82,6 +82,10 @@ void REGO600::CalcAndSetTxChecksum() {
     uartTxBuffer[REGO600_UART_TX_CHKSUM_END_INDEX] = chksum;
 }
 
+uint16_t REGO600::GetValueFromUartRxBuff() {
+    return (uartRxBuffer[1] << 14) + (uartRxBuffer[2] << 7) + uartRxBuffer[3];
+}
+
 void REGO600::task_loop() {
     if (lastAction == Action::WebSocketRaw) {
         // Read all available UART data
@@ -106,9 +110,26 @@ void REGO600::task_loop() {
                     // RX is done
                     if (lastAction == Action::ReadWholeLCD) {
                         // current line of lcd is calculated from requestIndex
+                        uint8_t lcdRowIndex = requestIndex-1;
+                        uint8_t lcdColIndex = 0;
+                        for (int i=1;i<41;i+=2) {
+                            lcdData[lcdRowIndex*20+lcdColIndex++] = uartRxBuffer[i]*16 + uartRxBuffer[i+1];
+                        }
+                        if (requestIndex < requestCount) SendNextRequest();
+                        else {
+                            // we are done rx whole LCD, exec some callback here
+                            // to send data back to whatever requested it
+                        }
                     }
                     else if (lastAction == Action::ReadTemperatures) {
                         // current temp index is calculated from requestIndex
+                        uint8_t tempIndex = requestIndex-1;
+                        temperatures[tempIndex] = GetValueFromUartRxBuff();
+                        if (requestIndex < requestCount) SendNextRequest();
+                        else {
+                            // we are done rx all temperatures, exec some callback here
+                            // to send data back to whatever requested it
+                        }
                     }
                 }
             }
