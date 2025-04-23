@@ -18,8 +18,7 @@ public:
     void task_loop();
     void BeginRetreiveWholeLCD();
 
-    enum class Command : int16_t{
-        None = -1,
+    enum class Command : uint16_t{
         ReadPanel = 0x00,
         WritePanel = 0x01,
         ReadRegister = 0x02,
@@ -35,6 +34,12 @@ public:
         ReadLastError = 42,
         ReadPrevError = 42
     };
+    enum class Action {
+        WebSocketRaw,
+        ReadWholePanel,
+        ReadWholeLCD,
+        ReadTemperatures
+    };
     struct Request {
         uint16_t address;
         uint16_t data;
@@ -47,7 +52,8 @@ private:
     unsigned long lastByteTime = 0;
     const unsigned long FLUSH_TIMEOUT_MS = 50; // flush after 50ms idle
 
-    Command lastCommand = Command::None;
+    Action lastAction = Action::WebSocketRaw;
+
     uint8_t currentExpectedRxLength = 0;
     //size_t currentRxCount = 0;
     const Request *requests; // contains a list of reg adresses to read
@@ -61,7 +67,8 @@ private:
     AsyncWebSocket ws;
     HardwareSerial& UART2;
     void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
-    void SetRequest(REGO600::Request req);
+    void SetRequestData(REGO600::Request req);
+    void SendNextRequest();
     void CalcAndSetTxChecksum();
 };
 const REGO600::Request RequestsWholeLCD[];

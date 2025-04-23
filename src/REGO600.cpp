@@ -31,7 +31,7 @@ void REGO600::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
 
         if (info->opcode == WS_BINARY) {
-            lastCommand = Command::None;
+            lastAction = Action::WebSocketRaw;
             UART2.write(data, len);
         }
     }
@@ -50,18 +50,22 @@ void REGO600::setup() {
 }
 
 void REGO600::BeginRetreiveWholeLCD() {
-    lastCommand = Command::ReadLcd;
+    lastAction = Action::ReadWholeLCD;
     currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadLcd;
     requestCount = RequestsWholeLCD_Count;
     requestIndex = 0;
     requests = RequestsWholeLCD;
-    uartTxBuffer[1] = (uint8_t)lastCommand;
-    SetRequest(requests[requestIndex++]);
+    uartTxBuffer[1] = (uint8_t)Command::ReadLcd;
+    SendNextRequest();
+}
+
+void REGO600::SendNextRequest() {
+    SetRequestData(requests[requestIndex++]);
     CalcAndSetTxChecksum();
     UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
 }
 
-void REGO600::SetRequest(REGO600::Request req) {
+void REGO600::SetRequestData(REGO600::Request req) {
     uartTxBuffer[2] = (req.address >> 14) & 0x7F;
     uartTxBuffer[3] = (req.address >> 7) & 0x7F;
     uartTxBuffer[4] = req.address & 0x7F;
@@ -79,7 +83,7 @@ void REGO600::CalcAndSetTxChecksum() {
 }
 
 void REGO600::task_loop() {
-    if (lastCommand == Command::None) {
+    if (lastAction == Action::WebSocketRaw) {
         // Read all available UART data
         while (UART2.available()) {
             if (uartBufferIndex < REGO600_UART_RX_BUFFER_SIZE) {
@@ -100,8 +104,11 @@ void REGO600::task_loop() {
                 uartRxBuffer[uartBufferIndex++] = UART2.read();
                 if (uartBufferIndex == currentExpectedRxLength) {
                     // RX is done
-                    if (lastCommand == Command::ReadLcd) {
-
+                    if (lastAction == Action::ReadWholeLCD) {
+                        // current line of lcd is calculated from requestIndex
+                    }
+                    else if (lastAction == Action::ReadTemperatures) {
+                        // current temp index is calculated from requestIndex
                     }
                 }
             }
