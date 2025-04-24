@@ -2,8 +2,9 @@
  
 */
 #include "main.h"
-#include "UART2websocket.h"
 
+//#include "UART2websocket.h"
+#include "REGO600.h"
 
 
 unsigned long auto_last_change = 0;
@@ -31,7 +32,8 @@ unsigned long deltaTime_displayUpdate = 0;
 void init_display(void);
 #endif
 
-UART2websocket uart2ws;
+//UART2websocket uart2ws;
+REGO600 rego600;
 
 void Timer_SyncTime() {
     DEBUG_UART.println("Timer_SyncTime");
@@ -279,7 +281,8 @@ void setup() {
     test.println(Time_ext::GetTimeAsString(now()).c_str());
     test.close();
 #endif
-    uart2ws.setup();
+    //uart2ws.setup();
+    rego600.setup();
 
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
@@ -294,7 +297,8 @@ void loop() {
     Scheduler::HandleAlarms();
     //currTime = millis();
     HeartbeatLed::task();
-    uart2ws.task_loop();
+    //uart2ws.task_loop();
+    rego600.task_loop();
 #if defined(ESP8266)
     MDNS.update(); // this is only required on esp8266
 #endif

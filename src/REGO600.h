@@ -17,6 +17,8 @@ public:
     void setup();
     void task_loop();
     void BeginRetreiveWholeLCD();
+    void BeginRetreiveAllTemperatures();
+    void BeginRetreiveAllStates();
 
     enum class Command : uint16_t{
         ReadPanel = 0x00,
@@ -38,21 +40,29 @@ public:
         WebSocketRaw,
         ReadWholePanel,
         ReadWholeLCD,
-        ReadTemperatures
+        ReadTemperatures,
+        ReadStates
+    };
+    enum class ActionDoneDestination {
+        NotSet,
+        Websocket,
+        HttpReq,
+        Callback // not implemented yet but can be used to send data to a server
     };
     struct Request {
         uint16_t address;
-        uint16_t data;
+        const char *text;
     };
 private:
     
     uint8_t uartTxBuffer[REGO600_UART_TX_BUFFER_SIZE]; 
     uint8_t uartRxBuffer[REGO600_UART_RX_BUFFER_SIZE];
-    size_t uartBufferIndex = 0;
+    size_t uartRxBufferIndex = 0;
     unsigned long lastByteTime = 0;
     const unsigned long FLUSH_TIMEOUT_MS = 50; // flush after 50ms idle
 
     Action lastAction = Action::WebSocketRaw;
+    ActionDoneDestination actionDoneDestination = ActionDoneDestination::NotSet;
 
     uint8_t currentExpectedRxLength = 0;
     //size_t currentRxCount = 0;
@@ -60,8 +70,11 @@ private:
     uint8_t requestIndex = 0;
     uint8_t requestCount = 0;
 
+    AsyncWebServerRequest* pendingRequest = nullptr;
+
     char lcdData[20*4];
     uint16_t temperatures[9];
+    uint16_t states[8];
 
     AsyncWebServer server;
     AsyncWebSocket ws;
@@ -71,9 +84,13 @@ private:
     void SendNextRequest();
     void CalcAndSetTxChecksum();
     uint16_t GetValueFromUartRxBuff();
+
+    void RequestsWholeLCD_Task();
+    void RequestsAllTemperatures_Task();
+    void RequestsAllStates_Task();
 };
-const REGO600::Request RequestsWholeLCD[];
-const REGO600::Request RequestsAllTemperatures[];
+extern const REGO600::Request RequestsWholeLCD[];
+extern const REGO600::Request RequestsAllTemperatures[];
 
 extern const size_t RequestsWholeLCD_Count;
 extern const size_t RequestsAllTemperatures_Count;
