@@ -32,11 +32,14 @@ namespace DeviceManager
     #define BUSSES_DEV_PRINT
 
     #define DEVICE_MANAGER_REST_API_PORT               81
-    #define DEVICE_MANAGER_REST_API_WRITE_URL          "/write/"
-    #define DEVICE_MANAGER_REST_API_READ_URL           "/read/"
-    #define DEVICE_MANAGER_REST_API_WRITE_UINT32_CMD   "uint32"
-    #define DEVICE_MANAGER_REST_API_WRITE_FLOAT_CMD    "float"
-    #define DEVICE_MANAGER_REST_API_WRITE_STRING_CMD   "string"
+    #define DEVICE_MANAGER_REST_API_WRITE_CMD          "write"
+    #define DEVICE_MANAGER_REST_API_READ_CMD           "read"
+    #define DEVICE_MANAGER_REST_API_WRITE_URL          "/" DEVICE_MANAGER_REST_API_WRITE_CMD "/"
+    #define DEVICE_MANAGER_REST_API_READ_URL           "/" DEVICE_MANAGER_REST_API_READ_CMD "/"
+
+    #define DEVICE_MANAGER_REST_API_UINT32_TYPE        "uint32"
+    #define DEVICE_MANAGER_REST_API_FLOAT_TYPE         "float"
+    #define DEVICE_MANAGER_REST_API_STRING_TYPE        "string"
 
     #define DEVICE_MANAGER_FILES_PATH                  F("/DeviceManager")
     #define DEVICE_MANAGER_CONFIG_JSON_FILE            F("/DeviceManager/cfg.json")

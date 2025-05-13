@@ -531,17 +531,19 @@ namespace DeviceManager
         String value = url.substring(p3 + 1);                          // "255" or "" if missing
 
         // Do something with them
-        String message = "\"debug\":{";
+        String message = "";
+        
+        message += "\"debug\":{";
         message += "\"Command\":\"" + command + "\",";
         message += "\"Type\":\"" + type + "\",";
         message += "\"UID\":\"" + uid + "\",";
         message += "\"Value\":\"" + value + "\"},";
 
 
-        if (command == "write") {
+        if (command == DEVICE_MANAGER_REST_API_WRITE_CMD) {
             // Handle write command
             if (value.length() > 0 || p3 != -1) {
-                if (type == "uint32") {
+                if (type == DEVICE_MANAGER_REST_API_UINT32_TYPE) {
                     // Convert value to integer
                     int intValue = value.toInt();
                     uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
@@ -550,16 +552,7 @@ namespace DeviceManager
                     else
                         message += "\"error\":\"Failed to write value.\"";
 
-                } else if (type == "float") {
-                    // Convert value to float
-                    float floatValue = value.toFloat();
-                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-                    if (setValue(uidInt, floatValue))
-                        message += "\"message\":\"Value written: " + String(floatValue) + "\"";
-                    else
-                        message += "\"error\":\"Failed to write value.\"";
-
-                } else if (type == "string") {
+                } else if (type == DEVICE_MANAGER_REST_API_STRING_TYPE) {
                     // Convert value to string
                     uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
                     if (setValue(uidInt, value.c_str()))
@@ -573,8 +566,8 @@ namespace DeviceManager
             } else {
                 message += "\"error\":\"No value provided for writing.\"";
             }
-        } else if (command == "read") {
-            if (type == "uint32") {
+        } else if (command == DEVICE_MANAGER_REST_API_READ_CMD) {
+            if (type == DEVICE_MANAGER_REST_API_UINT32_TYPE) {
                 // Handle read command
                 uint32_t readValue = 0;
                 uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
@@ -583,7 +576,7 @@ namespace DeviceManager
                 } else {
                     message += "\"error\":\"Failed to read value.\"";
                 }
-            } else if (type == "float") {
+            } else if (type == DEVICE_MANAGER_REST_API_FLOAT_TYPE) {
                 // Handle read command
                 float readValue = 0;
                 uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);

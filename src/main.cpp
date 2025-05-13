@@ -347,7 +347,7 @@ void setup() {
 }
 
 void loop() {
-    ws2812fx.service();
+    //ws2812fx.service();
     //tcp2uart.BridgeMainTask();
     ArduinoOTA.handle();
     webserver.handleClient();
