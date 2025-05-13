@@ -36,14 +36,20 @@ void REGO600::RequestsWholeLCD_Task() {
     if (requestIndex < requestCount) SendNextRequest();
     else {
         // we are done rx whole LCD, send data back to whatever requested it
-        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
-            if (pendingRequest == nullptr) return;
+
+        if (onUartQueryComplete != nullptr) {
             String jsonStr = "{";
             jsonStr += "\"" + String(requests[0].text) + "\":\"" + String(lcdData,20) + "\",";
             jsonStr += "\"" + String(requests[1].text) + "\":\"" + String(&lcdData[20],20) + "\",";
             jsonStr += "\"" + String(requests[2].text) + "\":\"" + String(&lcdData[40],20) + "\",";
             jsonStr += "\"" + String(requests[3].text) + "\":\"" + String(&lcdData[60],20) + "\""; //charArrayToHex(String(&lcdData[60],20).c_str(),20) + "\"";
             jsonStr += "}";
+            onUartQueryComplete(jsonStr);
+        }
+        /*
+        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
+            if (pendingRequest == nullptr) return;
+            
             pendingRequest->send(200, "application/json; charset=windows-1252", jsonStr);
             //pendingRequest->send(200, "text/plain", String(lcdData, 80));
             pendingRequest=nullptr;
@@ -53,7 +59,7 @@ void REGO600::RequestsWholeLCD_Task() {
         }
         else if (actionDoneDestination == ActionDoneDestination::Callback) {
             
-        }
+        }*/
     }
 }
 
@@ -86,14 +92,20 @@ void REGO600::RequestsAllTemperatures_Task() {
     if (requestIndex < requestCount) SendNextRequest();
     else {
         // we are done rx all temperatures, send data back to whatever requested it
-        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
-            if (pendingRequest == nullptr) return;
+        
+        if (onUartQueryComplete != nullptr) {
             String jsonStr = "{";
             for (int i=0;i<RequestsAllTemperatures_Count;i++) {
                 jsonStr += "\"" + String(requests[i].text) + "\":" + String((float)temperatures[i]/(float)10,1);
                 if (i<RequestsAllTemperatures_Count-1) jsonStr += ",";
             }
             jsonStr += "}";
+            onUartQueryComplete(jsonStr);
+        }
+        /*
+        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
+            if (pendingRequest == nullptr) return;
+            
             pendingRequest->send(200, "application/json", jsonStr);
             pendingRequest=nullptr;
         }
@@ -102,7 +114,7 @@ void REGO600::RequestsAllTemperatures_Task() {
         }
         else if (actionDoneDestination == ActionDoneDestination::Callback) {
             
-        }
+        }*/
     }
 }
 
@@ -134,14 +146,19 @@ void REGO600::RequestsAllStates_Task() {
     if (requestIndex < requestCount) SendNextRequest();
     else {
         // we are done rx all temperatures, send data back to whatever requested it
-        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
-            if (pendingRequest == nullptr) return;
+        if (onUartQueryComplete != nullptr) {
             String jsonStr = "{";
             for (int i=0;i<RequestsAllStates_Count;i++) {
                 jsonStr += "\"" + String(requests[i].text) + "\":" + String(states[i]==1?"true":"false");
                 if (i<RequestsAllStates_Count-1) jsonStr += ",";
             }
             jsonStr += "}";
+            onUartQueryComplete(jsonStr);
+        }
+/*
+        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
+            if (pendingRequest == nullptr) return;
+            
             pendingRequest->send(200, "application/json", jsonStr);
             pendingRequest=nullptr;
         }
@@ -151,6 +168,7 @@ void REGO600::RequestsAllStates_Task() {
         else if (actionDoneDestination == ActionDoneDestination::Callback) {
             
         }
+        */
     }
 }
 
@@ -178,22 +196,35 @@ void REGO600::setup() {
     });
 
     server.addHandler(&ws);
-    server.begin();
+    
+    server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(200, "application/json; charset=utf-8", "Hello World");
+    });
     server.on("/Temperatures", HTTP_GET, [this](AsyncWebServerRequest *request) {
-        this->pendingRequest = request;
-        this->actionDoneDestination = ActionDoneDestination::HttpReq;
+        /*this->pendingRequest = request;
+        this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
+        onUartQueryComplete = [request](String jsonResponse) {
+            request->send(200, "application/json; charset=utf-8", jsonResponse);
+        };
         BeginRetreiveAllTemperatures();
     });
     server.on("/States", HTTP_GET, [this](AsyncWebServerRequest *request) {
-        this->pendingRequest = request;
-        this->actionDoneDestination = ActionDoneDestination::HttpReq;
+        /*this->pendingRequest = request;
+        this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
+        onUartQueryComplete = [request](String jsonResponse) {
+            request->send(200, "application/json; charset=utf-8", jsonResponse);
+        };
         BeginRetreiveAllStates();
     });
     server.on("/LCD", HTTP_GET, [this](AsyncWebServerRequest *request) {
-        this->pendingRequest = request;
-        this->actionDoneDestination = ActionDoneDestination::HttpReq;
+        /*this->pendingRequest = request;
+        this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
+        onUartQueryComplete = [request](String jsonResponse) {
+            request->send(200, "application/json; charset=windows-1252", jsonResponse);
+        };
         BeginRetreiveWholeLCD();
     });
+    server.begin();
 }
 
 void REGO600::SendNextRequest() {

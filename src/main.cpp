@@ -6,6 +6,9 @@
 //#include "UART2websocket.h"
 #include "REGO600.h"
 
+#include "esp_core_dump.h"
+
+
 
 unsigned long auto_last_change = 0;
 unsigned long last_wifi_check_time = 0;
@@ -196,7 +199,48 @@ void Start_MDNS()
     }
     DEBUG_UART.println("\n");
 }
+#include "esp_task_wdt.h"
 
+void handleCoreDump(AsyncWebServerRequest *request=nullptr) {
+    size_t addr = 0;
+    size_t size = 0;
+
+    esp_err_t err = esp_core_dump_image_get(&addr, &size);
+    if (err != ESP_OK || size == 0) {
+        if (request != nullptr)
+            request->send(500, "text/plain", "No core dump found or failed to read");
+        return;
+    }
+
+    const uint8_t* dump_ptr = reinterpret_cast<const uint8_t*>(addr);
+
+    // Ensure LittleFS is mounted
+    if (!LittleFS.begin()) {
+        if (request != nullptr)
+            request->send(500, "text/plain", "Failed to mount LittleFS");
+        return;
+    }
+
+    File file = LittleFS.open("/core_dump.bin", "w");
+    if (!file) {
+        if (request != nullptr)
+            request->send(500, "text/plain", "Failed to open file for writing");
+        return;
+    }
+
+    size_t written = file.write(dump_ptr, size);
+    file.close();
+
+    if (written != size) {
+        if (request != nullptr)
+            request->send(500, "text/plain", "Failed to write full core dump to file");
+    } else {
+        if (request != nullptr)
+            request->send(200, "text/plain", "Core dump saved to LittleFS as /core_dump.bin");
+    }
+}
+
+AsyncWebServer *asyncServer;
 void failsafeLoop()
 {
     // blink rapid to alert a crash
@@ -209,7 +253,20 @@ void failsafeLoop()
     DEBUG_UART.println(F("************************************"));
     DEBUG_UART.println(F("* Now entering failsafe OTA loop.. *"));
     DEBUG_UART.println(F("************************************"));
+    asyncServer = new AsyncWebServer(80);
+    asyncServer->on("/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(200, F("text/plain"), "The system will now reset and luckily go into normal mode.");
+        // Small delay to ensure the response is sent before restarting
+        delay(100); // NOT blocking in this context, short enough to work
 
+        esp_restart();  // Software reset
+    });
+    asyncServer->on("/core-dump",HTTP_GET, handleCoreDump);
+    asyncServer->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(200, F("text/plain"), "The system is in OTA failsafe loop.");
+    });
+    asyncServer->begin();
+    handleCoreDump();
     while (1)
     {
         ArduinoOTA.handle();
@@ -427,6 +484,7 @@ void initWebServerHandlers(void)
         int *ptr = nullptr; // Null pointer
         *ptr = 42;          // Dereference the null pointer (causes a crash)
     });
+    //webserver.on("/core-dump", handleCoreDump);
     
     webserver.onNotFound([]() {                              // If the client requests any URI
         String uri = webserver.uri();

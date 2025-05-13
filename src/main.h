@@ -15,7 +15,7 @@
 #include "OTA.h"
 
 // Amazon AWS IoT
-#include "AWS_IOT.h"
+//#include "AWS_IOT.h"
 
 
 // Thingspeak

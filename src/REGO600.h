@@ -62,7 +62,7 @@ private:
     const unsigned long FLUSH_TIMEOUT_MS = 50; // flush after 50ms idle
 
     Action lastAction = Action::WebSocketRaw;
-    ActionDoneDestination actionDoneDestination = ActionDoneDestination::NotSet;
+    //ActionDoneDestination actionDoneDestination = ActionDoneDestination::NotSet;
 
     uint8_t currentExpectedRxLength = 0;
     //size_t currentRxCount = 0;
@@ -70,7 +70,7 @@ private:
     uint8_t requestIndex = 0;
     uint8_t requestCount = 0;
 
-    AsyncWebServerRequest* pendingRequest = nullptr;
+    std::function<void(String)> onUartQueryComplete;
 
     char lcdData[20*4];
     uint16_t temperatures[9];

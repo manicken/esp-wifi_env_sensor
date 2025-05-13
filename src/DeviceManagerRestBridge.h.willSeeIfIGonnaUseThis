@@ -1,0 +1,31 @@
+#pragma once
+
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <stdlib.h>
+#include <LittleFS.h>
+#include "LittleFS_ext.h"
+
+#include <WiFiClient.h>
+#if defined(ESP8266)
+#include <ESP8266WebServer.h>
+#define DEBUG_UART Serial1
+#define WEBSERVER_TYPE ESP8266WebServer
+#elif defined(ESP32)
+#include <fs_WebServer.h>
+#define DEBUG_UART Serial
+#define WEBSERVER_TYPE fs_WebServer
+#endif
+
+#include <ESPAsyncWebServer.h>
+
+namespace DeviceManagerRestBridge
+{
+    #define DEVICE_MANAGER_REST_FILES_PATH                  F("/DeviceManagerRestBridge")
+    #define DEVICE_MANAGER_REST_CONFIG_JSON_FILE            F("/DeviceManagerRestBridge/cfg.json")
+    #define DEVICE_MANAGER_REST_URL_RELOAD_JSON             F("/DeviceManagerRestBridge/reloadJson")
+
+    void begin(WEBSERVER_TYPE &srv);
+    bool readJson();
+    void reloadJSON();
+}

@@ -7,11 +7,11 @@ namespace DeviceManager
     std::string lastError;
 
     WEBSERVER_TYPE *webserver = nullptr;
+    AsyncWebServer *asyncWebserver = nullptr;
 
     DHTesp dht;
     OneWire oneWire;
     DallasTemperature dTemp(&oneWire);
-    
 
     /**************** OneWireBus ****************/
     OneWireBus *oneWireBusses = nullptr;
@@ -126,7 +126,22 @@ namespace DeviceManager
         str.concat(", value="); str.concat(value);
         return str;
     }
-    
+
+    /**************** GPIOdevices ****************/
+    DOUTdevice::DOUTdevice(uint32_t _uid, uint8_t _pin)
+    {
+        type = DeviceType::DOUT;
+        uid = _uid;
+        pin = _pin;
+    }
+    DINdevice::DINdevice(uint32_t _uid, uint8_t _pin)
+    {
+        type = DeviceType::DIN;
+        uid = _uid;
+        pin = _pin;
+    }
+
+
     /**************** PWMdevice ****************/
     PWMdevice::PWMdevice(uint32_t _uid, uint8_t _pin, float _frequency, uint8_t _bits, uint8_t _invOut)
     {
@@ -382,6 +397,18 @@ namespace DeviceManager
                 int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
                 devices[currIndex++] = new TX433device(uid, pin);
             }
+            else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_DOUT, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DOUT)-1) == 0)
+            {
+                // TODO add isValid_JsonDOUT_Item function
+                int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
+                devices[currIndex++] = new DOUTdevice(uid, pin);
+            }
+            else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_DIN, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DIN)-1) == 0)
+            {
+                // TODO add isValid_JsonDIN_Item function
+                int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
+                devices[currIndex++] = new DINdevice(uid, pin);
+            }
             else
             {
                 lastError += "invalid device type: ";
@@ -485,6 +512,97 @@ namespace DeviceManager
         webserver->send(200, "text/html", ret);
     }
 
+    void restAPI_handleWriteOrRead(AsyncWebServerRequest *request) {
+        // Example URL: /write/pwm/tempSensor1/255
+
+        String url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
+
+        // Remove the leading '/'
+        if (url.startsWith("/")) url = url.substring(1);  // -> "write/pwm/tempSensor1/255"
+
+        // Split into parts
+        int p1 = url.indexOf('/');
+        int p2 = url.indexOf('/', p1 + 1);
+        int p3 = url.indexOf('/', p2 + 1);
+
+        String command = url.substring(0, p1);                         // "write" or "read"
+        String type = url.substring(p1 + 1, p2);                       // "pwm", "gpio", etc.
+        String uid  = url.substring(p2 + 1, p3);                       // "tempSensor1"
+        String value = url.substring(p3 + 1);                          // "255" or "" if missing
+
+        // Do something with them
+        String message = "\"debug\":{";
+        message += "\"Command\":\"" + command + "\",";
+        message += "\"Type\":\"" + type + "\",";
+        message += "\"UID\":\"" + uid + "\",";
+        message += "\"Value\":\"" + value + "\"},";
+
+
+        if (command == "write") {
+            // Handle write command
+            if (value.length() > 0 || p3 != -1) {
+                if (type == "uint32") {
+                    // Convert value to integer
+                    int intValue = value.toInt();
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (setValue(uidInt, intValue))
+                        message += "\"message\":\"Value written: " + String(intValue) + "\"";
+                    else
+                        message += "\"error\":\"Failed to write value.\"";
+
+                } else if (type == "float") {
+                    // Convert value to float
+                    float floatValue = value.toFloat();
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (setValue(uidInt, floatValue))
+                        message += "\"message\":\"Value written: " + String(floatValue) + "\"";
+                    else
+                        message += "\"error\":\"Failed to write value.\"";
+
+                } else if (type == "string") {
+                    // Convert value to string
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (setValue(uidInt, value.c_str()))
+                        message += "\"message\":\"String written: " + value + "\"";
+                    else
+                        message += "\"error\":\"Failed to write string.\"";
+
+                } else {
+                    message += "\"error\":\"Unknown type for writing.\"";
+                }
+            } else {
+                message += "\"error\":\"No value provided for writing.\"";
+            }
+        } else if (command == "read") {
+            if (type == "uint32") {
+                // Handle read command
+                uint32_t readValue = 0;
+                uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                if (getValue(uidInt, &readValue)) {
+                    message += "\"value\":\"" + String(readValue) + "\"";
+                } else {
+                    message += "\"error\":\"Failed to read value.\"";
+                }
+            } else if (type == "float") {
+                // Handle read command
+                float readValue = 0;
+                uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                if (getValue(uidInt, &readValue)) {
+                    message += "\"value\":\"" + String(readValue) + "\"";
+                } else {
+                    message += "\"error\":\"Failed to read value.\"";
+                }
+            } else {
+                message += "\"error\":\"Unknown type for reading.\"";
+            }
+        } else {
+            message += "\"error\":\"Unknown command.\"";
+        }
+
+        request->send(200, "application/json", "{" +  message + "}");
+    }
+
+
     void setup(WEBSERVER_TYPE &srv) {
 
         webserver = &srv;
@@ -500,7 +618,21 @@ namespace DeviceManager
             DEBUG_UART.println(message);
         }
         
-        
+        asyncWebserver = new AsyncWebServer(DEVICE_MANAGER_REST_API_PORT);
+        asyncWebserver->on(DEVICE_MANAGER_REST_API_WRITE_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
+        asyncWebserver->on(DEVICE_MANAGER_REST_API_READ_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
+
+        asyncWebserver->on("/", HTTP_ANY, [](AsyncWebServerRequest *request){
+            String message = "Device Manager - REST API<br>";
+            message += "<a href=\"/<cmd>/<type>/<uid>/<optional_value>\">Device command</a><br>";
+            request->send(200, "text/html", message);
+        });
+        asyncWebserver->onNotFound([](AsyncWebServerRequest *request){
+            String message = "Device Manager - REST API<br>";
+            message += "invalid url:" + request->url() + "<br>";
+            request->send(404, "text/html", message);
+        });
+        asyncWebserver->begin();
     }
 
     Device* getDeviceInfo(uint32_t uid)
@@ -625,13 +757,72 @@ namespace DeviceManager
         return true;
     }
 
-    void setValue(uint32_t uid, float value)
+    bool getValue(uint32_t uid, uint32_t* value)
     {
+        if (value == nullptr) return false; // no point of doing anything if value ptr is null
 
+        Device* device = getDeviceInfo(uid);
+        if (device == nullptr) {
+            *value = 0;
+            DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");
+            return false;
+        }
+        if (device->type == DeviceType::ADC) {
+            pinMode(device->pin, INPUT);
+            *value = analogRead(device->pin);
+        }
+        else if (device->type == DeviceType::DIN) {
+            pinMode(device->pin, INPUT);
+            *value = digitalRead(device->pin);
+        }
+        // keep theese commented out as they are not implemented yet
+        /*else if (device->type == DeviceType::PWM) {}*/ // cannot get value from a PWM output
+        /*else if (device->type == DeviceType::DOUT) {}*/ // cannot get value from a digital output
+        /*else if (device->type == DeviceType::TX433) {}*/ // don't have a value to get
+        /*else if (device->type == DeviceType::DAC) {}*/ // cannot get value from a digital output
+        /*else if (device->type == DeviceType::OneWireTemp) {}*/ // unsupported data type
+        else {
+            *value = 0;
+            return false;
+        }
+        return true;
     }
-    void setValue(uint32_t uid, uint32_t value)
+
+    bool setValue(uint32_t uid, uint32_t value)
     {
-        
+        Device* device = getDeviceInfo(uid);
+        if (device == nullptr) {
+            DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");
+            return false;
+        }
+        if (device->type == DeviceType::PWM) {
+            analogWrite(device->pin, value);
+        }
+        else if (device->type == DeviceType::DOUT) {
+            pinMode(device->pin, OUTPUT);
+            digitalWrite(device->pin, value);
+        }
+        else return false;
+
+        return true;
+    }
+
+    bool setValue(uint32_t uid, std::string value) {
+        Device* device = getDeviceInfo(uid);
+        if (device == nullptr) {
+            DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");
+            return false;
+        }
+        if (device->type == DeviceType::TX433) {
+            TX433device& tx433d = static_cast<TX433device&>(*device);
+            RF433::init(tx433d.pin);
+            RF433::DecodeFromJSON(value);
+        }
+        else {
+            DEBUG_UART.println("setValue: device type not supported");
+            return false;
+        }
+        return true;
     }
     void htmlGetListOfOneWireDevicesOnBusPin()
     {

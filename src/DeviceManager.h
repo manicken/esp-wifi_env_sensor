@@ -9,6 +9,7 @@
 #include <WiFiClient.h>
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
+#include <ESPAsyncTCP.h>
 #define DEBUG_UART Serial1
 #define WEBSERVER_TYPE ESP8266WebServer
 #elif defined(ESP32)
@@ -17,16 +18,25 @@
 #define WEBSERVER_TYPE fs_WebServer
 #endif
 
+#include <ESPAsyncWebServer.h>
+
 #include <DHTesp.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-
+#include "RF433.h"
 
 #include "GPIO_manager.h"
 
 namespace DeviceManager
 {
     #define BUSSES_DEV_PRINT
+
+    #define DEVICE_MANAGER_REST_API_PORT               81
+    #define DEVICE_MANAGER_REST_API_WRITE_URL          "/write/"
+    #define DEVICE_MANAGER_REST_API_READ_URL           "/read/"
+    #define DEVICE_MANAGER_REST_API_WRITE_UINT32_CMD   "uint32"
+    #define DEVICE_MANAGER_REST_API_WRITE_FLOAT_CMD    "float"
+    #define DEVICE_MANAGER_REST_API_WRITE_STRING_CMD   "string"
 
     #define DEVICE_MANAGER_FILES_PATH                  F("/DeviceManager")
     #define DEVICE_MANAGER_CONFIG_JSON_FILE            F("/DeviceManager/cfg.json")
@@ -35,6 +45,7 @@ namespace DeviceManager
     #define DEVICE_MANAGER_URL_GET_VALUE               F("/DeviceManager/getValue")
     #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS    F("/DeviceManager/getAll1wireTemps")
     #define DEVICE_MANAGER_URL_PRINT_DEVICES           F("/DeviceManager/printDevices")
+
 
     #define DEVICE_MANAGER_JSON_NAME_TYPE               "type"
     #define DEVICE_MANAGER_JSON_NAME_DHT_TYPE           "dht"
@@ -85,6 +96,13 @@ namespace DeviceManager
         DHT22 = 0x22,
         AM2302 = 0x2302,
         RHT03 = 0x3,
+    };
+
+    enum class GPIO_Type: int32_t
+    {
+        Unknown = -1,
+        Input = 1,
+        Output = 0,
     };
 
     struct OneWireBus
@@ -140,6 +158,14 @@ namespace DeviceManager
         TX433device(uint32_t _uid, uint8_t _pin);
     };
 
+    struct DINdevice : public Device {
+        DINdevice(uint32_t _uid, uint8_t _pin);
+    };
+
+    struct DOUTdevice : public Device {
+        DOUTdevice(uint32_t _uid, uint8_t _pin);
+    };
+
     enum class NEOPIXEL_Type {
         WS2811 = 0x2811,
         WS2812 = 0x2812,
@@ -168,7 +194,8 @@ namespace DeviceManager
     bool getAllOneWireTemperatures();
     void htmlGetAllOneWireTemperatures();
     bool getValue(uint32_t uid, float* value);
-    void setValue(uint32_t uid, float value);
-    void setValue(uint32_t uid, uint32_t value);
+    bool getValue(uint32_t uid, uint32_t* value);
+    bool setValue(uint32_t uid, uint32_t value);
+    bool setValue(uint32_t uid, std::string value);
     void htmlGetListOfOneWireDevicesOnBusPin();
 }
