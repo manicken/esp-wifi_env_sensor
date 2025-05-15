@@ -708,6 +708,60 @@ namespace DeviceManager
         webserver->send(200, "text/html", ret);
     }
 
+    void DecodeFromJSON(std::string jsonStr) {
+        StaticJsonDocument<128> json;
+        deserializeJson(json, jsonStr.c_str());
+        if (json.isNull()) {
+            DEBUG_UART.println("Failed to parse JSON");
+            return;
+        }
+        if (json.containsKey("uid") == false) {
+            DEBUG_UART.println("Missing 'uid' key in JSON");
+            return;
+        }
+        if (json.containsKey("cmd") == false) {
+            DEBUG_UART.println("Missing 'cmd' key in JSON");
+            return;
+        }
+        if (json.containsKey("value") == false) {
+            DEBUG_UART.println("Missing 'value' key in JSON");
+            return;
+        }
+        if (json["uid"].isNull()) {
+            DEBUG_UART.println("Missing 'uid' value in JSON");
+            return;
+        }
+        if (json["cmd"].isNull()) {
+            DEBUG_UART.println("Missing 'cmd' value in JSON");
+            return;
+        }
+        if (json["value"].isNull()) {
+            DEBUG_UART.println("Missing 'value' value in JSON");
+            return;
+        }
+        std::string uid = json["uid"].as<std::string>();
+        std::string cmd = json["cmd"].as<std::string>();
+        std::string value = json["value"].as<std::string>();
+        if (cmd == "writeuint32") {
+            uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+            uint32_t valueInt = (uint32_t) strtoul(value.c_str(), nullptr, 10);
+            setValue(uidInt, valueInt);
+        }
+        else if (cmd == "writefloat") {
+            uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+            float valueFloat = std::stof(value);
+            setValue(uidInt, valueFloat);
+        }
+        else if (cmd == "writeString") {
+            uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+            setValue(uidInt, value);
+        }
+        else {
+            DEBUG_UART.println("Unknown command in JSON");
+            return;
+        }
+    }
+
     bool getValue(uint32_t uid, float* value)
     {
         if (value == nullptr) return false; // no point of doing anything if value ptr is null

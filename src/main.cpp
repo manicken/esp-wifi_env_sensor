@@ -76,63 +76,25 @@ void Alarm_SendToRF433(const OnTickExtParameters *param)
         RF433::DecodeFromJSON(casted_param->jsonStr);
     }
 }
+void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
+{
+    DEBUG_UART.println("Alarm_SendToDeviceManager");
+    const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
+    if (casted_param != nullptr)
+    {
+        DeviceManager::DecodeFromJSON(casted_param->jsonStr);
+    }
+}
 
-Scheduler::NameToFunction nameToFunctionList[4] = {
+Scheduler::NameToFunction nameToFunctionList[5] = {
 //   name         , onTick            , onTickExt
     {"ntp_sync"   , &Timer_SyncTime   , nullptr           },
     {"sendEnvData", &Timer_SendEnvData, nullptr           },
-    {"fan"        , nullptr           , &Alarm_SetFanSpeed},
-    {"rf433"      , nullptr           , &Alarm_SendToRF433}
+    {"fan"        , nullptr           , &Alarm_SetFanSpeed}, // this would be obsolete in favor of using SendToDeviceManager
+    {"rf433"      , nullptr           , &Alarm_SendToRF433}, // this would be obsolete in favor of using SendToDeviceManager
+    {"devmgr"     , nullptr           , &Alarm_SendToDeviceManager}
 };
 
-
-void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
-{
-    DEBUG_UART.print("Received [");
-    DEBUG_UART.print(topic);
-    DEBUG_UART.print("]: ");
-    for (unsigned int i = 0; i < length; i++)
-    {
-        DEBUG_UART.print((char)payload[i]);
-    }
-    DEBUG_UART.println();
-    DynamicJsonDocument jsonDoc(256);
-
-    deserializeJson(jsonDoc, payload);
-
-
-    if (jsonDoc.containsKey("cmd"))
-    {
-        std::string cmd = (std::string)jsonDoc["cmd"].as<std::string>();
-        if (cmd == "sendEnvData")
-        {
-#if defined(ESP8266)
-            DEBUG_UART.println("sending to AWS IOT");
-            //AWS_IOT::publishMessage(humidity_dht, temp_ds);
-#endif
-        }
-        else if (cmd == "RF433")
-        {
-            JsonVariant jsonVariant = jsonDoc.as<JsonVariant>();
-            RF433::DecodeFromJSON(jsonVariant);
-        }
-        else if (cmd == "FAN")
-        {
-            JsonVariant jsonVariant = jsonDoc.as<JsonVariant>();
-            FAN::DecodeFromJSON(jsonVariant);
-        }
-        else if (cmd == "OTA_update")
-        {
-            if (!jsonDoc.containsKey("url")) return;
-
-            std::string url = (std::string)jsonDoc["url"].as<std::string>();
-
-            DEBUG_UART.printf("starting OTA from %s\n", url.c_str());
-            
-            OTA::Download_Update(url.c_str());
-        }
-    }
-}
 #if defined(ESP32)
 #define INIT_SDMMC_PRINT_INFO
 #define INIT_SDMMC_PRINT_DIR
@@ -428,7 +390,7 @@ void initWebServerHandlers(void)
             
             
         } else if (upload.status == UPLOAD_FILE_END) {
-            AWS_IOT_messageReceived(nullptr, upload.buf, upload.currentSize);
+            //AWS_IOT_messageReceived(nullptr, upload.buf, upload.currentSize);
         }
     });
     

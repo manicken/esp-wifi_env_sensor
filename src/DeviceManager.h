@@ -41,13 +41,14 @@ namespace DeviceManager
     #define DEVICE_MANAGER_REST_API_FLOAT_TYPE         "float"
     #define DEVICE_MANAGER_REST_API_STRING_TYPE        "string"
 
-    #define DEVICE_MANAGER_FILES_PATH                  F("/DeviceManager")
-    #define DEVICE_MANAGER_CONFIG_JSON_FILE            F("/DeviceManager/cfg.json")
-    #define DEVICE_MANAGER_URL_RELOAD_JSON             F("/DeviceManager/reloadJson")
-    #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_DEVICES  F("/DeviceManager/listAll1wireDevices")
-    #define DEVICE_MANAGER_URL_GET_VALUE               F("/DeviceManager/getValue")
-    #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS    F("/DeviceManager/getAll1wireTemps")
-    #define DEVICE_MANAGER_URL_PRINT_DEVICES           F("/DeviceManager/printDevices")
+    #define DEVICE_MANAGER_ROOT_URL                    "/DeviceManager"
+    #define DEVICE_MANAGER_FILES_PATH                  F(DEVICE_MANAGER_ROOT_URL)
+    #define DEVICE_MANAGER_CONFIG_JSON_FILE            F(DEVICE_MANAGER_ROOT_URL "/cfg.json")
+    #define DEVICE_MANAGER_URL_RELOAD_JSON             F(DEVICE_MANAGER_ROOT_URL "/reloadJson")
+    #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_DEVICES  F(DEVICE_MANAGER_ROOT_URL "/listAll1wireDevices")
+    #define DEVICE_MANAGER_URL_GET_VALUE               F(DEVICE_MANAGER_ROOT_URL "/getValue")
+    #define DEVICE_MANAGER_URL_LIST_ALL_1WIRE_TEMPS    F(DEVICE_MANAGER_ROOT_URL "/getAll1wireTemps")
+    #define DEVICE_MANAGER_URL_PRINT_DEVICES           F(DEVICE_MANAGER_ROOT_URL "/printDevices")
 
 
     #define DEVICE_MANAGER_JSON_NAME_TYPE               "type"
@@ -196,6 +197,7 @@ namespace DeviceManager
     
     bool getAllOneWireTemperatures();
     void htmlGetAllOneWireTemperatures();
+    void DecodeFromJSON(std::string jsonStr);
     bool getValue(uint32_t uid, float* value);
     bool getValue(uint32_t uid, uint32_t* value);
     bool setValue(uint32_t uid, uint32_t value);

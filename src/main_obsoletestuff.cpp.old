@@ -1,0 +1,51 @@
+
+
+
+
+void AWS_IOT_messageReceived(char *topic, byte *payload, unsigned int length)
+{
+    DEBUG_UART.print("Received [");
+    DEBUG_UART.print(topic);
+    DEBUG_UART.print("]: ");
+    for (unsigned int i = 0; i < length; i++)
+    {
+        DEBUG_UART.print((char)payload[i]);
+    }
+    DEBUG_UART.println();
+    DynamicJsonDocument jsonDoc(256);
+
+    deserializeJson(jsonDoc, payload);
+
+
+    if (jsonDoc.containsKey("cmd"))
+    {
+        std::string cmd = (std::string)jsonDoc["cmd"].as<std::string>();
+        if (cmd == "sendEnvData")
+        {
+#if defined(ESP8266)
+            DEBUG_UART.println("sending to AWS IOT");
+            //AWS_IOT::publishMessage(humidity_dht, temp_ds);
+#endif
+        }
+        else if (cmd == "RF433")
+        {
+            JsonVariant jsonVariant = jsonDoc.as<JsonVariant>();
+            RF433::DecodeFromJSON(jsonVariant);
+        }
+        else if (cmd == "FAN")
+        {
+            JsonVariant jsonVariant = jsonDoc.as<JsonVariant>();
+            FAN::DecodeFromJSON(jsonVariant);
+        }
+        else if (cmd == "OTA_update")
+        {
+            if (!jsonDoc.containsKey("url")) return;
+
+            std::string url = (std::string)jsonDoc["url"].as<std::string>();
+
+            DEBUG_UART.printf("starting OTA from %s\n", url.c_str());
+            
+            OTA::Download_Update(url.c_str());
+        }
+    }
+}

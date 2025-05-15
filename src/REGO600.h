@@ -37,6 +37,7 @@ public:
         ReadPrevError = 42
     };
     enum class Action {
+        NotSet,
         WebSocketRaw,
         ReadWholePanel,
         ReadWholeLCD,
