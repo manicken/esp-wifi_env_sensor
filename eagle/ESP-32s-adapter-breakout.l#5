@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
@@ -78,10 +78,10 @@
 <pad name="IO17" x="15.24" y="-5.08" drill="0.8"/>
 <pad name="IO4" x="15.24" y="-7.62" drill="0.8"/>
 <pad name="IO2" x="15.24" y="-10.16" drill="0.8"/>
-<pad name="P$30" x="12.7" y="-10.16" drill="0.8"/>
+<pad name="IO15" x="12.7" y="-10.16" drill="0.8"/>
 <pad name="IO0" x="12.7" y="-7.62" drill="0.8"/>
 <pad name="IO16" x="12.7" y="-5.08" drill="0.8"/>
-<pad name="IO15" x="12.7" y="-2.54" drill="0.8"/>
+<pad name="IO5" x="12.7" y="-2.54" drill="0.8"/>
 <pad name="IO19" x="12.7" y="0" drill="0.8"/>
 <pad name="IO22" x="12.7" y="2.54" drill="0.8"/>
 <pad name="EN" x="12.7" y="7.62" drill="0.8"/>
@@ -135,12 +135,6 @@
 <pin name="IO12" x="-7.62" y="-12.7" length="middle"/>
 <pin name="GND@15" x="-7.62" y="-15.24" length="middle"/>
 <pin name="IO13" x="-7.62" y="-17.78" length="middle"/>
-<pin name="NC@17" x="-7.62" y="-20.32" length="middle"/>
-<pin name="NC@18" x="-7.62" y="-22.86" length="middle"/>
-<pin name="NC@19" x="-7.62" y="-25.4" length="middle"/>
-<pin name="NC@20" x="27.94" y="-25.4" length="middle" rot="R180"/>
-<pin name="NC@21" x="27.94" y="-22.86" length="middle" rot="R180"/>
-<pin name="NC@22" x="27.94" y="-20.32" length="middle" rot="R180"/>
 <pin name="IO15" x="27.94" y="-17.78" length="middle" rot="R180"/>
 <pin name="IO2" x="27.94" y="-15.24" length="middle" rot="R180"/>
 <pin name="IO0" x="27.94" y="-12.7" length="middle" rot="R180"/>
@@ -164,6 +158,27 @@
 </symbol>
 </symbols>
 <devicesets>
+<deviceset name="ESP-32S-ADAPTER-BREAKOUT" prefix="ESP-32S-ADAPTER-PCB">
+<gates>
+<gate name="G$1" symbol="ESP-32S-ADAPTER-BREAKOUT" x="-10.16" y="0"/>
+</gates>
+<devices>
+<device name="" package="ESP-32S-ADAPTER-PCB">
+<connects>
+<connect gate="G$1" pin="3V3" pad="3V3"/>
+<connect gate="G$1" pin="EN" pad="EN"/>
+<connect gate="G$1" pin="GND@1" pad="GND"/>
+<connect gate="G$1" pin="GND@15" pad="GND2"/>
+<connect gate="G$1" pin="IO0" pad="IO0"/>
+<connect gate="G$1" pin="IO2" pad="IO2"/>
+<connect gate="G$1" pin="IO4" pad="IO4"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
 </devicesets>
 </library>
 </drawing>

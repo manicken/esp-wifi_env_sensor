@@ -192,7 +192,7 @@ void REGO600::setup() {
     lastAction = Action::NotSet;
     requestIndex = 0;
     uartTxBuffer[0] = 0x81; // allways 0x81, never to be changed
-    UART2.begin(19200, SERIAL_8N1, 16, 17);  // Set correct RX/TX pins for UART2
+    UART2.begin(19200, SERIAL_8N1, 34, 33);  // Set correct RX/TX pins for UART2
     ws.onEvent([this](AsyncWebSocket *s, AsyncWebSocketClient *c, AwsEventType t, void *a, uint8_t *d, size_t l) {
         this->onWsEvent(s, c, t, a, d, l);
     });

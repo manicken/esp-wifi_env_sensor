@@ -115,6 +115,7 @@
 <wire x1="-7.62" y1="15.24" x2="-7.62" y2="17.78" width="0.127" layer="21"/>
 <wire x1="-7.62" y1="17.78" x2="-10.16" y2="17.78" width="0.127" layer="21"/>
 <wire x1="-10.16" y1="17.78" x2="-10.16" y2="15.24" width="0.127" layer="21"/>
+<pad name="GND3" x="12.7" y="10.16" drill="0.8"/>
 </package>
 </packages>
 <symbols>
@@ -170,8 +171,31 @@
 <connect gate="G$1" pin="GND@1" pad="GND"/>
 <connect gate="G$1" pin="GND@15" pad="GND2"/>
 <connect gate="G$1" pin="IO0" pad="IO0"/>
+<connect gate="G$1" pin="IO12" pad="IO12"/>
+<connect gate="G$1" pin="IO13" pad="IO13"/>
+<connect gate="G$1" pin="IO14" pad="IO14"/>
+<connect gate="G$1" pin="IO15" pad="IO15"/>
+<connect gate="G$1" pin="IO18" pad="IO18"/>
+<connect gate="G$1" pin="IO19" pad="IO19"/>
 <connect gate="G$1" pin="IO2" pad="IO2"/>
+<connect gate="G$1" pin="IO21" pad="IO21"/>
+<connect gate="G$1" pin="IO22" pad="IO22"/>
+<connect gate="G$1" pin="IO23" pad="IO23"/>
+<connect gate="G$1" pin="IO25" pad="IO25"/>
+<connect gate="G$1" pin="IO26" pad="IO26"/>
+<connect gate="G$1" pin="IO27" pad="IO27"/>
+<connect gate="G$1" pin="IO32" pad="IO32"/>
+<connect gate="G$1" pin="IO33" pad="IO33"/>
+<connect gate="G$1" pin="IO34" pad="IO34"/>
+<connect gate="G$1" pin="IO35" pad="IO35"/>
 <connect gate="G$1" pin="IO4" pad="IO4"/>
+<connect gate="G$1" pin="IO5" pad="IO5"/>
+<connect gate="G$1" pin="NC@27" pad="IO16"/>
+<connect gate="G$1" pin="NC@28" pad="IO17"/>
+<connect gate="G$1" pin="RXD0" pad="RXD"/>
+<connect gate="G$1" pin="SNP" pad="SVN"/>
+<connect gate="G$1" pin="SVP" pad="SVP"/>
+<connect gate="G$1" pin="TXD0" pad="TXD"/>
 </connects>
 <technologies>
 <technology name=""/>

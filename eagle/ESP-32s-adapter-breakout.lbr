@@ -65,7 +65,7 @@
 <pad name="IO14" x="-15.24" y="0" drill="0.8"/>
 <pad name="IO26" x="-15.24" y="2.54" drill="0.8"/>
 <pad name="IO35" x="-15.24" y="7.62" drill="0.8"/>
-<pad name="SVN" x="-15.24" y="10.16" drill="0.8"/>
+<pad name="IO39" x="-15.24" y="10.16" drill="0.8"/>
 <pad name="IO13" x="-15.24" y="-2.54" drill="0.8"/>
 <pad name="SD3" x="-15.24" y="-5.08" drill="0.8"/>
 <pad name="CLK" x="-15.24" y="-7.62" drill="0.8"/>
@@ -86,7 +86,7 @@
 <pad name="IO22" x="12.7" y="2.54" drill="0.8"/>
 <pad name="EN" x="12.7" y="7.62" drill="0.8"/>
 <pad name="GND" x="12.7" y="10.16" drill="0.8"/>
-<pad name="SVP" x="-12.7" y="10.16" drill="0.8"/>
+<pad name="IO36" x="-12.7" y="10.16" drill="0.8"/>
 <pad name="IO34" x="-12.7" y="7.62" drill="0.8"/>
 <pad name="IO25" x="-12.7" y="2.54" drill="0.8"/>
 <pad name="IO27" x="-12.7" y="0" drill="0.8"/>
@@ -123,10 +123,10 @@
 <pin name="GND@1" x="-7.62" y="20.32" length="middle"/>
 <pin name="3V3" x="-7.62" y="17.78" length="middle"/>
 <pin name="EN" x="-7.62" y="15.24" length="middle"/>
-<pin name="SVP" x="-7.62" y="12.7" length="middle"/>
-<pin name="SNP" x="-7.62" y="10.16" length="middle"/>
-<pin name="IO34" x="-7.62" y="7.62" length="middle"/>
-<pin name="IO35" x="-7.62" y="5.08" length="middle"/>
+<pin name="I(O)36" x="-7.62" y="12.7" length="middle"/>
+<pin name="I(O)39" x="-7.62" y="10.16" length="middle"/>
+<pin name="I(O)34" x="-7.62" y="7.62" length="middle"/>
+<pin name="I(O)35" x="-7.62" y="5.08" length="middle"/>
 <pin name="IO32" x="-7.62" y="2.54" length="middle"/>
 <pin name="IO33" x="-7.62" y="0" length="middle"/>
 <pin name="IO25" x="-7.62" y="-2.54" length="middle"/>
@@ -146,8 +146,8 @@
 <pin name="IO18" x="27.94" y="0" length="middle" rot="R180"/>
 <pin name="IO19" x="27.94" y="2.54" length="middle" rot="R180"/>
 <pin name="IO21" x="27.94" y="7.62" length="middle" rot="R180"/>
-<pin name="RXD0" x="27.94" y="10.16" length="middle" rot="R180"/>
-<pin name="TXD0" x="27.94" y="12.7" length="middle" rot="R180"/>
+<pin name="RXD0(IO3)" x="27.94" y="10.16" length="middle" rot="R180"/>
+<pin name="TXD0(IO1)" x="27.94" y="12.7" length="middle" rot="R180"/>
 <pin name="IO22" x="27.94" y="15.24" length="middle" rot="R180"/>
 <pin name="IO23" x="27.94" y="17.78" length="middle" rot="R180"/>
 <pin name="GND@38" x="27.94" y="20.32" length="middle" rot="R180"/>
@@ -170,6 +170,10 @@
 <connect gate="G$1" pin="GND@1" pad="GND"/>
 <connect gate="G$1" pin="GND@15" pad="GND2"/>
 <connect gate="G$1" pin="GND@38" pad="GND3"/>
+<connect gate="G$1" pin="I(O)34" pad="IO34"/>
+<connect gate="G$1" pin="I(O)35" pad="IO35"/>
+<connect gate="G$1" pin="I(O)36" pad="IO36"/>
+<connect gate="G$1" pin="I(O)39" pad="IO39"/>
 <connect gate="G$1" pin="IO0" pad="IO0"/>
 <connect gate="G$1" pin="IO12" pad="IO12"/>
 <connect gate="G$1" pin="IO13" pad="IO13"/>
@@ -186,16 +190,12 @@
 <connect gate="G$1" pin="IO27" pad="IO27"/>
 <connect gate="G$1" pin="IO32" pad="IO32"/>
 <connect gate="G$1" pin="IO33" pad="IO33"/>
-<connect gate="G$1" pin="IO34" pad="IO34"/>
-<connect gate="G$1" pin="IO35" pad="IO35"/>
 <connect gate="G$1" pin="IO4" pad="IO4"/>
 <connect gate="G$1" pin="IO5" pad="IO5"/>
 <connect gate="G$1" pin="NC@27" pad="IO16"/>
 <connect gate="G$1" pin="NC@28" pad="IO17"/>
-<connect gate="G$1" pin="RXD0" pad="RXD"/>
-<connect gate="G$1" pin="SNP" pad="SVN"/>
-<connect gate="G$1" pin="SVP" pad="SVP"/>
-<connect gate="G$1" pin="TXD0" pad="TXD"/>
+<connect gate="G$1" pin="RXD0(IO3)" pad="RXD"/>
+<connect gate="G$1" pin="TXD0(IO1)" pad="TXD"/>
 </connects>
 <technologies>
 <technology name=""/>
