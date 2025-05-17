@@ -140,7 +140,19 @@ namespace DeviceManager
         uid = _uid;
         pin = _pin;
     }
-
+    DPOUTdevice::DPOUTdevice(uint32_t _uid, uint8_t _pin, uint8_t _inactiveState)
+    {
+        type = DeviceType::DPOUT;
+        uid = _uid;
+        pin = _pin;
+        spout = new SinglePulseOutput(pin, _inactiveState);
+    }
+    DPOUTdevice::~DPOUTdevice()
+    {
+        if (spout != nullptr)
+            delete spout;
+        spout = nullptr;
+    }
 
     /**************** PWMdevice ****************/
     PWMdevice::PWMdevice(uint32_t _uid, uint8_t _pin, float _frequency, uint8_t _bits, uint8_t _invOut)
@@ -403,6 +415,13 @@ namespace DeviceManager
                 int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
                 devices[currIndex++] = new DOUTdevice(uid, pin);
             }
+            else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_DPOUT, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DPOUT)-1) == 0)
+            {
+                // TODO add isValid_JsonDOUT_Item function
+                int pin = jsonItem[DEVICE_MANAGER_JSON_NAME_PIN].as<int>();
+                int inactiveState = jsonItem[DEVICE_MANAGER_JSON_NAME_INACTIVE_STATE].as<int>();
+                devices[currIndex++] = new DPOUTdevice(uid, pin, inactiveState);
+            }
             else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_DIN, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DIN)-1) == 0)
             {
                 // TODO add isValid_JsonDIN_Item function
@@ -512,7 +531,7 @@ namespace DeviceManager
         webserver->send(200, "text/html", ret);
     }
 
-    void restAPI_handleWriteOrRead(AsyncWebServerRequest *request) {
+    void restAPI_handleWriteOrRead(AsyncWebServerRequest *request) { // BIG TODO: refactor this function to handle error cases better
         // Example URL: /write/pwm/tempSensor1/255
 
         String url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
@@ -525,12 +544,15 @@ namespace DeviceManager
         int p2 = url.indexOf('/', p1 + 1);
         int p3 = url.indexOf('/', p2 + 1);
 
-        String command = url.substring(0, p1);                         // "write" or "read"
-        String type = url.substring(p1 + 1, p2);                       // "pwm", "gpio", etc.
-        String uid  = url.substring(p2 + 1, p3);                       // "tempSensor1"
-        String value = url.substring(p3 + 1);                          // "255" or "" if missing
+        String command = url.substring(0, p1);
+        String type = url.substring(p1 + 1, p2);
+        String uid  = url.substring(p2 + 1, p3);
+        if (p2 != -1 && p3 != -1) {
+            uid = url.substring(p2 + 1, p3);
+        }
+        String value = "";
+        if (p3 != -1) value = url.substring(p3 + 1);
 
-        // Do something with them
         String message = "";
         
         message += "\"debug\":{";
@@ -848,6 +870,10 @@ namespace DeviceManager
         else if (device->type == DeviceType::DOUT) {
             pinMode(device->pin, OUTPUT);
             digitalWrite(device->pin, value);
+        }
+        else if (device->type == DeviceType::DPOUT) {
+            DPOUTdevice& dpoutd = static_cast<DPOUTdevice&>(*device);
+            dpoutd.spout->pulse(value);
         }
         else return false;
 

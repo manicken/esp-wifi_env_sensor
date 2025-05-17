@@ -24,6 +24,8 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "RF433.h"
+#include "SinglePulseOutput.h"
+
 
 #include "GPIO_manager.h"
 
@@ -68,11 +70,13 @@ namespace DeviceManager
     #define DEVICE_MANAGER_JSON_NAME_TYPE_PWM           "PWM" // used for fan:s, servos, etc.
     #define DEVICE_MANAGER_JSON_NAME_TYPE_TX433         "TX433" // transmitter on RF @ 433MHz
     #define DEVICE_MANAGER_JSON_NAME_TYPE_NEO_PIXEL     "NEOPIX"
-    // future types
+    
     #define DEVICE_MANAGER_JSON_NAME_TYPE_ADC           "ADC"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DAC           "DAC"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DIN           "DIN"
     #define DEVICE_MANAGER_JSON_NAME_TYPE_DOUT          "DOUT"
+    #define DEVICE_MANAGER_JSON_NAME_TYPE_DPOUT         "DPOUT" // digital pulse output
+    #define DEVICE_MANAGER_JSON_NAME_INACTIVE_STATE     "istate" // used for DPOUT
 
     #define DEVICE_MANAGER_JSON_NAME_PWM_FREQ           "freq"
     #define DEVICE_MANAGER_JSON_NAME_PWM_BITS           "bits"
@@ -90,7 +94,8 @@ namespace DeviceManager
         ADC = 0xA1, 
         DAC = 0xA0, // future ???
         DIN = 0xD1, // digital input
-        DOUT = 0xD0 // digital output
+        DOUT = 0xD0, // digital output
+        DPOUT = 0xDB0 // digital pulse(beat) output
     };
 
     enum class DHT_Type: int32_t
@@ -169,6 +174,13 @@ namespace DeviceManager
     struct DOUTdevice : public Device {
         DOUTdevice(uint32_t _uid, uint8_t _pin);
     };
+
+    struct DPOUTdevice : public Device {
+        SinglePulseOutput *spout;
+        DPOUTdevice(uint32_t _uid, uint8_t _pin, uint8_t _inactiveState = LOW);
+        ~DPOUTdevice();
+    };
+    
 
     enum class NEOPIXEL_Type {
         WS2811 = 0x2811,
