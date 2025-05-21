@@ -40,7 +40,9 @@ namespace DeviceManager
     #define DEVICE_MANAGER_REST_API_READ_URL           "/" DEVICE_MANAGER_REST_API_READ_CMD "/"
 
     #define DEVICE_MANAGER_REST_API_UINT32_TYPE        "uint32"
+    #define DEVICE_MANAGER_REST_API_BOOL_TYPE          "bool"
     #define DEVICE_MANAGER_REST_API_FLOAT_TYPE         "float"
+    #define DEVICE_MANAGER_REST_API_JSON_STR_TYPE      "json"
     #define DEVICE_MANAGER_REST_API_STRING_TYPE        "string"
 
     #define DEVICE_MANAGER_ROOT_URL                    "/DeviceManager"
@@ -214,5 +216,6 @@ namespace DeviceManager
     bool getValue(uint32_t uid, uint32_t* value);
     bool setValue(uint32_t uid, uint32_t value);
     bool setValue(uint32_t uid, std::string value);
+    bool decodeJsonStrValue(uint32_t uid, std::string value);
     void htmlGetListOfOneWireDevicesOnBusPin();
 }

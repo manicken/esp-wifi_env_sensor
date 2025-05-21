@@ -4,7 +4,9 @@
 #include "main.h"
 
 //#include "UART2websocket.h"
+#if defined(HEATPUMP)
 #include "REGO600.h"
+#endif
 
 #include "esp_core_dump.h"
 
@@ -36,7 +38,9 @@ void init_display(void);
 #endif
 
 //UART2websocket uart2ws;
+#if defined(HEATPUMP)
 REGO600 rego600;
+#endif
 
 void Timer_SyncTime() {
     DEBUG_UART.println("Timer_SyncTime");
@@ -176,6 +180,8 @@ void handleCoreDump(AsyncWebServerRequest *request=nullptr) {
 
     const uint8_t* dump_ptr = reinterpret_cast<const uint8_t*>(addr);
 
+    if (dump_ptr == nullptr) return;
+
     // Ensure LittleFS is mounted
     if (!LittleFS.begin()) {
         if (request != nullptr)
@@ -223,12 +229,12 @@ void failsafeLoop()
 
         esp_restart();  // Software reset
     });
-    asyncServer->on("/core-dump",HTTP_GET, handleCoreDump);
+    //asyncServer->on("/core-dump",HTTP_GET, handleCoreDump); // skip this non working garbage for now
     asyncServer->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, F("text/plain"), "The system is in OTA failsafe loop.");
     });
     asyncServer->begin();
-    handleCoreDump();
+    //handleCoreDump(); // skip this non working garbage for now
     while (1)
     {
         ArduinoOTA.handle();
@@ -301,8 +307,9 @@ void setup() {
     test.close();
 #endif
     //uart2ws.setup();
+#if defined(HEATPUMP)
     rego600.setup();
-
+#endif
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
@@ -317,7 +324,10 @@ void loop() {
     //currTime = millis();
     HeartbeatLed::task();
     //uart2ws.task_loop();
+#if defined(HEATPUMP)
     rego600.task_loop();
+#endif
+
 #if defined(ESP8266)
     MDNS.update(); // this is only required on esp8266
 #endif

@@ -565,12 +565,31 @@ namespace DeviceManager
         if (command == DEVICE_MANAGER_REST_API_WRITE_CMD) {
             // Handle write command
             if (value.length() > 0 || p3 != -1) {
-                if (type == DEVICE_MANAGER_REST_API_UINT32_TYPE) {
-                    // Convert value to integer
-                    int intValue = value.toInt();
+                if (type == DEVICE_MANAGER_REST_API_BOOL_TYPE) {
+                    uint32_t uintValue = 0;
+                    if (value == "true" || value == "1") {
+                        uintValue = 1;
+                    } else if (value == "false" || value == "0") {
+                        uintValue = 0;
+                    } else {
+                        message += "\"error\":\"Invalid boolean value.\"";
+                        request->send(200, "application/json", "{" +  message + "}");
+                        return;
+                    }
                     uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-                    if (setValue(uidInt, intValue))
-                        message += "\"message\":\"Value written: " + String(intValue) + "\"";
+                    if (setValue(uidInt, uintValue))
+                        message += "\"message\":\"Value written: " + String(uintValue) + "\"";
+                    else
+                        message += "\"error\":\"Failed to write value.\"";
+                }
+                else if (type == DEVICE_MANAGER_REST_API_UINT32_TYPE) {
+                    // Convert value to integer
+                    uint32_t uintValue = (uint32_t) strtoul(value.c_str(), nullptr, 10);
+                    Serial.print("devmgr write uint32 value:");
+                    Serial.println(uintValue);
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (setValue(uidInt, uintValue))
+                        message += "\"message\":\"Value written: " + String(uintValue) + "\"";
                     else
                         message += "\"error\":\"Failed to write value.\"";
 
@@ -582,14 +601,30 @@ namespace DeviceManager
                     else
                         message += "\"error\":\"Failed to write string.\"";
 
-                } else {
+                } else if (type == DEVICE_MANAGER_REST_API_JSON_STR_TYPE) {
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (decodeJsonStrValue(uidInt, value.c_str()))
+                        message += "\"message\":\"String written: " + value + "\"";
+                    else
+                        message += "\"error\":\"Failed to write string.\"";
+                }
+                else {
                     message += "\"error\":\"Unknown type for writing.\"";
                 }
             } else {
                 message += "\"error\":\"No value provided for writing.\"";
             }
         } else if (command == DEVICE_MANAGER_REST_API_READ_CMD) {
-            if (type == DEVICE_MANAGER_REST_API_UINT32_TYPE) {
+            if (type == DEVICE_MANAGER_REST_API_BOOL_TYPE) {
+                // Handle read command
+                uint32_t readValue = 0;
+                uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                if (getValue(uidInt, &readValue)) {
+                    message += "\"value\":\"" + String(readValue) + "\"";
+                } else {
+                    message += "\"error\":\"Failed to read value.\"";
+                }
+            } else if (type == DEVICE_MANAGER_REST_API_UINT32_TYPE) {
                 // Handle read command
                 uint32_t readValue = 0;
                 uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
@@ -764,19 +799,22 @@ namespace DeviceManager
         std::string uid = json["uid"].as<std::string>();
         std::string cmd = json["cmd"].as<std::string>();
         std::string value = json["value"].as<std::string>();
-        if (cmd == "writeuint32") {
+        if (cmd == "write_uint32") {
             uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
             uint32_t valueInt = (uint32_t) strtoul(value.c_str(), nullptr, 10);
             setValue(uidInt, valueInt);
         }
-        else if (cmd == "writefloat") {
-            uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-            float valueFloat = std::stof(value);
-            setValue(uidInt, valueFloat);
-        }
-        else if (cmd == "writeString") {
+        else if (cmd == "write_string") {
             uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
             setValue(uidInt, value);
+        }
+        else if (cmd == "write_json") {
+            uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+            decodeJsonStrValue(uidInt, value);
+        }
+        else if (cmd == "write_bool") {
+            uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+            setValue(uidInt, (value == "true" || value == "1") ? 1 : 0);
         }
         else {
             DEBUG_UART.println("Unknown command in JSON");
@@ -844,6 +882,7 @@ namespace DeviceManager
             pinMode(device->pin, INPUT);
             *value = digitalRead(device->pin);
         }
+        //else 
         // keep theese commented out as they are not implemented yet
         /*else if (device->type == DeviceType::PWM) {}*/ // cannot get value from a PWM output
         /*else if (device->type == DeviceType::DOUT) {}*/ // cannot get value from a digital output
@@ -869,7 +908,7 @@ namespace DeviceManager
         }
         else if (device->type == DeviceType::DOUT) {
             pinMode(device->pin, OUTPUT);
-            digitalWrite(device->pin, value);
+            digitalWrite(device->pin, value & 0x01);
         }
         else if (device->type == DeviceType::DPOUT) {
             DPOUTdevice& dpoutd = static_cast<DPOUTdevice&>(*device);
@@ -881,6 +920,19 @@ namespace DeviceManager
     }
 
     bool setValue(uint32_t uid, std::string value) {
+        Device* device = getDeviceInfo(uid);
+        if (device == nullptr) {
+            DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");
+            return false;
+        }
+        if (true) {
+            DEBUG_UART.println("setValue: device type not supported");
+            return false;
+        }
+        return true;
+    }
+
+    bool decodeJsonStrValue(uint32_t uid, std::string value) {
         Device* device = getDeviceInfo(uid);
         if (device == nullptr) {
             DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");

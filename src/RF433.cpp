@@ -4,6 +4,16 @@
 namespace RF433
 {
     uint32_t pin = -1;
+    uint32_t RF433_FC_SHORT = 470;   // fixed code short
+    uint32_t RF433_FC_LONG = 1410;   // fixed code long
+    uint32_t RF433_FC_SYNC = 14500;  // fixed code sync
+    uint32_t RF433_LC_SHORT = 270;   // (270uS)  learning code short
+    uint32_t RF433_LC_LONG = 1280;   // (1.28mS) learning code data long
+    uint32_t RF433_LC_START = 2650;  // (2.65mS) learning code start (low part)
+    uint32_t RF433_LC_SYNC = 10000;  // (10mS)   learning code sync (low part)
+    uint32_t RF433_FC_REPEATS = 5;
+    uint32_t RF433_LC_REPEATS = 5;
+
     
     #define RF433_Set() digitalWrite(pin, HIGH)
     #define RF433_Clear() digitalWrite(pin, LOW)
@@ -55,6 +65,27 @@ namespace RF433
         return value;
     }
 
+    uint32_t decode5AlphaNumericTo4byteId(const std::string& id) {
+        if (id.length() != 4) return 0; // Handle error or return special value
+
+        auto charToValue = [](char c) -> int {
+            if (c >= '0' && c <= '9') return c - '0';                // 0–9 → 0–9
+            if (c >= 'a' && c <= 'z') return c - 'a' + 10;           // a–z → 10–35
+            if (c >= 'A' && c <= 'Z') return c - 'A' + 36;           // A–Z → 36–61
+            if (c == ' ') return 62;                                 // space → 62
+            return -1; // Invalid
+        };
+
+        uint32_t result = 0;
+        for (char c : id) {
+            int val = charToValue(c);
+            if (val == -1) return 0; // or handle invalid character
+            result = (result << 6) | val;
+        }
+
+        return result;
+    }
+
     void Send433FC_One(void)
     {
         RF433_Set();
@@ -99,7 +130,7 @@ namespace RF433
         delayMicroseconds(14500);
     }
 
-    void Send433LC_HalfOne(void)
+    void Send433LC_Short(void)
     {
         RF433_Set();
         delayMicroseconds(RF433_LC_SHORT);
@@ -107,7 +138,7 @@ namespace RF433
         delayMicroseconds(RF433_LC_SHORT);
     }
 
-    void Send433LC_HalfZero(void)
+    void Send433LC_Long(void)
     {
         RF433_Set();
         delayMicroseconds(RF433_LC_SHORT);
@@ -117,14 +148,14 @@ namespace RF433
 
     void Send433LC_One(void)
     {
-        Send433LC_HalfZero();
-        Send433LC_HalfOne();
+        Send433LC_Long();
+        Send433LC_Short();
     }
 
     void Send433LC_Zero(void)
     {
-        Send433LC_HalfOne();
-        Send433LC_HalfZero();
+        Send433LC_Short();
+        Send433LC_Long();
     }
 
     void Send433LC_Sync(void)
@@ -246,20 +277,28 @@ namespace RF433
     "grp_btn":"0"
     }
     */
+    void SendTo433_SLC(const char *strUniqueHexId, U8 groupBtn, U8 enable, U8 btnCode) {
+        SendTo433_SLC(GetAsciiHexValue(strUniqueHexId, 6), groupBtn, enable, btnCode);
+    }
 
-    void SendTo433_SLC(const char *strUniqueId, U8 groupBtn, U8 enable, U8 btnCode) // 433MHz "Simple Learning Code" (NEXA)
+    void SendTo433_SLC(U32 uId, U8 groupBtn, U8 enable, U8 btnCode) // 433MHz "Simple Learning Code" (NEXA)
     {
         if (pin == -1) return;
         int i;
-        U32 uId = GetAsciiHexValue(strUniqueId, 7);
-        btnCode = Get1AsciiHexValue(btnCode);
         
+        btnCode = Get1AsciiHexValue(btnCode);
+        //Serial.print("uid: ");
+        //Serial.println(uId, HEX);
+        //Serial.print("btnCode: ");
+        //Serial.println(btnCode, HEX);
+
         for (i = 0; i < RF433_LC_REPEATS; i++)
         {
             //LED6_IO = 1;
             Send433LC_Start();
-            //SendTo433_LC_bits(0x2AAAAAAA, 0x02000000); // this works
-            SendTo433_LC_bits(uId, 0x02000000); // works not
+            SendTo433_LC_bits(uId, 0x800000); // only the first 24 bits are used
+            Send433LC_One(); // constant bit ( of UID?)
+            Send433LC_Zero(); // constant bit (of UID?)
             if (groupBtn == '1')
                 Send433LC_One();
             else
@@ -315,8 +354,18 @@ namespace RF433
         if (pin == -1) return;
         std::string grp_btn = "", btn = "";
         Serial1.println("slc type");
-        if (!json.containsKey("uid")) return;
-        std::string uid = json["uid"];
+        U32 uid = 0;
+        if (json.containsKey("hexid")){
+            std::string uidStr = json["hexid"].as<std::string>();
+            uid = GetAsciiHexValue(uidStr.c_str(), 6);
+        } else if (json.containsKey("anid")) {
+            std::string uidStr = json["anid"].as<std::string>();
+            uid = decode5AlphaNumericTo4byteId(uidStr);
+        } else {
+            Serial1.println("No UID found");
+            return;
+        } 
+        //std::string uid = json["uid"];
         if (json.containsKey("grp_btn")) // grp_btn can be '1' or '0'
             
             grp_btn = (std::string)json["grp_btn"].as<std::string>();
@@ -328,14 +377,37 @@ namespace RF433
             btn = (std::string)json["btn"].as<std::string>();
         else
             btn = "0";
+
+        if (json.containsKey("pl_sync"))
+            RF433_LC_SYNC = (uint32_t)json["pl_sync"].as<uint32_t>();
+        if (json.containsKey("pl_start"))
+            RF433_LC_START = (uint32_t)json["pl_start"].as<uint32_t>();
+        if (json.containsKey("pl_short"))
+            RF433_LC_SHORT = (uint32_t)json["pl_short"].as<uint32_t>();
+        if (json.containsKey("pl_long"))
+            RF433_LC_LONG = (uint32_t)json["pl_long"].as<uint32_t>();
+        if (json.containsKey("pl_repeats"))
+            RF433_LC_REPEATS = (uint32_t)json["pl_repeats"].as<uint32_t>();
+    
         Serial1.println("slc sending");
-        SendTo433_SLC(uid.c_str(), grp_btn[0], state[0], btn[0]);
+        SendTo433_SLC(uid, grp_btn[0], state[0], btn[0]);
     }
     void DecodeFromJSON_ALC(const JsonVariant &json)
     {
         if (pin == -1) return;
         if (!json.containsKey("raw")) return;
         std::string raw = json["raw"];
+        if (json.containsKey("pl_sync"))
+            RF433_LC_SYNC = (uint32_t)json["pl_sync"].as<uint32_t>();
+        if (json.containsKey("pl_start"))
+            RF433_LC_START = (uint32_t)json["pl_start"].as<uint32_t>();
+        if (json.containsKey("pl_short"))
+            RF433_LC_SHORT = (uint32_t)json["pl_short"].as<uint32_t>();
+        if (json.containsKey("pl_long"))
+            RF433_LC_LONG = (uint32_t)json["pl_long"].as<uint32_t>();
+        if (json.containsKey("pl_repeats"))
+            RF433_LC_REPEATS = (uint32_t)json["pl_repeats"].as<uint32_t>();
+    
         SendTo433_ALC(raw.c_str());
     }
 
@@ -360,7 +432,7 @@ namespace RF433
     void DecodeFromJSON(std::string jsonStr)
     {
         if (pin == -1) return;
-        StaticJsonDocument<128> json;
+        StaticJsonDocument<256> json;
         deserializeJson(json, jsonStr.c_str());
         DecodeFromJSON(json);
     }
