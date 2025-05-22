@@ -578,7 +578,7 @@ namespace DeviceManager
                     }
                     uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
                     if (setValue(uidInt, uintValue))
-                        message += "\"message\":\"Value written: " + String(uintValue) + "\"";
+                        message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
                     else
                         message += "\"error\":\"Failed to write value.\"";
                 }
@@ -589,7 +589,7 @@ namespace DeviceManager
                     Serial.println(uintValue);
                     uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
                     if (setValue(uidInt, uintValue))
-                        message += "\"message\":\"Value written: " + String(uintValue) + "\"";
+                        message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
                     else
                         message += "\"error\":\"Failed to write value.\"";
 
@@ -597,14 +597,14 @@ namespace DeviceManager
                     // Convert value to string
                     uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
                     if (setValue(uidInt, value.c_str()))
-                        message += "\"message\":\"String written: " + value + "\"";
+                        message += "\"info\":{\"String written\":\"" + value + "\"}";
                     else
                         message += "\"error\":\"Failed to write string.\"";
 
                 } else if (type == DEVICE_MANAGER_REST_API_JSON_STR_TYPE) {
                     uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
                     if (decodeJsonStrValue(uidInt, value.c_str()))
-                        message += "\"message\":\"String written: " + value + "\"";
+                        message += "\"info\":{\"Json written\":" + value + "}";
                     else
                         message += "\"error\":\"Failed to write string.\"";
                 }

@@ -76,6 +76,17 @@ const REGO600::Request RequestsAllTemperatures[RequestsAllTemperatures_Count] = 
     {0x0211, "GT10"}, // Cold fluid in [GT10]
     {0x0212, "GT11"}, // Cold fluid out [GT11]
 };
+bool REGO600::GetTemperatureRegisterAddrFromName(const char *name, uint32_t *addr) {
+    if (name == nullptr) return false;
+    if (addr == nullptr) return false;
+    for (int i=0;i<RequestsAllTemperatures_Count;i++){
+        if (strcmp(RequestsAllTemperatures[i].text, name) == 0) {
+            *addr = RequestsAllTemperatures[i].address;
+            return true;
+        }
+    }
+    return false;
+}
 void REGO600::BeginRetreiveAllTemperatures() { // maybe some callback function should be passed into this
     lastAction = Action::ReadTemperatures;
     currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadRegister;
@@ -92,30 +103,22 @@ void REGO600::RequestsAllTemperatures_Task() {
     if (requestIndex < requestCount) SendNextRequest();
     else {
         // we are done rx all temperatures, send data back to whatever requested it
-        
-        if (onUartQueryComplete != nullptr) {
-            String jsonStr = "{";
-            for (int i=0;i<RequestsAllTemperatures_Count;i++) {
-                jsonStr += "\"" + String(requests[i].text) + "\":" + String((float)temperatures[i]/(float)10,1);
-                if (i<RequestsAllTemperatures_Count-1) jsonStr += ",";
-            }
-            jsonStr += "}";
-            onUartQueryComplete(jsonStr);
-        }
-        /*
-        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
-            if (pendingRequest == nullptr) return;
-            
-            pendingRequest->send(200, "application/json", jsonStr);
-            pendingRequest=nullptr;
-        }
-        else if (actionDoneDestination == ActionDoneDestination::Websocket) {
+        if (onUartQueryComplete == nullptr) return;
 
+        String jsonStr = "{";
+        for (int i=0;i<RequestsAllTemperatures_Count;i++) {
+            jsonStr += "\"" + String(requests[i].text) + "\":" + String((float)temperatures[i]/(float)10,1);
+            if (i<RequestsAllTemperatures_Count-1) jsonStr += ",";
         }
-        else if (actionDoneDestination == ActionDoneDestination::Callback) {
-            
-        }*/
+        jsonStr += "}";
+        onUartQueryComplete(jsonStr);
     }
+}
+void REGO600::RequestOneTemperature_Task() {
+    uint16_t temp = GetValueFromUartRxBuff();
+    if (onUartQueryComplete == nullptr) return;
+    String jsonStr = "{\"value\":" + String((float)temp/(float)10,1) + "}";
+    onUartQueryComplete(jsonStr);
 }
 
 
@@ -130,6 +133,17 @@ const REGO600::Request RequestsAllStates[RequestsAllStates_Count] = {
     {0x0205, "VXV"}, // Tree-way valve [VXV]
     {0x0206, "ALARM"}, // Cold fluid in [GT10]
 };
+bool REGO600::GetStatusRegisterAddrFromName(const char *name, uint32_t *addr) {
+    if (name == nullptr) return false;
+    if (addr == nullptr) return false;
+    for (int i=0;i<RequestsAllStates_Count;i++){
+        if (strcmp(RequestsAllStates[i].text, name) == 0) {
+            *addr = RequestsAllStates[i].address;
+            return true;
+        }
+    }
+    return false;
+}
 void REGO600::BeginRetreiveAllStates() { // maybe some callback function should be passed into this
     lastAction = Action::ReadStates;
     currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadRegister;
@@ -146,30 +160,22 @@ void REGO600::RequestsAllStates_Task() {
     if (requestIndex < requestCount) SendNextRequest();
     else {
         // we are done rx all temperatures, send data back to whatever requested it
-        if (onUartQueryComplete != nullptr) {
-            String jsonStr = "{";
-            for (int i=0;i<RequestsAllStates_Count;i++) {
-                jsonStr += "\"" + String(requests[i].text) + "\":" + String(states[i]==1?"true":"false");
-                if (i<RequestsAllStates_Count-1) jsonStr += ",";
-            }
-            jsonStr += "}";
-            onUartQueryComplete(jsonStr);
-        }
-/*
-        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
-            if (pendingRequest == nullptr) return;
-            
-            pendingRequest->send(200, "application/json", jsonStr);
-            pendingRequest=nullptr;
-        }
-        else if (actionDoneDestination == ActionDoneDestination::Websocket) {
+        if (onUartQueryComplete == nullptr) return; // do nothing
 
+        String jsonStr = "{";
+        for (int i=0;i<RequestsAllStates_Count;i++) {
+            jsonStr += "\"" + String(requests[i].text) + "\":" + String(states[i]==1?"true":"false");
+            if (i<RequestsAllStates_Count-1) jsonStr += ",";
         }
-        else if (actionDoneDestination == ActionDoneDestination::Callback) {
-            
-        }
-        */
+        jsonStr += "}";
+        onUartQueryComplete(jsonStr);
     }
+}
+void REGO600::RequestOneState_Task() {
+    uint16_t state = GetValueFromUartRxBuff();
+    if (onUartQueryComplete == nullptr) return;
+    String jsonStr = "{\"value\":" + String((state==1)?"true":"false") + "}";
+    onUartQueryComplete(jsonStr);
 }
 
 REGO600::REGO600()
@@ -202,6 +208,48 @@ void REGO600::setup() {
     server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
         request->send(200, "application/json; charset=utf-8", "Hello World");
     });
+    server.on("/get/*", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        String url = request->url();
+        // Remove the leading '/'
+        if (url.startsWith("/")) url = url.substring(1);
+        // Split into parts
+        int p1 = url.indexOf('/');
+        int p2 = url.indexOf('/', p1 + 1);
+        //int p3 = url.indexOf('/', p2 + 1);
+        if (p1 == -1 || p2 == -1) request->send(200, "application/json; charset=utf-8", "{\"error\":\"url missing parameters\"}");
+        String type = url.substring(p1+1, p2);
+        String regname = url.substring(p2 + 1);
+        
+        type.toLowerCase();
+        regname.toUpperCase();
+        if (type == "temp") {
+            uint32_t addr = 0;
+            if (GetTemperatureRegisterAddrFromName(regname.c_str(),&addr) == false) {
+                request->send(200, "application/json; charset=utf-8", "{\"error\":\"unknown status regname: "+regname+"\"}");
+                return;
+            }
+            onUartQueryComplete = [request](String jsonResponse) {
+                request->send(200, "application/json; charset=utf-8", jsonResponse);
+            };
+            lastAction = Action::ReadTemperature;
+            StartSendOneRegisterReadRequest(addr);
+
+        } else if (type == "state") {
+            uint32_t addr = 0;
+            if (GetStatusRegisterAddrFromName(regname.c_str(),&addr) == false) {
+                request->send(200, "application/json; charset=utf-8", "{\"error\":\"unknown status regname: "+regname+"\"}");
+                return;
+            }
+            onUartQueryComplete = [request](String jsonResponse) {
+                request->send(200, "application/json; charset=utf-8", jsonResponse);
+            };
+            lastAction = Action::ReadState;
+            StartSendOneRegisterReadRequest(addr);
+
+        } else {
+            request->send(200, "application/json; charset=utf-8", "{\"error\":\"unknown type: "+type+"\"}");
+        }
+    });
     server.on("/Temperatures", HTTP_GET, [this](AsyncWebServerRequest *request) {
         /*this->pendingRequest = request;
         this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
@@ -231,15 +279,24 @@ void REGO600::setup() {
 
 void REGO600::SendNextRequest() {
     uartRxBufferIndex = 0;
-    SetRequestData(requests[requestIndex++]);
+    SetRequestAddr(requests[requestIndex++].address);
     CalcAndSetTxChecksum();
     UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
 }
 
-void REGO600::SetRequestData(REGO600::Request req) {
-    uartTxBuffer[2] = (req.address >> 14) & 0x7F;
-    uartTxBuffer[3] = (req.address >> 7) & 0x7F;
-    uartTxBuffer[4] = req.address & 0x7F;
+void REGO600::StartSendOneRegisterReadRequest(uint32_t address) {
+    currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadRegister;
+    uartTxBuffer[1] = (uint8_t)Command::ReadRegister;
+    uartRxBufferIndex = 0;
+    SetRequestAddr(address);
+    CalcAndSetTxChecksum();
+    UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
+}
+
+void REGO600::SetRequestAddr(uint32_t address) {
+    uartTxBuffer[2] = (address >> 14) & 0x7F;
+    uartTxBuffer[3] = (address >> 7) & 0x7F;
+    uartTxBuffer[4] = address & 0x7F;
     uartTxBuffer[5] = 0x00; // allways zero
     uartTxBuffer[6] = 0x00; // allways zero
     uartTxBuffer[7] = 0x00; // allways zero
@@ -284,12 +341,14 @@ void REGO600::task_loop() {
                     // RX is done
                     if (lastAction == Action::ReadWholeLCD) {
                         RequestsWholeLCD_Task();
-                    }
-                    else if (lastAction == Action::ReadTemperatures) {
+                    } else if (lastAction == Action::ReadTemperatures) {
                         RequestsAllTemperatures_Task();
-                    }
-                    else if (lastAction == Action::ReadStates) {
+                    } else if (lastAction == Action::ReadStates) {
                         RequestsAllStates_Task();
+                    } else if (lastAction == Action::ReadState) {
+                        RequestOneState_Task();
+                    } else if (lastAction == Action::ReadTemperature) {
+                        RequestOneTemperature_Task();
                     }
                 }
             }

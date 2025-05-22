@@ -19,6 +19,7 @@ public:
     void BeginRetreiveWholeLCD();
     void BeginRetreiveAllTemperatures();
     void BeginRetreiveAllStates();
+    
 
     enum class Command : uint16_t{
         ReadPanel = 0x00,
@@ -42,7 +43,9 @@ public:
         ReadWholePanel,
         ReadWholeLCD,
         ReadTemperatures,
-        ReadStates
+        ReadStates,
+        ReadTemperature,
+        ReadState
     };
     enum class ActionDoneDestination {
         NotSet,
@@ -81,14 +84,21 @@ private:
     AsyncWebSocket ws;
     HardwareSerial& UART2;
     void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
-    void SetRequestData(REGO600::Request req);
+    void SetRequestAddr(uint32_t address);
     void SendNextRequest();
+    void StartSendOneRegisterReadRequest(uint32_t address);
     void CalcAndSetTxChecksum();
     uint16_t GetValueFromUartRxBuff();
 
     void RequestsWholeLCD_Task();
     void RequestsAllTemperatures_Task();
     void RequestsAllStates_Task();
+
+    bool GetTemperatureRegisterAddrFromName(const char *name, uint32_t *addr);
+    bool GetStatusRegisterAddrFromName(const char *name, uint32_t *addr);
+
+    void RequestOneTemperature_Task();
+    void RequestOneState_Task();
 };
 extern const REGO600::Request RequestsWholeLCD[];
 extern const REGO600::Request RequestsAllTemperatures[];
