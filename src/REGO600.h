@@ -79,6 +79,7 @@ private:
     char lcdData[20*4];
     uint16_t temperatures[9];
     uint16_t states[8];
+    unsigned long startTimeMs = 0; // used for debuggin times
 
     AsyncWebServer server;
     AsyncWebSocket ws;

@@ -46,20 +46,6 @@ void REGO600::RequestsWholeLCD_Task() {
             jsonStr += "}";
             onUartQueryComplete(jsonStr);
         }
-        /*
-        if (actionDoneDestination == ActionDoneDestination::HttpReq) {
-            if (pendingRequest == nullptr) return;
-            
-            pendingRequest->send(200, "application/json; charset=windows-1252", jsonStr);
-            //pendingRequest->send(200, "text/plain", String(lcdData, 80));
-            pendingRequest=nullptr;
-        }
-        else if (actionDoneDestination == ActionDoneDestination::Websocket) {
-
-        }
-        else if (actionDoneDestination == ActionDoneDestination::Callback) {
-            
-        }*/
     }
 }
 
@@ -228,10 +214,13 @@ void REGO600::setup() {
                 request->send(200, "application/json; charset=utf-8", "{\"error\":\"unknown status regname: "+regname+"\"}");
                 return;
             }
-            onUartQueryComplete = [request](String jsonResponse) {
+            onUartQueryComplete = [this,request](String jsonResponse) {
+                unsigned long totalTimeMs = millis()-this->startTimeMs;
+                if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
                 request->send(200, "application/json; charset=utf-8", jsonResponse);
             };
             lastAction = Action::ReadTemperature;
+            startTimeMs = millis();
             StartSendOneRegisterReadRequest(addr);
 
         } else if (type == "state") {
@@ -240,10 +229,13 @@ void REGO600::setup() {
                 request->send(200, "application/json; charset=utf-8", "{\"error\":\"unknown status regname: "+regname+"\"}");
                 return;
             }
-            onUartQueryComplete = [request](String jsonResponse) {
+            onUartQueryComplete = [this,request](String jsonResponse) {
+                unsigned long totalTimeMs = millis()-this->startTimeMs;
+                if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
                 request->send(200, "application/json; charset=utf-8", jsonResponse);
             };
             lastAction = Action::ReadState;
+            startTimeMs = millis();
             StartSendOneRegisterReadRequest(addr);
 
         } else {
@@ -253,25 +245,35 @@ void REGO600::setup() {
     server.on("/Temperatures", HTTP_GET, [this](AsyncWebServerRequest *request) {
         /*this->pendingRequest = request;
         this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
-        onUartQueryComplete = [request](String jsonResponse) {
+        
+        onUartQueryComplete = [request,this](String jsonResponse) {
+            unsigned long totalTimeMs = millis()-this->startTimeMs;
+            /*if (this->ws.count() > 0)*/ this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
             request->send(200, "application/json; charset=utf-8", jsonResponse);
         };
+        startTimeMs = millis();
         BeginRetreiveAllTemperatures();
     });
     server.on("/States", HTTP_GET, [this](AsyncWebServerRequest *request) {
         /*this->pendingRequest = request;
         this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
-        onUartQueryComplete = [request](String jsonResponse) {
+        onUartQueryComplete = [this,request](String jsonResponse) {
+            unsigned long totalTimeMs = millis()-this->startTimeMs;
+            if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
             request->send(200, "application/json; charset=utf-8", jsonResponse);
         };
+        startTimeMs = millis();
         BeginRetreiveAllStates();
     });
     server.on("/LCD", HTTP_GET, [this](AsyncWebServerRequest *request) {
         /*this->pendingRequest = request;
         this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
-        onUartQueryComplete = [request](String jsonResponse) {
+        onUartQueryComplete = [this,request](String jsonResponse) {
+            unsigned long totalTimeMs = millis()-this->startTimeMs;
+            if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
             request->send(200, "application/json; charset=windows-1252", jsonResponse);
         };
+        startTimeMs = millis();
         BeginRetreiveWholeLCD();
     });
     server.begin();
