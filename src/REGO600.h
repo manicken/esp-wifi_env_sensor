@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
 
 #define REGO600_UART_TX_CHKSUM_START_INDEX 2
@@ -38,20 +39,14 @@ public:
         ReadPrevError = 42
     };
     enum class Action {
-        NotSet,
-        WebSocketRaw,
-        ReadWholePanel,
-        ReadWholeLCD,
-        ReadTemperatures,
-        ReadStates,
-        ReadTemperature,
-        ReadState
-    };
-    enum class ActionDoneDestination {
-        NotSet,
-        Websocket,
-        HttpReq,
-        Callback // not implemented yet but can be used to send data to a server
+        NotSet = 0,
+        WebSocketRaw = 1,
+        ReadWholePanel = 2,
+        ReadWholeLCD = 3,
+        ReadTemperatures = 4,
+        ReadStates = 5,
+        ReadTemperature = 6,
+        ReadState = 7
     };
     struct Request {
         uint16_t address;
@@ -85,9 +80,12 @@ private:
     AsyncWebSocket ws;
     HardwareSerial& UART2;
     void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
-    void SetRequestAddr(uint32_t address);
+    void SetRequestAddr(uint16_t address);
+    void SetRequestData(uint16_t data);
+    void SendReq(uint16_t address);
+    void Send(uint16_t address, uint16_t data);
     void SendNextRequest();
-    void StartSendOneRegisterReadRequest(uint32_t address);
+    void StartSendOneRegisterReadRequest(uint16_t address);
     void CalcAndSetTxChecksum();
     uint16_t GetValueFromUartRxBuff();
 

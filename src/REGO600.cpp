@@ -36,16 +36,16 @@ void REGO600::RequestsWholeLCD_Task() {
     if (requestIndex < requestCount) SendNextRequest();
     else {
         // we are done rx whole LCD, send data back to whatever requested it
-
-        if (onUartQueryComplete != nullptr) {
-            String jsonStr = "{";
-            jsonStr += "\"" + String(requests[0].text) + "\":\"" + String(lcdData,20) + "\",";
-            jsonStr += "\"" + String(requests[1].text) + "\":\"" + String(&lcdData[20],20) + "\",";
-            jsonStr += "\"" + String(requests[2].text) + "\":\"" + String(&lcdData[40],20) + "\",";
-            jsonStr += "\"" + String(requests[3].text) + "\":\"" + String(&lcdData[60],20) + "\""; //charArrayToHex(String(&lcdData[60],20).c_str(),20) + "\"";
-            jsonStr += "}";
-            onUartQueryComplete(jsonStr);
-        }
+        lastAction = Action::NotSet;
+        if (onUartQueryComplete == nullptr) return;
+        
+        String jsonStr = "{";
+        jsonStr += "\"" + String(requests[0].text) + "\":\"" + String(lcdData,20) + "\",";
+        jsonStr += "\"" + String(requests[1].text) + "\":\"" + String(&lcdData[20],20) + "\",";
+        jsonStr += "\"" + String(requests[2].text) + "\":\"" + String(&lcdData[40],20) + "\",";
+        jsonStr += "\"" + String(requests[3].text) + "\":\"" + String(&lcdData[60],20) + "\""; //charArrayToHex(String(&lcdData[60],20).c_str(),20) + "\"";
+        jsonStr += "}";
+        onUartQueryComplete(jsonStr);
     }
 }
 
@@ -88,6 +88,7 @@ void REGO600::RequestsAllTemperatures_Task() {
     temperatures[tempIndex] = GetValueFromUartRxBuff();
     if (requestIndex < requestCount) SendNextRequest();
     else {
+        lastAction = Action::NotSet;
         // we are done rx all temperatures, send data back to whatever requested it
         if (onUartQueryComplete == nullptr) return;
 
@@ -101,8 +102,10 @@ void REGO600::RequestsAllTemperatures_Task() {
     }
 }
 void REGO600::RequestOneTemperature_Task() {
-    uint16_t temp = GetValueFromUartRxBuff();
+    lastAction = Action::NotSet;
     if (onUartQueryComplete == nullptr) return;
+    uint16_t temp = GetValueFromUartRxBuff();
+    
     String jsonStr = "{\"value\":" + String((float)temp/(float)10,1) + "}";
     onUartQueryComplete(jsonStr);
 }
@@ -145,6 +148,7 @@ void REGO600::RequestsAllStates_Task() {
     states[stateIndex] = GetValueFromUartRxBuff();
     if (requestIndex < requestCount) SendNextRequest();
     else {
+        lastAction = Action::NotSet;
         // we are done rx all temperatures, send data back to whatever requested it
         if (onUartQueryComplete == nullptr) return; // do nothing
 
@@ -158,8 +162,9 @@ void REGO600::RequestsAllStates_Task() {
     }
 }
 void REGO600::RequestOneState_Task() {
-    uint16_t state = GetValueFromUartRxBuff();
+    lastAction = Action::NotSet;
     if (onUartQueryComplete == nullptr) return;
+    uint16_t state = GetValueFromUartRxBuff();
     String jsonStr = "{\"value\":" + String((state==1)?"true":"false") + "}";
     onUartQueryComplete(jsonStr);
 }
@@ -172,10 +177,84 @@ void REGO600::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                                 AwsEventType type, void *arg, uint8_t *data, size_t len) {
     if (type == WS_EVT_DATA) {
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
+        
+        if (info->opcode == WS_TEXT) {
+            lastAction = Action::NotSet;
+            // Copy data to a null-terminated string
+            String jsonString = String((char*)data).substring(0, len);
+            
+            // Allocate a JSON document (use ArduinoJson Assistant to size this correctly)
+            DynamicJsonDocument doc(jsonString.length() * 2);
+            DeserializationError error = deserializeJson(doc, jsonString);
 
-        if (info->opcode == WS_BINARY) {
+            if (error) {
+                Serial.print("JSON parse failed: ");
+                Serial.println(error.c_str());
+                // Send error message back to the same client
+                String errMsg = String("{\"error\":\"JSON parse failed: ") + error.c_str() + "\"}";
+                client->text(errMsg);  // Sends a WebSocket text message to the client
+                return;
+            }
+
+            // Example: reading a key "command" from the JSON
+            if (doc.containsKey("cmd")) {
+                String command = doc["cmd"];
+                Serial.println("Received command: " + command);
+                // You can take action based on the command here
+                if (command == "temperatures") {
+                    onUartQueryComplete = [client,this](String jsonResponse) {
+                        unsigned long totalTimeMs = millis()-this->startTimeMs;
+                        //client->text(jsonResponse);
+                        if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
+                        if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"temperatures get time\":\""+String(totalTimeMs)+"\"}}\n");
+                        onUartQueryComplete = nullptr;
+                    };
+                    startTimeMs = millis();
+                    BeginRetreiveAllTemperatures();
+                } else if (command == "states") {
+                    onUartQueryComplete = [client,this](String jsonResponse) {
+                        unsigned long totalTimeMs = millis()-this->startTimeMs;
+                        //client->text(jsonResponse);
+                        if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
+                        if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"states get time\":\""+String(totalTimeMs)+"\"}}\n");
+                        onUartQueryComplete = nullptr;
+                    };
+                    startTimeMs = millis();
+                    BeginRetreiveAllStates();
+                } else if (command == "lcd") {
+                    onUartQueryComplete = [client,this](String jsonResponse) {
+                        unsigned long totalTimeMs = millis()-this->startTimeMs;
+                        //client->text(jsonResponse);
+                        if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
+                        if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"lcd get time\":\""+String(totalTimeMs)+"\"}}\n");
+                        onUartQueryComplete = nullptr;
+                    };
+                    startTimeMs = millis();
+                    BeginRetreiveWholeLCD();
+                } else if (command == "writepanel") {
+                    if (doc.containsKey("addr") == false) {client->text("{\"error\":\"panel addr parameter missing in json\"}"); return; }
+                    if (doc.containsKey("data") == false) {client->text("{\"error\":\"panel data parameter missing in json\"}"); return; }
+                    String addrStr = doc["addr"];
+                    String dataStr = doc["data"];
+                    uint16_t addr = (uint16_t) strtoul(addrStr.c_str(), nullptr, 16);
+                    uint16_t data = (uint16_t) strtoul(dataStr.c_str(), nullptr, 16);
+                    uartTxBuffer[1] = (uint8_t)Command::WritePanel;
+                    lastAction = Action::WebSocketRaw; // for now maybe handle it better
+                    Send(addr,data);
+                } else if (command == "readpanel") {
+                    // TODO fix this
+                } else {
+                    String errMsg = String("{\"error\":\"unknown cmd: ") + command.c_str() + "\"}";
+                    client->text(errMsg);  // Sends a WebSocket text message to the client
+                }
+            } else {
+                client->text("{\"error\":\"cmd parameter missing in json\"}");  // Sends a WebSocket text message to the client
+            }
+        } else if (info->opcode == WS_BINARY) {
             lastAction = Action::WebSocketRaw;
             UART2.write(data, len);
+        } else {
+            client->text("{\"error\":\"unsupported datatype:"+String(info->opcode)+"\"}");  // Sends a WebSocket text message to the client
         }
     }
 }
@@ -184,7 +263,7 @@ void REGO600::setup() {
     lastAction = Action::NotSet;
     requestIndex = 0;
     uartTxBuffer[0] = 0x81; // allways 0x81, never to be changed
-    UART2.begin(19200, SERIAL_8N1, 34, 33);  // Set correct RX/TX pins for UART2
+    UART2.begin(19200, SERIAL_8N1, 34, 33); // Set correct RX/TX pins for UART2
     ws.onEvent([this](AsyncWebSocket *s, AsyncWebSocketClient *c, AwsEventType t, void *a, uint8_t *d, size_t l) {
         this->onWsEvent(s, c, t, a, d, l);
     });
@@ -216,8 +295,9 @@ void REGO600::setup() {
             }
             onUartQueryComplete = [this,request](String jsonResponse) {
                 unsigned long totalTimeMs = millis()-this->startTimeMs;
-                if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
+                if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"temp get time\":\""+String(totalTimeMs)+"\"}}\n");
                 request->send(200, "application/json; charset=utf-8", jsonResponse);
+                onUartQueryComplete = nullptr;
             };
             lastAction = Action::ReadTemperature;
             startTimeMs = millis();
@@ -231,13 +311,14 @@ void REGO600::setup() {
             }
             onUartQueryComplete = [this,request](String jsonResponse) {
                 unsigned long totalTimeMs = millis()-this->startTimeMs;
-                if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
+                if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"temp get time\":\""+String(totalTimeMs)+"\"}}\n");
                 request->send(200, "application/json; charset=utf-8", jsonResponse);
+                onUartQueryComplete = nullptr;
             };
             lastAction = Action::ReadState;
             startTimeMs = millis();
             StartSendOneRegisterReadRequest(addr);
-
+        
         } else {
             request->send(200, "application/json; charset=utf-8", "{\"error\":\"unknown type: "+type+"\"}");
         }
@@ -248,8 +329,10 @@ void REGO600::setup() {
         
         onUartQueryComplete = [request,this](String jsonResponse) {
             unsigned long totalTimeMs = millis()-this->startTimeMs;
-            /*if (this->ws.count() > 0)*/ this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
             request->send(200, "application/json; charset=utf-8", jsonResponse);
+
+            if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"temperatures get time\":\""+String(totalTimeMs)+"\"}}\n");
+            onUartQueryComplete = nullptr;
         };
         startTimeMs = millis();
         BeginRetreiveAllTemperatures();
@@ -259,8 +342,9 @@ void REGO600::setup() {
         this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
         onUartQueryComplete = [this,request](String jsonResponse) {
             unsigned long totalTimeMs = millis()-this->startTimeMs;
-            if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
             request->send(200, "application/json; charset=utf-8", jsonResponse);
+            if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"states get time\":\""+String(totalTimeMs)+"\"}}\n");
+            onUartQueryComplete = nullptr;
         };
         startTimeMs = millis();
         BeginRetreiveAllStates();
@@ -270,8 +354,10 @@ void REGO600::setup() {
         this->actionDoneDestination = ActionDoneDestination::HttpReq;*/
         onUartQueryComplete = [this,request](String jsonResponse) {
             unsigned long totalTimeMs = millis()-this->startTimeMs;
-            if (this->ws.count() > 0) this->ws.textAll("{\"temp get time\":\""+String(totalTimeMs)+"\"}\n");
-            request->send(200, "application/json; charset=windows-1252", jsonResponse);
+            request->send(200, "application/json; charset=utf-8", jsonResponse);
+            if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"lcd get time\":\""+String(totalTimeMs)+"\"}}\n");
+            //request->send(200, "application/json; charset=windows-1252", jsonResponse);
+            onUartQueryComplete = nullptr;
         };
         startTimeMs = millis();
         BeginRetreiveWholeLCD();
@@ -280,36 +366,51 @@ void REGO600::setup() {
 }
 
 void REGO600::SendNextRequest() {
-    uartRxBufferIndex = 0;
-    SetRequestAddr(requests[requestIndex++].address);
-    CalcAndSetTxChecksum();
-    UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
+    SendReq(requests[requestIndex++].address);
 }
 
-void REGO600::StartSendOneRegisterReadRequest(uint32_t address) {
-    currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadRegister;
-    uartTxBuffer[1] = (uint8_t)Command::ReadRegister;
+void REGO600::SendReq(uint16_t address) {
     uartRxBufferIndex = 0;
     SetRequestAddr(address);
     CalcAndSetTxChecksum();
     UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
 }
 
-void REGO600::SetRequestAddr(uint32_t address) {
+void REGO600::Send(uint16_t address, uint16_t data) {
+    uartRxBufferIndex = 0;
+    SetRequestAddr(address);
+    SetRequestData(data);
+    CalcAndSetTxChecksum();
+    UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
+}
+
+void REGO600::StartSendOneRegisterReadRequest(uint16_t address) {
+    currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadRegister;
+    uartTxBuffer[1] = (uint8_t)Command::ReadRegister;
+    SendReq(address);
+}
+
+void REGO600::SetRequestAddr(uint16_t address) {
     uartTxBuffer[2] = (address >> 14) & 0x7F;
     uartTxBuffer[3] = (address >> 7) & 0x7F;
     uartTxBuffer[4] = address & 0x7F;
-    uartTxBuffer[5] = 0x00; // allways zero
-    uartTxBuffer[6] = 0x00; // allways zero
-    uartTxBuffer[7] = 0x00; // allways zero
+    uartTxBuffer[5] = 0x00; // allways zero unless set
+    uartTxBuffer[6] = 0x00; // allways zero unless set
+    uartTxBuffer[7] = 0x00; // allways zero unless set
+}
+
+void REGO600::SetRequestData(uint16_t data) {
+    uartTxBuffer[5] = (data >> 14) & 0x7F;
+    uartTxBuffer[6] = (data >> 7) & 0x7F;
+    uartTxBuffer[7] = data & 0x7F;
 }
 
 void REGO600::CalcAndSetTxChecksum() {
     uint8_t chksum = 0;
-    for (int i=REGO600_UART_TX_CHKSUM_START_INDEX;i<REGO600_UART_TX_CHKSUM_END_INDEX;i++) {
+    for (int i=2;i<8;i++) {
         chksum ^= uartTxBuffer[i];
     }
-    uartTxBuffer[REGO600_UART_TX_CHKSUM_END_INDEX] = chksum;
+    uartTxBuffer[8] = chksum;
 }
 
 uint16_t REGO600::GetValueFromUartRxBuff() {
@@ -318,6 +419,9 @@ uint16_t REGO600::GetValueFromUartRxBuff() {
 
 void REGO600::task_loop() {
     if (lastAction == Action::NotSet) {
+        while (UART2.available()) { // to make sure that any garbage gets collected
+            uint8_t dummy = UART2.read();
+        }
         return;
     }
     if (lastAction == Action::WebSocketRaw) {
@@ -351,8 +455,12 @@ void REGO600::task_loop() {
                         RequestOneState_Task();
                     } else if (lastAction == Action::ReadTemperature) {
                         RequestOneTemperature_Task();
+                    } else {
+                        if (this->ws.count() > 0) this->ws.textAll("{\"error\":\"last action not set\"}\n");
                     }
                 }
+            } else {
+                if (this->ws.count() > 0) this->ws.textAll("{\"error\":\"uartRxBuffer full\"}\n");
             }
         }
     }
