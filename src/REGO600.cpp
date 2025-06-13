@@ -33,7 +33,7 @@ void REGO600::RequestsWholeLCD_Task() {
     for (int i=1;i<41;i+=2) {
         lcdData[lcdRowIndex*20+lcdColIndex++] = uartRxBuffer[i]*16 + uartRxBuffer[i+1];
     }
-    if (requestIndex < requestCount) SendNextRequest();
+    if (requestIndex < requestCount) { delay(100); SendNextRequest(); }
     else {
         // we are done rx whole LCD, send data back to whatever requested it
         lastAction = Action::NotSet;
@@ -86,7 +86,7 @@ void REGO600::RequestsAllTemperatures_Task() {
     // current temp index is calculated from requestIndex
     uint8_t tempIndex = requestIndex-1;
     temperatures[tempIndex] = GetValueFromUartRxBuff();
-    if (requestIndex < requestCount) SendNextRequest();
+    if (requestIndex < requestCount) { delay(10); SendNextRequest(); }
     else {
         lastAction = Action::NotSet;
         // we are done rx all temperatures, send data back to whatever requested it
@@ -146,7 +146,7 @@ void REGO600::RequestsAllStates_Task() {
     // current temp index is calculated from requestIndex
     uint8_t stateIndex = requestIndex-1;
     states[stateIndex] = GetValueFromUartRxBuff();
-    if (requestIndex < requestCount) SendNextRequest();
+    if (requestIndex < requestCount) { delay(10); SendNextRequest(); }
     else {
         lastAction = Action::NotSet;
         // we are done rx all temperatures, send data back to whatever requested it
@@ -173,8 +173,42 @@ REGO600::REGO600()
     : server(REGO600_WS_PORT), ws("/rego600ws"), UART2(Serial2) // Init UART2 as HardwareSerial(2)
 {}
 
+String toHex(const char *data, size_t len) {
+    String hex = "";
+    for (size_t i = 0; i < len; i++) {
+        if (data[i] < 16) hex += "0";  // Pad single digits
+        hex += String(data[i], HEX);
+        if (i<len-1) hex += ",";
+    }
+    return hex;
+}
+
+String convertISO88591toUTF8(const String &input) {
+  String output = "";
+  for (int i = 0; i < input.length(); i++) {
+    unsigned char c = input[i];
+    if (c == 1) output += "\u2581";
+    else if (c == 2) output += "\u2582";
+    else if (c == 3) output += "\u2583";
+    else if (c == 4) output += "\u2584";
+    else if (c == 5) output += "\u2585";
+    else if (c == 6) output += "\u2586";
+    else if (c == 7) output += "\u2587";
+    else if (c == 8) output += "\u2588";
+    else if (c < 32) output += "{"+String(c,16)+"}";
+    else if (c < 128) {
+      output += (char)c;
+    } else {
+      output += (char)(0xC0 | (c >> 6));
+      output += (char)(0x80 | (c & 0x3F));
+    }
+  }
+  return output;
+}
+
 void REGO600::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                                 AwsEventType type, void *arg, uint8_t *data, size_t len) {
+    
     if (type == WS_EVT_DATA) {
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         
@@ -204,8 +238,8 @@ void REGO600::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                 if (command == "temperatures") {
                     onUartQueryComplete = [client,this](String jsonResponse) {
                         unsigned long totalTimeMs = millis()-this->startTimeMs;
-                        //client->text(jsonResponse);
-                        if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
+                        client->text("{\"temperatures\":"+jsonResponse+"}");
+                        //if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
                         if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"temperatures get time\":\""+String(totalTimeMs)+"\"}}\n");
                         onUartQueryComplete = nullptr;
                     };
@@ -214,8 +248,8 @@ void REGO600::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                 } else if (command == "states") {
                     onUartQueryComplete = [client,this](String jsonResponse) {
                         unsigned long totalTimeMs = millis()-this->startTimeMs;
-                        //client->text(jsonResponse);
-                        if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
+                        client->text("{\"states\":"+jsonResponse+"}");
+                        //if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
                         if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"states get time\":\""+String(totalTimeMs)+"\"}}\n");
                         onUartQueryComplete = nullptr;
                     };
@@ -224,8 +258,8 @@ void REGO600::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                 } else if (command == "lcd") {
                     onUartQueryComplete = [client,this](String jsonResponse) {
                         unsigned long totalTimeMs = millis()-this->startTimeMs;
-                        //client->text(jsonResponse);
-                        if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
+                        client->text("{\"lcd\":"+convertISO88591toUTF8(jsonResponse)+"}");
+                        //if (this->ws.count() > 0) this->ws.textAll(jsonResponse);
                         if (this->ws.count() > 0) this->ws.textAll("{\"debug\":{\"lcd get time\":\""+String(totalTimeMs)+"\"}}\n");
                         onUartQueryComplete = nullptr;
                     };
@@ -460,6 +494,7 @@ void REGO600::task_loop() {
                     }
                 }
             } else {
+                uint8_t dummy = UART2.read(); // must read remaining to get out of loop
                 if (this->ws.count() > 0) this->ws.textAll("{\"error\":\"uartRxBuffer full\"}\n");
             }
         }

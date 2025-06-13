@@ -1,0 +1,84 @@
+// size 1163
+[
+  {"uid":"1WTG","type":"1WTG","rtime":1000,"note":"temperatures"},
+  {"uid":"1B1","type":"1WB","pin":25,"grp":"1WTG"},
+  {"uid":"1B2","type":"1WB","pin":26,"grp":"1WTG"},
+  {"uid":"1B3","type":"1WB","pin":27,"grp":"1WTG"},
+  {"uid":"1D1","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:20:9E:8D","note":"temp inne uppe"},
+  {"uid":"1D2","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:27:D4:DB","note":"temp inne nere"},
+  {"uid":"1D3","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:18:C3:F0","note":"temp ute fram"},
+  {"uid":"1D4","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:1F:79:D2","note":"temp ute bak"},
+  {"uid":"1D5","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:21:D5:2F","note":"temp inne mitten"},
+  {"uid":"1D6","type":"1WT","bus":"1B3","romid":"28:87:17:43:d4:bd:0a:46","note":"temp ute jord"},
+  {"uid":"1D7","type":"1WT","bus":"1B3","romid":"28:F0:5F:43:D4:CD:3C:59","note":"temp inne jord"},
+  {"uid":"D11","type":"DHT","model":"DHT11","pin":18,"note":"fuktighet inne"},
+  {"uid":"FAN1","type":"PWM","pin":22,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
+  {"uid":"433","type":"TX433","pin":19,"note":"till fjärrstyrning"},
+  {"uid":"R600","type":"REGO600","rxpin":34,"txpin":33,"note":"rego600 heatpump"}
+]
+
+// size 1011
+[
+  {"uid":"1WTG","type":"1WTG","rtime":1000,
+    "bitems":[
+	  {"uid":"1B1","pin":25},
+	  {"uid":"1B2","pin":26},
+	  {"uid":"1B3","pin":27},
+	],
+	"ditems":[
+	  {"uid":"1D1","bus":"1B1","romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
+	  {"uid":"1D2","bus":"1B1","romid":"28:61:64:35:18:27:D4:DB","note":"inne nere"},
+	  {"uid":"1D3","bus":"1B2","romid":"28:61:64:35:18:18:C3:F0","note":"ute fram"},
+	  {"uid":"1D4","bus":"1B2","romid":"28:61:64:35:18:1F:79:D2","note":"ute bak"},
+	  {"uid":"1D5","bus":"1B2","romid":"28:61:64:35:18:21:D5:2F","note":"inne mitten"},
+	  {"uid":"1D6","bus":"1B3","romid":"28:87:17:43:d4:bd:0a:46","note":"ute jord"},
+	  {"uid":"1D7","bus":"1B3","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne jord"},
+	]
+  },
+  {"uid":"D11","type":"DHT","model":"DHT11","pin":18,"note":"fuktighet inne"},
+  {"uid":"FA1","type":"PWM","pin":22,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
+  {"uid":"433","type":"TX433","pin":19,"note":"till fjärrstyrning"}
+]
+
+// size 921
+[
+  {"version":"1.0"},
+  {"uid":"1WT","type":"1WTG","refreshtimesec":1,"note":"temperatures",
+    "items":[
+	  {"pin":25,"items":[
+	    {"uid":"1WD1","romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
+	    {"uid":"1WD2","romid":"28:61:64:35:18:27:D4:DB","note":"inne nere"},
+	  ]},
+	  {"pin":26,"items":[
+	    {"uid":"1WD3","romid":"28:61:64:35:18:18:C3:F0","note":"ute fram"},
+	    {"uid":"1WD4","romid":"28:61:64:35:18:1F:79:D2","note":"ute bak"},
+	    {"uid":"1WD5","romid":"28:61:64:35:18:21:D5:2F","note":"inne mitten"},
+	  ]},
+	  {"pin":27,"items":[
+	    {"uid":"1WD6","romid":"28:87:17:43:d4:bd:0a:46","note":"ute jord"},
+	    {"uid":"1WD7","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne jord"},
+	  ]},
+	]
+  },
+  {"uid":"D11","type":"DHT","model":"DHT11","pin":18,"note":"fuktighet inne"},
+  {"uid":"FA1","type":"PWM","pin":22,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
+  {"uid":"433","type":"TX433","pin":19,"note":"till fjärrstyrning"},
+  {"uid":"R600","type":"REGO600","rxpin":34,"txpin":33,"refreshtimesec":1,"note":"rego600 heatpump"
+    "items":[ // note a register could either be adressed by the actual register addr or by the mnemonic regname
+	  {"uid":"GT3","addr":"020B","regname":"GT3","note":"warmwater"},
+	  {"uid":"GT6","addr":"020E","regname":"GT6","note":"compressor"},
+	  {"uid":"GT8","addr":"020E","regname":"GT8","note":"heat fluid out"},
+	  {"uid":"GT9","addr":"020E","regname":"GT9","note":"heat fluid in"},
+	  {"uid":"GT10","addr":"020E","regname":"GT10","note":"cold fluid in"},
+	  {"uid":"GT11","addr":"020E","regname":"GT11","note":"cold fluid out"},
+	]
+  },
+]
+
+Tasmota is an acronym for "Theo Arends Sonoff MQTT OTA,"
+
+WiFi IOT ESP REST MQTT => WIERM
+
+ESP HAL WireLess Control Sensor IOT
+
+WAL
