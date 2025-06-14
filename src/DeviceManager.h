@@ -28,6 +28,7 @@
 
 
 #include "GPIO_manager.h"
+#include "HAL/HALdevice.h"
 
 namespace DeviceManager
 {
