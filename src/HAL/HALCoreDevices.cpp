@@ -34,6 +34,7 @@ namespace HAL {
 // ██████  ██  ██████  ██    ██    ██   ██ ███████      ██████   ██████     ██    ██       ██████     ██    
                                                                                                          
     DigitalOutput::DigitalOutput(uint8_t pin) : pin(pin){ pinMode(pin, OUTPUT); }
+    DigitalOutput::~DigitalOutput() { pinMode(pin, INPUT); } // release the pin
 
     bool DigitalOutput::read(HALValue &val) {
         //val.set(value); // read back the latest write value
@@ -51,6 +52,47 @@ namespace HAL {
         return "DigitalOutput(pin=" +  String(pin) + ",val=" + String(value) +  + ")";
     }
 
+// ██████  ██    ██ ██      ███████ ███████      ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
+// ██   ██ ██    ██ ██      ██      ██          ██    ██ ██    ██    ██    ██   ██ ██    ██    ██    
+// ██████  ██    ██ ██      ███████ █████       ██    ██ ██    ██    ██    ██████  ██    ██    ██    
+// ██      ██    ██ ██           ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
+// ██       ██████  ███████ ███████ ███████      ██████   ██████     ██    ██       ██████     ██    
+
+    SinglePulseOutput::SinglePulseOutput(uint8_t _pin, uint8_t _inactiveState) : pin(_pin),inactiveState(_inactiveState) {
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, inactiveState);
+    }
+    SinglePulseOutput::~SinglePulseOutput() { 
+        pinMode(pin, INPUT);
+        pulseTicker.detach();
+    }
+
+    bool SinglePulseOutput::read(HALValue &val) {
+        //val.set(value); // read back the latest write value
+        val = value;
+        return true;
+    }
+
+    void SinglePulseOutput::pulseTicker_Callback(SinglePulseOutput* context) {
+        context->endPulse();
+    }
+
+    bool SinglePulseOutput::write(const HALValue& val) {
+        value = val;//val.asUInt();
+        digitalWrite(pin, !inactiveState);
+        pulseTicker.detach();
+        pulseTicker.once_ms(value, pulseTicker_Callback, this);
+        return true;
+    }
+
+    void SinglePulseOutput::endPulse() {
+        digitalWrite(pin, inactiveState);
+    }
+
+    String SinglePulseOutput::ToString() {
+        return "SinglePulseOutput(pin=" +  String(pin) + ",val=" + String(value) +  + ")";
+    }
+
 //  █████  ███    ██  █████  ██       ██████   ██████      ██ ███    ██ ██████  ██    ██ ████████ 
 // ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██ ████   ██ ██   ██ ██    ██    ██    
 // ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██ ██ ██  ██ ██████  ██    ██    ██    
@@ -58,6 +100,8 @@ namespace HAL {
 // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
 
     AnalogInput::AnalogInput(uint8_t pin) : pin(pin){ pinMode(pin, ANALOG); }
+    AnalogInput::~AnalogInput() { pinMode(pin, INPUT); }
+
 
     bool AnalogInput::read(HALValue &val) {
         //val.set((uint32_t)analogRead(pin));
@@ -107,6 +151,7 @@ namespace HAL {
     PWMAnalogWrite::PWMAnalogWrite(uint8_t pin, uint8_t inv_out) : pin(pin),inv_out(inv_out) {
         pinMode(pin, OUTPUT);
     }
+    PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, INPUT); }
 
     bool PWMAnalogWrite::read(HALValue &val) {
         //val.set(value); // just read back latest write

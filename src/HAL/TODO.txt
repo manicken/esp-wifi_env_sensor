@@ -1,0 +1,13 @@
+
+REGO600
+
+DS18B20
+
+RF433 TX
+
+// maybe future devices
+
+TCP2UART bridge
+WEBSOCKET2UART bridge
+
+WS2812 neostrip led

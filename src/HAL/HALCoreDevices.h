@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <Ticker.h>
 #include "HALDevice.h" // assuming this contains HalDevice
 
 // ASCII ART generated here:
@@ -15,9 +16,11 @@ namespace HAL {
 // ██████  ██  ██████  ██    ██    ██   ██ ███████     ██ ██   ████ ██       ██████     ██  
 
     class DigitalInput : public Device {
-    public:
+    private:
         uint8_t pin = 0;
+    public:
         DigitalInput(uint8_t pin);
+        //~DigitalInput();
         bool read(HALValue&) override;
         bool write(const HALValue&) override;
         String ToString() override;
@@ -30,14 +33,39 @@ namespace HAL {
 // ██████  ██  ██████  ██    ██    ██   ██ ███████      ██████   ██████     ██    ██       ██████     ██    
 
     class DigitalOutput : public Device {
-    public:
+    private:
         uint8_t pin = 0;
         uint32_t value = 0;
+    public:
         DigitalOutput(uint8_t pin);
+        ~DigitalOutput();
         bool read(HALValue&) override;
         bool write(const HALValue&) override;
         String ToString() override;
     };
+
+// ███████ ██ ███    ██  ██████  ██      ███████     ██████  ██    ██ ██      ███████ ███████      ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
+// ██      ██ ████   ██ ██       ██      ██          ██   ██ ██    ██ ██      ██      ██          ██    ██ ██    ██    ██    ██   ██ ██    ██    ██    
+// ███████ ██ ██ ██  ██ ██   ███ ██      █████       ██████  ██    ██ ██      ███████ █████       ██    ██ ██    ██    ██    ██████  ██    ██    ██    
+//      ██ ██ ██  ██ ██ ██    ██ ██      ██          ██      ██    ██ ██           ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
+// ███████ ██ ██   ████  ██████  ███████ ███████     ██       ██████  ███████ ███████ ███████      ██████   ██████     ██    ██       ██████     ██    
+                                                                                                                                                    
+    class SinglePulseOutput : public Device {
+    private:
+        uint8_t pin = 0;
+        uint32_t value = 0;
+        uint8_t inactiveState = 0;
+        Ticker pulseTicker;
+        void endPulse();
+        static void pulseTicker_Callback(SinglePulseOutput* context);
+    public:
+        SinglePulseOutput(uint8_t _pin, uint8_t _inactiveState = LOW);
+        ~SinglePulseOutput();
+        bool read(HALValue&) override;
+        bool write(const HALValue&) override;
+        String ToString() override;
+    };
+
 
 //  █████  ███    ██  █████  ██       ██████   ██████      ██ ███    ██ ██████  ██    ██ ████████ 
 // ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██ ████   ██ ██   ██ ██    ██    ██    
@@ -46,9 +74,11 @@ namespace HAL {
 // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
 
     class AnalogInput : public Device {
-    public:
+    private:
         uint8_t pin = 0;
+    public:
         AnalogInput(uint8_t pin);
+        ~AnalogInput();
         bool read(HALValue&) override;
         bool write(const HALValue&) override;
         String ToString() override;
@@ -81,20 +111,17 @@ namespace HAL {
 // ██       ███ ███  ██      ██     ██   ██ ██   ████ ██   ██ ███████  ██████   ██████       ███ ███  ██   ██ ██    ██    ███████ 
 
     class PWMAnalogWrite : public Device {
-    public:
+    private:
         uint8_t pin = 0;
         uint8_t inv_out = 0;
-        uint8_t resolution = 0; // used together with inv_out to get correct value
-
         uint32_t value = 0; // for readback only
-        uint32_t frequency = 0; // debug only
-        
+        uint32_t getInvValue(uint32_t val);
+    public:
         PWMAnalogWrite(uint8_t pin, uint8_t inv_out);
+        ~PWMAnalogWrite();
         bool read(HALValue&) override;
         bool write(const HALValue&) override;
         String ToString() override;
-    private:
-        uint32_t getInvValue(uint32_t val);
     };
 
     // TODO implement HW_PWM to use with esp32 only (ledc based)
