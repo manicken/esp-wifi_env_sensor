@@ -7,6 +7,7 @@ namespace HAL {
     Device::~Device() {}
 
     void Device::loop() {}
+    Device* Device::findDevice(uint64_t uid) { return nullptr; }
 
     String Device::ToString() {
         return "uid=" + String(decodeUID(uid).c_str());

@@ -743,6 +743,7 @@ namespace DeviceManager
 
             oneWire.begin(owtd.pin);
             owtd.value = dTemp.getTempC(owtd.romid);
+            
         }
         return true;
     }

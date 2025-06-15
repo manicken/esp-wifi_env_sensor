@@ -1,7 +1,9 @@
 
+DS18B20
+
 REGO600
 
-DS18B20
+
 
 RF433 TX
 

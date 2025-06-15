@@ -22,6 +22,8 @@ namespace HAL {
         virtual bool read(String &val);
         virtual bool write(String val);
         virtual void loop();
+        /** used to find sub/leaf devices @ "group devices" */
+        virtual Device* findDevice(uint64_t uid);
 
         virtual String ToString();
     };
