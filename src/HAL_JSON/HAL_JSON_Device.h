@@ -4,10 +4,10 @@
 #include <cstring>
 #include <string>
 #include <Arduino.h> // Needed for String class
-#include "HALValue.h"
-#include "UIDPath.h"
+#include "HAL_JSON_Value.h"
+#include "UID_JSON_Path.h"
 
-namespace HAL {
+namespace HAL_JSON {
 
     class Device {
     protected:

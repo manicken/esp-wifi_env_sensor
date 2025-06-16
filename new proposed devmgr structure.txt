@@ -42,7 +42,7 @@
 
 // size 921
 [
-  {"version":"1.0"},
+  {"type":"version","val":"1.0"},
   {"uid":"1WT","type":"1WTG","refreshtimesec":1,"note":"temperatures",
     "items":[
 	  {"pin":25,"items":[

@@ -1,7 +1,7 @@
 
-#include "HALCoreDevices.h"
+#include "HAL_JSON_CoreDevices.h"
 
-namespace HAL {
+namespace HAL_JSON {
 
     
 // ██████  ██  ██████  ██ ████████  █████  ██          ██ ███    ██ ██████  ██    ██ ████████ 

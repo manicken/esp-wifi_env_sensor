@@ -1,7 +1,22 @@
 
-#include "HALOneWireTemp.h"
+#include "HAL_JSON_OneWireTemp.h"
 
-namespace HAL {
+namespace HAL_JSON {
+    
+    bool OneWireTemp_JSON_validate(JsonVariant jsonObj) {
+        // the type don't need any failsafe check as that is taken care of outside this class and is allways available
+        const char* typeStr = jsonObj["type"].as<const char*>();
+
+        if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, 4) == 0) {
+            return true;
+        } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, 4) == 0) {
+            return true;
+        } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, 4) == 0) {
+            return true;
+        }
+        return false;
+    }
+
     OneWireTempGroup::OneWireTempGroup(JsonVariant jsonObj) {
         double rawSec = 1.0;
         if (jsonObj.containsKey("refreshtimesec")) {
@@ -34,9 +49,12 @@ namespace HAL {
 
         // the type don't need any failsafe check as that is taken care of outside this class and is allways available
         const char* typeStr = jsonObj["type"].as<const char*>();
-        if (strncmp(typeStr, "1WTG", 4) == 0) {
 
-        } else if (strncmp(typeStr, "1WTD", 4) == 0) {
+        if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, 4) == 0) {
+
+        } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, 4) == 0) {
+
+        } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, 4) == 0) {
             
         }
     }
@@ -46,26 +64,26 @@ namespace HAL {
     }
 
     void OneWireTempGroup::loop() {
-    uint32_t now = millis();
-    switch (state) {
-        case IDLE:
-            if (now - lastUpdateMs >= refreshTimeMs) {
-                for (int i=0;i<busCount;i++) {
-                    busses[i].requestTemperatures();
+        uint32_t now = millis();
+        switch (state) {
+            case IDLE:
+                if (now - lastUpdateMs >= refreshTimeMs) {
+                    for (int i=0;i<busCount;i++) {
+                        busses[i].requestTemperatures();
+                    }
+                    state = WAITING_FOR_CONVERSION;
+                    lastStart = now;
                 }
-                state = WAITING_FOR_CONVERSION;
-                lastStart = now;
-            }
-            break;
-        case WAITING_FOR_CONVERSION:
-            if (now - lastStart >= 750) {
-                for (int i=0;i<busCount;i++) {
-                    busses[i].readAll(); // needs to exist
+                break;
+            case WAITING_FOR_CONVERSION:
+                if (now - lastStart >= refreshTimeMs) {
+                    for (int i=0;i<busCount;i++) {
+                        busses[i].readAll();
+                    }
+                    lastUpdateMs = now;
+                    state = IDLE;
                 }
-                lastUpdateMs = now;
-                state = IDLE;
-            }
-            break;
+                break;
+        }
     }
-}
 }

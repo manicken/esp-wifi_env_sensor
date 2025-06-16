@@ -4,9 +4,15 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <Ticker.h>
-#include "HALDevice.h"
+#include "HAL_JSON_Device.h"
 
-namespace HAL {
+#define HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP  "1WTG"
+#define HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS    "1WTB"
+#define HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE "1WTD"
+
+namespace HAL_JSON {
+    /** used to validate and recognize one wire temp device types */
+    bool OneWireTemp_JSON_validate(JsonVariant jsonObj);
 
     class OneWireTempDevice : public Device {
     public:

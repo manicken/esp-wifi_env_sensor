@@ -1,6 +1,6 @@
-#include "HALDevice.h"
+#include "HAL_JSON_Device.h"
 
-namespace HAL {
+namespace HAL_JSON {
 
     Device::Device() {}
 

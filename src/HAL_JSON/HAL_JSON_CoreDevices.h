@@ -2,12 +2,12 @@
 
 #include <Arduino.h>
 #include <Ticker.h>
-#include "HALDevice.h"
+#include "HAL_JSON_Device.h"
 
 // ASCII ART generated here:
 // https://patorjk.com/software/taag/#p=display&f=ANSI%20Regular&t=ASCII%20ART
 
-namespace HAL {
+namespace HAL_JSON {
 
 // ██████  ██  ██████  ██ ████████  █████  ██          ██ ███    ██ ██████  ██    ██ ████████ 
 // ██   ██ ██ ██       ██    ██    ██   ██ ██          ██ ████   ██ ██   ██ ██    ██    ██    

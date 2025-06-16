@@ -2,7 +2,7 @@
 
 #include <Arduino.h> // for String
 #include <cstdint>
-namespace HAL {
+namespace HAL_JSON {
 
     class HALValue {
     public:

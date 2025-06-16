@@ -5,7 +5,7 @@
 #include <cstring>
 #include <string>
 #include <Arduino.h> // Needed for String class
-namespace HAL {
+namespace HAL_JSON {
 
     // Encode UID from ASCII string (up to 8 chars)
     uint64_t encodeUID(const char* str);

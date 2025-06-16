@@ -1,5 +1,5 @@
-#include "HALValue.h"
-namespace HAL {
+#include "HAL_JSON_Value.h"
+namespace HAL_JSON {
     HALValue::HALValue() : type(Type::NONE) {}
 
     HALValue::HALValue(uint32_t v) : type(Type::UINT), uval(v) {}

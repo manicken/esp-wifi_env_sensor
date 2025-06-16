@@ -1,6 +1,6 @@
-#include "UIDPath.h"
+#include "UID_JSON_Path.h"
 
-namespace HAL {
+namespace HAL_JSON {
 
     uint64_t encodeUID(const char* str) {
         uint64_t out = 0;
