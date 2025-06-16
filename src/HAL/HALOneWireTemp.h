@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <Ticker.h>
 #include "HALDevice.h"
 
@@ -32,7 +33,8 @@ namespace HAL {
         
         /** this function will search the devices to find the device with the uid */
         Device* findDevice(uint64_t uid);
-        
+        void requestTemperatures();
+        void readAll();
         bool read(HALValue &val);
         bool write(const HALValue &val);
         String ToString();
@@ -40,13 +42,17 @@ namespace HAL {
 
     // this class is automatically instantiated even if there is only one 1 wire temperature sensor
     class OneWireTempGroup : public Device {
+        enum State { IDLE, WAITING_FOR_CONVERSION };
     private:
         OneWireBus *busses;
         uint32_t busCount = 0;
         uint32_t refreshTimeMs = 0;
         uint32_t lastUpdateMs = 0;
+
+        State state = IDLE;
+        uint32_t lastStart = 0;
     public:
-        OneWireTempGroup();
+        OneWireTempGroup(JsonVariant jsonObj);
         ~OneWireTempGroup();
         
         /** this function will search the busses and their devices to find the device with the uid */
