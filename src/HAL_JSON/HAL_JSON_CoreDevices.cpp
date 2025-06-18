@@ -19,6 +19,10 @@ namespace HAL_JSON {
     }
     DigitalInput::DigitalInput(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+
         // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, INPUT);
@@ -55,6 +59,10 @@ namespace HAL_JSON {
     }
     DigitalOutput::DigitalOutput(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+
         // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, OUTPUT);
@@ -93,6 +101,10 @@ namespace HAL_JSON {
     }
     SinglePulseOutput::SinglePulseOutput(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE)) {
             inactiveState = jsonObj[HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE].as<uint8_t>();
         } else {
@@ -160,6 +172,10 @@ namespace HAL_JSON {
 
     AnalogInput::AnalogInput(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+
         // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, ANALOG);
@@ -230,6 +246,10 @@ namespace HAL_JSON {
 
     PWMAnalogWrite::PWMAnalogWrite(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+        
         // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, OUTPUT);

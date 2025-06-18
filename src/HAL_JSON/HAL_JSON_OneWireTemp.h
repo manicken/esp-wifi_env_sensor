@@ -28,7 +28,7 @@ namespace HAL_JSON {
     class OneWireBus {
     private:
         uint8_t pin;
-        OneWireTempDevice *devices;
+        OneWireTempDevice **devices;
         uint32_t deviceCount = 0;
     public:
         static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
@@ -48,7 +48,7 @@ namespace HAL_JSON {
     class OneWireTempGroup : public Device {
         enum State { IDLE, WAITING_FOR_CONVERSION };
     private:
-        OneWireBus *busses;
+        OneWireBus **busses;
         uint32_t busCount = 0;
         uint32_t refreshTimeMs = 0;
         uint32_t lastUpdateMs = 0;

@@ -69,6 +69,10 @@ namespace HAL_JSON {
         }
     }
     OneWireTempGroup::~OneWireTempGroup() {
+        if (busses != nullptr) {
+            for (int i=0;i<busCount;i++)
+                delete busses[i];
+        }
         delete[] busses;
         busses = nullptr;
     }
@@ -79,7 +83,7 @@ namespace HAL_JSON {
             case IDLE:
                 if (now - lastUpdateMs >= refreshTimeMs) {
                     for (int i=0;i<busCount;i++) {
-                        busses[i].requestTemperatures();
+                        busses[i]->requestTemperatures();
                     }
                     state = WAITING_FOR_CONVERSION;
                     lastStart = now;
@@ -88,7 +92,7 @@ namespace HAL_JSON {
             case WAITING_FOR_CONVERSION:
                 if (now - lastStart >= refreshTimeMs) {
                     for (int i=0;i<busCount;i++) {
-                        busses[i].readAll();
+                        busses[i]->readAll();
                     }
                     lastUpdateMs = now;
                     state = IDLE;
@@ -103,11 +107,22 @@ namespace HAL_JSON {
     //  ██   ██ ██    ██      ██ 
     //  ██████   ██████  ███████ 
 
-
+    OneWireBus::~OneWireBus() {
+        if (devices != nullptr) {
+            for (int i=0;i<deviceCount;i++)
+                delete devices[i];
+        }
+        delete[] devices;
+        devices = nullptr;
+    }
 
     //  ██████  ███████ ██    ██ ██  ██████ ███████ 
     //  ██   ██ ██      ██    ██ ██ ██      ██      
     //  ██   ██ █████   ██    ██ ██ ██      █████   
     //  ██   ██ ██       ██  ██  ██ ██      ██      
     //  ██████  ███████   ████   ██  ██████ ███████ 
+
+    OneWireTempDevice::~OneWireTempDevice() {
+        
+    }
 }
