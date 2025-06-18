@@ -64,17 +64,28 @@ namespace HAL_JSON {
         
         // cleanup of prev device list if existent
         if (devices != nullptr) {
-            for (int i=0;i<deviceCount;i++) {
+            for (int i=0;i<HAL_JSON::deviceCount;i++) {
                 if (devices[i] != nullptr) {
                     delete devices[i];
                     devices[i] = nullptr;
                 }
             }
             delete[] devices;
+            devices = nullptr;
         }
         HAL_JSON::deviceCount = deviceCount;
+        if (deviceCount == 0) {
+            Serial.println(F("The loaded JSON cfg does not contain any valid devices!"));
+            Serial.println(F("Hint: Check that all entries have 'type' and 'uid' fields, and match known types."));
+            return;
+        }
         // Allocate space for all devices
-        devices = new Device*[HAL_JSON::deviceCount];
+        devices = new Device*[HAL_JSON::deviceCount]();
+
+        if (devices == nullptr) {
+            Serial.println(F("Failed to allocate device array"));
+            return;
+        }
         
         // Second pass: actually create and store devices
         uint32_t index = 0;
@@ -84,5 +95,7 @@ namespace HAL_JSON {
             devices[index] = CreateDeviceFromJSON(jsonItem);
             index++;
         }
+        Serial.printf("Created %u devices\n", deviceCount);
+
     }
 }
