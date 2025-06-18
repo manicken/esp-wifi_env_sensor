@@ -3,21 +3,31 @@
 
 namespace HAL_JSON {
     
-    bool OneWireTemp_JSON_validate(JsonVariant jsonObj) {
+    //   ██████  ██████   ██████  ██    ██ ██████  
+    //  ██       ██   ██ ██    ██ ██    ██ ██   ██ 
+    //  ██   ███ ██████  ██    ██ ██    ██ ██████  
+    //  ██    ██ ██   ██ ██    ██ ██    ██ ██      
+    //   ██████  ██   ██  ██████   ██████  ██      
+    
+    Device* OneWireTempGroup::Create(JsonVariant &jsonObj) {
+        return new OneWireTempGroup(jsonObj);
+    }
+
+    HAL_JSON_VERIFY_JSON_RETURN_TYPE OneWireTempGroup::VerifyJSON(JsonVariant &jsonObj) {
         // the type don't need any failsafe check as that is taken care of outside this class and is allways available
         const char* typeStr = jsonObj["type"].as<const char*>();
 
         if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, 4) == 0) {
-            return true;
+            return HAL_JSON_VERIFY_JSON_RETURN_OK;
         } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, 4) == 0) {
-            return true;
+            return HAL_JSON_VERIFY_JSON_RETURN_OK;
         } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, 4) == 0) {
-            return true;
+            return HAL_JSON_VERIFY_JSON_RETURN_OK;
         }
-        return false;
+        return F("error");
     }
 
-    OneWireTempGroup::OneWireTempGroup(JsonVariant jsonObj) {
+    OneWireTempGroup::OneWireTempGroup(JsonVariant &jsonObj) {
         double rawSec = 1.0;
         if (jsonObj.containsKey("refreshtimesec")) {
             JsonVariant rtimeObj = jsonObj["refreshtimesec"];
@@ -86,4 +96,18 @@ namespace HAL_JSON {
                 break;
         }
     }
+
+    //  ██████  ██    ██ ███████ 
+    //  ██   ██ ██    ██ ██      
+    //  ██████  ██    ██ ███████ 
+    //  ██   ██ ██    ██      ██ 
+    //  ██████   ██████  ███████ 
+
+
+
+    //  ██████  ███████ ██    ██ ██  ██████ ███████ 
+    //  ██   ██ ██      ██    ██ ██ ██      ██      
+    //  ██   ██ █████   ██    ██ ██ ██      █████   
+    //  ██   ██ ██       ██  ██  ██ ██      ██      
+    //  ██████  ███████   ████   ██  ██████ ███████ 
 }

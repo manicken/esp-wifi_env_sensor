@@ -1,0 +1,43 @@
+
+[
+  {"type":"version","val":"1.0"},
+  "accessing one temp device example 1WT:D1",
+  {"uid":"1WT","type":"1WTG","refreshtimesec":1,"note":"temperatures",
+    "items":[
+	  {"pin":25,"note":"inne","items":[
+	    {"uid":"D1","romid":"28:61:64:35:18:20:9E:8D","note":"uppe"},
+	    {"uid":"D2","romid":"28:61:64:35:18:27:D4:DB","note":"nere"},
+	  ]},
+	  {"pin":26,"note":"mitten","items":[
+	    {"uid":"D3","romid":"28:61:64:35:18:18:C3:F0","note":"ute fram"},
+	    {"uid":"D4","romid":"28:61:64:35:18:1F:79:D2","note":"ute bak"},
+	    {"uid":"D5","romid":"28:61:64:35:18:21:D5:2F","note":"inne"},
+	  ]},
+	  {"pin":27,"note":"jord","items":[
+	    {"uid":"D6","romid":"28:87:17:43:d4:bd:0a:46","note":"ute"},
+	    {"uid":"D7","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne"},
+	  ]},
+	]
+  },
+  "1WTD type can be used when there is only one temp device connected, or when different refresh time is required for one sensor",
+  {"type":"1WTD","uid":"1WTD0","pin":28,"refreshtimesec":1,"romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
+  "1WTB type can be used when there is only one bus, or when different refresh time is required for one bus",
+  {"type":"1WTB","pin":25,"refreshtimesec":1,"items":[
+	    {"uid":"D1","romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
+	    {"uid":"D2","romid":"28:61:64:35:18:27:D4:DB","note":"inne nere"},
+  ]},
+  {"uid":"D11","type":"DHT","model":"DHT11","pin":18,"note":"fuktighet inne"},
+  {"uid":"FA1","type":"PWM","pin":22,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
+  {"uid":"433","type":"TX433","pin":19,"note":"till fjärrstyrning"},
+  {"uid":"R600","type":"REGO600","rxpin":34,"txpin":33,"refreshtimesec":1,"note":"rego600 heatpump"
+    "items":[
+      "note a register could either be adressed by the actual register addr or by the mnemonic regname",
+	  {"uid":"GT3","addr":"020B","regname":"GT3","note":"warmwater"},
+	  {"uid":"GT6","addr":"020E","regname":"GT6","note":"compressor"},
+	  {"uid":"GT8","addr":"020E","regname":"GT8","note":"heat fluid out"},
+	  {"uid":"GT9","addr":"020E","regname":"GT9","note":"heat fluid in"},
+	  {"uid":"GT10","addr":"020E","regname":"GT10","note":"cold fluid in"},
+	  {"uid":"GT11","addr":"020E","regname":"GT11","note":"cold fluid out"},
+	]
+  },
+]

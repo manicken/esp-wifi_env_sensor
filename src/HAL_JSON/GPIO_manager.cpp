@@ -62,6 +62,8 @@ namespace GPIO_manager
     const uint8_t available_gpio_list_lenght = sizeof(available_gpio_list)/sizeof(available_gpio_list[0]);
     const uint8_t PinModeStrings_lenght = sizeof(PinModeStrings)/sizeof(PinModeStrings[0]);
 
+    uint8_t reservedPins[available_gpio_list_lenght];
+
     void setup(WEBSERVER_TYPE &srv) {
         webserver = &srv;
         srv.on(GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST, HTTP_GET, sendList);
@@ -112,5 +114,37 @@ namespace GPIO_manager
         srv_return_msg.concat("}");
         srv_return_msg.concat("}");
         webserver->send(200, "text/json", srv_return_msg);
+    }
+
+    bool isPinModeCompatible(PinMode requested, PinMode target) {
+        return (target == PinMode::IO) || (requested == target);
+    }
+
+    HAL_JSON_VERIFY_JSON_RETURN_TYPE CheckIfPinAvailable(uint8_t pin, PinMode mode) {
+        for (int i=0;i<available_gpio_list_lenght;i++) {
+            if (available_gpio_list[i].pin == pin) {
+                if (reservedPins[i] == 1) return F("CheckIfPinAvailable error - pin allready reserved");
+
+                if (isPinModeCompatible(mode, available_gpio_list[i].mode))
+                    return HAL_JSON_VERIFY_JSON_RETURN_OK;
+                return F("CheckIfPinAvailable error - pinmode mismatch");
+            }
+        }
+        return F("Pin to reserve - not found!");
+        //return HAL_JSON_VERIFY_JSON_RETURN_OK;
+    }
+
+    void ClearAllReservations() {
+        for (int i=0;i<available_gpio_list_lenght;i++)
+            reservedPins[i] = 0;
+    }
+    /** CheckIfPinAvailable must be called prior to using this function. */
+    void ReservePin(uint8_t pin) {
+        for (int i=0;i<available_gpio_list_lenght;i++) {
+            if (available_gpio_list[i].pin == pin) {
+                reservedPins[i] = 1;
+                return;
+            }
+        }
     }
 }

@@ -27,8 +27,8 @@
 #include "SinglePulseOutput.h"
 
 
-#include "GPIO_manager.h"
-#include "HAL/HALdevice.h"
+#include "HAL_JSON/GPIO_manager.h"
+#include "HAL_JSON/HAL_JSON_Device.h"
 
 namespace DeviceManager
 {

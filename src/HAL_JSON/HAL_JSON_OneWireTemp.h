@@ -5,17 +5,14 @@
 #include <ArduinoJson.h>
 #include <Ticker.h>
 #include "HAL_JSON_Device.h"
+#include "HAL_JSON_DeviceTypeDefNames.h"
 
-#define HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP  "1WTG"
-#define HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS    "1WTB"
-#define HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE "1WTD"
 
 namespace HAL_JSON {
-    /** used to validate and recognize one wire temp device types */
-    bool OneWireTemp_JSON_validate(JsonVariant jsonObj);
 
     class OneWireTempDevice : public Device {
     public:
+        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
         float value;
         uint8_t romid[8];
         
@@ -34,6 +31,7 @@ namespace HAL_JSON {
         OneWireTempDevice *devices;
         uint32_t deviceCount = 0;
     public:
+        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
         OneWireBus();
         ~OneWireBus();
         
@@ -46,7 +44,7 @@ namespace HAL_JSON {
         String ToString();
     };
 
-    // this class is automatically instantiated even if there is only one 1 wire temperature sensor
+    // this class is automatically instantiated even if there is only one 1 wire temperature sensor, to avoid creating same Refresh Loop state machine for every other type
     class OneWireTempGroup : public Device {
         enum State { IDLE, WAITING_FOR_CONVERSION };
     private:
@@ -58,7 +56,9 @@ namespace HAL_JSON {
         State state = IDLE;
         uint32_t lastStart = 0;
     public:
-        OneWireTempGroup(JsonVariant jsonObj);
+        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
+        static Device* Create(JsonVariant &jsonObj);
+        OneWireTempGroup(JsonVariant &jsonObj);
         ~OneWireTempGroup();
         
         /** this function will search the busses and their devices to find the device with the uid */

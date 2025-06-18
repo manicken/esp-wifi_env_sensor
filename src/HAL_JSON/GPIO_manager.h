@@ -15,6 +15,8 @@
 #define WEBSERVER_TYPE fs_WebServer
 #endif
 
+#include "HAL_JSON_DeviceTypeDefNames.h"
+
 /*
     this file is only intended to manage which functions that are assigned to a specific GPIO pin
     that table is stored into a JSON file
@@ -28,9 +30,8 @@
 */
 namespace GPIO_manager
 {
-    #define GPIO_MANAGER_FILES_PATH                 F("/GPIO_manager")
-    #define GPIO_MANAGER_CONFIG_JSON_FILE           F("/GPIO_manager/cfg.json")
-    #define GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST    F("/GPIO_manager/getAvailableGPIOs")
+    #define GPIO_MANAGER_ROOT                 "/GPIO_manager"
+    #define GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST    F(GPIO_MANAGER_ROOT "/getAvailableGPIOs")
 
     enum class PinMode : int8_t {
         NA = -1,
@@ -57,5 +58,8 @@ namespace GPIO_manager
 
     void sendList();
     void setup(WEBSERVER_TYPE &srv);
-
+    HAL_JSON_VERIFY_JSON_RETURN_TYPE CheckIfPinAvailable(uint32_t pin, PinMode mode);
+    void ClearAllReservations();
+    /** CheckIfPinAvailable must be called prior to using this function. */
+    void ReservePin(uint8_t pin);
 }
