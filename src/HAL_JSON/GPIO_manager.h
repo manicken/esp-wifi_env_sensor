@@ -33,32 +33,38 @@ namespace GPIO_manager
     #define GPIO_MANAGER_ROOT                 "/GPIO_manager"
     #define GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST    F(GPIO_MANAGER_ROOT "/getAvailableGPIOs")
 
-    enum class PinMode : int8_t {
-        NA = -1,
-        OUT = 0,
-        IN = 1,
-        IO = 2,
+    
+
+    enum class PinMode : uint8_t {
+        OUT = 0x01,
+        IN = 0x02,
+        AIN = 0x04,
+        LOW2BOOT = 0x08,
+        HIGH2BOOT = 0x10,
+        Reserved = 0x20,
+        SpecialAtBoot = 0x40
     };
     typedef struct {
         const char* Name;
-        PinMode mode;
+        uint8_t mode;
     } PinModeDef;
 
-    const PinModeDef PinModeStrings[] = {
-        {"NA", PinMode::NA},
-        {"OUT", PinMode::OUT},
-        {"IN", PinMode::IN},
-        {"IO", PinMode::IO}
-    };
+    #define MAKE_PIN_MASK(...) (static_cast<uint8_t>(0) | __VA_ARGS__)
+
+    // Templated makePinMask function
+    /*template<typename... Modes>
+    constexpr uint8_t makePinMask(Modes... modes) {
+        return (static_cast<uint8_t>(modes) | ...);  // C++17 fold expression
+    }*/
 
     typedef struct {
         uint8_t pin;
-        PinMode mode;
+        uint8_t mode;
     } gpio_pin;
 
     void sendList();
     void setup(WEBSERVER_TYPE &srv);
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE CheckIfPinAvailable(uint32_t pin, PinMode mode);
+    HAL_JSON_VERIFY_JSON_RETURN_TYPE CheckIfPinAvailable(uint32_t pin, uint8_t pinMode);
     void ClearAllReservations();
     /** CheckIfPinAvailable must be called prior to using this function. */
     void ReservePin(uint8_t pin);
