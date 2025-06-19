@@ -33,16 +33,15 @@ namespace GPIO_manager
     #define GPIO_MANAGER_ROOT                 "/GPIO_manager"
     #define GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST    F(GPIO_MANAGER_ROOT "/getAvailableGPIOs")
 
-    
-
     enum class PinMode : uint8_t {
         OUT = 0x01,
         IN = 0x02,
         AIN = 0x04,
-        LOW2BOOT = 0x08,
-        HIGH2BOOT = 0x10,
-        Reserved = 0x20,
-        SpecialAtBoot = 0x40
+        AOUT = 0x08,
+        LOW2BOOT = 0x10,
+        HIGH2BOOT = 0x20,
+        Reserved = 0x40,
+        SpecialAtBoot = 0x80
     };
     typedef struct {
         const char* Name;
