@@ -26,18 +26,18 @@ namespace HAL_JSON {
     }
     bool VerifyDeviceJson(JsonVariant &jsonObj) {
         if (jsonObj.is<const char*>()) return false; // this is defined as a comment
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_TYPE) == false) return false;
-        if (jsonObj[HAL_JSON_KEYNAME_TYPE].is<const char*>() == false) return false;
-        if (jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>() == nullptr) return false;
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_UID) == false) return false;
-        if (jsonObj[HAL_JSON_KEYNAME_UID].is<const char*>() == false) return false;
-        if (jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>() == nullptr) return false;
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_TYPE) == false){ Serial.println(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_TYPE)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_TYPE].is<const char*>() == false){ Serial.println(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_TYPE)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>() == nullptr){ Serial.println(HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_TYPE)); return false; }
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_UID) == false){ Serial.println(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_UID)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_UID].is<const char*>() == false){ Serial.println(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_UID)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>() == nullptr){ Serial.println(HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_UID)); return false; }
 
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
         for (int i=0;DeviceRegistry[i].type != nullptr;i++) {
             if (strcmp(type, DeviceRegistry[i].type) == 0) {
-                if (DeviceRegistry[i].Verify_JSON_Function == nullptr) return false;
-                if (DeviceRegistry[i].Create_Function == nullptr) return false; // skip devices that dont have this defined
+                if (DeviceRegistry[i].Verify_JSON_Function == nullptr){ Serial.print(F("Verify_JSON_Function missing for:")); Serial.println(type); return false; }
+                if (DeviceRegistry[i].Create_Function == nullptr){ Serial.print(F("Create_Function missing for:")); Serial.println(type); return false; } // skip devices that dont have this defined
 
                 auto err = DeviceRegistry[i].Verify_JSON_Function(jsonObj);
                 if (err != HAL_JSON_VERIFY_JSON_RETURN_OK) {
@@ -47,6 +47,9 @@ namespace HAL_JSON {
                 return true;
             }
         }
+
+        Serial.print(F("Err - could not find type:"));
+        Serial.println(type);
         return false;
     }
 

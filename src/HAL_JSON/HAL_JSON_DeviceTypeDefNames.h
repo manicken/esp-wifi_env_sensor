@@ -50,3 +50,5 @@
 
 // the following must be at end
 #define HAL_JSON_ERR_MISSING_KEY(k) (F("Missing key: " k))
+#define HAL_JSON_ERR_VALUE_TYPE(t) (F("Value type: " t))
+#define HAL_JSON_ERR_STRING_EMPTY(k) (F("String is empty:" k))

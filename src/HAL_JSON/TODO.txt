@@ -1,4 +1,6 @@
 
+make all json verify/validate errors into a error code system to save memory
+
 DS18B20
 
 REGO600
