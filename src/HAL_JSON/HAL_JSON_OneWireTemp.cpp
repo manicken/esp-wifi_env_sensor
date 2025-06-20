@@ -77,6 +77,13 @@ namespace HAL_JSON {
         busses = nullptr;
     }
 
+    bool OneWireTempGroup::read(const HALReadRequest &req) {
+        return false;
+    }
+    bool OneWireTempGroup::write(const HALWriteRequest&req) {
+        return false;
+    }
+
     void OneWireTempGroup::loop() {
         uint32_t now = millis();
         switch (state) {

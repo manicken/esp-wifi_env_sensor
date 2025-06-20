@@ -101,4 +101,71 @@ namespace HAL_JSON {
         Serial.printf("Created %u devices\n", deviceCount);
 
     }
+
+    Device* findDevice(uint64_t uid) {
+        if (deviceCount == 0) return nullptr;
+        if (devices == nullptr) return nullptr;
+        for (int i=0;i<deviceCount;i++) {
+            if (devices[i] == nullptr) continue;
+            if (devices[i]->uid == uid) return devices[i];
+        }
+        return nullptr;
+    }
+
+    template<typename RequestType>
+    bool dispatchRead(const RequestType& req) {
+        Device* device = findDevice(req.path.root());
+        return device ? device->read(req) : false;
+    }
+
+    template<typename RequestType>
+    bool dispatchWrite(const RequestType& req) {
+        Device* device = findDevice(req.path.root());
+        return device ? device->write(req) : false;
+    }
+
+    bool read(const HALReadRequest &req) {
+        Device* device = findDevice(req.path.root());
+        if (device == nullptr) return false;
+        return device->read(req);
+    }
+    bool write(const HALWriteRequest &req) {
+        Device* device = findDevice(req.path.root());
+        if (device == nullptr) return false;
+        return device->write(req);
+    }
+    bool read(const HALReadStringRequest &req) {
+        Device* device = findDevice(req.path.root());
+        if (device == nullptr) return false;
+        return device->read(req);
+    }
+    bool write(const HALWriteStringRequest &req) {
+        Device* device = findDevice(req.path.root());
+        if (device == nullptr) return false;
+        return device->write(req);
+    }
+    void loop() {
+        if (deviceCount == 0) return;
+        if (devices == nullptr) return;
+        for (int i=0;i<deviceCount;i++) {
+            if (devices[i] == nullptr) continue;
+            devices[i]->loop();
+        }
+    }
+
+    void TEST() {
+        String result;
+        HALReadStringRequest req{UIDPath("D1","1WTG"), result};
+        if (dispatchRead(req)) {
+            Serial.println(result);
+        }
+
+        HALValue value;
+        HALReadRequest req2(UIDPath("D2","1WTG"), value);
+        if (dispatchRead(req2)) {
+            Serial.println(value.asFloat());
+        }
+
+        //if (dispatchWrite())
+    }
 }

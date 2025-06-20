@@ -19,8 +19,8 @@ namespace HAL_JSON {
         OneWireTempDevice(uint8_t romid[8]);
         ~OneWireTempDevice();
         
-        bool read(HALValue &val);
-        bool write(const HALValue &val);
+        bool read(const HALReadRequest &req) override;
+        bool write(const HALWriteRequest&req) override;
         String ToString();
     };
 
@@ -65,8 +65,8 @@ namespace HAL_JSON {
         Device* findDevice(uint64_t uid) override;
         void loop() override; // this task will take care of starting 1 wire temp measurements at regular intervalls (defined by refreshTimeMs)
         
-        bool read(HALValue &val) override;
-        bool write(const HALValue &val);
+        bool read(const HALReadRequest &req) override;
+        bool write(const HALWriteRequest&req) override;
         String ToString() override;
     };
     

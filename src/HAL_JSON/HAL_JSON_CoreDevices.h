@@ -24,8 +24,8 @@ namespace HAL_JSON {
         static Device* Create(JsonVariant &json);
         DigitalInput(JsonVariant &jsonObj);
         //~DigitalInput();
-        bool read(HALValue&) override;
-        bool write(const HALValue&) override;
+        bool read(const HALReadRequest&) override;
+        bool write(const HALWriteRequest&) override;
         String ToString() override;
     };
 
@@ -44,8 +44,8 @@ namespace HAL_JSON {
         static Device* Create(JsonVariant &jsonObj);
         DigitalOutput(JsonVariant &jsonObj);
         ~DigitalOutput();
-        bool read(HALValue&) override;
-        bool write(const HALValue&) override;
+        bool read(const HALReadRequest&) override;
+        bool write(const HALWriteRequest&) override;
         String ToString() override;
     };
 
@@ -68,8 +68,8 @@ namespace HAL_JSON {
         static Device* Create(JsonVariant &jsonObj);
         SinglePulseOutput(JsonVariant &jsonObj);
         ~SinglePulseOutput();
-        bool read(HALValue&) override;
-        bool write(const HALValue&) override;
+        bool read(const HALReadRequest&) override;
+        bool write(const HALWriteRequest&) override;
         String ToString() override;
     };
 
@@ -88,8 +88,8 @@ namespace HAL_JSON {
         static Device* Create(JsonVariant &jsonObj);
         AnalogInput(JsonVariant &jsonObj);
         ~AnalogInput();
-        bool read(HALValue&) override;
-        bool write(const HALValue&) override;
+        bool read(const HALReadRequest&) override;
+        bool write(const HALWriteRequest&) override;
         String ToString() override;
     };
 
@@ -109,8 +109,8 @@ namespace HAL_JSON {
         static uint32_t frequency;
         
         PWMAnalogWriteConfig(JsonVariant &jsonObj);
-        bool read(HALValue&) override;
-        bool write(const HALValue&) override;
+        bool read(const HALReadRequest&) override;
+        bool write(const HALWriteRequest&) override;
         String ToString() override;
 
     };
@@ -132,8 +132,8 @@ namespace HAL_JSON {
         static Device* Create(JsonVariant &jsonObj);
         PWMAnalogWrite(JsonVariant &jsonObj);
         ~PWMAnalogWrite();
-        bool read(HALValue&) override;
-        bool write(const HALValue&) override;
+        bool read(const HALReadRequest&) override;
+        bool write(const HALWriteRequest&) override;
         String ToString() override;
     };
 

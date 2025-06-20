@@ -1,4 +1,4 @@
-#include "UID_JSON_Path.h"
+#include "HAL_JSON_UID_Path.h"
 
 namespace HAL_JSON {
 
@@ -11,17 +11,17 @@ namespace HAL_JSON {
     }
 
     std::string decodeUID(uint64_t uid) {
-    char str[9] = {}; // 8 chars + null terminator
-    for (int i = 0; i < 8; ++i) {
-        // Extract each byte from most significant to least significant
-        str[i] = static_cast<char>((uid >> (8 * (7 - i))) & 0xFF);
-        if (str[i] == '\0') { // Stop if null terminator found
-            str[i] = '\0';
-            break;
+        char str[9] = {}; // 8 chars + null terminator
+        for (int i = 0; i < 8; ++i) {
+            // Extract each byte from most significant to least significant
+            str[i] = static_cast<char>((uid >> (8 * (7 - i))) & 0xFF);
+            if (str[i] == '\0') { // Stop if null terminator found
+                str[i] = '\0';
+                break;
+            }
         }
+        return std::string(str);
     }
-    return std::string(str);
-}
 
     UIDPath::UIDPath() = default;
 
@@ -35,8 +35,9 @@ namespace HAL_JSON {
         item  = encodeUID(itemStr.c_str());
     }
 
-    bool UIDPath::isItemOnly() const {
-        return group == 0;
+    uint64_t UIDPath::root() const {
+        if (group == 0) return item;
+        else return group;
     }
 
     bool UIDPath::operator==(const UIDPath& other) const {

@@ -6,7 +6,8 @@
 #include <Arduino.h> // Needed for String class
 #include <ArduinoJson.h>
 #include "HAL_JSON_Value.h"
-#include "UID_JSON_Path.h"
+#include "HAL_JSON_UID_Path.h"
+#include "HAL_JSON_Operations.h"
 #include "GPIO_manager.h"
 
 namespace HAL_JSON {
@@ -19,10 +20,10 @@ namespace HAL_JSON {
 
         uint64_t uid;
 
-        virtual bool read(HALValue &val);
-        virtual bool write(const HALValue &val);
-        virtual bool read(String &val);
-        virtual bool write(const String &val);
+        virtual bool read(const HALReadRequest &req);
+        virtual bool write(const HALWriteRequest &val);
+        virtual bool read(const HALReadStringRequest &val);
+        virtual bool write(const HALWriteStringRequest &val);
         virtual void loop();
         /** used to find sub/leaf devices @ "group devices" */
         virtual Device* findDevice(uint64_t uid);

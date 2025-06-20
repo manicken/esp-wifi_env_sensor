@@ -19,7 +19,7 @@ namespace HAL_JSON {
         UIDPath(const char* itemStr, const char* groupStr = nullptr);
         UIDPath(std::string itemStr, std::string groupStr = "");
 
-        bool isItemOnly() const;
+        uint64_t root() const;
 
         bool operator==(const UIDPath& other) const;
         bool operator==(const char* uidStr) const;

@@ -12,9 +12,9 @@ namespace HAL_JSON {
     String Device::ToString() {
         return "uid=" + String(decodeUID(uid).c_str());
     }
-    bool Device::read(HALValue &val) { return false; }
-    bool Device::write(const HALValue &val) { return false; };
-    bool Device::read(String &val) { return false; }
-    bool Device::write(const String &val) { return false; }
+    bool Device::read(const HALReadRequest &req) { return false; }
+    bool Device::write(const HALWriteRequest &req) { return false; };
+    bool Device::read(const HALReadStringRequest &req) { return false; }
+    bool Device::write(const HALWriteStringRequest &req) { return false; }
 
 } // namespace HAL

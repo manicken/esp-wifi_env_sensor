@@ -29,13 +29,13 @@ namespace HAL_JSON {
         pinMode(pin, INPUT);
     }
 
-    bool DigitalInput::read(HALValue &val) {
+    bool DigitalInput::read(const HALReadRequest &req) {
         //val.set((uint32_t)digitalRead(pin));
-        val = (uint32_t)digitalRead(pin);
+        req.out_value = (uint32_t)digitalRead(pin);
         return true;
     }
 
-    bool DigitalInput::write(const HALValue& val) {
+    bool DigitalInput::write(const HALWriteRequest& req) {
         // read-only, do nothing
         return false;
     }
@@ -71,15 +71,15 @@ namespace HAL_JSON {
     }
     DigitalOutput::~DigitalOutput() { pinMode(pin, INPUT); } // release the pin
 
-    bool DigitalOutput::read(HALValue &val) {
+    bool DigitalOutput::read(const HALReadRequest &req) {
         //val.set(value); // read back the latest write value
-        val = value;
+        req.out_value = value;
         return true;
     }
 
-    bool DigitalOutput::write(const HALValue& val) {
-        value = val;//val.asUInt();
-        digitalWrite(pin, val);
+    bool DigitalOutput::write(const HALWriteRequest& req) {
+        value = req.value;//val.asUInt();
+        digitalWrite(pin, value);
         return true;
     }
 
@@ -128,9 +128,9 @@ namespace HAL_JSON {
         pulseTicker.detach();
     }
 
-    bool SinglePulseOutput::read(HALValue &val) {
+    bool SinglePulseOutput::read(const HALReadRequest &req) {
         //val.set(value); // read back the latest write value
-        val = pulseLength;
+        req.out_value = pulseLength;
         return true;
     }
 
@@ -138,8 +138,8 @@ namespace HAL_JSON {
         context->endPulse();
     }
 
-    bool SinglePulseOutput::write(const HALValue& val) {
-        uint32_t t = val;
+    bool SinglePulseOutput::write(const HALWriteRequest& req) {
+        uint32_t t = req.value;
         if (t != 0) // only change if not zero
             pulseLength = t;//val.asUInt();
         if (pulseLength == 0) return true; // no pulse
@@ -187,13 +187,13 @@ namespace HAL_JSON {
     AnalogInput::~AnalogInput() { pinMode(pin, INPUT); }
 
 
-    bool AnalogInput::read(HALValue &val) {
+    bool AnalogInput::read(const HALReadRequest &req) {
         //val.set((uint32_t)analogRead(pin));
-        val = (uint32_t)analogRead(pin);
+        req.out_value = (uint32_t)analogRead(pin);
         return true;
     }
 
-    bool AnalogInput::write(const HALValue& val) {
+    bool AnalogInput::write(const HALWriteRequest& req) {
         // read-only, do nothing
         return false;
     }
@@ -229,8 +229,8 @@ namespace HAL_JSON {
         analogWriteFrequency(PWMAnalogWriteConfig::frequency);
 #endif
     }
-    bool PWMAnalogWriteConfig::read(HALValue &val) { return false; }
-    bool PWMAnalogWriteConfig::write(const HALValue& val) { return false; }
+    //bool PWMAnalogWriteConfig::read(HALReadRequest &req) { return false; } // default is in HAL_JSON_Device
+    //bool PWMAnalogWriteConfig::write(const HALWriteRequest& req) { return false; } // default is in HAL_JSON_Device
     String PWMAnalogWriteConfig::ToString() {
         return "PWMAnalogWriteConfig(freq=" + String(PWMAnalogWriteConfig::frequency) + ", resolution=" + String(PWMAnalogWriteConfig::resolution) + ")";
     }
@@ -263,15 +263,15 @@ namespace HAL_JSON {
     }
     PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, INPUT); }
 
-    bool PWMAnalogWrite::read(HALValue &val) {
+    bool PWMAnalogWrite::read(const HALReadRequest &req) {
         //val.set(value); // just read back latest write
-        val = value;
+        req.out_value = value;
         return true;
     }
 
-    bool PWMAnalogWrite::write(const HALValue& val) {
+    bool PWMAnalogWrite::write(const HALWriteRequest& req) {
         //value = val.asUInt();
-        value = val;
+        value = req.value;
         if (inv_out)
             value = getInvValue(value);
         analogWrite(pin, value);

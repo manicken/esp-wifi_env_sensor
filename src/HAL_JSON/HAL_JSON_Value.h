@@ -6,20 +6,23 @@ namespace HAL_JSON {
 
     class HALValue {
     public:
-        enum class Type { NONE, UINT, FLOAT };
+        enum class Type { NONE, UINT, FLOAT/*, STRING*/ };
 
     private:
         Type type;
         union {
             uint32_t uval;
             float fval;
+            //char* str; // future use?? // check chatgpt conversation "Function Parameter Passing"
         };
 
 
     public:
         HALValue();
+        //HALValue(const HALValue& other);  // future use?? only used for string
         HALValue(uint32_t v);
         HALValue(float v);
+        // HALValue(char* str); // future use??
 
         Type getType() const;
         bool isNumber() const;
