@@ -4,8 +4,8 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <Ticker.h>
-#include "HAL_JSON_Device.h"
-#include "HAL_JSON_DeviceTypeDefNames.h"
+#include "../HAL_JSON_Device.h"
+#include "../HAL_JSON_DeviceTypeDefNames.h"
 
 
 namespace HAL_JSON {
