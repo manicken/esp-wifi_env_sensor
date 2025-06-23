@@ -9,15 +9,18 @@ namespace HAL_JSON {
 // ██   ██ ██ ██   ███ ██    ██    ███████ ██          ██ ██ ██  ██ ██████  ██    ██    ██    
 // ██   ██ ██ ██    ██ ██    ██    ██   ██ ██          ██ ██  ██ ██ ██      ██    ██    ██    
 // ██████  ██  ██████  ██    ██    ██   ██ ███████     ██ ██   ████ ██       ██████     ██   
+
     Device* DigitalInput::Create(JsonVariant &jsonObj) {
         return new DigitalInput(jsonObj);
     }
+
     HAL_JSON_VERIFY_JSON_RETURN_TYPE DigitalInput::VerifyJSON(JsonVariant &jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
+
     DigitalInput::DigitalInput(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
@@ -35,10 +38,10 @@ namespace HAL_JSON {
         return true;
     }
 
-    bool DigitalInput::write(const HALWriteRequest& req) {
+    /*bool DigitalInput::write(const HALWriteRequest& req) {  // default is in HAL_JSON_Device
         // read-only, do nothing
         return false;
-    }
+    }*/
 
     String DigitalInput::ToString() {
         return "DigitalInput(pin=" + String(pin) + ",val=" + String(digitalRead(pin)) + ")";
@@ -53,12 +56,14 @@ namespace HAL_JSON {
     Device* DigitalOutput::Create(JsonVariant &jsonObj) {
         return new DigitalOutput(jsonObj);
     }
+
     HAL_JSON_VERIFY_JSON_RETURN_TYPE DigitalOutput::VerifyJSON(JsonVariant &jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
+
     DigitalOutput::DigitalOutput(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
@@ -69,6 +74,7 @@ namespace HAL_JSON {
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, OUTPUT);
     }
+
     DigitalOutput::~DigitalOutput() { pinMode(pin, INPUT); } // release the pin
 
     bool DigitalOutput::read(const HALReadRequest &req) {
@@ -96,12 +102,14 @@ namespace HAL_JSON {
     Device* SinglePulseOutput::Create(JsonVariant &jsonObj) {
         return new SinglePulseOutput(jsonObj);
     }
+
     HAL_JSON_VERIFY_JSON_RETURN_TYPE SinglePulseOutput::VerifyJSON(JsonVariant &jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
+
     SinglePulseOutput::SinglePulseOutput(JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
@@ -123,6 +131,7 @@ namespace HAL_JSON {
         pinMode(pin, OUTPUT);
         digitalWrite(pin, inactiveState);
     }
+
     SinglePulseOutput::~SinglePulseOutput() { 
         pinMode(pin, INPUT);
         pulseTicker.detach();
@@ -167,6 +176,7 @@ namespace HAL_JSON {
     Device* AnalogInput::Create(JsonVariant &jsonObj) {
         return new AnalogInput(jsonObj);
     }
+
     HAL_JSON_VERIFY_JSON_RETURN_TYPE AnalogInput::VerifyJSON(JsonVariant &jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
@@ -184,8 +194,8 @@ namespace HAL_JSON {
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, ANALOG);
     }
-    AnalogInput::~AnalogInput() { pinMode(pin, INPUT); }
 
+    AnalogInput::~AnalogInput() { pinMode(pin, INPUT); }
 
     bool AnalogInput::read(const HALReadRequest &req) {
         //val.set((uint32_t)analogRead(pin));
@@ -193,10 +203,10 @@ namespace HAL_JSON {
         return true;
     }
 
-    bool AnalogInput::write(const HALWriteRequest& req) {
+    /*bool AnalogInput::write(const HALWriteRequest& req) {  // default is in HAL_JSON_Device
         // read-only, do nothing
         return false;
-    }
+    }*/
 
     String AnalogInput::ToString() {
         return "AnalogInput(pin=" +  String(pin) + ",val=" + String(analogRead(pin)) + ")";
@@ -211,6 +221,7 @@ namespace HAL_JSON {
     Device* PWMAnalogWriteConfig::Create(JsonVariant &jsonObj) {
         return new PWMAnalogWriteConfig(jsonObj);
     }
+
     HAL_JSON_VERIFY_JSON_RETURN_TYPE PWMAnalogWriteConfig::VerifyJSON(JsonVariant &jsonObj) {
         if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY].is<uint32_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY);
         if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION].is<uint32_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION);
@@ -229,6 +240,7 @@ namespace HAL_JSON {
         analogWriteFrequency(PWMAnalogWriteConfig::frequency);
 #endif
     }
+
     //bool PWMAnalogWriteConfig::read(HALReadRequest &req) { return false; } // default is in HAL_JSON_Device
     //bool PWMAnalogWriteConfig::write(const HALWriteRequest& req) { return false; } // default is in HAL_JSON_Device
     String PWMAnalogWriteConfig::ToString() {
@@ -244,6 +256,7 @@ namespace HAL_JSON {
     Device* PWMAnalogWrite::Create(JsonVariant &jsonObj) {
         return new PWMAnalogWrite(jsonObj);
     }
+
     HAL_JSON_VERIFY_JSON_RETURN_TYPE PWMAnalogWrite::VerifyJSON(JsonVariant &jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
@@ -261,6 +274,7 @@ namespace HAL_JSON {
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, OUTPUT);
     }
+
     PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, INPUT); }
 
     bool PWMAnalogWrite::read(const HALReadRequest &req) {

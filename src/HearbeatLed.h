@@ -13,7 +13,7 @@
 namespace HeartbeatLed
 {
 
-#if defined (ESP32WROVER_IE_F8R8)
+#if defined (ESP32WROVER_E_IE)
     #define HEARTBEATLED_PIN 0
     #define HEARTBEATLED_ACTIVESTATE LOW
     #define HEARTBEATLED_INACTIVESTATE HIGH

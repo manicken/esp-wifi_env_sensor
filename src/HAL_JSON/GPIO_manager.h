@@ -34,22 +34,26 @@ namespace GPIO_manager
     #define GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST    F(GPIO_MANAGER_ROOT "/getAvailableGPIOs")
 
     enum class PinMode : uint8_t {
-        OUT = 0x01,
-        IN = 0x02,
-        AIN = 0x04,
-        AOUT = 0x08,
-        LOW2BOOT = 0x10,
-        HIGH2BOOT = 0x20,
-        Reserved = 0x40,
-        SpecialAtBoot = 0x80
+        Reserved = 0x01,
+        SpecialAtBoot = 0x02,
+        LOW2BOOT = 0x04,
+        HIGH2BOOT = 0x08,        
+        OUT = 0x10,
+        IN = 0x20,
+        AIN = 0x40,
+        AOUT = 0x80
     };
+    
     typedef struct {
         const char* Name;
         uint8_t mode;
     } PinModeDef;
 
-    #define MAKE_PIN_MASK(...) (static_cast<uint8_t>(0) | __VA_ARGS__)
-
+    enum class PrintListMode {
+        String,
+        Hex,
+        Binary
+    };
     // Templated makePinMask function
     /*template<typename... Modes>
     constexpr uint8_t makePinMask(Modes... modes) {

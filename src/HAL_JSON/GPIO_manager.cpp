@@ -1,8 +1,9 @@
 #include "GPIO_manager.h"
 
-#define MAKE_PIN_MASK_3(a, b, c) (static_cast<uint8_t>(a) | static_cast<uint8_t>(b) | static_cast<uint8_t>(c))
-#define MAKE_PIN_MASK_2(a, b)    (static_cast<uint8_t>(a) | static_cast<uint8_t>(b))
-#define MAKE_PIN_MASK_1(a)       (static_cast<uint8_t>(a))
+#define MAKE_PIN_MASK_4(a, b, c, d) (static_cast<uint8_t>(a) | static_cast<uint8_t>(b) | static_cast<uint8_t>(c) | static_cast<uint8_t>(d))
+#define MAKE_PIN_MASK_3(a, b, c)    (static_cast<uint8_t>(a) | static_cast<uint8_t>(b) | static_cast<uint8_t>(c))
+#define MAKE_PIN_MASK_2(a, b)       (static_cast<uint8_t>(a) | static_cast<uint8_t>(b))
+#define MAKE_PIN_MASK_1(a)          (static_cast<uint8_t>(a))
 
 namespace GPIO_manager
 {
@@ -31,23 +32,27 @@ namespace GPIO_manager
 #elif defined(ESP32)
     const gpio_pin available_gpio_list[] {
         {0, MAKE_PIN_MASK_3(PinMode::OUT, PinMode::HIGH2BOOT, PinMode::SpecialAtBoot)}, // ADC2_1/TOUCH1 (reserved for programming, better to just keep it a output)
-        //{1, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::SpecialAtBoot)}, // U0_TXD (reserved for programmer/debug)
+        {1, MAKE_PIN_MASK_3(PinMode::Reserved, PinMode::OUT, PinMode::SpecialAtBoot)}, // U0_TXD (reserved for programmer/debug)
         {2, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::LOW2BOOT)}, // ADC2_2/TOUCH2/SD_DATA0 (must be LOW during boot/is connected to onboard LED, could be a output function only pin)
-        //{3, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)}, // U0_RXD (reserved for programmer/debug cannot be shared directly)
+        {3, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)}, // U0_RXD (reserved for programmer/debug cannot be shared directly)
         {4, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)},  // ADC2_0/TOUCH0/SD_DATA1 (ADC2 cannot be used together with WiFi)
         {5, MAKE_PIN_MASK_3(PinMode::OUT, PinMode::HIGH2BOOT, PinMode::SpecialAtBoot)},  // VSPI_CS (must be HIGH during boot better to keep it a output only)
-        //{6, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U1_CTS/SPI_CLK (reserved for flash)
-        //{7, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U2_RTS/SPI_MISO (reserved for flash)
-        //{8, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U2_CTS/SPI_MOSI (reserved for flash)
-        //{9, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U1_RXD/SPI_HD (reserved for flash)
-        //{10, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)}, // U1_TXD/SPI_WP (reserved for flash)
-        //{11, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)}, // U1_RTX/SPI_CS (reserved for flash)
+#ifndef ESP32WROVER_E_IE        
+        {6, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U1_CTS/SPI_CLK (reserved for flash)
+        {7, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U2_RTS/SPI_MISO (reserved for flash)
+        {8, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U2_CTS/SPI_MOSI (reserved for flash)
+        {9, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)},  // U1_RXD/SPI_HD (reserved for flash)
+        {10, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)}, // U1_TXD/SPI_WP (reserved for flash)
+        {11, MAKE_PIN_MASK_2(PinMode::Reserved, PinMode::SpecialAtBoot)}, // U1_RTX/SPI_CS (reserved for flash)
+#endif
         {12, MAKE_PIN_MASK_3(PinMode::OUT, PinMode::LOW2BOOT, PinMode::SpecialAtBoot)}, // ADC2_5/TOUCH5/HSPI_MISO/SD_DATA2 (must be LOW during boot, could be a output function only pin)
         {13, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)}, // ADC2_4/TOUCH4/HSPI_MOSI/SD_DATA3 (ADC2 cannot be used together with WiFi)
         {14, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)}, // ADC2_6/TOUCH6/HSPI_CLK/SD_CLK (ADC2 cannot be used together with WiFi)
         {15, MAKE_PIN_MASK_3(PinMode::OUT, PinMode::HIGH2BOOT, PinMode::SpecialAtBoot)}, // ADC2_3/TOUCH3/HSPI_CS/SD_CMD (must be HIGH during boot, could be a output function only pin)
+#ifndef ESP32WROVER_E_IE
         {16, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)}, // U2_RXD
         {17, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)}, // U2_TXD
+#endif       
         {18, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)}, // VSPI_CLK
         {19, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)}, // VSPI_MISO
         {21, MAKE_PIN_MASK_2(PinMode::OUT, PinMode::IN)}, // I2C_SDA
@@ -67,13 +72,14 @@ namespace GPIO_manager
     const uint8_t available_gpio_list_lenght = sizeof(available_gpio_list)/sizeof(available_gpio_list[0]);
 
     const PinModeDef PinModeStrings[] = {
+        {"Reserved", static_cast<uint8_t>(PinMode::Reserved)},
+        {"SpecialAtBoot", static_cast<uint8_t>(PinMode::SpecialAtBoot)},
+        {"LOW2BOOT", static_cast<uint8_t>(PinMode::LOW2BOOT)},
+        {"HIGH2BOOT", static_cast<uint8_t>(PinMode::HIGH2BOOT)},
         {"OUT", static_cast<uint8_t>(PinMode::OUT)},
         {"IN", static_cast<uint8_t>(PinMode::IN)},
         {"AIN", static_cast<uint8_t>(PinMode::AIN)},
-        {"LOW2BOOT", static_cast<uint8_t>(PinMode::LOW2BOOT)},
-        {"HIGH2BOOT", static_cast<uint8_t>(PinMode::HIGH2BOOT)},
-        {"Reserved", static_cast<uint8_t>(PinMode::Reserved)},
-        {"SpecialAtBoot", static_cast<uint8_t>(PinMode::SpecialAtBoot)}
+        {"AOUT", static_cast<uint8_t>(PinMode::AOUT)}
     };
     const uint8_t PinModeStrings_length = sizeof(PinModeStrings)/sizeof(PinModeStrings[0]);
 
@@ -98,31 +104,52 @@ namespace GPIO_manager
     void sendList()
     {
         String srv_return_msg = "{";
+        PrintListMode listMode = PrintListMode::Hex;
+        if (webserver->hasArg("mode")) {
+            String listModeStr = webserver->arg("mode");
+            if (listModeStr == "string")
+                listMode = PrintListMode::String;
+            else if (listModeStr == "binary")
+                listMode = PrintListMode::Binary;
+            else
+                listMode = PrintListMode::Hex; // default
+        }
 #if defined(ESP8266)
         srv_return_msg.concat("\"MCU\":\"ESP8266\",");
 #elif defined(ESP32)
         srv_return_msg.concat("\"MCU\":\"ESP32\",");
 #endif
-        srv_return_msg.concat("\"PinModes\":{");
-        for (int i=0;i<PinModeStrings_length;i++)
-        {
-            /*
-            srv_return_msg.concat("{\"mode\":");
-            srv_return_msg.concat((int8_t)PinModeStrings[i].mode);
-            srv_return_msg.concat(",\"str\":\"");
-            srv_return_msg.concat(PinModeStrings[i].Name);
-            srv_return_msg.concat("\"}");
-            */
-            srv_return_msg.concat("\"");
-            
-            srv_return_msg.concat(describePinMode((uint8_t)PinModeStrings[i].mode).c_str());
-            srv_return_msg.concat("\":\"");
-            srv_return_msg.concat(PinModeStrings[i].Name);
-            srv_return_msg.concat("\"");
-            if (i<(PinModeStrings_length-1))
-                srv_return_msg.concat(",");
+        if (listMode != PrintListMode::String) {
+            srv_return_msg.concat("\"PinModes\":{");
+            for (int i=0;i<PinModeStrings_length;i++)
+            {
+                /*
+                srv_return_msg.concat("{\"mode\":");
+                srv_return_msg.concat((int8_t)PinModeStrings[i].mode);
+                srv_return_msg.concat(",\"str\":\"");
+                srv_return_msg.concat(PinModeStrings[i].Name);
+                srv_return_msg.concat("\"}");
+                */
+                srv_return_msg.concat("\"");
+                uint8_t modeMask = PinModeStrings[i].mode;
+                if (listMode == PrintListMode::Binary) {
+                    String binStr = String(modeMask, BIN);
+                    while (binStr.length() < 8) binStr = "0" + binStr;  // pad to 8 bits
+                    srv_return_msg.concat(binStr);
+                }
+                else {
+                    String hexStr = String(modeMask, HEX);
+                    while (hexStr.length() < 2) hexStr = "0" + hexStr;  // pad to 2 hex digits
+                    srv_return_msg.concat(hexStr);
+                }
+                srv_return_msg.concat("\":\"");
+                srv_return_msg.concat(PinModeStrings[i].Name);
+                srv_return_msg.concat("\"");
+                if (i<(PinModeStrings_length-1))
+                    srv_return_msg.concat(",");
+            }
+            srv_return_msg.concat("},");
         }
-        srv_return_msg.concat("},");
         srv_return_msg.concat("\"list\":{");
         for (int i=0;i<available_gpio_list_lenght;i++)
         {
@@ -133,8 +160,21 @@ namespace GPIO_manager
             srv_return_msg.concat("}");*/
             srv_return_msg.concat("\"");
             srv_return_msg.concat(available_gpio_list[i].pin);
-            srv_return_msg.concat("\":");
-            srv_return_msg.concat((int8_t)available_gpio_list[i].mode);
+            srv_return_msg.concat("\":\"");
+            uint8_t modeMask = available_gpio_list[i].mode;
+            if (listMode == PrintListMode::String)
+                srv_return_msg.concat(describePinMode(modeMask).c_str());
+            else if (listMode == PrintListMode::Binary) {
+                String binStr = String(modeMask, BIN);
+                while (binStr.length() < 8) binStr = "0" + binStr;  // pad to 8 bits
+                srv_return_msg.concat(binStr);
+            }
+            else { // (listMode == PrintListMode::Hex) 
+                String hexStr = String(modeMask, HEX);
+                while (hexStr.length() < 2) hexStr = "0" + hexStr;  // pad to 2 hex digits
+                srv_return_msg.concat(hexStr);
+            }
+            srv_return_msg.concat("\"");
             if (i<(available_gpio_list_lenght-1))
                 srv_return_msg.concat(",");
         }
