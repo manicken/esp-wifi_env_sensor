@@ -27,7 +27,7 @@ namespace HAL_JSON {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
 
-        // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
+        // this is a failsafe call and would not return any errors, as to come to this stage the VerifyJSON must first return OK
         GPIO_manager::ReservePin(pin); 
         pinMode(pin, INPUT);
     }

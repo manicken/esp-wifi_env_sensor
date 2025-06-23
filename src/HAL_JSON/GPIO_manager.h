@@ -15,6 +15,8 @@
 #define WEBSERVER_TYPE fs_WebServer
 #endif
 
+#include "../Support/Logger.h"
+
 #include "HAL_JSON_DeviceTypeDefNames.h"
 
 /*
@@ -43,7 +45,7 @@ namespace GPIO_manager
         AIN = 0x40,
         AOUT = 0x80
     };
-    
+
     typedef struct {
         const char* Name;
         uint8_t mode;
@@ -67,7 +69,7 @@ namespace GPIO_manager
 
     void sendList();
     void setup(WEBSERVER_TYPE &srv);
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE CheckIfPinAvailable(uint32_t pin, uint8_t pinMode);
+    bool CheckIfPinAvailable(uint32_t pin, uint8_t pinMode);
     void ClearAllReservations();
     /** CheckIfPinAvailable must be called prior to using this function. */
     void ReservePin(uint8_t pin);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <time.h>
 
 enum class Loglevel : uint8_t {
     Info = 0,
@@ -11,7 +12,7 @@ enum class Loglevel : uint8_t {
 class Logger {
 
     struct LogEntry {
-      uint32_t timestamp;
+      time_t timestamp;
       Loglevel level;
       union {
           uint32_t errorCode;
