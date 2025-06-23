@@ -1,10 +1,5 @@
 #pragma once
 
-#define HAL_JSON_VERIFY_JSON_RETURN_TYPE const __FlashStringHelper*
-#define HAL_JSON_VERIFY_JSON_RETURN_OK nullptr
-
-
-
 // Global use
 #define HAL_JSON_KEYNAME_TYPE                               "type"
 #define HAL_JSON_KEYNAME_UID                                "uid"
@@ -13,6 +8,8 @@
 #define HAL_JSON_KEYNAME_ITEMS                              "items"
 #define HAL_JSON_KEYNAME_REFRESHTIME_SEC                    "refreshtimesec"
 #define HAL_JSON_KEYNAME_REFRESHTIME_MIN                    "refreshtimemin"
+
+
 
 // Types
 #define HAL_JSON_TYPE_DOUT                 "DOUT"
@@ -52,3 +49,5 @@
 #define HAL_JSON_ERR_MISSING_KEY(k) (F("Missing key: " k))
 #define HAL_JSON_ERR_VALUE_TYPE(t) (F("Value type: " t))
 #define HAL_JSON_ERR_STRING_EMPTY(k) (F("String is empty:" k))
+#define HAL_JSON_ERR_ITEMS_EMPTY(t) (F(t " items list is empty"))
+#define HAL_JSON_ERR_ITEMS_NOT_VALID(t) (F(t " do not contain any valid items"))

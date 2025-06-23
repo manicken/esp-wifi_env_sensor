@@ -9,25 +9,68 @@ namespace HAL_JSON {
     //  ██    ██ ██   ██ ██    ██ ██    ██ ██      
     //   ██████  ██   ██  ██████   ██████  ██      
     
-    Device* OneWireTempGroup::Create(JsonVariant &jsonObj) {
+    Device* OneWireTempGroup::Create(const JsonVariant &jsonObj) {
         return new OneWireTempGroup(jsonObj);
     }
 
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE OneWireTempGroup::VerifyJSON(JsonVariant &jsonObj) {
+    bool OneWireTempGroup::VerifyJSON(const JsonVariant &jsonObj) {
         // the type don't need any failsafe check as that is taken care of outside this class and is allways available
         const char* typeStr = jsonObj["type"].as<const char*>();
 
         if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, 4) == 0) {
-            return HAL_JSON_VERIFY_JSON_RETURN_OK;
-        } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, 4) == 0) {
-            return HAL_JSON_VERIFY_JSON_RETURN_OK;
-        } else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, 4) == 0) {
-            return HAL_JSON_VERIFY_JSON_RETURN_OK;
+            if (jsonObj.containsKey(HAL_JSON_KEYNAME_ITEMS) == false) {
+                GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_ITEMS));
+                return false;
+            }
+            if (jsonObj[HAL_JSON_KEYNAME_ITEMS].is<JsonArray>() == false) {
+                GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_ITEMS " not array"));
+                return false;
+            }
+            const JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
+            if (items.size() == 0) {
+                GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("OneWireTempGroup"));
+                return false;
+            }
+            size_t itemCount = items.size();
+            size_t validItemCount = 0;
+            for (int i=0;i<itemCount;i++) {
+                const JsonVariant item = items[i];
+                if (item.is<const char*>() == false) continue; // comment item
+                if (OneWireBus::VerifyJSON(item) == true) validItemCount++;
+            }
+            if (validItemCount == 0) {
+                GlobalLogger.Error(HAL_JSON_ERR_ITEMS_NOT_VALID("OneWireTempGroup"));
+                return false;
+            } 
+            return true;
         }
-        return F("error");
+        else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, 4) == 0) {
+            if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) {
+                GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN));
+                return false;
+            }
+            if (jsonObj.containsKey(HAL_JSON_KEYNAME_ITEMS) == false) {
+                GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_ITEMS));
+                return false;
+            }
+            if (jsonObj[HAL_JSON_KEYNAME_ITEMS].is<JsonArray>() == false) {
+                GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_ITEMS " not array"));
+                return false;
+            }
+            return OneWireBus::VerifyJSON(jsonObj);
+        }
+        else if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, 4) == 0) {
+            if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) {
+                GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN));
+                return false;
+            }
+            return OneWireTempDevice::VerifyJSON(jsonObj);
+        }
+        GlobalLogger.Error(F("DeviceTypesRegistryError"));
+        return false;
     }
 
-    OneWireTempGroup::OneWireTempGroup(JsonVariant &jsonObj) {
+    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) {
         double rawSec = 1.0;
         if (jsonObj.containsKey("refreshtimesec")) {
             JsonVariant rtimeObj = jsonObj["refreshtimesec"];
@@ -114,6 +157,20 @@ namespace HAL_JSON {
     //  ██   ██ ██    ██      ██ 
     //  ██████   ██████  ███████ 
 
+    bool OneWireBus::VerifyJSON(const JsonVariant &jsonObj) {
+        const JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
+        if (items.size() == 0) { GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("OneWireBus")); return false;}
+        size_t itemCount = items.size();
+        size_t validItemCount = 0;
+        for (int i=0;i<itemCount;i++) {
+            const JsonVariant item = items[i];
+            if (item.is<const char*>() == false) continue; // comment item
+            if (OneWireTempDevice::VerifyJSON(item) == true) validItemCount++;
+        }
+        if (validItemCount == 0) { GlobalLogger.Error(HAL_JSON_ERR_ITEMS_NOT_VALID("OneWireBus")); return false; }
+        return true;
+    }
+
     OneWireBus::~OneWireBus() {
         if (devices != nullptr) {
             for (int i=0;i<deviceCount;i++)
@@ -128,6 +185,18 @@ namespace HAL_JSON {
     //  ██   ██ █████   ██    ██ ██ ██      █████   
     //  ██   ██ ██       ██  ██  ██ ██      ██      
     //  ██████  ███████   ████   ██  ██████ ███████ 
+
+    bool OneWireTempDevice::VerifyJSON(const JsonVariant &jsonObj) {
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_UID) == false){ return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_UID); }
+        if (jsonObj[HAL_JSON_KEYNAME_UID].is<const char*>() == false){ return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_UID); }
+        if (jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>() == nullptr){ return HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_UID); }
+
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_ONE_WIRE_ROMID) == false){ return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_ONE_WIRE_ROMID); }
+        if (jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].is<const char*>() == false){ return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_ONE_WIRE_ROMID); }
+        if (jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>() == nullptr){ return HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_ONE_WIRE_ROMID); }
+
+        return true;
+    }
 
     OneWireTempDevice::~OneWireTempDevice() {
         

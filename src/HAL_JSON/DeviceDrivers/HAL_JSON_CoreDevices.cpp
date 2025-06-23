@@ -4,24 +4,24 @@
 namespace HAL_JSON {
 
     
-// ██████  ██  ██████  ██ ████████  █████  ██          ██ ███    ██ ██████  ██    ██ ████████ 
-// ██   ██ ██ ██       ██    ██    ██   ██ ██          ██ ████   ██ ██   ██ ██    ██    ██    
-// ██   ██ ██ ██   ███ ██    ██    ███████ ██          ██ ██ ██  ██ ██████  ██    ██    ██    
-// ██   ██ ██ ██    ██ ██    ██    ██   ██ ██          ██ ██  ██ ██ ██      ██    ██    ██    
-// ██████  ██  ██████  ██    ██    ██   ██ ███████     ██ ██   ████ ██       ██████     ██   
+    // ██████  ██  ██████  ██ ████████  █████  ██          ██ ███    ██ ██████  ██    ██ ████████ 
+    // ██   ██ ██ ██       ██    ██    ██   ██ ██          ██ ████   ██ ██   ██ ██    ██    ██    
+    // ██   ██ ██ ██   ███ ██    ██    ███████ ██          ██ ██ ██  ██ ██████  ██    ██    ██    
+    // ██   ██ ██ ██    ██ ██    ██    ██   ██ ██          ██ ██  ██ ██ ██      ██    ██    ██    
+    // ██████  ██  ██████  ██    ██    ██   ██ ███████     ██ ██   ████ ██       ██████     ██   
 
-    Device* DigitalInput::Create(JsonVariant &jsonObj) {
+    Device* DigitalInput::Create(const JsonVariant &jsonObj) {
         return new DigitalInput(jsonObj);
     }
 
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE DigitalInput::VerifyJSON(JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
+    bool DigitalInput::VerifyJSON(const JsonVariant &jsonObj) {
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
-    DigitalInput::DigitalInput(JsonVariant &jsonObj) {
+    DigitalInput::DigitalInput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -47,24 +47,24 @@ namespace HAL_JSON {
         return "DigitalInput(pin=" + String(pin) + ",val=" + String(digitalRead(pin)) + ")";
     }
 
-// ██████  ██  ██████  ██ ████████  █████  ██           ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
-// ██   ██ ██ ██       ██    ██    ██   ██ ██          ██    ██ ██    ██    ██    ██   ██ ██    ██    ██    
-// ██   ██ ██ ██   ███ ██    ██    ███████ ██          ██    ██ ██    ██    ██    ██████  ██    ██    ██    
-// ██   ██ ██ ██    ██ ██    ██    ██   ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
-// ██████  ██  ██████  ██    ██    ██   ██ ███████      ██████   ██████     ██    ██       ██████     ██    
+    // ██████  ██  ██████  ██ ████████  █████  ██           ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
+    // ██   ██ ██ ██       ██    ██    ██   ██ ██          ██    ██ ██    ██    ██    ██   ██ ██    ██    ██    
+    // ██   ██ ██ ██   ███ ██    ██    ███████ ██          ██    ██ ██    ██    ██    ██████  ██    ██    ██    
+    // ██   ██ ██ ██    ██ ██    ██    ██   ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
+    // ██████  ██  ██████  ██    ██    ██   ██ ███████      ██████   ██████     ██    ██       ██████     ██    
     
-    Device* DigitalOutput::Create(JsonVariant &jsonObj) {
+    Device* DigitalOutput::Create(const JsonVariant &jsonObj) {
         return new DigitalOutput(jsonObj);
     }
 
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE DigitalOutput::VerifyJSON(JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
+    bool DigitalOutput::VerifyJSON(const JsonVariant &jsonObj) {
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
-    DigitalOutput::DigitalOutput(JsonVariant &jsonObj) {
+    DigitalOutput::DigitalOutput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -93,24 +93,24 @@ namespace HAL_JSON {
         return "DigitalOutput(pin=" +  String(pin) + ",val=" + String(value) +  + ")";
     }
 
-// ██████  ██    ██ ██      ███████ ███████      ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
-// ██   ██ ██    ██ ██      ██      ██          ██    ██ ██    ██    ██    ██   ██ ██    ██    ██    
-// ██████  ██    ██ ██      ███████ █████       ██    ██ ██    ██    ██    ██████  ██    ██    ██    
-// ██      ██    ██ ██           ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
-// ██       ██████  ███████ ███████ ███████      ██████   ██████     ██    ██       ██████     ██    
+    // ██████  ██    ██ ██      ███████ ███████      ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
+    // ██   ██ ██    ██ ██      ██      ██          ██    ██ ██    ██    ██    ██   ██ ██    ██    ██    
+    // ██████  ██    ██ ██      ███████ █████       ██    ██ ██    ██    ██    ██████  ██    ██    ██    
+    // ██      ██    ██ ██           ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
+    // ██       ██████  ███████ ███████ ███████      ██████   ██████     ██    ██       ██████     ██    
 
-    Device* SinglePulseOutput::Create(JsonVariant &jsonObj) {
+    Device* SinglePulseOutput::Create(const JsonVariant &jsonObj) {
         return new SinglePulseOutput(jsonObj);
     }
 
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE SinglePulseOutput::VerifyJSON(JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
+    bool SinglePulseOutput::VerifyJSON(const JsonVariant &jsonObj) {
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
-    SinglePulseOutput::SinglePulseOutput(JsonVariant &jsonObj) {
+    SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -167,24 +167,24 @@ namespace HAL_JSON {
         return "SinglePulseOutput(pin=" +  String(pin) + ",val=" + String(pulseLength) +  + ")";
     }
 
-//  █████  ███    ██  █████  ██       ██████   ██████      ██ ███    ██ ██████  ██    ██ ████████ 
-// ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██ ████   ██ ██   ██ ██    ██    ██    
-// ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██ ██ ██  ██ ██████  ██    ██    ██    
-// ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ██  ██ ██ ██      ██    ██    ██    
-// ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
+    //  █████  ███    ██  █████  ██       ██████   ██████      ██ ███    ██ ██████  ██    ██ ████████ 
+    // ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██ ████   ██ ██   ██ ██    ██    ██    
+    // ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██ ██ ██  ██ ██████  ██    ██    ██    
+    // ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ██  ██ ██ ██      ██    ██    ██    
+    // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
 
-    Device* AnalogInput::Create(JsonVariant &jsonObj) {
+    Device* AnalogInput::Create(const JsonVariant &jsonObj) {
         return new AnalogInput(jsonObj);
     }
 
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE AnalogInput::VerifyJSON(JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
+    bool AnalogInput::VerifyJSON(const JsonVariant &jsonObj) {
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
-    AnalogInput::AnalogInput(JsonVariant &jsonObj) {
+    AnalogInput::AnalogInput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -212,23 +212,23 @@ namespace HAL_JSON {
         return "AnalogInput(pin=" +  String(pin) + ",val=" + String(analogRead(pin)) + ")";
     }
 
-// ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████      ██████ ███████  ██████  
-// ██   ██ ██     ██ ████  ████     ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██     ██ ██   ██ ██    ██    ██          ██      ██      ██       
-// ██████  ██  █  ██ ██ ████ ██     ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██  █  ██ ██████  ██    ██    █████       ██      █████   ██   ███ 
-// ██      ██ ███ ██ ██  ██  ██     ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ███ ██ ██   ██ ██    ██    ██          ██      ██      ██    ██ 
-// ██       ███ ███  ██      ██     ██   ██ ██   ████ ██   ██ ███████  ██████   ██████       ███ ███  ██   ██ ██    ██    ███████      ██████ ██       ██████  
+    // ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████      ██████ ███████  ██████  
+    // ██   ██ ██     ██ ████  ████     ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██     ██ ██   ██ ██    ██    ██          ██      ██      ██       
+    // ██████  ██  █  ██ ██ ████ ██     ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██  █  ██ ██████  ██    ██    █████       ██      █████   ██   ███ 
+    // ██      ██ ███ ██ ██  ██  ██     ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ███ ██ ██   ██ ██    ██    ██          ██      ██      ██    ██ 
+    // ██       ███ ███  ██      ██     ██   ██ ██   ████ ██   ██ ███████  ██████   ██████       ███ ███  ██   ██ ██    ██    ███████      ██████ ██       ██████  
 
-    Device* PWMAnalogWriteConfig::Create(JsonVariant &jsonObj) {
+    Device* PWMAnalogWriteConfig::Create(const JsonVariant &jsonObj) {
         return new PWMAnalogWriteConfig(jsonObj);
     }
 
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE PWMAnalogWriteConfig::VerifyJSON(JsonVariant &jsonObj) {
-        if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY].is<uint32_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY);
-        if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION].is<uint32_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION);
-        return HAL_JSON_VERIFY_JSON_RETURN_OK; // TODO logic here
+    bool PWMAnalogWriteConfig::VerifyJSON(const JsonVariant &jsonObj) {
+        if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY].is<uint32_t>() == false) { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION].is<uint32_t>() == false) { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION)); return false; }
+        return true;
     }
 
-    PWMAnalogWriteConfig::PWMAnalogWriteConfig(JsonVariant &jsonObj) {
+    PWMAnalogWriteConfig::PWMAnalogWriteConfig(const JsonVariant &jsonObj) {
         PWMAnalogWriteConfig::frequency = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY].as<uint32_t>();
         PWMAnalogWriteConfig::resolution = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION].as<uint32_t>();
 
@@ -247,24 +247,24 @@ namespace HAL_JSON {
         return "PWMAnalogWriteConfig(freq=" + String(PWMAnalogWriteConfig::frequency) + ", resolution=" + String(PWMAnalogWriteConfig::resolution) + ")";
     }
 
-// ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████ 
-// ██   ██ ██     ██ ████  ████     ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██     ██ ██   ██ ██    ██    ██      
-// ██████  ██  █  ██ ██ ████ ██     ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██  █  ██ ██████  ██    ██    █████   
-// ██      ██ ███ ██ ██  ██  ██     ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ███ ██ ██   ██ ██    ██    ██      
-// ██       ███ ███  ██      ██     ██   ██ ██   ████ ██   ██ ███████  ██████   ██████       ███ ███  ██   ██ ██    ██    ███████ 
+    // ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████ 
+    // ██   ██ ██     ██ ████  ████     ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██     ██ ██   ██ ██    ██    ██      
+    // ██████  ██  █  ██ ██ ████ ██     ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██  █  ██ ██████  ██    ██    █████   
+    // ██      ██ ███ ██ ██  ██  ██     ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ███ ██ ██   ██ ██    ██    ██      
+    // ██       ███ ███  ██      ██     ██   ██ ██   ████ ██   ██ ███████  ██████   ██████       ███ ███  ██   ██ ██    ██    ███████ 
 
-    Device* PWMAnalogWrite::Create(JsonVariant &jsonObj) {
+    Device* PWMAnalogWrite::Create(const JsonVariant &jsonObj) {
         return new PWMAnalogWrite(jsonObj);
     }
 
-    HAL_JSON_VERIFY_JSON_RETURN_TYPE PWMAnalogWrite::VerifyJSON(JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN);
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false) return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN);
+    bool PWMAnalogWrite::VerifyJSON(const JsonVariant &jsonObj) {
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
-    PWMAnalogWrite::PWMAnalogWrite(JsonVariant &jsonObj) {
+    PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();

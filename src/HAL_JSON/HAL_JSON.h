@@ -9,12 +9,14 @@
 #include "HAL_JSON_DeviceTypeDefNames.h"
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
+#include "../Support/Logger.h"
+
 
 
 namespace HAL_JSON {
-    Device* CreateDeviceFromJSON(JsonVariant &json);
-    bool VerifyDeviceJson(JsonVariant &jsonObj);
-    void ParseJSON(JsonArray &jsonArray);
+    Device* CreateDeviceFromJSON(const JsonVariant &json);
+    bool VerifyDeviceJson(const JsonVariant &jsonObj);
+    void ParseJSON(const JsonArray &jsonArray);
 
     Device* findDevice(uint64_t uid);
     bool read(const HALReadRequest &req);

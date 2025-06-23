@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <Ticker.h>
+#include "../../Support/Logger.h"
 #include "../HAL_JSON_Device.h"
 #include "../HAL_JSON_DeviceTypeDefNames.h"
 
@@ -12,7 +13,7 @@ namespace HAL_JSON {
 
     class OneWireTempDevice : public Device {
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
         float value;
         uint8_t romid[8];
         
@@ -31,7 +32,7 @@ namespace HAL_JSON {
         OneWireTempDevice **devices;
         uint32_t deviceCount = 0;
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
         OneWireBus();
         ~OneWireBus();
         
@@ -50,15 +51,15 @@ namespace HAL_JSON {
     private:
         OneWireBus **busses;
         uint32_t busCount = 0;
-        uint32_t refreshTimeMs = 0;
+        uint32_t refreshTimeMs = 1000;
         uint32_t lastUpdateMs = 0;
 
         State state = IDLE;
         uint32_t lastStart = 0;
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
-        static Device* Create(JsonVariant &jsonObj);
-        OneWireTempGroup(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
+        OneWireTempGroup(const JsonVariant &jsonObj);
         ~OneWireTempGroup();
         
         /** this function will search the busses and their devices to find the device with the uid */

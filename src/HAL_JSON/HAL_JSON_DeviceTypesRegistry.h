@@ -9,8 +9,8 @@
 #include "DeviceDrivers/HAL_JSON_OneWireTemp.h"
 
 namespace HAL_JSON {
-    typedef Device* (*HAL_DEVICE_CREATE_FUNC)(JsonVariant &json);
-    typedef HAL_JSON_VERIFY_JSON_RETURN_TYPE (*HAL_DEVICE_VERIFY_JSON_FUNC)(JsonVariant &json);
+    typedef Device* (*HAL_DEVICE_CREATE_FUNC)(const JsonVariant &json);
+    typedef bool (*HAL_DEVICE_VERIFY_JSON_FUNC)(const JsonVariant &json);
 
     typedef struct DeviceTypeDef {
         const char* type;

@@ -5,7 +5,7 @@ namespace HAL_JSON {
     Device **devices = nullptr;
     uint32_t deviceCount = 0;
 
-    Device* CreateDeviceFromJSON(JsonVariant &jsonObj) {
+    Device* CreateDeviceFromJSON(const JsonVariant &jsonObj) {
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
         for (int i=0;DeviceRegistry[i].type != nullptr;i++) {
             if (strcmp(type, DeviceRegistry[i].type) == 0) {
@@ -24,7 +24,7 @@ namespace HAL_JSON {
         }
         return nullptr; // no match
     }
-    bool VerifyDeviceJson(JsonVariant &jsonObj) {
+    bool VerifyDeviceJson(const JsonVariant &jsonObj) {
         if (jsonObj.is<const char*>()) return false; // this is defined as a comment
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_TYPE) == false){ Serial.println(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_TYPE)); return false; }
         if (jsonObj[HAL_JSON_KEYNAME_TYPE].is<const char*>() == false){ Serial.println(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_TYPE)); return false; }
@@ -53,7 +53,7 @@ namespace HAL_JSON {
         return false;
     }
 
-    void ParseJSON(JsonArray &jsonArray) {
+    void ParseJSON(const JsonArray &jsonArray) {
         uint32_t deviceCount = 0;
         uint32_t arraySize = jsonArray.size();
 
@@ -157,6 +157,7 @@ namespace HAL_JSON {
         String result;
         HALReadStringRequest req{UIDPath("D1","1WTG"), result};
         if (dispatchRead(req)) {
+
             Serial.println(result);
         }
 

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <Ticker.h>
+#include "../../Support/Logger.h"
 #include "../HAL_JSON_Device.h"
 #include "../HAL_JSON_DeviceTypeDefNames.h"
 
@@ -20,9 +21,9 @@ namespace HAL_JSON {
     private:
         uint8_t pin = 0;
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &json);
-        static Device* Create(JsonVariant &json);
-        DigitalInput(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &json);
+        static Device* Create(const JsonVariant &json);
+        DigitalInput(const JsonVariant &jsonObj);
         //~DigitalInput();
         bool read(const HALReadRequest&) override;
         bool write(const HALWriteRequest&) override;
@@ -40,9 +41,9 @@ namespace HAL_JSON {
         uint8_t pin = 0;
         uint32_t value = 0;
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
-        static Device* Create(JsonVariant &jsonObj);
-        DigitalOutput(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
+        DigitalOutput(const JsonVariant &jsonObj);
         ~DigitalOutput();
         bool read(const HALReadRequest&) override;
         bool write(const HALWriteRequest&) override;
@@ -64,9 +65,9 @@ namespace HAL_JSON {
         void endPulse();
         static void pulseTicker_Callback(SinglePulseOutput* context);
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
-        static Device* Create(JsonVariant &jsonObj);
-        SinglePulseOutput(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
+        SinglePulseOutput(const JsonVariant &jsonObj);
         ~SinglePulseOutput();
         bool read(const HALReadRequest&) override;
         bool write(const HALWriteRequest&) override;
@@ -84,9 +85,9 @@ namespace HAL_JSON {
     private:
         uint8_t pin = 0;
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
-        static Device* Create(JsonVariant &jsonObj);
-        AnalogInput(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
+        AnalogInput(const JsonVariant &jsonObj);
         ~AnalogInput();
         bool read(const HALReadRequest&) override;
         bool write(const HALWriteRequest&) override;
@@ -103,12 +104,12 @@ namespace HAL_JSON {
 
     class PWMAnalogWriteConfig  : public Device { // this do include the base class Device mostly so that the loaded devices can be printed for debug 
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
-        static Device* Create(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
         static uint8_t resolution; // used together with inv_out to get correct value
         static uint32_t frequency;
         
-        PWMAnalogWriteConfig(JsonVariant &jsonObj);
+        PWMAnalogWriteConfig(const JsonVariant &jsonObj);
         bool read(const HALReadRequest&) override;
         bool write(const HALWriteRequest&) override;
         String ToString() override;
@@ -128,9 +129,9 @@ namespace HAL_JSON {
         uint32_t value = 0; // for readback only
         uint32_t getInvValue(uint32_t val);
     public:
-        static HAL_JSON_VERIFY_JSON_RETURN_TYPE VerifyJSON(JsonVariant &jsonObj);
-        static Device* Create(JsonVariant &jsonObj);
-        PWMAnalogWrite(JsonVariant &jsonObj);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
+        PWMAnalogWrite(const JsonVariant &jsonObj);
         ~PWMAnalogWrite();
         bool read(const HALReadRequest&) override;
         bool write(const HALWriteRequest&) override;
