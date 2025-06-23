@@ -138,6 +138,8 @@ void Logger::printAllLogs(Stream &out) const {
         } else {
             out.println(entry.message);
         }
+        if (entry.text != nullptr)
+            out.println(entry.text);
     }
 }
 

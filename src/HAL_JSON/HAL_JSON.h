@@ -16,7 +16,8 @@
 namespace HAL_JSON {
     Device* CreateDeviceFromJSON(const JsonVariant &json);
     bool VerifyDeviceJson(const JsonVariant &jsonObj);
-    void ParseJSON(const JsonArray &jsonArray);
+    bool ParseJSON(const JsonArray &jsonArray);
+    bool ReadJSON(const char* path);
 
     Device* findDevice(uint64_t uid);
     bool read(const HALReadRequest &req);
