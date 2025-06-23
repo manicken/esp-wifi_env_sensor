@@ -11,6 +11,8 @@
 
 namespace HAL_JSON {
 
+    #define HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS 1000
+
     class OneWireTempDevice : public Device {
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
@@ -51,7 +53,7 @@ namespace HAL_JSON {
     private:
         OneWireBus **busses;
         uint32_t busCount = 0;
-        uint32_t refreshTimeMs = 1000;
+        uint32_t refreshTimeMs = HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS;
         uint32_t lastUpdateMs = 0;
 
         State state = IDLE;

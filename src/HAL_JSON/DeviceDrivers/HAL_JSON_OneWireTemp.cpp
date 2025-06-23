@@ -14,8 +14,8 @@ namespace HAL_JSON {
     }
 
     bool OneWireTempGroup::VerifyJSON(const JsonVariant &jsonObj) {
-        // the type don't need any failsafe check as that is taken care of outside this class and is allways available
-        const char* typeStr = jsonObj["type"].as<const char*>();
+        // the type don't need any failsafe check as that is taken care of outside this call and is allways available
+        const char* typeStr = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
 
         if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, 4) == 0) {
             if (jsonObj.containsKey(HAL_JSON_KEYNAME_ITEMS) == false) {
@@ -72,8 +72,8 @@ namespace HAL_JSON {
 
     OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) {
         double rawSec = 1.0;
-        if (jsonObj.containsKey("refreshtimesec")) {
-            JsonVariant rtimeObj = jsonObj["refreshtimesec"];
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_REFRESHTIME_SEC)) {
+            JsonVariant rtimeObj = jsonObj[HAL_JSON_KEYNAME_REFRESHTIME_SEC];
             if (rtimeObj.is<float>() || rtimeObj.is<double>()) {
                 rawSec = rtimeObj.as<double>();
             } else if (rtimeObj.is<const char*>()) {
@@ -84,24 +84,34 @@ namespace HAL_JSON {
 
             if (rawSec < 1.0) rawSec = 1.0;
         }
+        else if (jsonObj.containsKey(HAL_JSON_KEYNAME_REFRESHTIME_MIN)) {
+            JsonVariant rtimeObj = jsonObj[HAL_JSON_KEYNAME_REFRESHTIME_MIN];
+            if (rtimeObj.is<float>() || rtimeObj.is<double>()) {
+                rawSec = rtimeObj.as<double>();
+            } else if (rtimeObj.is<const char*>()) {
+                rawSec = atof(rtimeObj.as<const char*>());
+            } else if (rtimeObj.is<uint32_t>()) {
+                rawSec = static_cast<double>(rtimeObj.as<uint32_t>());
+            }
+            rawSec *= (double)60;
+
+            if (rawSec < 1.0) rawSec = 1.0;
+        }
+        else {
+            GlobalLogger.Warn(F("refreshrate is not set default is:"),String(HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS).c_str());
+        }
         refreshTimeMs = static_cast<uint32_t>(round(rawSec * 1000));
 
-        // will maybe do the following outside before creating new instanse of this class
-        // will see if I want to force usage of uid for the group
-        // to answer my own question:
-        // there could be a situation when only one 1-wire temp device is defined in the devmgr json list
-        // in that case the single device will be created with a default OneWireGroup containing one OneWireBus with the device
-        // which case that is could be determined by checking the type field of the current input JsonVariant jsonObj
-        if (jsonObj.containsKey("uid")) {
-            JsonVariant uidObj = jsonObj["uid"];
-            if (uidObj.is<const char*>()) {
-                const char* uidStr = uidObj.as<const char*>();
-                uid = encodeUID(uidStr);
-            }
+        // checked beforehand 
+        JsonVariant uidObj = jsonObj[HAL_JSON_KEYNAME_UID];
+        if (uidObj.is<const char*>()) {
+            const char* uidStr = uidObj.as<const char*>();
+            uid = encodeUID(uidStr);
         }
+        
 
         // the type don't need any failsafe check as that is taken care of outside this class and is allways available
-        const char* typeStr = jsonObj["type"].as<const char*>();
+        const char* typeStr = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
 
         if (strncmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, 4) == 0) {
 
