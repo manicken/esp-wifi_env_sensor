@@ -2,42 +2,114 @@
 
 Logger GlobalLogger;
 
-#define LOGGER_GET_TIME() time(nullptr)
+#define LOGGER_GET_TIME time(nullptr)
 
-void Logger::Log(uint32_t code, Loglevel level = Loglevel::Info) {
-    buffer[head] = {LOGGER_GET_TIME(), level, .errorCode = code, true};
-    advance();
+LogEntry::LogEntry() : timestamp(0),
+      level(Loglevel::Info),
+      errorCode(0),
+      text(nullptr),
+      isCode(true) {}
+
+void LogEntry::Set(time_t time, Loglevel _level, uint32_t _errorCode) {
+    timestamp = time;
+    level = _level;
+    errorCode = _errorCode;
+    if (text != nullptr) { free(text); text = nullptr; }
+    isCode = true;
+}
+void LogEntry::Set(time_t time, Loglevel _level, const __FlashStringHelper* _message) {
+    timestamp = time;
+    level = _level;
+    message = _message;
+    if (text != nullptr) { free(text); text = nullptr; }
+    isCode = false;
+}
+void LogEntry::Set(time_t time, Loglevel _level, uint32_t _errorCode, const char* _text) {
+    timestamp = time;
+    level = _level;
+    errorCode = _errorCode;
+    if (text != nullptr) { free(text); text = nullptr; }
+    if (_text) {
+        text = strdup(_text);  // <-- heap-allocate and copy the string
+    } else {
+        text = nullptr;
+    }
+    isCode = true;
+}
+void LogEntry::Set(time_t time, Loglevel _level, const __FlashStringHelper* _message, const char* _text) {
+    timestamp = time;
+    level = _level;
+    message = _message;
+    if (text != nullptr) { free(text); text = nullptr; }
+    if (_text) {
+        text = strdup(_text);  // <-- heap-allocate and copy the string
+    } else {
+        text = nullptr;
+    }
+    isCode = false;
+}
+LogEntry::~LogEntry() {
+    if (text) {
+        free(text);
+        text = nullptr;
+    }
 }
 
-void Logger::Log(const __FlashStringHelper* msg, Loglevel level = Loglevel::Info) {
-    buffer[head] = {LOGGER_GET_TIME(), level, .message = msg, false};
-    advance();
+Logger::Logger() {
+
 }
 
 void Logger::Error(uint32_t code) {
-    buffer[head] = {LOGGER_GET_TIME(), Loglevel::Error, .errorCode = code, true};
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, code);
     advance();
 }
 void Logger::Error(const __FlashStringHelper* msg) {
-    buffer[head] = {LOGGER_GET_TIME(), Loglevel::Error, .message = msg, false};
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg);
     advance();
 }
+void Logger::Error(uint32_t code, const char* text) {
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, code, text);
+    advance();
+}
+void Logger::Error(const __FlashStringHelper* msg, const char* text) {
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg, text);
+    advance();
+}
+
 void Logger::Info(uint32_t code) {
-    buffer[head] = {LOGGER_GET_TIME(), Loglevel::Info, .errorCode = code, true};
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, code);
     advance();
 }
 void Logger::Info(const __FlashStringHelper* msg) {
-    buffer[head] = {LOGGER_GET_TIME(), Loglevel::Info, .message = msg, false};
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg);
     advance();
 }
+void Logger::Info(uint32_t code, const char* text) {
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, code, text);
+    advance();
+}
+void Logger::Info(const __FlashStringHelper* msg, const char* text) {
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg, text);
+    advance();
+}
+
 void Logger::Warn(uint32_t code) {
-    buffer[head] = {LOGGER_GET_TIME(), Loglevel::Warn, .errorCode = code, true};
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, code);
     advance();
 }
 void Logger::Warn(const __FlashStringHelper* msg) {
-    buffer[head] = {LOGGER_GET_TIME(), Loglevel::Warn, .message = msg, false};
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg);
     advance();
 }
+void Logger::Warn(uint32_t code, const char* text) {
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, code, text);
+    advance();
+}
+void Logger::Warn(const __FlashStringHelper* msg, const char* text) {
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg, text);
+    advance();
+}
+
 
 void Logger::printAllLogs(Stream &out) const {
     size_t start = wrapped ? head : 0;
@@ -48,7 +120,10 @@ void Logger::printAllLogs(Stream &out) const {
         const LogEntry& entry = buffer[index];
 
         out.print(F("["));
-        out.print(entry.timestamp);
+        struct tm* timeinfo;
+        timeinfo = localtime(&entry.timestamp);
+        out.print(asctime(timeinfo));
+        //out.print(entry.timestamp);
         out.print(F("] "));
 
         switch (entry.level) {
