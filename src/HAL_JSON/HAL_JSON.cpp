@@ -92,6 +92,10 @@ namespace HAL_JSON {
         if (devices == nullptr) return nullptr;
         for (int i=0;i<deviceCount;i++) {
             if (devices[i] == nullptr) continue;
+            if (devices[i]->uid == 0) { // special case where a device can utilize root uid:s
+                Device* dev = devices[i]->findDevice(uid);
+                if (dev != nullptr) return dev;
+            }
             if (devices[i]->uid == uid) return devices[i];
         }
         return nullptr;

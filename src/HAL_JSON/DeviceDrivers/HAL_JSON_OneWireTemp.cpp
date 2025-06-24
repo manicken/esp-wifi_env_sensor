@@ -158,9 +158,23 @@ namespace HAL_JSON {
     }
 
     bool OneWireTempGroup::read(const HALReadRequest &req) {
+        if (type == OneWireTemp::Type::GROUP) {
+
+        } else if (type == OneWireTemp::Type::BUS) {
+
+        } else if (type == OneWireTemp::Type::DEVICE) {
+            return busses[0]->GetFirstDevice()->read(req);
+        }
         return false;
     }
     bool OneWireTempGroup::write(const HALWriteRequest&req) {
+        if (type == OneWireTemp::Type::GROUP) {
+
+        } else if (type == OneWireTemp::Type::BUS) {
+
+        } else if (type == OneWireTemp::Type::DEVICE) {
+            return busses[0]->GetFirstDevice()->write(req);
+        }
         return false;
     }
 
@@ -247,7 +261,7 @@ namespace HAL_JSON {
                 if (OneWireTempDevice::VerifyJSON(item) == false) continue;
                 deviceCount++;
             }
-            devices = new OneWireTempDevice*[deviceCount];
+            devices = new (std::nothrow) OneWireTempDevice*[deviceCount];
             uint32_t index = 0;
             for (int i=0;i<itemCount;i++) {
                 JsonVariant item = items[i];
@@ -282,6 +296,10 @@ namespace HAL_JSON {
             else if (devices[i]->format == OneWireTemp::TempFormat::Fahrenheit)
                 devices[i]->value = dTemp->getTempF(devices[i]->romid);
         }
+    }
+
+    OneWireTempDevice* OneWireTempBus::GetFirstDevice() {
+        return devices[0];
     }
 
     //  ██████  ███████ ██    ██ ██  ██████ ███████ 

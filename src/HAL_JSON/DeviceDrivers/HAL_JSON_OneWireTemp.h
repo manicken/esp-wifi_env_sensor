@@ -52,22 +52,24 @@ namespace HAL_JSON {
     class OneWireTempBus {
     private:
         uint8_t pin;
-        OneWireTempDevice **devices;
+       
         uint32_t deviceCount = 0;
-
+        OneWireTempDevice **devices;
         OneWire* oneWire = nullptr;
         DallasTemperature* dTemp = nullptr;
     public:
+        
         static bool VerifyJSON(const JsonVariant &jsonObj);
         OneWireTempBus(const JsonVariant &jsonObj, OneWireTemp::Type type);
         ~OneWireTempBus();
         
+        OneWireTempDevice* GetFirstDevice();
         /** this function will search the devices to find the device with the uid */
         Device* findDevice(uint64_t uid);
         void requestTemperatures();
         void readAll();
-        bool read(HALValue &val);
-        bool write(const HALValue &val);
+        //bool read(const HALReadRequest &req); currently Bus do not use uid so this func do not make any sense
+        //bool write(const HALWriteRequest &req); currently Bus do not use uid so this func do not make any sense
         String ToString();
     };
 
