@@ -13,13 +13,21 @@ namespace HAL_JSON {
 
     #define HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS 1000
 
+    namespace OneWireTemp {
+
+        bool VerifyJSON(const JsonVariant &jsonObj);
+        Device* Create(const JsonVariant &jsonObj);
+        double ParseRefreshTime(const JsonVariant &jsonObj);
+        uint32_t ParseRefreshTimeMs(const JsonVariant &value);
+    }
+
     class OneWireTempDevice : public Device {
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
         float value;
         uint8_t romid[8];
         
-        OneWireTempDevice(uint8_t romid[8]);
+        OneWireTempDevice(const JsonVariant &jsonObj);
         ~OneWireTempDevice();
         
         bool read(const HALReadRequest &req) override;
@@ -28,15 +36,15 @@ namespace HAL_JSON {
     };
 
     // this class is automatically instantiated even if there is only one 1 wire temperature sensor
-    class OneWireBus {
+    class OneWireTempBus {
     private:
         uint8_t pin;
         OneWireTempDevice **devices;
         uint32_t deviceCount = 0;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        OneWireBus();
-        ~OneWireBus();
+        OneWireTempBus(const JsonVariant &jsonObj);
+        ~OneWireTempBus();
         
         /** this function will search the devices to find the device with the uid */
         Device* findDevice(uint64_t uid);
@@ -49,18 +57,21 @@ namespace HAL_JSON {
 
     // this class is automatically instantiated even if there is only one 1 wire temperature sensor, to avoid creating same Refresh Loop state machine for every other type
     class OneWireTempGroup : public Device {
-        enum State { IDLE, WAITING_FOR_CONVERSION };
+        enum class State { IDLE, WAITING_FOR_CONVERSION };
+        /** used by find function to determine how to search for a device */
+        enum class FindMode { GROUP, BUS, DEVICE };
     private:
-        OneWireBus **busses;
+        FindMode findMode = FindMode::GROUP; 
+        OneWireTempBus **busses;
         uint32_t busCount = 0;
         uint32_t refreshTimeMs = HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS;
         uint32_t lastUpdateMs = 0;
 
-        State state = IDLE;
+        State state = State::IDLE;
         uint32_t lastStart = 0;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
+        
         OneWireTempGroup(const JsonVariant &jsonObj);
         ~OneWireTempGroup();
         

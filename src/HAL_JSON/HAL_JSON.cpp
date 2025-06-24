@@ -9,19 +9,15 @@ namespace HAL_JSON {
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
         for (int i=0;DeviceRegistry[i].type != nullptr;i++) {
             if (strcmp(type, DeviceRegistry[i].type) == 0) {
-                //if (DeviceRegistry[i].Verify_JSON_Function == nullptr) return nullptr; // silenty skip this for now (it do actually mean the list is done but not the implementation)
-                if (DeviceRegistry[i].Create_Function == nullptr) return nullptr; // silenty skip this for now (it do actually mean the list is done but not the implementation) also no point of verifying the json if the create function don't exists
-                //auto err = DeviceRegistry[i].Verify_JSON_Function(jsonObj);
-                //if (err != HAL_JSON_VERIFY_JSON_RETURN_OK) {
-                //    Serial.println(err); // just print to the serial for now
-                //    return nullptr;
-                //} 
-                // note to the above commennted out code:
-                // it should not be nessesary to do VerifyJson again as it's done in the create all devices loop
-
+                if (DeviceRegistry[i].Create_Function == nullptr) {
+                    GlobalLogger.Error(F("CreateDeviceFromJSON - Create_Function == nullptr - something is very wrong if this happens"));
+                    return nullptr; // should never happen as VerifyJson is called before and do actually verify that this pointer do point to something
+                }
                 return DeviceRegistry[i].Create_Function(jsonObj);
             }
         }
+        // should never happen as VerifyJson is called before and do actually verify that this function should work
+        GlobalLogger.Error(F("CreateDeviceFromJSON - something is very wrong if this happens"));
         return nullptr; // no match
     }
     bool VerifyDeviceJson(const JsonVariant &jsonObj) {
@@ -57,7 +53,6 @@ namespace HAL_JSON {
             deviceCount++;
         }
         
-        
         // cleanup of prev device list if existent
         if (devices != nullptr) {
             for (int i=0;i<HAL_JSON::deviceCount;i++) {
@@ -88,8 +83,7 @@ namespace HAL_JSON {
         for (int i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
             if (VerifyDeviceJson(jsonItem) == false) continue;
-            devices[index] = CreateDeviceFromJSON(jsonItem);
-            index++;
+            devices[index++] = CreateDeviceFromJSON(jsonItem);
         }
         String devCountStr = String(deviceCount);
         GlobalLogger.Info(F("Created %u devices\n"), devCountStr.c_str());
