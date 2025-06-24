@@ -4,9 +4,13 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <Ticker.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include "../../Support/Logger.h"
+#include "../../Support/ConvertHelper.h"
 #include "../HAL_JSON_Device.h"
 #include "../HAL_JSON_DeviceTypeDefNames.h"
+#include "../ArduinoJSON_ext.h"
 
 
 namespace HAL_JSON {
@@ -14,16 +18,25 @@ namespace HAL_JSON {
     #define HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS 1000
 
     namespace OneWireTemp {
-
         bool VerifyJSON(const JsonVariant &jsonObj);
         Device* Create(const JsonVariant &jsonObj);
         double ParseRefreshTime(const JsonVariant &jsonObj);
         uint32_t ParseRefreshTimeMs(const JsonVariant &value);
+        enum class Type {
+            GROUP,
+            BUS,
+            DEVICE
+        };
+        enum class TempFormat {
+            Celsius,
+            Fahrenheit
+        };
     }
 
     class OneWireTempDevice : public Device {
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
+        OneWireTemp::TempFormat format = OneWireTemp::TempFormat::Celsius;
         float value;
         uint8_t romid[8];
         
@@ -41,9 +54,12 @@ namespace HAL_JSON {
         uint8_t pin;
         OneWireTempDevice **devices;
         uint32_t deviceCount = 0;
+
+        OneWire* oneWire = nullptr;
+        DallasTemperature* dTemp = nullptr;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        OneWireTempBus(const JsonVariant &jsonObj);
+        OneWireTempBus(const JsonVariant &jsonObj, OneWireTemp::Type type);
         ~OneWireTempBus();
         
         /** this function will search the devices to find the device with the uid */
@@ -58,10 +74,8 @@ namespace HAL_JSON {
     // this class is automatically instantiated even if there is only one 1 wire temperature sensor, to avoid creating same Refresh Loop state machine for every other type
     class OneWireTempGroup : public Device {
         enum class State { IDLE, WAITING_FOR_CONVERSION };
-        /** used by find function to determine how to search for a device */
-        enum class FindMode { GROUP, BUS, DEVICE };
     private:
-        FindMode findMode = FindMode::GROUP; 
+        OneWireTemp::Type type = OneWireTemp::Type::GROUP; 
         OneWireTempBus **busses;
         uint32_t busCount = 0;
         uint32_t refreshTimeMs = HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS;

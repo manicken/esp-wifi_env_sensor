@@ -1,6 +1,6 @@
 #include "DeviceManager.h"
 #include <cstdlib> // For std::strtoul
-#include "ConvertHelper.h"
+#include "Support/ConvertHelper.h"
 
 namespace DeviceManager
 {
@@ -75,7 +75,7 @@ namespace DeviceManager
     OneWireTempDevice::OneWireTempDevice(uint32_t _uid, uint8_t _pin, const char* romid_hexstr)
     {
         romid = new uint8_t[8]();
-        if (Convert::convertHexToBytes(romid_hexstr, romid, 8) == false) { delete[] romid; romid = nullptr;}
+        if (Convert::HexToBytes(romid_hexstr, romid, 8) == false) { delete[] romid; romid = nullptr;}
         // note later usage must allways check beforehand if romid is nullptr before use
         type = DeviceType::OneWireTemp;
         uid = _uid;

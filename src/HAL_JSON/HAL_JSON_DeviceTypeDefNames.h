@@ -42,7 +42,8 @@
 #define HAL_JSON_KEYNAME_PWM_INVOUT                         "invOut"
 
 // 1-wire temp
-#define HAL_JSON_KEYNAME_ONE_WIRE_ROMID    "romid"
+#define HAL_JSON_KEYNAME_ONE_WIRE_ROMID       "romid"
+#define HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT "format"
 
 
 // the following must be at end

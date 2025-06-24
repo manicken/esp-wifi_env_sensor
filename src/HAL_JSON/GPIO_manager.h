@@ -69,7 +69,8 @@ namespace GPIO_manager
 
     void sendList();
     void setup(WEBSERVER_TYPE &srv);
-    bool CheckIfPinAvailable(uint32_t pin, uint8_t pinMode);
+    bool CheckIfPinAvailableAndReserve(uint8_t pin, uint8_t pinMode);
+    bool CheckIfPinAvailable(uint8_t pin, uint8_t pinMode);
     void ClearAllReservations();
     /** CheckIfPinAvailable must be called prior to using this function. */
     void ReservePin(uint8_t pin);

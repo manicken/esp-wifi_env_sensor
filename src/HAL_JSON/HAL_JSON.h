@@ -10,19 +10,38 @@
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
 #include "../Support/Logger.h"
-
+#include "ArduinoJSON_ext.h"
 
 
 namespace HAL_JSON {
-    Device* CreateDeviceFromJSON(const JsonVariant &json);
-    bool VerifyDeviceJson(const JsonVariant &jsonObj);
-    bool ParseJSON(const JsonArray &jsonArray);
-    bool ReadJSON(const char* path);
+    class Manager {
+    private:
+        static Device** devices;
+        static uint32_t deviceCount;
 
-    Device* findDevice(uint64_t uid);
-    bool read(const HALReadRequest &req);
-    bool write(const HALWriteRequest &req);
-    bool read(const HALReadStringRequest &req);
-    bool write(const HALWriteStringRequest &req);
-    void loop();
+        static Device* CreateDeviceFromJSON(const JsonVariant &json);
+        static bool VerifyDeviceJson(const JsonVariant &jsonObj);
+        static Device* findDevice(uint64_t uid);
+    public:
+        // JSON I/O
+        static bool ParseJSON(const JsonArray &jsonArray);
+        static bool ReadJSON(const char* path);
+
+        // Device operations
+        static bool read(const HALReadRequest &req);
+        static bool write(const HALWriteRequest &req);
+        static bool read(const HALReadStringRequest &req);
+        static bool write(const HALWriteStringRequest &req);
+        // dispatch Device operations (( will see what i will use ))
+        template<typename RequestType>
+        static bool dispatchRead(const RequestType& req);
+        template<typename RequestType>
+        bool Manager::dispatchWrite(const RequestType& req);
+
+        // Maintenance
+        static void loop();
+
+        // Debug / Testing
+        static void TEST();
+    };
 }

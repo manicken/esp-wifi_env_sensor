@@ -187,19 +187,27 @@ namespace GPIO_manager
         for (int i=0;i<available_gpio_list_lenght;i++) {
             if (available_gpio_list[i].pin == pin) {
                 if (reservedPins[i] == 1) {
-                    GlobalLogger.Error(F("CheckIfPinAvailable error - pin allready reserved"));
+                    GlobalLogger.Error(F("CheckIfPinAvailable error - pin allready reserved"),String(pin).c_str());
                     return false;
                 }
                 if ((pinMode & available_gpio_list[i].mode) > 0)
                     return true;
-
-                GlobalLogger.Error(F("CheckIfPinAvailable error - pinmode mismatch"));
+                String err = String(pinMode,16) + " <-> " + String(available_gpio_list[i].mode,16);
+                GlobalLogger.Error(F("CheckIfPinAvailable error - pinmode mismatch"),err.c_str());
                 return false;
             }
         }
         GlobalLogger.Error(F("Pin to reserve - not found!"));
         return false;
         //return HAL_JSON_VERIFY_JSON_RETURN_OK;
+    }
+
+    bool CheckIfPinAvailableAndReserve(uint8_t pin, uint8_t pinMode) {
+        if (CheckIfPinAvailable(pin, pinMode)) {
+            ReservePin(pin);
+            return true;
+        }
+        return false;
     }
 
     void ClearAllReservations() {

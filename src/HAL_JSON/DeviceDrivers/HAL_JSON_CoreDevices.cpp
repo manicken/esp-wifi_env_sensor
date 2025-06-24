@@ -17,18 +17,17 @@ namespace HAL_JSON {
     bool DigitalInput::VerifyJSON(const JsonVariant &jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
+        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
     DigitalInput::DigitalInput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        // pin is reserved in ValidateJSON
         
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
 
-        // this is a failsafe call and would not return any errors, as to come to this stage the VerifyJSON must first return OK
-        GPIO_manager::ReservePin(pin); 
         pinMode(pin, INPUT);
     }
 
@@ -61,17 +60,16 @@ namespace HAL_JSON {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
+        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
     DigitalOutput::DigitalOutput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        
+        // pin is reserved in ValidateJSON
+
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
 
-        // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
-        GPIO_manager::ReservePin(pin); 
         pinMode(pin, OUTPUT);
     }
 
@@ -107,12 +105,12 @@ namespace HAL_JSON {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
+        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
     SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        
+        // pin is reserved in ValidateJSON
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
 
@@ -126,8 +124,6 @@ namespace HAL_JSON {
         } else {
             pulseLength = 0; // will hopefully be set at write
         }
-        // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
-        GPIO_manager::ReservePin(pin); 
         pinMode(pin, OUTPUT);
         digitalWrite(pin, inactiveState);
     }
@@ -181,17 +177,14 @@ namespace HAL_JSON {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
         uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
+        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
     AnalogInput::AnalogInput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        
+        // pin is reserved in ValidateJSON
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
-
-        // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
-        GPIO_manager::ReservePin(pin); 
         pinMode(pin, ANALOG);
     }
 
@@ -266,12 +259,10 @@ namespace HAL_JSON {
 
     PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        
+        // pin is reserved in ValidateJSON
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
-        
-        // this is a failsafe call and would not return any errors as to come to this stage the VerifyJSON must first return OK
-        GPIO_manager::ReservePin(pin); 
+
         pinMode(pin, OUTPUT);
     }
 

@@ -2,11 +2,11 @@
 #include "HAL_JSON_OneWireTemp.h"
 
 namespace HAL_JSON {
-    namespace OneWireTemp { 
+    namespace OneWireTemp {
+
         bool VerifyJSON(const JsonVariant &jsonObj) {
             // the type don't need any failsafe check as that is taken care of outside this call and is allways available
             const char* typeStr = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
-
             // ***************** GROUP ******************
             if (strcmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP) == 0)
             {
@@ -110,7 +110,7 @@ namespace HAL_JSON {
         // ***************** GROUP ******************
         if (strcmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP) == 0)
         {
-            findMode = FindMode::GROUP;
+            type = OneWireTemp::Type::GROUP;
             busCount = 0;
             const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
             uint32_t itemCount = items.size();
@@ -125,27 +125,27 @@ namespace HAL_JSON {
             for (int i=0;i<itemCount;i++) {
                 const JsonVariant& item = items[i];
                 if (OneWireTempBus::VerifyJSON(item) == false) continue;
-                busses[index++] = new OneWireTempBus(item);
+                busses[index++] = new OneWireTempBus(item, type);
             }
         }
         // *****************  BUS  ********************
         else if (strcmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS) == 0)
         {
-            findMode = FindMode::BUS;
+            type = OneWireTemp::Type::BUS;
             // there is only one bus 
             busCount = 1;
             busses = new OneWireTempBus*[1];
-            busses[0] = new OneWireTempBus(jsonObj);
+            busses[0] = new OneWireTempBus(jsonObj, type);
         }
         // **************** DEVICE **********************
         else if (strcmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE) == 0)
         {
-            findMode = FindMode::DEVICE;
+            type = OneWireTemp::Type::DEVICE;
             // allways create one default bus even if there is only one device
             // this is to avoid creating duplicate loop state machine code for each devicetype
             busCount = 1;
             busses = new OneWireTempBus*[1];
-            busses[0] = new OneWireTempBus(jsonObj);
+            busses[0] = new OneWireTempBus(jsonObj, type);
         }
     }
     OneWireTempGroup::~OneWireTempGroup() {
@@ -195,8 +195,10 @@ namespace HAL_JSON {
     //  ██████   ██████  ███████ 
 
     bool OneWireTempBus::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) {
-            GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN));
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
+        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
+        if (GPIO_manager::CheckIfPinAvailableAndReserve(pin, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN))) == false) {
             return false;
         }
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_ITEMS) == false) {
@@ -220,8 +222,39 @@ namespace HAL_JSON {
         return true;
     }
 
-    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj) {
+    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj, OneWireTemp::Type type) {
+        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        // pin is reserved in ValidateJSON
 
+        oneWire = new OneWire(pin);
+        dTemp = new DallasTemperature(oneWire);
+        dTemp->setWaitForConversion(false);
+
+        if (type == OneWireTemp::Type::DEVICE) // special case
+        {
+            deviceCount = 1;
+            devices = new OneWireTempDevice*[1];
+            devices[0] = new OneWireTempDevice(jsonObj);
+        }
+        else
+        {
+            deviceCount = 0;
+            JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
+            uint32_t itemCount = items.size();
+            // first pass count valid devices
+            for (int i=0;i<itemCount;i++) {
+                JsonVariant item = items[i];
+                if (OneWireTempDevice::VerifyJSON(item) == false) continue;
+                deviceCount++;
+            }
+            devices = new OneWireTempDevice*[deviceCount];
+            uint32_t index = 0;
+            for (int i=0;i<itemCount;i++) {
+                JsonVariant item = items[i];
+                if (OneWireTempDevice::VerifyJSON(item) == false) continue;
+                devices[index++] = new OneWireTempDevice(item);
+            }
+        }
     }
 
     OneWireTempBus::~OneWireTempBus() {
@@ -229,8 +262,26 @@ namespace HAL_JSON {
             for (int i=0;i<deviceCount;i++)
                 delete devices[i];
         }
+        delete dTemp;
+        delete oneWire;
         delete[] devices;
         devices = nullptr;
+        pinMode(pin, INPUT); // set to default input
+    }
+
+    void OneWireTempBus::requestTemperatures()
+    {
+        dTemp->requestTemperatures();
+    }
+
+    void OneWireTempBus::readAll()
+    {
+        for (int i=0;i<deviceCount;i++) {
+            if (devices[i]->format == OneWireTemp::TempFormat::Celsius)
+                devices[i]->value = dTemp->getTempC(devices[i]->romid);
+            else if (devices[i]->format == OneWireTemp::TempFormat::Fahrenheit)
+                devices[i]->value = dTemp->getTempF(devices[i]->romid);
+        }
     }
 
     //  ██████  ███████ ██    ██ ██  ██████ ███████ 
@@ -240,19 +291,28 @@ namespace HAL_JSON {
     //  ██████  ███████   ████   ██  ██████ ███████ 
 
     bool OneWireTempDevice::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_UID) == false){ return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_UID); }
-        if (jsonObj[HAL_JSON_KEYNAME_UID].is<const char*>() == false){ return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_UID); }
-        if (jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>() == nullptr){ return HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_UID); }
-
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_ONE_WIRE_ROMID) == false){ return HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_ONE_WIRE_ROMID); }
-        if (jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].is<const char*>() == false){ return HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_ONE_WIRE_ROMID); }
-        if (jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>() == nullptr){ return HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_ONE_WIRE_ROMID); }
-
-        return true;
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) return false;
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_ROMID)) return false;
+        
+        const char* romIdStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>();
+        if (strlen(romIdStr) == 0) { GlobalLogger.Error(F("OneWireTempDevice romId is zero lenght")); return false; }
+        return Convert::HexToBytes(romIdStr, nullptr, 8);
     }
 
     OneWireTempDevice::OneWireTempDevice(const JsonVariant &jsonObj) {
-        
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+        const char* romIdStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>();
+        Convert::HexToBytes(romIdStr, romid, 8);
+        // optional settings
+        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT)) {
+            const char* tempFormatStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT].as<const char*>();
+            if (tempFormatStr[0] == 'c' || tempFormatStr[0] == 'C')
+                format = OneWireTemp::TempFormat::Celsius;
+            else if (tempFormatStr[0] == 'f' || tempFormatStr[0] == 'F')
+                format = OneWireTemp::TempFormat::Fahrenheit;
+            // else the default value is used (defined in .h file)
+        }
     }
 
     OneWireTempDevice::~OneWireTempDevice() {

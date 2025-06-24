@@ -2,10 +2,11 @@
 #include "HAL_JSON.h"
 
 namespace HAL_JSON {
-    Device **devices = nullptr;
-    uint32_t deviceCount = 0;
 
-    Device* CreateDeviceFromJSON(const JsonVariant &jsonObj) {
+    Device** Manager::devices = nullptr;
+    uint32_t Manager::deviceCount = 0;
+
+    Device* Manager::CreateDeviceFromJSON(const JsonVariant &jsonObj) {
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
         for (int i=0;DeviceRegistry[i].type != nullptr;i++) {
             if (strcmp(type, DeviceRegistry[i].type) == 0) {
@@ -20,14 +21,10 @@ namespace HAL_JSON {
         GlobalLogger.Error(F("CreateDeviceFromJSON - something is very wrong if this happens"));
         return nullptr; // no match
     }
-    bool VerifyDeviceJson(const JsonVariant &jsonObj) {
+    bool Manager::VerifyDeviceJson(const JsonVariant &jsonObj) {
         if (jsonObj.is<const char*>()) return false; // this is defined as a comment
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_TYPE) == false){ GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_TYPE)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_TYPE].is<const char*>() == false){ GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_TYPE)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>() == nullptr){ GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_TYPE)); return false; }
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_UID) == false){ GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_UID)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_UID].is<const char*>() == false){ GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_UID)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>() == nullptr){ GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY(HAL_JSON_KEYNAME_UID)); return false; }
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TYPE)) return false;
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) return false;
 
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
         for (int i=0;DeviceRegistry[i].type != nullptr;i++) {
@@ -38,14 +35,14 @@ namespace HAL_JSON {
                 return DeviceRegistry[i].Verify_JSON_Function(jsonObj);
             }
         }
-        GlobalLogger.Error(F("Err - could not find type:"),type);
+        GlobalLogger.Error(F("VerifyDeviceJson - could not find type:"),type);
         return false;
     }
 
-    bool ParseJSON(const JsonArray &jsonArray) {
+    bool Manager::ParseJSON(const JsonArray &jsonArray) {
         uint32_t deviceCount = 0;
         uint32_t arraySize = jsonArray.size();
-
+        GPIO_manager::ClearAllReservations(); // when devices are verified they also reservate the pins to include checks for duplicate use
         // First pass: count valid entries
         for (int i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
@@ -55,7 +52,7 @@ namespace HAL_JSON {
         
         // cleanup of prev device list if existent
         if (devices != nullptr) {
-            for (int i=0;i<HAL_JSON::deviceCount;i++) {
+            for (int i=0;i<HAL_JSON::Manager::deviceCount;i++) {
                 if (devices[i] != nullptr) {
                     delete devices[i];
                     devices[i] = nullptr;
@@ -64,20 +61,20 @@ namespace HAL_JSON {
             delete[] devices;
             devices = nullptr;
         }
-        HAL_JSON::deviceCount = deviceCount;
+        HAL_JSON::Manager::deviceCount = deviceCount;
         if (deviceCount == 0) {
             GlobalLogger.Error(F("The loaded JSON cfg does not contain any valid devices!\n" 
                                  "Hint: Check that all entries have 'type' and 'uid' fields, and match known types."));
             return false;
         }
         // Allocate space for all devices
-        devices = new Device*[HAL_JSON::deviceCount]();
+        devices = new Device*[HAL_JSON::Manager::deviceCount]();
 
         if (devices == nullptr) {
             GlobalLogger.Error(F("Failed to allocate device array"));
             return false;
         }
-        
+        GPIO_manager::ClearAllReservations(); // when devices are verified they also reservate the pins to include checks for duplicate use
         // Second pass: actually create and store devices
         uint32_t index = 0;
         for (int i=0;i<arraySize;i++) {
@@ -90,7 +87,7 @@ namespace HAL_JSON {
         return true;
     }
 
-    Device* findDevice(uint64_t uid) {
+    Device* Manager::findDevice(uint64_t uid) {
         if (deviceCount == 0) return nullptr;
         if (devices == nullptr) return nullptr;
         for (int i=0;i<deviceCount;i++) {
@@ -101,39 +98,39 @@ namespace HAL_JSON {
     }
 
     template<typename RequestType>
-    bool dispatchRead(const RequestType& req) {
+    bool Manager::dispatchRead(const RequestType& req) {
         Device* device = findDevice(req.path.root());
         return device ? device->read(req) : false;
     }
 
     template<typename RequestType>
-    bool dispatchWrite(const RequestType& req) {
+    bool Manager::dispatchWrite(const RequestType& req) {
         Device* device = findDevice(req.path.root());
         return device ? device->write(req) : false;
     }
 
-    bool read(const HALReadRequest &req) {
+    bool Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path.root());
         if (device == nullptr) return false;
         return device->read(req);
     }
-    bool write(const HALWriteRequest &req) {
+    bool Manager::write(const HALWriteRequest &req) {
         Device* device = findDevice(req.path.root());
         if (device == nullptr) return false;
         return device->write(req);
     }
-    bool read(const HALReadStringRequest &req) {
+    bool Manager::read(const HALReadStringRequest &req) {
         Device* device = findDevice(req.path.root());
         if (device == nullptr) return false;
         return device->read(req);
     }
-    bool write(const HALWriteStringRequest &req) {
+    bool Manager::write(const HALWriteStringRequest &req) {
         Device* device = findDevice(req.path.root());
         if (device == nullptr) return false;
         return device->write(req);
     }
 
-    bool ReadJSON(const char* path) {
+    bool Manager::ReadJSON(const char* path) {
         
         if (LittleFS.exists(path) == false) {
             GlobalLogger.Error(F("ReadJSON - cfg file did not exist"),path);
@@ -166,7 +163,7 @@ namespace HAL_JSON {
         }
         return ParseJSON(jsonItems);
     }
-    void loop() {
+    void Manager::loop() {
         if (deviceCount == 0) return;
         if (devices == nullptr) return;
         for (int i=0;i<deviceCount;i++) {
@@ -175,7 +172,7 @@ namespace HAL_JSON {
         }
     }
 
-    void TEST() {
+    void Manager::TEST() {
         String result;
         HALReadStringRequest req{UIDPath("D1","1WTG"), result};
         if (dispatchRead(req)) {

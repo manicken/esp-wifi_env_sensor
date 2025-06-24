@@ -59,10 +59,11 @@ namespace Convert
         return str;
     }
 
-    bool convertHexToBytes(const char* hexString, uint8_t* byteArray, size_t arraySize)
+    bool HexToBytes(const char* hexString, uint8_t* byteArray, size_t arraySize)
     {
-        if (!hexString || !byteArray ) {
-            DEBUG_UART.println("convertHexToBytes - Invalid input 1");
+        if (!hexString) { // if byteArray is nullptr then this function is only used to verify a hexString
+            GlobalLogger.Error(F("HexToBytes - Invalid input 1"));
+            DEBUG_UART.println(F("HexToBytes - Invalid input 1"));
             return false; // Invalid input 1
         }
         size_t hexStrLen = strlen(hexString);
@@ -72,24 +73,28 @@ namespace Convert
         else if (hexStrLen == (arraySize*3)-1)// any desired deliminator between hex-byte numbers
             incr = 3;
         else {
-            DEBUG_UART.println("convertHexToBytes - hexStrLen mismatch:" + String(hexStrLen));
+            GlobalLogger.Error(F("HexToBytes - hexStrLen mismatch:"),String(hexStrLen).c_str());
+            DEBUG_UART.print(F("HexToBytes - hexStrLen mismatch:"));
+            DEBUG_UART.println(String(hexStrLen));
             return false; // Invalid input 2
         }
         size_t byteIndex = 0;
         for (size_t i = 0; i < hexStrLen; i+=incr) {
             if (byteIndex >= arraySize) {
-                DEBUG_UART.println("Exceeded array size");
+                GlobalLogger.Error(F("HexToBytes - Exceeded array size"));
+                DEBUG_UART.println(F("HexToBytes - Exceeded array size"));
                 return false; // Exceeded array size
             }
             char highNibble = hexString[i];
             char lowNibble = hexString[i + 1];
 
             if (!std::isxdigit(highNibble) || !std::isxdigit(lowNibble)) {
-                DEBUG_UART.println("Non-hex character found");
+                GlobalLogger.Error(F("HexToBytes - Non-hex character found"));
+                DEBUG_UART.println(F("HexToBytes - Non-hex character found"));
                 return false; // Non-hex character found
             }
-
-            byteArray[byteIndex++] = (uint8_t)((std::isdigit(highNibble) ? highNibble - '0' : std::toupper(highNibble) - 'A' + 10) << 4 |
+            if (byteArray != nullptr) // if byteArray is nullptr then this is only a convert pre-validate
+                byteArray[byteIndex++] = (uint8_t)((std::isdigit(highNibble) ? highNibble - '0' : std::toupper(highNibble) - 'A' + 10) << 4 |
                                     (std::isdigit(lowNibble) ? lowNibble - '0' : std::toupper(lowNibble) - 'A' + 10));
         }
 
