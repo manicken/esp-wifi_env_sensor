@@ -88,15 +88,15 @@ namespace HAL_JSON {
     }
 
     Device* Manager::findDevice(uint64_t uid) {
-        if (deviceCount == 0) return nullptr;
-        if (devices == nullptr) return nullptr;
+        if (!devices || deviceCount == 0 || uid == 0) return nullptr;
+        
         for (int i=0;i<deviceCount;i++) {
             if (devices[i] == nullptr) continue;
-            if (devices[i]->uid == 0) { // special case where a device can utilize root uid:s
+            if (devices[i]->uid == 0) { // devices with uid == 0 may delegate device lookup to sub-devices
                 Device* dev = devices[i]->findDevice(uid);
                 if (dev != nullptr) return dev;
             }
-            if (devices[i]->uid == uid) return devices[i];
+            else if (devices[i]->uid == uid) return devices[i];
         }
         return nullptr;
     }
