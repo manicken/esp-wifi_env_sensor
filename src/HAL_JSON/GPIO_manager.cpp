@@ -214,7 +214,9 @@ namespace GPIO_manager
         for (int i=0;i<available_gpio_list_lenght;i++)
             reservedPins[i] = 0;
     }
-    /** CheckIfPinAvailable must be called prior to using this function. */
+    /** it's recommended to call CheckIfPinAvailable prior to using this function,
+     * this function is very basic and do only set the actual pin to reserved state, 
+     * so calling it many times on the same pin do not matter */
     void ReservePin(uint8_t pin) {
         for (int i=0;i<available_gpio_list_lenght;i++) {
             if (available_gpio_list[i].pin == pin) {

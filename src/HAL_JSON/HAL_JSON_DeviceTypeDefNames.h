@@ -1,5 +1,13 @@
 #pragma once
 
+#define HAL_JSON_VALIDATE_JSON_STRICT
+
+#if defined(HAL_JSON_VALIDATE_JSON_STRICT)
+#define HAL_JSON_VALIDATE_FAIL_OPERATION return false
+#else
+#define HAL_JSON_VALIDATE_FAIL_OPERATION continue
+#endif
+
 // Global use
 #define HAL_JSON_KEYNAME_TYPE                               "type"
 #define HAL_JSON_KEYNAME_UID                                "uid"

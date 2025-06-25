@@ -23,7 +23,7 @@ namespace HAL_JSON {
 
     DigitalInput::DigitalInput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        // pin is reserved in ValidateJSON
+        GPIO_manager::ReservePin(pin);
         
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
@@ -65,7 +65,7 @@ namespace HAL_JSON {
 
     DigitalOutput::DigitalOutput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        // pin is reserved in ValidateJSON
+        GPIO_manager::ReservePin(pin);
 
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
@@ -110,7 +110,7 @@ namespace HAL_JSON {
 
     SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        // pin is reserved in ValidateJSON
+        GPIO_manager::ReservePin(pin);
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
 
@@ -182,7 +182,7 @@ namespace HAL_JSON {
 
     AnalogInput::AnalogInput(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        // pin is reserved in ValidateJSON
+        GPIO_manager::ReservePin(pin);
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
         pinMode(pin, ANALOG);
@@ -259,7 +259,7 @@ namespace HAL_JSON {
 
     PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        // pin is reserved in ValidateJSON
+        GPIO_manager::ReservePin(pin);
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
 

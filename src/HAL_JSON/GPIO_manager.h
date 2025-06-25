@@ -72,6 +72,8 @@ namespace GPIO_manager
     bool CheckIfPinAvailableAndReserve(uint8_t pin, uint8_t pinMode);
     bool CheckIfPinAvailable(uint8_t pin, uint8_t pinMode);
     void ClearAllReservations();
-    /** CheckIfPinAvailable must be called prior to using this function. */
+    /** it's recommended to call CheckIfPinAvailable prior to using this function,
+     * this function is very basic and do only set the actual pin to reserved state, 
+     * so calling it many times on the same pin do not matter */
     void ReservePin(uint8_t pin);
 }

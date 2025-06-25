@@ -17,6 +17,10 @@
 	    {"uid":"D6","romid":"28:87:17:43:d4:bd:0a:46","note":"ute"},
 	    {"uid":"D7","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne"},
 	  ]},
+	  {"pin":25,"note":"duplicate pin use test","items":[
+	    {"uid":"D8","romid":"28:87:17:43:d4:bd:0a:46","note":"ute"},
+	    {"uid":"D9","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne"},
+	  ]},
 	]
   },
   "1WTD type can be used when there is only one temp device connected, or when different refresh time is required for one sensor",
@@ -38,6 +42,28 @@
 	  {"uid":"GT9","addr":"020E","regname":"GT9","note":"heat fluid in"},
 	  {"uid":"GT10","addr":"020E","regname":"GT10","note":"cold fluid in"},
 	  {"uid":"GT11","addr":"020E","regname":"GT11","note":"cold fluid out"},
+	]
+  },
+  "this is a future implementation where devices can be adressed using both group id and bus id ex. 1WT2:B2:D1 ",
+  {"uid":"1WT2","type":"1WTG","refreshtimesec":1,"note":"temperatures",
+    "items":[
+	  {"uid":"B1","pin":25,"note":"inne","items":[
+	    {"uid":"D1","romid":"28:61:64:35:18:20:9E:8D","note":"uppe"},
+	    {"uid":"D2","romid":"28:61:64:35:18:27:D4:DB","note":"nere"},
+	  ]},
+	  {"uid":"B2","pin":26,"note":"mitten","items":[
+	    {"uid":"D1","romid":"28:61:64:35:18:18:C3:F0","note":"ute fram"},
+	    {"uid":"D2","romid":"28:61:64:35:18:1F:79:D2","note":"ute bak"},
+	    {"uid":"D3","romid":"28:61:64:35:18:21:D5:2F","note":"inne"},
+	  ]},
+	  {"uid":"B3","pin":27,"note":"jord","items":[
+	    {"uid":"D1","romid":"28:87:17:43:d4:bd:0a:46","note":"ute"},
+	    {"uid":"D2","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne"},
+	  ]},
+	  {"uid":"B4","pin":25,"note":"duplicate pin use test","items":[
+	    {"uid":"D1","romid":"28:87:17:43:d4:bd:0a:46","note":"ute"},
+	    {"uid":"D2","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne"},
+	  ]},
 	]
   },
 ]

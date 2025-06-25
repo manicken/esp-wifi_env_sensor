@@ -1,5 +1,11 @@
 
-make all json verify/validate errors into a error code system to save memory
+Convert all JSON validation errors to use an error code system for improved memory efficiency.
+Note: This is partially implemented—currently, F("") strings are used, which keeps the string data in flash memory, so the tradeoff is extra used flash memory.
+
+implement a global defines that can be switched on/off
+  #define HAL_JSON_VALIDATE_FAIL_OPERATION continue
+  #define HAL_JSON_VALIDATE_FAIL_OPERATION return false
+so that "if one fail" -> "all fail" principe can be used"
 
 DS18B20
 
@@ -15,3 +21,5 @@ TCP2UART bridge
 WEBSOCKET2UART bridge
 
 WS2812 neostrip led
+
+analog/digital muxing of pins

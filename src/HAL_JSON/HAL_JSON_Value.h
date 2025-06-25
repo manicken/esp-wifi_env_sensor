@@ -14,6 +14,7 @@ namespace HAL_JSON {
             uint32_t uval;
             float fval;
             //char* str; // future use?? // check chatgpt conversation "Function Parameter Passing"
+            //uint8_t* arr; // future use (here the first byte defines how many lenght def bytes that comes after, and then that lenght def bytes def. how many actual data bytes come after that)
         };
 
 

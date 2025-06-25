@@ -114,18 +114,20 @@ namespace HAL_JSON {
             busCount = 0;
             const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
             uint32_t itemCount = items.size();
-            // first pass count buscount
+            bool* validBusses = new bool[itemCount]; // must store this as OneWireTempBus::VerifyJSON cannot be run twice as the first time it actually reserve pin use
+            // first pass count valid busses
             for (int i=0;i<itemCount;i++) {
-                if (OneWireTempBus::VerifyJSON(items[i]) == false) continue;
+                bool valid = OneWireTempBus::VerifyJSON(items[i]);
+                validBusses[i] = valid;
+                if (valid == false) continue;
                 busCount++;
             }
             busses = new OneWireTempBus*[busCount];
             // second pass create busses
             uint32_t index = 0;
             for (int i=0;i<itemCount;i++) {
-                const JsonVariant& item = items[i];
-                if (OneWireTempBus::VerifyJSON(item) == false) continue;
-                busses[index++] = new OneWireTempBus(item, type);
+                if (validBusses[i] == false) continue;
+                busses[index++] = new OneWireTempBus(static_cast<const JsonVariant&>(items[i]), type);
             }
         }
         // *****************  BUS  ********************
@@ -157,25 +159,40 @@ namespace HAL_JSON {
         busses = nullptr;
     }
 
+    Device* OneWireTempGroup::findDevice(uint64_t uid) { // special note: this function will not be called when the type is device as that do use uid at root level
+        for (int i=0;i<busCount;i++)
+        {
+            Device * dev = busses[i]->findDevice(uid);
+            if (dev != nullptr) return dev;
+        }
+        return nullptr;
+    }
+
     bool OneWireTempGroup::read(const HALReadRequest &req) {
         if (type == OneWireTemp::Type::GROUP) {
+            Device* dev = findDevice(req.path.item); // use this until I can access devices by <group>:<bus>:<device> adress scheme
+            if (dev == nullptr) return false;
+            return dev->read(req);
 
-        } else if (type == OneWireTemp::Type::BUS) {
+        } else if (type == OneWireTemp::Type::BUS) { // this will not be used as in this mode the access will be direct to the device
 
-        } else if (type == OneWireTemp::Type::DEVICE) {
+        } else if (type == OneWireTemp::Type::DEVICE) { // this will not be used as in this mode the access will be direct to the device
             return busses[0]->GetFirstDevice()->read(req);
         }
-        return false;
+        return false; // failsafe
     }
     bool OneWireTempGroup::write(const HALWriteRequest&req) {
         if (type == OneWireTemp::Type::GROUP) {
+            Device* dev = findDevice(req.path.item); // use this until I can access devices by <group>:<bus>:<device> adress scheme
+            if (dev == nullptr) return false;
+            return dev->write(req);
 
-        } else if (type == OneWireTemp::Type::BUS) {
+        } else if (type == OneWireTemp::Type::BUS) { // this will not be used as in this mode the access will be direct to the device
 
-        } else if (type == OneWireTemp::Type::DEVICE) {
+        } else if (type == OneWireTemp::Type::DEVICE) { // this will not be used as in this mode the access will be direct to the device
             return busses[0]->GetFirstDevice()->write(req);
         }
-        return false;
+        return false; // failsafe
     }
 
     void OneWireTempGroup::loop() {
@@ -211,10 +228,7 @@ namespace HAL_JSON {
     bool OneWireTempBus::VerifyJSON(const JsonVariant &jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
         if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        if (GPIO_manager::CheckIfPinAvailableAndReserve(pin, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN))) == false) {
-            return false;
-        }
+        
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_ITEMS) == false) {
             GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_ITEMS));
             return false;
@@ -230,15 +244,18 @@ namespace HAL_JSON {
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
             if (item.is<const char*>() == false) continue; // comment item
-            if (OneWireTempDevice::VerifyJSON(item) == true) validItemCount++;
+            if (OneWireTempDevice::VerifyJSON(item) == false) continue;
+            validItemCount++;
         }
         if (validItemCount == 0) { GlobalLogger.Error(HAL_JSON_ERR_ITEMS_NOT_VALID("OneWireTempBus")); return false; }
-        return true;
+        
+        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
+        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)));
     }
 
     OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj, OneWireTemp::Type type) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        // pin is reserved in ValidateJSON
+        GPIO_manager::ReservePin(pin); // this is in most cases taken care of in OneWireTempBus::VerifyJSON but there are situations where it's needed
 
         oneWire = new OneWire(pin);
         dTemp = new DallasTemperature(oneWire);
@@ -255,18 +272,19 @@ namespace HAL_JSON {
             deviceCount = 0;
             JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
             uint32_t itemCount = items.size();
+            bool* validDevices = new bool[itemCount];
             // first pass count valid devices
             for (int i=0;i<itemCount;i++) {
-                JsonVariant item = items[i];
-                if (OneWireTempDevice::VerifyJSON(item) == false) continue;
+                bool valid = OneWireTempDevice::VerifyJSON(items[i]);
+                validDevices[i] = valid;
+                if (valid == false) continue;
                 deviceCount++;
             }
             devices = new (std::nothrow) OneWireTempDevice*[deviceCount];
             uint32_t index = 0;
             for (int i=0;i<itemCount;i++) {
-                JsonVariant item = items[i];
-                if (OneWireTempDevice::VerifyJSON(item) == false) continue;
-                devices[index++] = new OneWireTempDevice(item);
+                if (validDevices[i] == false) continue;
+                devices[index++] = new OneWireTempDevice(static_cast<const JsonVariant&>(items[i]));
             }
         }
     }
@@ -288,6 +306,8 @@ namespace HAL_JSON {
         dTemp->requestTemperatures();
     }
 
+
+
     void OneWireTempBus::readAll()
     {
         for (int i=0;i<deviceCount;i++) {
@@ -296,6 +316,14 @@ namespace HAL_JSON {
             else if (devices[i]->format == OneWireTemp::TempFormat::Fahrenheit)
                 devices[i]->value = dTemp->getTempF(devices[i]->romid);
         }
+    }
+
+    Device* OneWireTempBus::findDevice(uint64_t uid) {
+        for (int i=0;i<deviceCount;i++)
+        {
+            if (devices[i]->uid == uid) return devices[i];
+        }
+        return nullptr;
     }
 
     OneWireTempDevice* OneWireTempBus::GetFirstDevice() {
