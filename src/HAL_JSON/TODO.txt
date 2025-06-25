@@ -7,6 +7,9 @@ implement a global defines that can be switched on/off
   #define HAL_JSON_VALIDATE_FAIL_OPERATION return false
 so that "if one fail" -> "all fail" principe can be used"
 
+fix Operations so that a read string request can have a json string command scheme
+fix UID_Path so that multilevel paths can be used
+
 DS18B20
 
 REGO600

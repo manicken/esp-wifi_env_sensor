@@ -196,14 +196,15 @@ namespace HAL_JSON {
 
     void Manager::TEST() {
         String result;
-        HALReadStringRequest req{UIDPath("D1","1WTG"), result};
+        String cmd = "getDevices";
+        HALReadStringRequest req{UIDPath("1WTG"), result, cmd};
         if (dispatchRead(req)) {
 
             Serial.println(result);
         }
 
         HALValue value;
-        HALReadRequest req2(UIDPath("D2","1WTG"), value);
+        HALReadRequest req2(UIDPath("1WTG:D2"), value);
         if (dispatchRead(req2)) {
             Serial.println(value.asFloat());
         }

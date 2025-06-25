@@ -3,8 +3,18 @@
 namespace HAL_JSON {
 
     uint64_t encodeUID(const char* str) {
+        if (!str || (strlen(str) == 0)) return 0;
         uint64_t out = 0;
         for (int i = 0; i < 8 && str[i]; ++i) {
+            out |= ((uint64_t)(uint8_t)str[i]) << (8 * (7 - i)); // big-endian
+        }
+        return out;
+    }
+
+    uint64_t encodeUID(const char* str, uint32_t count) {
+        if (!str || (strlen(str) == 0) || (count == 0)) return 0;
+        uint64_t out = 0;
+        for (int i = 0; i < 8 && i < count && str[i]; ++i) {
             out |= ((uint64_t)(uint8_t)str[i]) << (8 * (7 - i)); // big-endian
         }
         return out;
@@ -25,21 +35,48 @@ namespace HAL_JSON {
 
     UIDPath::UIDPath() = default;
 
-    UIDPath::UIDPath(const char* itemStr, const char* groupStr) {
-        group = groupStr ? encodeUID(groupStr) : 0;
-        item  = encodeUID(itemStr);
+    UIDPath::UIDPath(const char* uidStr) {
+        uint32_t indiciesCount = 0;
+        const uint32_t* indicies = CharArray::getIndicies(uidStr, ':', indiciesCount);
+        itemCount = indiciesCount + 1;
+        items = new uint64_t[itemCount];
+        int currStrIndex = 0;
+        for (int i=0;i<itemCount;i++) {
+            if (i<indiciesCount) {
+                items[i] = encodeUID(&uidStr[currStrIndex], indicies[i]-currStrIndex);
+                currStrIndex = indicies[i]+1;
+            } else {
+                items[i] = encodeUID(&uidStr[currStrIndex]);
+            }
+        }
+        
+        delete[] indicies;
     }
 
-    UIDPath::UIDPath(std::string itemStr, std::string groupStr) {
-        group = groupStr.empty() ? 0 : encodeUID(groupStr.c_str());
-        item  = encodeUID(itemStr.c_str());
-    }
+    /*UIDPath::UIDPath(const char* uidStr) {
+        const char* sep = strchr(uidStr, ':');
+        if (sep) {
+            std::string groupPart(uidStr, sep - uidStr);
+            std::string itemPart(sep + 1);
+            group = encodeUID(groupPart.c_str());
+            item = encodeUID(itemPart.c_str());
+        } else {
+            group = 0;
+            item = encodeUID(uidStr);
+        }
+    }*/
+
+    UIDPath::UIDPath(const std::string& uidStr) : UIDPath(uidStr.c_str()) { }
 
     uint64_t UIDPath::root() const {
-        if (group == 0) return item;
-        else return group;
+        if (!items || itemCount == 0) return UID_INVALID;
+        return items[0];
     }
-
+    uint64_t UIDPath::byIndex(uint32_t index) const {
+        if (!items || itemCount == 0 || index >= itemCount) return UID_INVALID;
+        return items[index];
+    }
+/* don't think i need theese operations
     bool UIDPath::operator==(const UIDPath& other) const {
         return group == other.group && item == other.item;
     }
@@ -58,6 +95,6 @@ namespace HAL_JSON {
 
     bool UIDPath::operator==(const std::string& uidStr) const {
         return *this == uidStr.c_str();
-    }
+    }*/
 
 }

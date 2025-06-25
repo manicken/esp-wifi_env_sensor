@@ -170,7 +170,8 @@ namespace HAL_JSON {
 
     bool OneWireTempGroup::read(const HALReadRequest &req) {
         if (type == OneWireTemp::Type::GROUP) {
-            Device* dev = findDevice(req.path.item); // use this until I can access devices by <group>:<bus>:<device> adress scheme
+            // TODO take into account that this may adress by bus as well
+            Device* dev = findDevice(req.path.byIndex(1)); // use this until I can access devices by <group>:<bus>:<device> adress scheme
             if (dev == nullptr) return false;
             return dev->read(req);
 
@@ -183,7 +184,8 @@ namespace HAL_JSON {
     }
     bool OneWireTempGroup::write(const HALWriteRequest&req) {
         if (type == OneWireTemp::Type::GROUP) {
-            Device* dev = findDevice(req.path.item); // use this until I can access devices by <group>:<bus>:<device> adress scheme
+            // TODO take into account that this may adress by bus as well
+            Device* dev = findDevice(req.path.byIndex(1)); // use this until I can access devices by <group>:<bus>:<device> adress scheme
             if (dev == nullptr) return false;
             return dev->write(req);
 
