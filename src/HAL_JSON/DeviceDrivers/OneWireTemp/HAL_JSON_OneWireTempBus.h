@@ -50,7 +50,6 @@ namespace HAL_JSON {
 
     public:
         
-        static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj);
 
         OneWireTempBusAtRoot(const JsonVariant &jsonObj);

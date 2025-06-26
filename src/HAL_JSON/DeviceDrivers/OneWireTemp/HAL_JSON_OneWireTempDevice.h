@@ -18,16 +18,12 @@ namespace HAL_JSON {
         Fahrenheit
     };
 
-    class OneWireTempDeviceBase {
+    class OneWireTempDevice : public Device {
     public:
         uint8_t romid[8];
         OneWireTempDeviceTempFormat format = OneWireTempDeviceTempFormat::Celsius;
         float value;
-    };
 
-    class OneWireTempDevice : public Device, public OneWireTempDeviceBase {
-    public:
-        
         static bool VerifyJSON(const JsonVariant &jsonObj);
         
         OneWireTempDevice(const JsonVariant &jsonObj);
@@ -38,22 +34,21 @@ namespace HAL_JSON {
         String ToString();
     };
 
-    class OneWireTempDeviceAtRoot : public OneWireTempAutoRefreshDevice, public OneWireTempDeviceBase {
+    class OneWireTempDeviceAtRoot : public OneWireTempDevice {
     private:
         uint8_t pin;
         OneWire* oneWire = nullptr;
         DallasTemperature* dTemp = nullptr;
-        void requestTemperatures() override;
-        void readAll() override;
+        void requestTemperatures();
+        void readAll();
     public:
+        
         static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj);
         
         OneWireTempDeviceAtRoot(const JsonVariant &jsonObj);
         ~OneWireTempDeviceAtRoot();
 
-        
-        
         bool read(const HALReadRequest &req) override;
         bool write(const HALWriteRequest&req) override;
         String ToString();

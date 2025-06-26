@@ -44,7 +44,7 @@ namespace HAL_JSON {
         {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_ANALOG_WRITE, AnalogInput::Create, AnalogInput::VerifyJSON},
         // following three is OneWireTemp i.e. DS18B20
         {UIDPathMaxLength::Three, UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, OneWireTempGroup::Create, OneWireTempGroup::VerifyJSON}, // currently in development
-        {UIDPathMaxLength::Two, UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, OneWireTempBusAtRoot::Create, OneWireTempBusAtRoot::VerifyJSON}, // currently in development
+        {UIDPathMaxLength::Two, UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, OneWireTempBusAtRoot::Create, OneWireTempBus::VerifyJSON}, // currently in development
         {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, OneWireTempDeviceAtRoot::Create, OneWireTempDeviceAtRoot::VerifyJSON}, // currently in development
 
         {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_DHT, nullptr, nullptr}, // TODO implement
