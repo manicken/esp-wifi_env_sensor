@@ -72,4 +72,8 @@ namespace HAL_JSON {
             value = dTemp->getTempF(romid);
     }
 
+    void OneWireTempDeviceAtRoot::loop() {
+        autoRefresh.loop();
+    }
+
 }

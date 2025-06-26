@@ -135,4 +135,8 @@ namespace HAL_JSON {
             busses[i]->readAll();
         }
     }
+
+    void OneWireTempGroup::loop() {
+        autoRefresh.loop();
+    }
 }

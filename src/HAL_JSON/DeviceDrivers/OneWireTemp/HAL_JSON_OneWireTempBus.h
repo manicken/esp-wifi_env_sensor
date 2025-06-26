@@ -48,6 +48,7 @@ namespace HAL_JSON {
         OneWireTempBusAtRoot(const JsonVariant &jsonObj);
         ~OneWireTempBusAtRoot();
 
+        void loop() override;
         // TODO implement the following methods to allow fine precision of paths
         Device* findDevice(const UIDPath& path) override;
         bool read(const HALReadRequest &req) override;

@@ -110,4 +110,8 @@ namespace HAL_JSON {
         
     }
 
+    void OneWireTempBusAtRoot::loop() {
+        autoRefresh.loop();
+    }
+
 }

@@ -32,6 +32,7 @@ namespace HAL_JSON {
         /** this function will search the busses and their devices to find the device with the uid */
         Device* findDevice(const UIDPath& path) override;
 
+        void loop() override;
         bool read(const HALReadRequest &req) override;
         bool write(const HALWriteRequest&req) override;
         String ToString() override;

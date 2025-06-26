@@ -32,8 +32,6 @@ namespace HAL_JSON {
         HAL_DEVICE_VERIFY_JSON_FUNC Verify_JSON_Function;
     } DeviceTypeDef ;
 
-
-
     DeviceTypeDef DeviceRegistry[] = {
         {UseRootUID::Mandatory, HAL_JSON_TYPE_DIN, DigitalInput::Create, DigitalInput::VerifyJSON},
         {UseRootUID::Mandatory, HAL_JSON_TYPE_DOUT, DigitalOutput::Create, DigitalOutput::VerifyJSON},
