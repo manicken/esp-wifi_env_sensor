@@ -22,7 +22,7 @@ namespace HAL_JSON {
         return nullptr; // no match
     }
     bool Manager::VerifyDeviceJson(const JsonVariant &jsonObj) {
-        if (jsonObj.is<const char*>()) return false; // this is defined as a comment
+        
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TYPE)) return false;
         
 
@@ -50,9 +50,10 @@ namespace HAL_JSON {
         // First pass: count valid entries
         for (int i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
+            if (jsonItem.is<const char*>()) continue; // this is defined as a comment
             bool valid = VerifyDeviceJson(jsonItem);
             validDevices[i] = valid;
-            if (valid == false) continue;
+            if (valid == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
             deviceCount++;
         }
         

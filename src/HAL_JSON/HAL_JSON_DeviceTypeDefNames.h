@@ -3,9 +3,9 @@
 #define HAL_JSON_VALIDATE_JSON_STRICT
 
 #if defined(HAL_JSON_VALIDATE_JSON_STRICT)
-#define HAL_JSON_VALIDATE_FAIL_OPERATION return false
+#define HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION return false
 #else
-#define HAL_JSON_VALIDATE_FAIL_OPERATION continue
+#define HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION continue
 #endif
 
 // Global use

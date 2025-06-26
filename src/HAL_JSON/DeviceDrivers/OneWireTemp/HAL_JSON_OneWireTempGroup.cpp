@@ -26,12 +26,13 @@ namespace HAL_JSON {
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
             if (item.is<const char*>() == false) continue; // comment item
-            if (OneWireTempBus::VerifyJSON(item) == true) validItemCount++;
+            if (OneWireTempBus::VerifyJSON(item) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
+            validItemCount++;
         }
         if (validItemCount == 0) {
             GlobalLogger.Error(HAL_JSON_ERR_ITEMS_NOT_VALID("OneWireTempGroup"));
             return false;
-        } 
+        }
         return true;
     }
     OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) :
