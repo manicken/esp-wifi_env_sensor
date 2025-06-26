@@ -10,25 +10,19 @@
 #include "../../HAL_JSON_DeviceTypeDefNames.h"
 #include "../../ArduinoJSON_ext.h"
 #include "HAL_JSON_OneWireTempDevice.h"
-#include "HAL_JSON_OneWireTempAutoRefreshDevice.h"
+#include "HAL_JSON_OneWireTempAutoRefresh.h"
 
 namespace HAL_JSON {
 
-    class OneWireTempBusBase {
-    protected:
+    class OneWireTempBus : public Device {
+    private:
         uint8_t pin;
         OneWire* oneWire = nullptr;
         DallasTemperature* dTemp = nullptr;
-       
+    public:
         uint32_t deviceCount = 0;
         OneWireTempDevice **devices;
-        
-    };
 
-    class OneWireTempBus : public Device, public OneWireTempBusBase {
-        
-    public:
-        
         static bool VerifyJSON(const JsonVariant &jsonObj);
         OneWireTempBus(const JsonVariant &jsonObj);
         ~OneWireTempBus();
@@ -43,10 +37,9 @@ namespace HAL_JSON {
         String ToString();
     };
 
-    class OneWireTempBusAtRoot : public OneWireTempAutoRefreshDevice, public OneWireTempBusBase {
+    class OneWireTempBusAtRoot : public OneWireTempBus {
     private:
-        void requestTemperatures() override;
-        void readAll() override;
+        OneWireTempAutoRefresh autoRefresh;
 
     public:
         
@@ -54,13 +47,10 @@ namespace HAL_JSON {
 
         OneWireTempBusAtRoot(const JsonVariant &jsonObj);
         ~OneWireTempBusAtRoot();
-        
-        OneWireTempDevice* GetFirstDevice();
-        /** this function will search the devices to find the device with the uid */
-        Device* findDevice(const UIDPath& path) override;
 
+        // TODO implement the following methods to allow fine precision of paths
+        Device* findDevice(const UIDPath& path) override;
         bool read(const HALReadRequest &req) override;
         bool write(const HALWriteRequest &req) override;
-        String ToString() override;
     };
 }

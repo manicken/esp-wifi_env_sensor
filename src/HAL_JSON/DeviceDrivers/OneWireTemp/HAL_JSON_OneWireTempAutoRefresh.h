@@ -23,8 +23,8 @@ namespace HAL_JSON {
         State state = State::IDLE;
         uint32_t lastStart = 0;
 
-        Callback requestTemperatures = nullptr;
-        Callback readAll = nullptr;
+        std::function<void()> requestTemperatures;
+        std::function<void()> readAll;
 
     protected:
         uint32_t refreshTimeMs = HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS;
@@ -32,7 +32,8 @@ namespace HAL_JSON {
 
     public:
         OneWireTempAutoRefresh() = delete;
-        OneWireTempAutoRefresh(Callback _requestTemperatures, Callback _readAll);
+        OneWireTempAutoRefresh(OneWireTempAutoRefresh&) = delete;
+        OneWireTempAutoRefresh(std::function<void()> _requestTemperatures, std::function<void()> _readAll);
         void SetRefreshTimeMs(uint32_t _refreshTimeMs);
         static double ParseRefreshTime(const JsonVariant &jsonObj);
         static uint32_t ParseRefreshTimeMs(const JsonVariant &value);

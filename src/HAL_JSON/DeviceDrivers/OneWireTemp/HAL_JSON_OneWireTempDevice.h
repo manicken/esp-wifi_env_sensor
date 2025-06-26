@@ -9,7 +9,7 @@
 #include "../../HAL_JSON_Device.h"
 #include "../../HAL_JSON_DeviceTypeDefNames.h"
 #include "../../ArduinoJSON_ext.h"
-#include "HAL_JSON_OneWireTempAutoRefreshDevice.h"
+#include "HAL_JSON_OneWireTempAutoRefresh.h"
 
 namespace HAL_JSON {
 
@@ -36,6 +36,7 @@ namespace HAL_JSON {
 
     class OneWireTempDeviceAtRoot : public OneWireTempDevice {
     private:
+        OneWireTempAutoRefresh autoRefresh;
         uint8_t pin;
         OneWire* oneWire = nullptr;
         DallasTemperature* dTemp = nullptr;

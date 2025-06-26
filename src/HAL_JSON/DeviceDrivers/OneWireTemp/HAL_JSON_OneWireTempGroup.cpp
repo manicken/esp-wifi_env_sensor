@@ -34,8 +34,12 @@ namespace HAL_JSON {
         } 
         return true;
     }
-    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) {
-        refreshTimeMs = OneWireTempAutoRefreshDevice::ParseRefreshTimeMs(jsonObj);
+    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) :
+        autoRefresh(
+            [this]() { requestTemperatures(); },
+            [this]() { readAll(); })
+    {
+        autoRefresh.SetRefreshTimeMs(OneWireTempAutoRefresh::ParseRefreshTimeMs(jsonObj));
 
         // checked beforehand so extracting it here is safe
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();

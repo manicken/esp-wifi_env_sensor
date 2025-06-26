@@ -3,7 +3,7 @@
 
 namespace HAL_JSON {
 
-    OneWireTempAutoRefresh::OneWireTempAutoRefresh(Callback _requestTemperatures, Callback _readAll)
+    OneWireTempAutoRefresh::OneWireTempAutoRefresh(std::function<void()> _requestTemperatures, std::function<void()> _readAll)
         : requestTemperatures(_requestTemperatures), readAll(_readAll) {
             if (!requestTemperatures || !readAll) {
                 Serial.println(F("ERROR @ OneWireTempAutoRefresh - Callback pointers cannot be null"));

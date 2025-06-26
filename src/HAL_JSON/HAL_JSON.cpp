@@ -105,7 +105,7 @@ namespace HAL_JSON {
                 Device* dev = devices[i]->findDevice(path);
                 if (dev != nullptr) return dev;
             }
-            else if (devices[i]->uid == path.root()) return devices[i];
+            else if (devices[i]->uid == path.first()) return devices[i];
         }
         return nullptr;
     }

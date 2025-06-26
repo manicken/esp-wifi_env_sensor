@@ -25,7 +25,8 @@ namespace HAL_JSON {
         UIDPath(const char* uidStr);
         UIDPath(const std::string& uidStr);
 
-        uint64_t root() const;
+        bool empty() const;
+        uint64_t first() const;
         uint64_t last() const;
         uint64_t byIndex(uint32_t index) const;
 /*don't think i need theese operations
