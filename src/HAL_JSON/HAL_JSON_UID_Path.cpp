@@ -72,6 +72,10 @@ namespace HAL_JSON {
         if (!items || itemCount == 0) return UID_INVALID;
         return items[0];
     }
+    uint64_t UIDPath::last() const {
+        if (!items || itemCount == 0) return UID_INVALID;
+        return items[itemCount-1];
+    }
     uint64_t UIDPath::byIndex(uint32_t index) const {
         if (!items || itemCount == 0 || index >= itemCount) return UID_INVALID;
         return items[index];

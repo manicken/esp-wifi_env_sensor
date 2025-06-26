@@ -65,7 +65,7 @@ namespace HAL_JSON {
         
         OneWireTempDevice* GetFirstDevice();
         /** this function will search the devices to find the device with the uid */
-        Device* findDevice(uint64_t uid);
+        Device* findDevice(const UIDPath& path);
         void requestTemperatures();
         void readAll();
         //bool read(const HALReadRequest &req); currently Bus do not use uid so this func do not make any sense
@@ -92,7 +92,7 @@ namespace HAL_JSON {
         ~OneWireTempGroup();
         
         /** this function will search the busses and their devices to find the device with the uid */
-        Device* findDevice(uint64_t uid) override;
+        Device* findDevice(const UIDPath& path) override;
         void loop() override; // this task will take care of starting 1 wire temp measurements at regular intervalls (defined by refreshTimeMs)
         
         bool read(const HALReadRequest &req) override;

@@ -50,7 +50,8 @@ namespace DeviceManager
         else if (type == DeviceType::DOUT) return "DOUT";
         else if (type == DeviceType::PWM) return "PWM";
         else if (type == DeviceType::TX433) return "TX433";
-        else return "Unknown";
+        else if (type == DeviceType::DPOUT) return "DPOUT";
+        else return "Unknown:" + String((uint32_t)type);
     }
 
     String Device::ToString() {

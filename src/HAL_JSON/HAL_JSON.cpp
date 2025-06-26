@@ -96,49 +96,49 @@ namespace HAL_JSON {
         return true;
     }
 
-    Device* Manager::findDevice(uint64_t uid) {
-        if (!devices || deviceCount == 0 || uid == 0) return nullptr;
+    Device* Manager::findDevice(const UIDPath& path) {
+        if (!devices || deviceCount == 0) return nullptr;
         
         for (int i=0;i<deviceCount;i++) {
             if (devices[i] == nullptr) continue;
             if (devices[i]->uid == 0) { // devices with uid == 0 may delegate device lookup to sub-devices
-                Device* dev = devices[i]->findDevice(uid);
+                Device* dev = devices[i]->findDevice(path);
                 if (dev != nullptr) return dev;
             }
-            else if (devices[i]->uid == uid) return devices[i];
+            else if (devices[i]->uid == path.root()) return devices[i];
         }
         return nullptr;
     }
 
     template<typename RequestType>
     bool Manager::dispatchRead(const RequestType& req) {
-        Device* device = findDevice(req.path.root());
+        Device* device = findDevice(req.path);
         return device ? device->read(req) : false;
     }
 
     template<typename RequestType>
     bool Manager::dispatchWrite(const RequestType& req) {
-        Device* device = findDevice(req.path.root());
+        Device* device = findDevice(req.path);
         return device ? device->write(req) : false;
     }
 
     bool Manager::read(const HALReadRequest &req) {
-        Device* device = findDevice(req.path.root());
+        Device* device = findDevice(req.path);
         if (device == nullptr) return false;
         return device->read(req);
     }
     bool Manager::write(const HALWriteRequest &req) {
-        Device* device = findDevice(req.path.root());
+        Device* device = findDevice(req.path);
         if (device == nullptr) return false;
         return device->write(req);
     }
     bool Manager::read(const HALReadStringRequest &req) {
-        Device* device = findDevice(req.path.root());
+        Device* device = findDevice(req.path);
         if (device == nullptr) return false;
         return device->read(req);
     }
     bool Manager::write(const HALWriteStringRequest &req) {
-        Device* device = findDevice(req.path.root());
+        Device* device = findDevice(req.path);
         if (device == nullptr) return false;
         return device->write(req);
     }

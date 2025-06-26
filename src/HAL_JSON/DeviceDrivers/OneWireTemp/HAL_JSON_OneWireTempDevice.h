@@ -1,0 +1,61 @@
+#pragma once
+
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include "../../../Support/Logger.h"
+#include "../../../Support/ConvertHelper.h"
+#include "../../HAL_JSON_Device.h"
+#include "../../HAL_JSON_DeviceTypeDefNames.h"
+#include "../../ArduinoJSON_ext.h"
+#include "HAL_JSON_OneWireTempAutoRefreshDevice.h"
+
+namespace HAL_JSON {
+
+    enum class OneWireTempDeviceTempFormat {
+        Celsius,
+        Fahrenheit
+    };
+
+    class OneWireTempDeviceBase {
+    public:
+        uint8_t romid[8];
+        OneWireTempDeviceTempFormat format = OneWireTempDeviceTempFormat::Celsius;
+        float value;
+    };
+
+    class OneWireTempDevice : public Device, public OneWireTempDeviceBase {
+    public:
+        
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        
+        OneWireTempDevice(const JsonVariant &jsonObj);
+        ~OneWireTempDevice();
+        
+        bool read(const HALReadRequest &req) override;
+        bool write(const HALWriteRequest&req) override;
+        String ToString();
+    };
+
+    class OneWireTempDeviceAtRoot : public OneWireTempAutoRefreshDevice, public OneWireTempDeviceBase {
+    private:
+        uint8_t pin;
+        OneWire* oneWire = nullptr;
+        DallasTemperature* dTemp = nullptr;
+        void requestTemperatures() override;
+        void readAll() override;
+    public:
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
+        
+        OneWireTempDeviceAtRoot(const JsonVariant &jsonObj);
+        ~OneWireTempDeviceAtRoot();
+
+        
+        
+        bool read(const HALReadRequest &req) override;
+        bool write(const HALWriteRequest&req) override;
+        String ToString();
+    };
+}

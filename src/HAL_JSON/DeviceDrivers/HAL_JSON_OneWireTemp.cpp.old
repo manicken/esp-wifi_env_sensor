@@ -159,10 +159,10 @@ namespace HAL_JSON {
         busses = nullptr;
     }
 
-    Device* OneWireTempGroup::findDevice(uint64_t uid) { // special note: this function will not be called when the type is device as that do use uid at root level
+    Device* OneWireTempGroup::findDevice(const UIDPath& path) { // special note: this function will not be called when the type is device as that do use uid at root level
         for (int i=0;i<busCount;i++)
         {
-            Device * dev = busses[i]->findDevice(uid);
+            Device * dev = busses[i]->findDevice(path);
             if (dev != nullptr) return dev;
         }
         return nullptr;
@@ -171,13 +171,13 @@ namespace HAL_JSON {
     bool OneWireTempGroup::read(const HALReadRequest &req) {
         if (type == OneWireTemp::Type::GROUP) {
             // TODO take into account that this may adress by bus as well
-            Device* dev = findDevice(req.path.byIndex(1)); // use this until I can access devices by <group>:<bus>:<device> adress scheme
+            Device* dev = findDevice(req.path);
             if (dev == nullptr) return false;
             return dev->read(req);
 
-        } else if (type == OneWireTemp::Type::BUS) { // this will not be used as in this mode the access will be direct to the device
-
-        } else if (type == OneWireTemp::Type::DEVICE) { // this will not be used as in this mode the access will be direct to the device
+        } else if (type == OneWireTemp::Type::BUS) {
+            return busses[0]->GetFirstDevice()->read(req);
+        } else if (type == OneWireTemp::Type::DEVICE) {
             return busses[0]->GetFirstDevice()->read(req);
         }
         return false; // failsafe
@@ -185,13 +185,13 @@ namespace HAL_JSON {
     bool OneWireTempGroup::write(const HALWriteRequest&req) {
         if (type == OneWireTemp::Type::GROUP) {
             // TODO take into account that this may adress by bus as well
-            Device* dev = findDevice(req.path.byIndex(1)); // use this until I can access devices by <group>:<bus>:<device> adress scheme
+            Device* dev = findDevice(req.path);
             if (dev == nullptr) return false;
             return dev->write(req);
 
-        } else if (type == OneWireTemp::Type::BUS) { // this will not be used as in this mode the access will be direct to the device
-
-        } else if (type == OneWireTemp::Type::DEVICE) { // this will not be used as in this mode the access will be direct to the device
+        } else if (type == OneWireTemp::Type::BUS) {
+            return busses[0]->GetFirstDevice()->write(req);
+        } else if (type == OneWireTemp::Type::DEVICE) {
             return busses[0]->GetFirstDevice()->write(req);
         }
         return false; // failsafe
@@ -320,10 +320,10 @@ namespace HAL_JSON {
         }
     }
 
-    Device* OneWireTempBus::findDevice(uint64_t uid) {
+    Device* OneWireTempBus::findDevice(const UIDPath& path) {
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i]->uid == uid) return devices[i];
+            if (devices[i]->uid == path.last()) return devices[i];
         }
         return nullptr;
     }

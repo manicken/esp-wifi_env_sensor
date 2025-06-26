@@ -26,7 +26,7 @@ namespace HAL_JSON {
         virtual bool write(const HALWriteStringRequest &val);
         virtual void loop();
         /** used to find sub/leaf devices @ "group devices" */
-        virtual Device* findDevice(uint64_t uid);
+        virtual Device* findDevice(const UIDPath& path);
 
         virtual String ToString();
     };

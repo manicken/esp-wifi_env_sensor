@@ -74,8 +74,8 @@ char upload_html[] PROGMEM = R"=====(
       <input type="file" name="name">
       <input class="button" type="submit" value="Upload">
       <br>
-      <a href="/edit">
-      <button>Goto edit page</button>
+      <br>
+      <button onclick="window.location.href='/edit'">Go to edit page</button>
       </a>
 </form>
 

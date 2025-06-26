@@ -15,7 +15,7 @@ namespace LittleFS_ext
     bool load_from_file(const String& file_name, char *buff);
     /** using this is safe */
     bool load_from_file(const String& file_name, char** outBuffer, size_t* outSize = nullptr);
-    int getFileSize(String& file_name);
+    int getFileSize(const String& file_name);
     void listDir(Print &printStream, const char *dirname, uint8_t level);
     void listDir(String &str, bool isHtml, const char *dirname, uint8_t level);
 }
