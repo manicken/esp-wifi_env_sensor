@@ -19,7 +19,6 @@ namespace HAL_JSON {
     };
 
     enum class UIDPathMaxLength {
-        Zero = 0, // only used for terminator device
         One = 1,
         Two = 2,
         Three = 3,
@@ -27,7 +26,6 @@ namespace HAL_JSON {
     };
 
     typedef struct DeviceTypeDef {
-        UIDPathMaxLength uidPathMaxLength;
         UseRootUID useRootUID;
         const char* type;
         HAL_DEVICE_CREATE_FUNC Create_Function;
@@ -37,21 +35,21 @@ namespace HAL_JSON {
 
 
     DeviceTypeDef DeviceRegistry[] = {
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_DIN, DigitalInput::Create, DigitalInput::VerifyJSON},
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_DOUT, DigitalOutput::Create, DigitalOutput::VerifyJSON},
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_DPOUT, SinglePulseOutput::Create, SinglePulseOutput::VerifyJSON},
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_ADC, AnalogInput::Create, AnalogInput::VerifyJSON},
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_ANALOG_WRITE, AnalogInput::Create, AnalogInput::VerifyJSON},
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_DIN, DigitalInput::Create, DigitalInput::VerifyJSON},
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_DOUT, DigitalOutput::Create, DigitalOutput::VerifyJSON},
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_DPOUT, SinglePulseOutput::Create, SinglePulseOutput::VerifyJSON},
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_ADC, AnalogInput::Create, AnalogInput::VerifyJSON},
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_ANALOG_WRITE, AnalogInput::Create, AnalogInput::VerifyJSON},
         // following three is OneWireTemp i.e. DS18B20
-        {UIDPathMaxLength::Three, UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, OneWireTempGroup::Create, OneWireTempGroup::VerifyJSON}, // currently in development
-        {UIDPathMaxLength::Two, UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, OneWireTempBusAtRoot::Create, OneWireTempBus::VerifyJSON}, // currently in development
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, OneWireTempDeviceAtRoot::Create, OneWireTempDeviceAtRoot::VerifyJSON}, // currently in development
+        {UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, OneWireTempGroup::Create, OneWireTempGroup::VerifyJSON}, // currently in development
+        {UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, OneWireTempBusAtRoot::Create, OneWireTempBus::VerifyJSON}, // currently in development
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, OneWireTempDeviceAtRoot::Create, OneWireTempDeviceAtRoot::VerifyJSON}, // currently in development
 
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_DHT, nullptr, nullptr}, // TODO implement
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_TX433, nullptr, nullptr}, // TODO implement
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_REGO600, nullptr, nullptr}, // TODO implement
-        {UIDPathMaxLength::One, UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_LEDC, nullptr, nullptr}, // TODO implement
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_DHT, nullptr, nullptr}, // TODO implement
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_TX433, nullptr, nullptr}, // TODO implement
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_REGO600, nullptr, nullptr}, // TODO implement
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_LEDC, nullptr, nullptr}, // TODO implement
 
-        {UIDPathMaxLength::Zero, UseRootUID::Void, nullptr, nullptr, nullptr} // terminator 
+        {UseRootUID::Void, nullptr, nullptr, nullptr} // terminator 
     };
 }
