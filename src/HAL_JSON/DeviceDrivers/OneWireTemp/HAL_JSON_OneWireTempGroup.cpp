@@ -116,7 +116,17 @@ namespace HAL_JSON {
     }
 
     bool OneWireTempGroup::read(const HALReadStringRequestValue &val) {
-        return false;  // until we implement the real functionality
+        if (val.cmd == F("getAllNewDevices")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
+            return false; // currently not implemented
+        }
+        else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
+            return false; // currently not implemented
+        }
+        else if (val.cmd == F("getAllTemperatures")) { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
+            return false; // currently not implemented
+        }
+        val.out_value = F("{\"error\":\"cmd not found\"}");
+        return true;  // cmd not found
     }
 
     void OneWireTempGroup::requestTemperatures() {
