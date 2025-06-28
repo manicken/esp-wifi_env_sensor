@@ -10,20 +10,30 @@
 #include "HAL_JSON_Operations.h"
 #include "GPIO_manager.h"
 
+
 namespace HAL_JSON {
+
+    enum class UIDPathMaxLength : uint8_t {
+        One = 1,
+        Two = 2,
+        Three = 3,
+        Four = 4 // not used at the moment
+    };
 
     class Device {
     protected:
-        Device();
+        Device() = delete;
     public:
+        Device(UIDPathMaxLength uidMaxLength);
         virtual ~Device();
 
         uint64_t uid;
+        const uint8_t uidMaxLength;
 
-        virtual bool read(const HALReadRequest &req);
-        virtual bool write(const HALWriteRequest &val);
-        virtual bool read(const HALReadStringRequest &val);
-        virtual bool write(const HALWriteStringRequest &val);
+        virtual bool read(HALValue &val);
+        virtual bool write(const HALValue &val);
+        virtual bool read(const HALReadStringRequestValue &val);
+        virtual bool write(const HALWriteStringRequestValue &val);
         virtual void loop();
         /** used to find sub/leaf devices @ "group devices" */
         virtual Device* findDevice(const UIDPath& path);

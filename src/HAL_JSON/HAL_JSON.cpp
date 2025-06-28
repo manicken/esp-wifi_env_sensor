@@ -102,11 +102,25 @@ namespace HAL_JSON {
         
         for (int i=0;i<deviceCount;i++) {
             if (devices[i] == nullptr) continue;
-            if (devices[i]->uid == 0) { // devices with uid == 0 may delegate device lookup to sub-devices
-                Device* dev = devices[i]->findDevice(path);
-                if (dev != nullptr) return dev;
-            }
-            else if (devices[i]->uid == path.first()) return devices[i];
+#if defined(HAL_JSON_USE_EFFICIENT_FIND)
+            if (devices[i]->uid == path.first()) {
+				if (devices[i]->uidMaxLength == 1)
+					return devices[i];
+				else
+				{
+					Device* dev = devices[i]->findDevice(path);
+					if (dev != nullptr) return dev;
+				}
+					
+			}
+            else if (devices[i]->uid == 0) { // this will only happen on devices where uidMaxLenght>1
+				Device* dev = devices[i]->findDevice(path);
+				if (dev != nullptr) return dev;
+			}
+#else
+            Device* dev = devices[i]->findDevice(path);
+            if (dev != nullptr) return dev;
+#endif
         }
         return nullptr;
     }
@@ -120,28 +134,28 @@ namespace HAL_JSON {
     template<typename RequestType>
     bool Manager::dispatchWrite(const RequestType& req) {
         Device* device = findDevice(req.path);
-        return device ? device->write(req) : false;
+        return device ? device->write(req.value) : false;
     }
 
     bool Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) return false;
-        return device->read(req);
+        return device->read(req.out_value);
     }
     bool Manager::write(const HALWriteRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) return false;
-        return device->write(req);
+        return device->write(req.value);
     }
     bool Manager::read(const HALReadStringRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) return false;
-        return device->read(req);
+        return device->read(req.value);
     }
     bool Manager::write(const HALWriteStringRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) return false;
-        return device->write(req);
+        return device->write(req.value);
     }
 
     bool Manager::ReadJSON(const char* path) {
@@ -198,7 +212,9 @@ namespace HAL_JSON {
     void Manager::TEST() {
         String result;
         String cmd = "getDevices";
-        HALReadStringRequest req{UIDPath("1WTG"), result, cmd};
+
+        HALReadStringRequestValue strVal = {cmd, result};
+        HALReadStringRequest req{UIDPath("1WTG"), strVal};
         if (dispatchRead(req)) {
 
             Serial.println(result);

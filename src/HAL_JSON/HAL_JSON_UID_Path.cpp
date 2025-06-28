@@ -40,6 +40,7 @@ namespace HAL_JSON {
         const uint32_t* indicies = CharArray::getIndicies(uidStr, ':', indiciesCount);
         itemCount = indiciesCount + 1;
         items = new uint64_t[itemCount];
+        items2 = new HAL_UID[itemCount];
         int currStrIndex = 0;
         for (int i=0;i<itemCount;i++) {
             if (i<indiciesCount) {

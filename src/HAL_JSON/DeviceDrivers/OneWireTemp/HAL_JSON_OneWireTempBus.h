@@ -32,8 +32,8 @@ namespace HAL_JSON {
         Device* findDevice(const UIDPath& path) override;
         void requestTemperatures();
         void readAll();
-        bool read(const HALReadRequest &req) override;
-        bool write(const HALWriteRequest &req) override;
+        bool read(const HALReadStringRequestValue& val) override;
+
         String ToString();
     };
 
@@ -51,7 +51,6 @@ namespace HAL_JSON {
         void loop() override;
         // TODO implement the following methods to allow fine precision of paths
         Device* findDevice(const UIDPath& path) override;
-        bool read(const HALReadRequest &req) override;
-        bool write(const HALWriteRequest &req) override;
+
     };
 }

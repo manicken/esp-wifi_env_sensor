@@ -15,7 +15,7 @@ namespace HAL_JSON {
         return Convert::HexToBytes(romIdStr, nullptr, 8);
     }
 
-    OneWireTempDevice::OneWireTempDevice(const JsonVariant &jsonObj) {
+    OneWireTempDevice::OneWireTempDevice(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
         const char* romIdStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>();
@@ -33,6 +33,10 @@ namespace HAL_JSON {
 
     OneWireTempDevice::~OneWireTempDevice() {
         
+    }
+
+    bool OneWireTempDevice::read(HALValue& val) {
+        val = value;
     }
 
     bool OneWireTempDeviceAtRoot::VerifyJSON(const JsonVariant &jsonObj) {

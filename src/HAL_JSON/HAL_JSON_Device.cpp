@@ -2,7 +2,7 @@
 
 namespace HAL_JSON {
 
-    Device::Device() {}
+    Device::Device(UIDPathMaxLength uidMaxLength) : uidMaxLength(static_cast<uint8_t>(uidMaxLength)) { }
 
     Device::~Device() {}
 
@@ -12,9 +12,9 @@ namespace HAL_JSON {
     String Device::ToString() {
         return "uid=" + String(decodeUID(uid).c_str());
     }
-    bool Device::read(const HALReadRequest &req) { return false; }
-    bool Device::write(const HALWriteRequest &req) { return false; };
-    bool Device::read(const HALReadStringRequest &req) { return false; }
-    bool Device::write(const HALWriteStringRequest &req) { return false; }
+    bool Device::read(HALValue& val) { return false; }
+    bool Device::write(const HALValue& req) { return false; };
+    bool Device::read(const HALReadStringRequestValue &val) { return false; }
+    bool Device::write(const HALWriteStringRequestValue &val) { return false; }
 
 } // namespace HAL

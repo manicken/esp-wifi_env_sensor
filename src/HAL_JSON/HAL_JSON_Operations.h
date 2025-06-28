@@ -17,17 +17,27 @@ namespace HAL_JSON {
         HALWriteRequest(const UIDPath& p, const HALValue& val) : path(p), value(val) {}
     };
 
-    struct HALReadStringRequest {
-        const UIDPath& path;
+    struct HALReadStringRequestValue {
         String& out_value;
         const String& cmd;
-        HALReadStringRequest(const UIDPath& p, String& out, const String& cmd) : path(p), out_value(out), cmd(cmd) {}
+        HALReadStringRequestValue(String& out_value, const String& cmd): out_value(out_value), cmd(cmd) {}
+    };
+
+    struct HALWriteStringRequestValue {
+        const String& value;
+        String& result;
+        HALWriteStringRequestValue(const String& value, String& result): value(value), result(result) {}
+    };
+
+    struct HALReadStringRequest {
+        const UIDPath& path;
+        HALReadStringRequestValue& value;
+        HALReadStringRequest(const UIDPath& p, HALReadStringRequestValue& value) : path(p), value(value) {}
     };
 
     struct HALWriteStringRequest {
         const UIDPath& path;
-        const String& value;
-        String& result;
-        HALWriteStringRequest(const UIDPath& p, const String& val, String& result) : path(p), value(val), result(result) {}
+        HALWriteStringRequestValue& value;
+        HALWriteStringRequest(const UIDPath& p, HALWriteStringRequestValue& value) : path(p), value(value) {}
     };
 }

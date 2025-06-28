@@ -25,8 +25,10 @@ namespace HAL_JSON {
         static Device* Create(const JsonVariant &json);
         DigitalInput(const JsonVariant &jsonObj);
         //~DigitalInput();
-        bool read(const HALReadRequest&) override;
-        bool write(const HALWriteRequest&) override;
+#ifndef HAL_JSON_USE_EFFICIENT_FIND
+        Device* findDevice(const UIDPath& path) override;
+#endif
+        bool read(HALValue &val) override;
         String ToString() override;
     };
 
@@ -45,8 +47,11 @@ namespace HAL_JSON {
         static Device* Create(const JsonVariant &jsonObj);
         DigitalOutput(const JsonVariant &jsonObj);
         ~DigitalOutput();
-        bool read(const HALReadRequest&) override;
-        bool write(const HALWriteRequest&) override;
+#ifndef HAL_JSON_USE_EFFICIENT_FIND
+        Device* findDevice(const UIDPath& path) override;
+#endif
+        bool read(HALValue &val) override;
+        bool write(const HALValue &val) override;
         String ToString() override;
     };
 
@@ -69,8 +74,11 @@ namespace HAL_JSON {
         static Device* Create(const JsonVariant &jsonObj);
         SinglePulseOutput(const JsonVariant &jsonObj);
         ~SinglePulseOutput();
-        bool read(const HALReadRequest&) override;
-        bool write(const HALWriteRequest&) override;
+#ifndef HAL_JSON_USE_EFFICIENT_FIND
+        Device* findDevice(const UIDPath& path) override;
+#endif
+        bool read(HALValue &val) override;
+        bool write(const HALValue &val) override;
         String ToString() override;
     };
 
@@ -89,8 +97,10 @@ namespace HAL_JSON {
         static Device* Create(const JsonVariant &jsonObj);
         AnalogInput(const JsonVariant &jsonObj);
         ~AnalogInput();
-        bool read(const HALReadRequest&) override;
-        bool write(const HALWriteRequest&) override;
+#ifndef HAL_JSON_USE_EFFICIENT_FIND
+        Device* findDevice(const UIDPath& path) override;
+#endif
+        bool read(HALValue &val) override;
         String ToString() override;
     };
 
@@ -110,8 +120,10 @@ namespace HAL_JSON {
         static uint32_t frequency;
         
         PWMAnalogWriteConfig(const JsonVariant &jsonObj);
-        bool read(const HALReadRequest&) override;
-        bool write(const HALWriteRequest&) override;
+#ifndef HAL_JSON_USE_EFFICIENT_FIND
+        Device* findDevice(const UIDPath& path) override;
+#endif
+        bool write(const HALWriteStringRequestValue& value) override;
         String ToString() override;
 
     };
@@ -133,8 +145,11 @@ namespace HAL_JSON {
         static Device* Create(const JsonVariant &jsonObj);
         PWMAnalogWrite(const JsonVariant &jsonObj);
         ~PWMAnalogWrite();
-        bool read(const HALReadRequest&) override;
-        bool write(const HALWriteRequest&) override;
+#ifndef HAL_JSON_USE_EFFICIENT_FIND
+        Device* findDevice(const UIDPath& path) override;
+#endif
+        bool read(HALValue &val) override;
+        bool write(const HALValue &val) override;
         String ToString() override;
     };
 

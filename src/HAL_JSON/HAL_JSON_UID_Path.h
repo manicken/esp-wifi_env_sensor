@@ -6,6 +6,8 @@
 #include <string>
 #include <Arduino.h> // Needed for String class
 #include "../Support/CharArrayHelpers.h"
+#include "Test_NEW_UID.h"
+
 namespace HAL_JSON {
 
     // Encode UID from ASCII string (up to 8 chars)
@@ -17,6 +19,8 @@ namespace HAL_JSON {
         static constexpr uint64_t UID_INVALID = 1;
         uint64_t* items = nullptr;
         uint32_t itemCount = 0;
+
+        HAL_UID* items2 = nullptr;
 
         //uint64_t group = 0;
         //uint64_t item  = 0;

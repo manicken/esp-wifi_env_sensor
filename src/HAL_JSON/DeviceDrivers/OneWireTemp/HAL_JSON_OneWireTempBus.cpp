@@ -35,7 +35,7 @@ namespace HAL_JSON {
         return GPIO_manager::CheckIfPinAvailableAndReserve(pin, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)));
     }
 
-    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj) {
+    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::Two) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin); // this is in most cases taken care of in OneWireTempBus::VerifyJSON but there are situations where it's needed
 
@@ -95,6 +95,10 @@ namespace HAL_JSON {
             if (devices[i]->uid == path.last()) return devices[i];
         }
         return nullptr;
+    }
+
+    bool OneWireTempBus::read(const HALReadStringRequestValue& val) {
+        return false; // until we implement the real functionality
     }
 
     OneWireTempBusAtRoot::OneWireTempBusAtRoot(const JsonVariant &jsonObj) 

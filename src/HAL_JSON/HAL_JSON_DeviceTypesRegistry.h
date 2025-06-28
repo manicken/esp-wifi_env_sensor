@@ -18,12 +18,7 @@ namespace HAL_JSON {
         Void
     };
 
-    enum class UIDPathMaxLength {
-        One = 1,
-        Two = 2,
-        Three = 3,
-        Four = 4 // not used at the moment
-    };
+    
 
     typedef struct DeviceTypeDef {
         UseRootUID useRootUID;

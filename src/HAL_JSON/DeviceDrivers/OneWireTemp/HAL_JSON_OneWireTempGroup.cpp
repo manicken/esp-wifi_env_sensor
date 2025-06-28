@@ -35,7 +35,7 @@ namespace HAL_JSON {
         }
         return true;
     }
-    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) :
+    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::Three),
         autoRefresh(
             [this]() { requestTemperatures(); },
             [this]() { readAll(); })
@@ -102,7 +102,11 @@ namespace HAL_JSON {
         busses = nullptr;
     }
 
-    Device* OneWireTempGroup::findDevice(const UIDPath& path) { // special note: this function will not be called when the type is device as that do use uid at root level
+    Device* OneWireTempGroup::findDevice(const UIDPath& path) {
+        // here wee need to find out how the layout works
+        // i.e. when current uid is zero
+        // and how well that matches for the inputted path and the path:s length
+
         for (int i=0;i<busCount;i++)
         {
             Device * dev = busses[i]->findDevice(path);
@@ -111,18 +115,8 @@ namespace HAL_JSON {
         return nullptr;
     }
 
-    bool OneWireTempGroup::read(const HALReadRequest &req) {
-        // TODO take into account that this may adress by bus as well
-        Device* dev = findDevice(req.path);
-        if (dev == nullptr) return false;
-        return dev->read(req);
-    }
-
-    bool OneWireTempGroup::write(const HALWriteRequest&req) {
-        // TODO take into account that this may adress by bus as well
-        Device* dev = findDevice(req.path);
-        if (dev == nullptr) return false;
-        return dev->write(req);
+    bool OneWireTempGroup::read(const HALReadStringRequestValue &val) {
+        return false;  // until we implement the real functionality
     }
 
     void OneWireTempGroup::requestTemperatures() {

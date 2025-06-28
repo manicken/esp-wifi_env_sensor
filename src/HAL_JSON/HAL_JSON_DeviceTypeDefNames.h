@@ -8,6 +8,8 @@
 #define HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION continue
 #endif
 
+#define HAL_JSON_USE_EFFICIENT_FIND
+
 // Global use
 #define HAL_JSON_KEYNAME_TYPE                               "type"
 #define HAL_JSON_KEYNAME_UID                                "uid"

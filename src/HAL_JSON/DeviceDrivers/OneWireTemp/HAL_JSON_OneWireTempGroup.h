@@ -33,8 +33,8 @@ namespace HAL_JSON {
         Device* findDevice(const UIDPath& path) override;
 
         void loop() override;
-        bool read(const HALReadRequest &req) override;
-        bool write(const HALWriteRequest&req) override;
+        bool read(const HALReadStringRequestValue &val) override;
+        bool write(const HALWriteStringRequestValue &val) override;
         String ToString() override;
     };
 }
