@@ -76,18 +76,33 @@ namespace HAL_JSON {
     bool UIDPath::empty() const {
         return (!items || itemCount == 0);
     }
+    
+    uint32_t UIDPath::count() {
+        return itemCount;
+    }
     uint64_t UIDPath::getCurrentUID() {
         if (currentItemIndex == itemCount) return UID_INVALID; // ideally this wont happen
         return items[currentItemIndex];
     }
     uint64_t UIDPath::getNextUID() {
-        if (++currentItemIndex == itemCount) return UID_INVALID; // ideally this wont happen
+        if (itemCount == 0) return UID_INVALID; // ideally this wont happen
+        if (currentItemIndex == (itemCount-1)) return UID_INVALID; // ideally this wont happen
+        currentItemIndex++;
         return items[currentItemIndex];
+    }
+    uint64_t UIDPath::peekNextUID() {
+        if (itemCount == 0) return UID_INVALID; // ideally this wont happen
+        if (currentItemIndex == (itemCount-1)) return UID_INVALID; // ideally this wont happen
+        return items[currentItemIndex+1];
     }
     uint64_t UIDPath::resetAndGetFirst() {
         if (itemCount == 0) return UID_INVALID; // ideally this wont happen
         currentItemIndex = 0;
         return items[0];
+    }
+    bool UIDPath::isLast() {
+        if (itemCount == 0) return true; // ideally this wont happen
+        return (currentItemIndex==(itemCount-1));
     }
    /* uint64_t UIDPath::byIndex(uint32_t index) {
         return items[index];

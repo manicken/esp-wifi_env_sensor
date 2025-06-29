@@ -48,9 +48,13 @@ namespace HAL_JSON {
          * that way we never need to check it while using other functions
          */
         bool empty() const;
+        
+        uint32_t count();
         uint64_t getCurrentUID();
         uint64_t resetAndGetFirst();
         uint64_t getNextUID();
+        uint64_t peekNextUID();
+        bool isLast();
 
         //uint64_t byIndex(uint32_t index); // usage of this function don't make any sense
     };

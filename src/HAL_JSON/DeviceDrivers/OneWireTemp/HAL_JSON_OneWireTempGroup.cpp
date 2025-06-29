@@ -103,19 +103,31 @@ namespace HAL_JSON {
     }
 
     Device* OneWireTempGroup::findDevice(UIDPath& path) {
-        // here wee need to find out how the layout works
-        // i.e. when current uid is zero
-        // and how well that matches for the inputted path and the path:s length
+        uint64_t currLevelUID = 0;
+        if (uid != 0) // current device uid
+            currLevelUID = path.getNextUID();
+        else  // current device uid == 0
+            currLevelUID = path.getCurrentUID();
+        if (currLevelUID == UIDPath::UID_INVALID) return nullptr; // early break
 
         for (int i=0;i<busCount;i++)
         {
-            Device * dev = busses[i]->findDevice(path);
-            if (dev != nullptr) return dev;
+            OneWireTempBus* bus = busses[i];
+            if (!bus) continue;  // absolute failsafe
+            if (bus->uid == currLevelUID) {
+                if (path.isLast()) return bus;
+                return bus->findDevice(path); // this is the final step
+
+            } else if (bus->uid == 0 && !path.isLast()) {
+                Device* dev = bus->findDevice(path);
+                if (dev != nullptr) return dev;
+            }
+            
         }
         return nullptr;
     }
 
-    bool OneWireTempGroup::read(const HALReadStringRequestValue &val) {
+    bool OneWireTempGroup::read(const HALReadStringRequestValue& val) {
         if (val.cmd == F("getAllNewDevices")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
             return false; // currently not implemented
         }

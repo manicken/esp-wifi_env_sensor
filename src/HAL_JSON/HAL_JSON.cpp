@@ -101,25 +101,28 @@ namespace HAL_JSON {
         if (path.empty()) return nullptr;
 
         if (!devices || deviceCount == 0) return nullptr;
-        uint64_t currLevelUID = path.resetAndGetFirst();
+
+        uint64_t rootUID = path.resetAndGetFirst();
+
         for (int i=0;i<deviceCount;i++) {
-            if (devices[i] == nullptr) continue;
+            Device* device = devices[i];
+            if (device == nullptr) continue;
 #if defined(HAL_JSON_USE_EFFICIENT_FIND)
-            if (devices[i]->uid == currLevelUID) {
-				if (devices[i]->uidMaxLength == 1)
-					return devices[i];
+            if (device->uid == rootUID) {
+				if ((device->uidMaxLength == 1) || (path.count() == 1))
+					return device;
 				else
 				{
-					Device* dev = devices[i]->findDevice(path);
+					Device* dev = device->findDevice(path);
 					if (dev != nullptr) return dev;
-                    currLevelUID = path.resetAndGetFirst();
+                    rootUID = path.resetAndGetFirst();
 				}
 					
 			}
-            else if (devices[i]->uid == 0) { // this will only happen on devices where uidMaxLenght>1
-				Device* dev = devices[i]->findDevice(path);
+            else if (device->uid == 0) { // this will only happen on devices where uidMaxLenght>1
+				Device* dev = device->findDevice(path);
 				if (dev != nullptr) return dev;
-                currLevelUID = path.resetAndGetFirst();
+                rootUID = path.resetAndGetFirst();
 			}
             
 #else
