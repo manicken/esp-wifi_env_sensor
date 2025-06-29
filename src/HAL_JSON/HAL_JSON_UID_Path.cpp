@@ -35,12 +35,29 @@ namespace HAL_JSON {
 
     UIDPath::UIDPath() = default;
 
+    UIDPath::~UIDPath() {
+        if (items != nullptr)
+            delete[] items;
+    }
+
     UIDPath::UIDPath(const char* uidStr) {
+        currentItemIndex = 0;
+        if (uidStr == nullptr || strlen(uidStr) == 0) {
+            itemCount = 0; // allways used at reads so setting it to zero would make reads impossible
+            GlobalLogger.Error(F("new UIDPath - input uidStr invalid"));
+            return;
+        }
         uint32_t indiciesCount = 0;
         const uint32_t* indicies = CharArray::getIndicies(uidStr, ':', indiciesCount);
         itemCount = indiciesCount + 1;
-        items = new uint64_t[itemCount];
-        items2 = new HAL_UID[itemCount];
+        items = new (std::nothrow) uint64_t[itemCount];
+        if (items == nullptr) {
+            delete[] indicies;
+            GlobalLogger.Error(F("new UIDPath - Allocation for items failed, count: "), String(itemCount).c_str());
+            itemCount = 0; // allways used at reads so setting it to zero would make reads impossible
+            return;
+        }
+        //items2 = new HAL_UID[itemCount];
         int currStrIndex = 0;
         for (int i=0;i<itemCount;i++) {
             if (i<indiciesCount) {
@@ -59,16 +76,20 @@ namespace HAL_JSON {
     bool UIDPath::empty() const {
         return (!items || itemCount == 0);
     }
-    uint64_t UIDPath::first() const {
-        if (!items || itemCount == 0) return UID_INVALID;
+    uint64_t UIDPath::getCurrentUID() {
+        if (currentItemIndex == itemCount) return UID_INVALID; // ideally this wont happen
+        return items[currentItemIndex];
+    }
+    uint64_t UIDPath::getNextUID() {
+        if (++currentItemIndex == itemCount) return UID_INVALID; // ideally this wont happen
+        return items[currentItemIndex];
+    }
+    uint64_t UIDPath::resetAndGetFirst() {
+        if (itemCount == 0) return UID_INVALID; // ideally this wont happen
+        currentItemIndex = 0;
         return items[0];
     }
-    uint64_t UIDPath::last() const {
-        if (!items || itemCount == 0) return UID_INVALID;
-        return items[itemCount-1];
-    }
-    uint64_t UIDPath::byIndex(uint32_t index) const {
-        if (!items || itemCount == 0 || index >= itemCount) return UID_INVALID;
+   /* uint64_t UIDPath::byIndex(uint32_t index) {
         return items[index];
-    }
+    }*/
 }

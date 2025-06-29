@@ -21,7 +21,7 @@ namespace HAL_JSON {
 
         static Device* CreateDeviceFromJSON(const JsonVariant &json);
         static bool VerifyDeviceJson(const JsonVariant &jsonObj);
-        static Device* findDevice(const UIDPath& path);
+        static Device* findDevice(UIDPath& path);
     public:
         // JSON I/O
         static bool ParseJSON(const JsonArray &jsonArray);
@@ -33,10 +33,12 @@ namespace HAL_JSON {
         static bool read(const HALReadStringRequest &req);
         static bool write(const HALWriteStringRequest &req);
         // dispatch Device operations (( will see what i will use ))
+        
+        /* fuck stupid dispatch shit
         template<typename RequestType>
         static bool dispatchRead(const RequestType& req);
         template<typename RequestType>
-        static bool dispatchWrite(const RequestType& req);
+        static bool dispatchWrite(const RequestType& req);*/
 
         // Maintenance
         static void loop();

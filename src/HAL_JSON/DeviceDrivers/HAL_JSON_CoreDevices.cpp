@@ -31,7 +31,7 @@ namespace HAL_JSON {
         pinMode(pin, INPUT);
     }
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-    Device* DigitalInput::findDevice(const UIDPath& path) {
+    Device* DigitalInput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
         else return nullptr;
     }
@@ -80,7 +80,7 @@ namespace HAL_JSON {
 
     DigitalOutput::~DigitalOutput() { pinMode(pin, INPUT); } // release the pin
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-    Device* DigitalOutput::findDevice(const UIDPath& path) {
+    Device* DigitalOutput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
         else return nullptr;
     }
@@ -143,7 +143,7 @@ namespace HAL_JSON {
         pulseTicker.detach();
     }
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-    Device* SinglePulseOutput::findDevice(const UIDPath& path) {
+    Device* SinglePulseOutput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
         else return nullptr;
     }
@@ -205,7 +205,7 @@ namespace HAL_JSON {
 
     AnalogInput::~AnalogInput() { pinMode(pin, INPUT); }
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-    Device* AnalogInput::findDevice(const UIDPath& path) {
+    Device* AnalogInput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
         else return nullptr;
     }
@@ -254,7 +254,7 @@ namespace HAL_JSON {
 #endif
     }
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-    Device* PWMAnalogWriteConfig::findDevice(const UIDPath& path) {
+    Device* PWMAnalogWriteConfig::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
         else return nullptr;
     }
@@ -297,7 +297,7 @@ namespace HAL_JSON {
 
     PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, INPUT); }
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-    Device* PWMAnalogWrite::findDevice(const UIDPath& path) {
+    Device* PWMAnalogWrite::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
         else return nullptr;
     }

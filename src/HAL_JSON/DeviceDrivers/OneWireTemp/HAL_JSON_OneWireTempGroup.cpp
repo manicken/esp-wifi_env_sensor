@@ -102,7 +102,7 @@ namespace HAL_JSON {
         busses = nullptr;
     }
 
-    Device* OneWireTempGroup::findDevice(const UIDPath& path) {
+    Device* OneWireTempGroup::findDevice(UIDPath& path) {
         // here wee need to find out how the layout works
         // i.e. when current uid is zero
         // and how well that matches for the inputted path and the path:s length

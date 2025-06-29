@@ -97,26 +97,31 @@ namespace HAL_JSON {
         return true;
     }
 
-    Device* Manager::findDevice(const UIDPath& path) {
+    Device* Manager::findDevice(UIDPath& path) {
+        if (path.empty()) return nullptr;
+
         if (!devices || deviceCount == 0) return nullptr;
-        
+        uint64_t currLevelUID = path.resetAndGetFirst();
         for (int i=0;i<deviceCount;i++) {
             if (devices[i] == nullptr) continue;
 #if defined(HAL_JSON_USE_EFFICIENT_FIND)
-            if (devices[i]->uid == path.first()) {
+            if (devices[i]->uid == currLevelUID) {
 				if (devices[i]->uidMaxLength == 1)
 					return devices[i];
 				else
 				{
 					Device* dev = devices[i]->findDevice(path);
 					if (dev != nullptr) return dev;
+                    currLevelUID = path.resetAndGetFirst();
 				}
 					
 			}
             else if (devices[i]->uid == 0) { // this will only happen on devices where uidMaxLenght>1
 				Device* dev = devices[i]->findDevice(path);
 				if (dev != nullptr) return dev;
+                currLevelUID = path.resetAndGetFirst();
 			}
+            
 #else
             Device* dev = devices[i]->findDevice(path);
             if (dev != nullptr) return dev;
@@ -125,17 +130,17 @@ namespace HAL_JSON {
         return nullptr;
     }
 
-    template<typename RequestType>
+    /*template<typename RequestType>
     bool Manager::dispatchRead(const RequestType& req) {
         Device* device = findDevice(req.path);
-        return device ? device->read(req) : false;
+        return device ? device->read(req.value) : false;
     }
 
     template<typename RequestType>
     bool Manager::dispatchWrite(const RequestType& req) {
         Device* device = findDevice(req.path);
         return device ? device->write(req.value) : false;
-    }
+    }*/
 
     bool Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path);
@@ -214,15 +219,17 @@ namespace HAL_JSON {
         String cmd = "getDevices";
 
         HALReadStringRequestValue strVal = {cmd, result};
-        HALReadStringRequest req{UIDPath("1WTG"), strVal};
-        if (dispatchRead(req)) {
+        UIDPath path("1WTG");
+        HALReadStringRequest req{path, strVal};
+        if (read(req)) {
 
             Serial.println(result);
         }
 
         HALValue value;
-        HALReadRequest req2(UIDPath("1WTG:D2"), value);
-        if (dispatchRead(req2)) {
+        UIDPath path2("1WTG:D2");
+        HALReadRequest req2(path2, value);
+        if (read(req2)) {
             Serial.println(value.asFloat());
         }
 

@@ -30,11 +30,11 @@ namespace HAL_JSON {
         ~OneWireTempGroup();
         
         /** this function will search the busses and their devices to find the device with the uid */
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
 
         void loop() override;
         bool read(const HALReadStringRequestValue &val) override;
-        bool write(const HALWriteStringRequestValue &val) override;
+
         String ToString() override;
     };
 }

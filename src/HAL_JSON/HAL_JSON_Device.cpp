@@ -7,7 +7,7 @@ namespace HAL_JSON {
     Device::~Device() {}
 
     void Device::loop() {}
-    Device* Device::findDevice(const UIDPath& path) { return nullptr; }
+    Device* Device::findDevice(UIDPath& path) { return nullptr; }
 
     String Device::ToString() {
         return "uid=" + String(decodeUID(uid).c_str());

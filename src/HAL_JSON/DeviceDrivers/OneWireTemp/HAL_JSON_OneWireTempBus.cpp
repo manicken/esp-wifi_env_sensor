@@ -89,10 +89,15 @@ namespace HAL_JSON {
         }
     }
 
-    Device* OneWireTempBus::findDevice(const UIDPath& path) {
+    Device* OneWireTempBus::findDevice(UIDPath& path) {
+        uint64_t currLevelUID = 0;
+        if (uid != 0)
+            currLevelUID = path.getCurrentUID();
+
+
         for (int i=0;i<deviceCount;i++)
         {
-            if (devices[i]->uid == path.last()) return devices[i];
+            if (devices[i]->uid == currLevelUID) return devices[i];
         }
         return nullptr;
     }

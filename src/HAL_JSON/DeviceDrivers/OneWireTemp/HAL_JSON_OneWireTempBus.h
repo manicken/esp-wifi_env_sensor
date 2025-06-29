@@ -29,7 +29,7 @@ namespace HAL_JSON {
         
         OneWireTempDevice* GetFirstDevice();
         /** this function will search the devices to find the device with the uid */
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
         void requestTemperatures();
         void readAll();
         bool read(const HALReadStringRequestValue& val) override;
@@ -50,7 +50,7 @@ namespace HAL_JSON {
 
         void loop() override;
         // TODO implement the following methods to allow fine precision of paths
-        Device* findDevice(const UIDPath& path) override;
+       // Device* findDevice(UIDPath& path) override;
 
     };
 }

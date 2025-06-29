@@ -26,7 +26,7 @@ namespace HAL_JSON {
         DigitalInput(const JsonVariant &jsonObj);
         //~DigitalInput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
 #endif
         bool read(HALValue &val) override;
         String ToString() override;
@@ -48,7 +48,7 @@ namespace HAL_JSON {
         DigitalOutput(const JsonVariant &jsonObj);
         ~DigitalOutput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
 #endif
         bool read(HALValue &val) override;
         bool write(const HALValue &val) override;
@@ -75,7 +75,7 @@ namespace HAL_JSON {
         SinglePulseOutput(const JsonVariant &jsonObj);
         ~SinglePulseOutput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
 #endif
         bool read(HALValue &val) override;
         bool write(const HALValue &val) override;
@@ -98,7 +98,7 @@ namespace HAL_JSON {
         AnalogInput(const JsonVariant &jsonObj);
         ~AnalogInput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
 #endif
         bool read(HALValue &val) override;
         String ToString() override;
@@ -121,7 +121,7 @@ namespace HAL_JSON {
         
         PWMAnalogWriteConfig(const JsonVariant &jsonObj);
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
 #endif
         bool write(const HALWriteStringRequestValue& value) override;
         String ToString() override;
@@ -146,7 +146,7 @@ namespace HAL_JSON {
         PWMAnalogWrite(const JsonVariant &jsonObj);
         ~PWMAnalogWrite();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
-        Device* findDevice(const UIDPath& path) override;
+        Device* findDevice(UIDPath& path) override;
 #endif
         bool read(HALValue &val) override;
         bool write(const HALValue &val) override;
