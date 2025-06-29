@@ -133,18 +133,6 @@ namespace HAL_JSON {
         return nullptr;
     }
 
-    /*template<typename RequestType>
-    bool Manager::dispatchRead(const RequestType& req) {
-        Device* device = findDevice(req.path);
-        return device ? device->read(req.value) : false;
-    }
-
-    template<typename RequestType>
-    bool Manager::dispatchWrite(const RequestType& req) {
-        Device* device = findDevice(req.path);
-        return device ? device->write(req.value) : false;
-    }*/
-
     bool Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) return false;

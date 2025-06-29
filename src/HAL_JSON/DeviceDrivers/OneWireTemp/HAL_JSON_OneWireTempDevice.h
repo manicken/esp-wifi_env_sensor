@@ -30,8 +30,7 @@ namespace HAL_JSON {
         ~OneWireTempDevice();
         
         bool read(HALValue& val) override;
-        
-        String ToString();
+
     };
 
     class OneWireTempDeviceAtRoot : public OneWireTempDevice {
@@ -52,6 +51,5 @@ namespace HAL_JSON {
 
         void loop() override;
 
-        String ToString();
     };
 }

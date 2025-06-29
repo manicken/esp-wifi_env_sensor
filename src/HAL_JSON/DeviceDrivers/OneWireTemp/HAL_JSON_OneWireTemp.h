@@ -1,4 +1,4 @@
-
+#pragma once
 /**
  * the only purpose of this file is to make the OneWireTemp include into Device registry much easier
  */

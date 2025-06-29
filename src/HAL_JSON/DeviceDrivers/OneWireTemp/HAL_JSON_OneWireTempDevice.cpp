@@ -37,6 +37,7 @@ namespace HAL_JSON {
 
     bool OneWireTempDevice::read(HALValue& val) {
         val = value;
+        return true;
     }
 
     bool OneWireTempDeviceAtRoot::VerifyJSON(const JsonVariant &jsonObj) {

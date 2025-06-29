@@ -34,7 +34,8 @@ namespace HAL_JSON {
         void readAll();
         bool read(const HALReadStringRequestValue& val) override;
 
-        String ToString();
+        String getAllDevices();
+
     };
 
     class OneWireTempBusAtRoot : public OneWireTempBus {

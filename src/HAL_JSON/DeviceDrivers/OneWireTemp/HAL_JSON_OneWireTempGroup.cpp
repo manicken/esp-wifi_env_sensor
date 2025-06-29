@@ -132,7 +132,16 @@ namespace HAL_JSON {
             return false; // currently not implemented
         }
         else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
-            return false; // currently not implemented
+            val.out_value = "{";
+            for (int i=0;i<busCount;i++) {
+                OneWireTempBus* bus = busses[i];
+                if (bus == nullptr) continue;
+                bus->read(val);
+                if (i<busCount-1)
+                    val.out_value += ",";
+            }
+            val.out_value += "}";
+            return true;
         }
         else if (val.cmd == F("getAllTemperatures")) { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
             return false; // currently not implemented

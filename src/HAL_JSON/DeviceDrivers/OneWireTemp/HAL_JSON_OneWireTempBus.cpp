@@ -100,14 +100,63 @@ namespace HAL_JSON {
         for (int i=0;i<deviceCount;i++)
         {
             OneWireTempDevice* device = devices[i];
-            if (!device) continue;
+            if (!device) continue; // absolute failsafe
             if (device->uid == currLevelUID) return device;
         }
         return nullptr;
     }
 
     bool OneWireTempBus::read(const HALReadStringRequestValue& val) {
-        return false; // until we implement the real functionality
+        if (val.cmd == F("getAllNewDevices")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
+            return false; // currently not implemented
+        }
+        else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
+            val.out_value += getAllDevices();
+            return true; // currently not implemented
+        }
+        else if (val.cmd == F("getAllTemperatures")) { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
+
+            return false; // currently not implemented
+        }
+        val.out_value = F("{\"error\":\"cmd not found\"}");
+        return true;  // cmd not found
+    }
+
+    String OneWireTempBus::getAllDevices() {
+        byte i = 0;
+        byte done = 0;
+        byte addr[8];
+        String returnStr;
+        char hexString[3];
+        uint32_t count = 0;
+        returnStr.concat(F("{\"pin\":"));
+        returnStr.concat(pin);
+        returnStr.concat(F(",\"items\":[\"\"")); // plus one first dummy item so that 
+        while(!done)
+        {
+            if (oneWire->search(addr) != 1)
+            {
+                
+                oneWire->reset_search();
+                done = 1;
+            }
+            else
+            {
+                returnStr.concat("\"");
+                for( i = 0; i < 7; i++) 
+                {
+                    sprintf(hexString, "%02X", addr[i]);
+                    returnStr.concat(hexString);
+                    returnStr.concat(":");
+                }
+                sprintf(hexString, "%02X", addr[7]);
+                    returnStr.concat(hexString);
+                returnStr.concat("\",");
+                count++;
+            }
+        }
+        returnStr.concat(F("\"\"]}")); // plus one dummy item so that , can be used between items
+        return returnStr;
     }
 
     OneWireTempBusAtRoot::OneWireTempBusAtRoot(const JsonVariant &jsonObj) 
