@@ -89,8 +89,11 @@ namespace HAL_JSON {
                         request->send(200, "application/json", "{" +  message + "}");
                         return;
                     }
-                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-                    if (setValue(uidInt, uintValue))
+                    UIDPath uidPath(uid.c_str());
+                    HALValue halValue = uintValue;
+                    HALWriteRequest req(uidPath, halValue);
+                    //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (write(req))
                         message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
                     else
                         message += "\"error\":\"Failed to write value.\"";
