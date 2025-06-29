@@ -25,7 +25,8 @@ namespace HAL_JSON {
         size_t validItemCount = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
-            if (item.is<const char*>() == false) continue; // comment item
+            if (item.is<const char*>() == true) continue; // comment item
+            if (Device::DisabledInJson(item) == true) continue; // disabled
             if (OneWireTempBus::VerifyJSON(item) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
             validItemCount++;
         }
@@ -46,52 +47,30 @@ namespace HAL_JSON {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);      
 
-        // checked beforehand so extracting it here is safe
-        //const char* typeStr = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
-        
-        // ***************** GROUP ******************
-        //if (strcmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP) == 0)
-        //{
-            //type = OneWireTemp::Type::GROUP;
-            busCount = 0;
-            const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
-            uint32_t itemCount = items.size();
-            bool* validBusses = new bool[itemCount]; // must store this as OneWireTempBus::VerifyJSON cannot be run twice as the first time it actually reserve pin use
-            // first pass count valid busses
-            for (int i=0;i<itemCount;i++) {
-                bool valid = OneWireTempBus::VerifyJSON(items[i]);
-                validBusses[i] = valid;
-                if (valid == false) continue;
-                busCount++;
-            }
-            busses = new OneWireTempBus*[busCount];
-            // second pass create busses
-            uint32_t index = 0;
-            for (int i=0;i<itemCount;i++) {
-                if (validBusses[i] == false) continue;
-                busses[index++] = new OneWireTempBus(static_cast<const JsonVariant&>(items[i]));
-            }
-        /*}
-        
-        // *****************  BUS  ********************
-        else if (strcmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS) == 0)
-        {
-            type = OneWireTemp::Type::BUS;
-            // there is only one bus 
-            busCount = 1;
-            busses = new OneWireTempBus*[1];
-            busses[0] = new OneWireTempBus(jsonObj, type);
+        busCount = 0;
+        const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
+        uint32_t itemCount = items.size();
+        bool* validBusses = new bool[itemCount]; // must store this as OneWireTempBus::VerifyJSON cannot be run twice as the first time it actually reserve pin use
+        // first pass count valid busses
+        for (int i=0;i<itemCount;i++) {
+            const JsonVariant& item = items[i];
+            bool valid = true;
+            if (item.is<const char*>() == true) valid = false; // comment item
+            if (valid && Device::DisabledInJson(item) == true) valid = false; // disabled
+            if (valid)
+                valid = OneWireTempBus::VerifyJSON(item);
+            validBusses[i] = valid;
+            if (valid == false) continue;
+            busCount++;
         }
-        // **************** DEVICE **********************
-        else if (strcmp(typeStr, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE) == 0)
-        {
-            type = OneWireTemp::Type::DEVICE;
-            // allways create one default bus even if there is only one device
-            // this is to avoid creating duplicate loop state machine code for each devicetype
-            busCount = 1;
-            busses = new OneWireTempBus*[1];
-            busses[0] = new OneWireTempBus(jsonObj, type);
-        }*/
+        busses = new OneWireTempBus*[busCount];
+        // second pass create busses
+        uint32_t index = 0;
+        for (int i=0;i<itemCount;i++) {
+            if (validBusses[i] == false) continue;
+            busses[index++] = new OneWireTempBus(static_cast<const JsonVariant&>(items[i]));
+        }
+        delete[] validBusses;
     }
     OneWireTempGroup::~OneWireTempGroup() {
         if (busses != nullptr) {

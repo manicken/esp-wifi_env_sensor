@@ -22,4 +22,6 @@ namespace Convert
 
     uint64_t reverseMACaddress(uint64_t addr);
 
+    String PadTo8Bits(uint8_t value);
+
 } // namespace Convert

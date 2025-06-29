@@ -11,6 +11,7 @@
 #define HAL_JSON_USE_EFFICIENT_FIND
 
 // Global use
+#define HAL_JSON_KEYNAME_DISABLED                           "disabled"
 #define HAL_JSON_KEYNAME_TYPE                               "type"
 #define HAL_JSON_KEYNAME_UID                                "uid"
 #define HAL_JSON_KEYNAME_PIN                                "pin"
@@ -57,8 +58,12 @@
 
 
 // the following must be at end
-#define HAL_JSON_ERR_MISSING_KEY(k) (F("Missing key: " k))
-#define HAL_JSON_ERR_VALUE_TYPE(t) (F("Value type: " t))
-#define HAL_JSON_ERR_STRING_EMPTY(k) (F("String is empty:" k))
-#define HAL_JSON_ERR_ITEMS_EMPTY(t) (F(t " items list is empty"))
-#define HAL_JSON_ERR_ITEMS_NOT_VALID(t) (F(t " do not contain any valid items"))
+#define HAL_JSON_ERR_MISSING_KEY_ (F("Missing key: "))
+#define HAL_JSON_ERR_VALUE_TYPE_ (F("Value type: "))
+#define HAL_JSON_ERR_STRING_EMPTY_ (F("String is empty:"))
+
+#define HAL_JSON_ERR_MISSING_KEY(k) (F("Missing key: " k)),jsonObj
+#define HAL_JSON_ERR_VALUE_TYPE(t) (F("Value type: " t)),jsonObj
+#define HAL_JSON_ERR_STRING_EMPTY(k) (F("String is empty:" k)),jsonObj
+#define HAL_JSON_ERR_ITEMS_EMPTY(t) (F(t " items list is empty")),jsonObj
+#define HAL_JSON_ERR_ITEMS_NOT_VALID(t) (F(t " do not contain any valid items")),jsonObj

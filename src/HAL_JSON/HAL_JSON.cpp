@@ -5,6 +5,169 @@ namespace HAL_JSON {
 
     Device** Manager::devices = nullptr;
     uint32_t Manager::deviceCount = 0;
+    AsyncWebServer *asyncWebserver = nullptr;
+
+    void Manager::setup() {
+
+        asyncWebserver = new AsyncWebServer(HAL_JSON_REST_API_PORT);
+        asyncWebserver->on(HAL_JSON_REST_API_WRITE_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
+        asyncWebserver->on(HAL_JSON_REST_API_READ_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
+
+        asyncWebserver->on(HAL_JSON_URL_RELOAD_JSON, HTTP_ANY, [](AsyncWebServerRequest *request){
+            if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()) == false) {
+                AsyncResponseStream *response = request->beginResponseStream("application/json");
+                PrintStreamAdapter adapter(*response);
+                //webserver->sendHeader("Content-Type", "application/json");
+                //webserver->send(200, "application/json", "");
+                GlobalLogger.printAllLogs(adapter);
+            }
+            else
+            {
+                request->send(200, "text/html", "ok");
+            }
+        });
+
+        asyncWebserver->on("/", HTTP_ANY, [](AsyncWebServerRequest *request){
+            String message = "HAL JSON Manager - REST API<br>";
+            message += "<a href=\"/<cmd>/<type>/<uid>/<optional_value>\">Device command</a><br>";
+            request->send(200, "text/html", message);
+        });
+        asyncWebserver->onNotFound([](AsyncWebServerRequest *request){
+            String message = "HAL JSON Manager - REST API<br>";
+            message += "invalid url:" + request->url() + "<br>";
+            request->send(404, "text/html", message);
+        });
+        asyncWebserver->begin();
+       
+        if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()) == false) {
+            GlobalLogger.printAllLogs(Serial);
+        }
+    }
+
+    void Manager::restAPI_handleWriteOrRead(AsyncWebServerRequest *request) { // BIG TODO: refactor this function to handle error cases better
+        // Example URL: /write/pwm/tempSensor1/255
+
+        String url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
+
+        // Remove the leading '/'
+        if (url.startsWith("/")) url = url.substring(1);  // -> "write/pwm/tempSensor1/255"
+
+        // Split into parts
+        int p1 = url.indexOf('/');
+        int p2 = url.indexOf('/', p1 + 1);
+        int p3 = url.indexOf('/', p2 + 1);
+
+        String command = url.substring(0, p1);
+        String type = url.substring(p1 + 1, p2);
+        String uid  = url.substring(p2 + 1, p3);
+        if (p2 != -1 && p3 != -1) {
+            uid = url.substring(p2 + 1, p3);
+        }
+        String value = "";
+        if (p3 != -1) value = url.substring(p3 + 1);
+
+        String message = "";
+        
+        message += "\"debug\":{";
+        message += "\"Command\":\"" + command + "\",";
+        message += "\"Type\":\"" + type + "\",";
+        message += "\"UID\":\"" + uid + "\",";
+        message += "\"Value\":\"" + value + "\"},";
+
+
+        if (command == HAL_JSON_REST_API_WRITE_CMD) {
+            // Handle write command
+            if (value.length() > 0 || p3 != -1) {
+                if (type == HAL_JSON_REST_API_BOOL_TYPE) {
+                    uint32_t uintValue = 0;
+                    if (value == "true" || value == "1") {
+                        uintValue = 1;
+                    } else if (value == "false" || value == "0") {
+                        uintValue = 0;
+                    } else {
+                        message += "\"error\":\"Invalid boolean value.\"";
+                        request->send(200, "application/json", "{" +  message + "}");
+                        return;
+                    }
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (setValue(uidInt, uintValue))
+                        message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
+                    else
+                        message += "\"error\":\"Failed to write value.\"";
+                }
+                else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
+                    // Convert value to integer
+                    uint32_t uintValue = (uint32_t) strtoul(value.c_str(), nullptr, 10);
+                    Serial.print("devmgr write uint32 value:");
+                    Serial.println(uintValue);
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (setValue(uidInt, uintValue))
+                        message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
+                    else
+                        message += "\"error\":\"Failed to write value.\"";
+
+                } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
+                    // Convert value to string
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (setValue(uidInt, value.c_str()))
+                        message += "\"info\":{\"String written\":\"" + value + "\"}";
+                    else
+                        message += "\"error\":\"Failed to write string.\"";
+
+                } else if (type == HAL_JSON_REST_API_JSON_STR_TYPE) {
+                    uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    if (decodeJsonStrValue(uidInt, value.c_str()))
+                        message += "\"info\":{\"Json written\":" + value + "}";
+                    else
+                        message += "\"error\":\"Failed to write string.\"";
+                }
+                else {
+                    message += "\"error\":\"Unknown type for writing.\"";
+                }
+            } else {
+                message += "\"error\":\"No value provided for writing.\"";
+            }
+        } else if (command == HAL_JSON_REST_API_READ_CMD) {
+            if (type == HAL_JSON_REST_API_BOOL_TYPE) {
+                // Handle read command
+                uint32_t readValue = 0;
+                uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                if (getValue(uidInt, &readValue)) {
+                    message += "\"value\":\"" + String(readValue) + "\"";
+                } else {
+                    message += "\"error\":\"Failed to read value.\"";
+                }
+            } else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
+                // Handle read command
+                uint32_t readValue = 0;
+                uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                if (getValue(uidInt, &readValue)) {
+                    message += "\"value\":\"" + String(readValue) + "\"";
+                } else {
+                    message += "\"error\":\"Failed to read value.\"";
+                }
+            } else if (type == HAL_JSON_REST_API_FLOAT_TYPE) {
+                // Handle read command
+                float readValue = 0;
+                uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                if (getValue(uidInt, &readValue)) {
+                    message += "\"value\":\"" + String(readValue) + "\"";
+                } else {
+                    message += "\"error\":\"Failed to read value.\"";
+                }
+            } else {
+                message += "\"error\":\"Unknown type for reading.\"";
+            }
+        } else {
+            message += "\"error\":\"Unknown command.\"";
+        }
+
+        request->send(200, "application/json", "{" +  message + "}");
+    }
+
+    void Manager::reloadJSON() {
+        
+    }
 
     Device* Manager::CreateDeviceFromJSON(const JsonVariant &jsonObj) {
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
@@ -50,8 +213,11 @@ namespace HAL_JSON {
         // First pass: count valid entries
         for (int i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
-            if (jsonItem.is<const char*>()) continue; // this is defined as a comment
-            bool valid = VerifyDeviceJson(jsonItem);
+            bool valid = true;
+            if (jsonItem.is<const char*>() == true) valid = false; // comment item
+            if (valid && Device::DisabledInJson(jsonItem) == true) valid = false; // disabled
+            if (valid)
+                valid = VerifyDeviceJson(jsonItem);
             validDevices[i] = valid;
             if (valid == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
             deviceCount++;

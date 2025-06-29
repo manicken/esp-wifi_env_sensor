@@ -25,7 +25,8 @@ namespace HAL_JSON {
         size_t validItemCount = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
-            if (item.is<const char*>() == false) continue; // comment item
+            if (item.is<const char*>() == true) continue; // comment item
+            if (Device::DisabledInJson(item) == true) continue; // disabled
             if (OneWireTempDevice::VerifyJSON(item) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
             validItemCount++;
         }
@@ -44,12 +45,17 @@ namespace HAL_JSON {
         dTemp->setWaitForConversion(false);
 
         deviceCount = 0;
-        JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
+        const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
         uint32_t itemCount = items.size();
         bool* validDevices = new bool[itemCount];
         // first pass count valid devices
         for (int i=0;i<itemCount;i++) {
-            bool valid = OneWireTempDevice::VerifyJSON(items[i]);
+            const JsonVariant& item = items[i];
+            bool valid = true;
+            if (item.is<const char*>() == true)  valid = false; // comment item
+            if (valid && Device::DisabledInJson(item) == true) valid = false; // disabled
+            if (valid)
+                valid = OneWireTempDevice::VerifyJSON(items[i]);
             validDevices[i] = valid;
             if (valid == false) continue;
             deviceCount++;
@@ -60,6 +66,7 @@ namespace HAL_JSON {
             if (validDevices[i] == false) continue;
             devices[index++] = new OneWireTempDevice(static_cast<const JsonVariant&>(items[i]));
         }
+        delete[] validDevices;
     }
 
     OneWireTempBus::~OneWireTempBus() {

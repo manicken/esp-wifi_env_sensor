@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <time.h>
 
 enum class Loglevel : uint8_t {
@@ -40,14 +41,17 @@ class Logger {
     void Error(const __FlashStringHelper* msg);
     void Error(uint32_t code, const char* text);
     void Error(const __FlashStringHelper* msg, const char* text);
+    void Error(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
     void Info(uint32_t code);
     void Info(const __FlashStringHelper* msg);
     void Info(uint32_t code, const char* text);
     void Info(const __FlashStringHelper* msg, const char* text);
+    void Info(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
     void Warn(uint32_t code);
     void Warn(const __FlashStringHelper* msg);
     void Warn(uint32_t code, const char* text);
     void Warn(const __FlashStringHelper* msg, const char* text);
+    void Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
     void printAllLogs(Stream &out = Serial) const;
 
   private:
@@ -58,6 +62,22 @@ class Logger {
     void addAndAdvance(LogEntry&& entry);
     void advance();
 };
+
+class PrintStreamAdapter : public Stream {
+public:
+  PrintStreamAdapter(Print &p) : _print(p) {}
+
+  size_t write(uint8_t b) override { return _print.write(b); }
+  size_t write(const uint8_t *buffer, size_t size) override { return _print.write(buffer, size); }
+
+  int available() override { return 0; }
+  int read() override { return -1; }
+  int peek() override { return -1; }
+
+private:
+  Print &_print;
+};
+
 
 // Declare a global instance
 extern Logger GlobalLogger;

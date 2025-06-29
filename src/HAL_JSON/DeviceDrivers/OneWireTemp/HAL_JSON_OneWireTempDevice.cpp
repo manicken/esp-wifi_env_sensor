@@ -7,6 +7,7 @@ namespace HAL_JSON {
     }
 
     bool OneWireTempDevice::VerifyJSON(const JsonVariant &jsonObj) {
+        
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) return false;
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_ROMID)) return false;
         

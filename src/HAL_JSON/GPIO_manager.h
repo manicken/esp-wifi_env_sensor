@@ -16,6 +16,7 @@
 #endif
 
 #include "../Support/Logger.h"
+#include "../Support/ConvertHelper.h"
 
 #include "HAL_JSON_DeviceTypeDefNames.h"
 

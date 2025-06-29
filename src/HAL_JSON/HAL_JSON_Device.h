@@ -39,5 +39,7 @@ namespace HAL_JSON {
         virtual Device* findDevice(UIDPath& path);
 
         virtual String ToString();
+
+        static bool DisabledInJson(const JsonVariant& jsonObj);
     };
 } // namespace HAL

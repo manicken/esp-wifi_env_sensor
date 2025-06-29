@@ -75,6 +75,12 @@ void Logger::Error(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg, text);
     advance();
 }
+void Logger::Error(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
+    String jsonStr;
+    serializeJson(jsonObj, jsonStr);
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg, jsonStr.c_str());
+    advance();
+}
 
 void Logger::Info(uint32_t code) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, code);
@@ -92,6 +98,12 @@ void Logger::Info(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg, text);
     advance();
 }
+void Logger::Info(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
+    String jsonStr;
+    serializeJson(jsonObj, jsonStr);
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg, jsonStr.c_str());
+    advance();
+}
 
 void Logger::Warn(uint32_t code) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, code);
@@ -107,6 +119,12 @@ void Logger::Warn(uint32_t code, const char* text) {
 }
 void Logger::Warn(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg, text);
+    advance();
+}
+void Logger::Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
+    String jsonStr;
+    serializeJson(jsonObj, jsonStr);
+    buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg, jsonStr.c_str());
     advance();
 }
 
@@ -134,12 +152,13 @@ void Logger::printAllLogs(Stream &out) const {
 
         if (entry.isCode) {
             out.print(F("Error Code: 0x"));
-            out.println(entry.errorCode, HEX);
+            out.print(entry.errorCode, HEX);
         } else {
-            out.println(entry.message);
+            out.print(entry.message);
         }
         if (entry.text != nullptr)
-            out.println(entry.text);
+            out.print(entry.text);
+        out.println();
     }
 }
 

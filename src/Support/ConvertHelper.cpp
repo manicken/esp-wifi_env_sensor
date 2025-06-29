@@ -113,4 +113,12 @@ namespace Convert
         return macAddrBigEndian;
     }
 
+    String PadTo8Bits(uint8_t value) {
+        String bin = String(value, BIN);  // Convert to binary
+        while (bin.length() < 8) {
+            bin = "0" + bin;
+        }
+        return bin;
+    }
+
 }

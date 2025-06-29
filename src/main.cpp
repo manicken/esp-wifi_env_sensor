@@ -311,7 +311,7 @@ void setup() {
     rego600.setup();
 #endif
 
-    if (HAL_JSON::Manager::ReadJSON("/LittleFS/hal/cfg.json") == false) {
+    if (HAL_JSON::Manager::ReadJSON("/hal/cfg.json") == false) {
         GlobalLogger.printAllLogs(DEBUG_UART);
     }
     // make sure that the following are allways at the end of this function
