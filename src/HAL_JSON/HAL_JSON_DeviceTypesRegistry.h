@@ -4,10 +4,9 @@
 #include <ArduinoJson.h>
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_Device.h"
-// all HAL devices here
+
 #include "HAL_JSON_DeviceTypeDefNames.h"
-#include "DeviceDrivers/HAL_JSON_CoreDevices.h"
-#include "DeviceDrivers/OneWireTemp/HAL_JSON_OneWireTemp.h"
+
 
 namespace HAL_JSON {
     typedef Device* (*HAL_DEVICE_CREATE_FUNC)(const JsonVariant &json);
