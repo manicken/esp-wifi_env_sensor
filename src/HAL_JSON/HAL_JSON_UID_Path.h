@@ -32,7 +32,10 @@ namespace HAL_JSON {
         uint32_t currentItemIndex = 0;
 
     public:
-
+        enum class ToStringType {
+            String,
+            Raw
+        };
         static constexpr uint64_t UID_INVALID = 1;
 
         UIDPath();
@@ -55,6 +58,8 @@ namespace HAL_JSON {
         uint64_t getNextUID();
         uint64_t peekNextUID();
         bool isLast();
+
+        String ToString(ToStringType type = ToStringType::String);
 
         //uint64_t byIndex(uint32_t index); // usage of this function don't make any sense
     };

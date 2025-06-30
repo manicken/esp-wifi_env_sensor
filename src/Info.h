@@ -11,7 +11,7 @@
 #define WIFI_getChipId() ESP.getChipId()
 #define WIFI_CHIPID_PREFIX "ESP_"
 #elif defined(ESP32)
-#include <fs_WebServer.h>
+#include "Support/fs_WebServer.h"
 #define WEBSERVER_TYPE fs_WebServer
 #define AUTOFORMAT_ON_FAIL true
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "/LittleFS", 10, "spiffs")

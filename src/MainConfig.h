@@ -15,7 +15,7 @@
 #define WIFI_getChipId() ESP.getChipId()
 #define WIFI_CHIPID_PREFIX "ESP_"
 #elif defined(ESP32)
-#include <fs_WebServer.h>
+#include "Support/fs_WebServer.h"
 #define DEBUG_UART Serial
 #define WEBSERVER_TYPE fs_WebServer
 #define WIFI_getChipId() (uint32_t)(ESP.getEfuseMac()>>32)

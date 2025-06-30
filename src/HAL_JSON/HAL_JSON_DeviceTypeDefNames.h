@@ -58,12 +58,14 @@
 
 
 // the following must be at end
-#define HAL_JSON_ERR_MISSING_KEY_ (F("Missing key: "))
-#define HAL_JSON_ERR_VALUE_TYPE_ (F("Value type: "))
-#define HAL_JSON_ERR_STRING_EMPTY_ (F("String is empty:"))
+#define HAL_JSON_ERR_MISSING_STRING_VALUE_KEY (F("Missing string value key: "))
+#define HAL_JSON_ERR_VALUE_TYPE_NOT_STRING (F("Value type not string: "))
+#define HAL_JSON_ERR_STRING_EMPTY (F("String is empty:"))
 
 #define HAL_JSON_ERR_MISSING_KEY(k) (F("Missing key: " k)),jsonObj
 #define HAL_JSON_ERR_VALUE_TYPE(t) (F("Value type: " t)),jsonObj
-#define HAL_JSON_ERR_STRING_EMPTY(k) (F("String is empty:" k)),jsonObj
 #define HAL_JSON_ERR_ITEMS_EMPTY(t) (F(t " items list is empty")),jsonObj
 #define HAL_JSON_ERR_ITEMS_NOT_VALID(t) (F(t " do not contain any valid items")),jsonObj
+
+#define HAL_JSON_DEBUG(constStr, dynStr) Serial.print(constStr); Serial.println(dynStr);
+//#define HAL_JSON_DEBUG(constStr, dynStr) GlobalLogger.Info(constStr, dynStr);

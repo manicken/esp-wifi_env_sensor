@@ -37,6 +37,8 @@ namespace HAL_JSON {
     }
 
     OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::Two) {
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin); // this is in most cases taken care of in OneWireTempBus::VerifyJSON but there are situations where it's needed
 
@@ -102,8 +104,12 @@ namespace HAL_JSON {
             currLevelUID = path.peekNextUID();
         else  // current device uid == 0
             currLevelUID = path.getCurrentUID();
-        if (currLevelUID == UIDPath::UID_INVALID) return nullptr; // early break
 
+        if (currLevelUID == UIDPath::UID_INVALID) { GlobalLogger.Error(F("OneWireTempBus::findDevice - currLevelUID == UIDPath::UID_INVALID")); return nullptr; } // early break
+        
+        HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - uid: "), decodeUID(uid).c_str());
+        HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - currLevelUID: "), decodeUID(currLevelUID).c_str());
+        
         for (int i=0;i<deviceCount;i++)
         {
             OneWireTempDevice* device = devices[i];

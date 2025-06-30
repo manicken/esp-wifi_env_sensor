@@ -15,7 +15,7 @@
 #define DEBUG_UART Serial1
 #define WEBSERVER_TYPE ESP8266WebServer
 #elif defined(ESP32)
-#include <fs_WebServer.h>
+#include "Support/fs_WebServer.h"
 #define DEBUG_UART Serial
 #define WEBSERVER_TYPE fs_WebServer
 #endif

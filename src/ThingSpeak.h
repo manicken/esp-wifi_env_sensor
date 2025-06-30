@@ -8,7 +8,7 @@
 #define DEBUG_UART Serial1
 #elif defined(ESP32)
 #include <HTTPClient.h>
-#include <fs_WebServer.h>
+#include "Support/fs_WebServer.h"
 #define WEBSERVER_TYPE fs_WebServer
 #define DEBUG_UART Serial
 #endif

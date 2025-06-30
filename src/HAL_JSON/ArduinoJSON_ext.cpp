@@ -22,16 +22,33 @@ JsonVariant getValueIgnoreCase(JsonObject obj, const char* keyToFind) {
 
 bool ValidateJsonStringField(const JsonVariant &jsonObj, const char* key) {
     if (!jsonObj.containsKey(key)) {
-        GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY_, key);
+        GlobalLogger.Error(HAL_JSON_ERR_MISSING_STRING_VALUE_KEY, key);
         return false;
     }
     if (!jsonObj[key].is<const char*>()) {
-        GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_, key);
+        GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, key);
         return false;
     }
     const char* val = jsonObj[key].as<const char*>();
     if (val == nullptr || strlen(val) == 0) {
-        GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY_, key);
+        GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY, key);
+        return false;
+    }
+    return true;
+}
+
+bool ValidateJsonStringField_noLog(const JsonVariant &jsonObj, const char* key) {
+    if (!jsonObj.containsKey(key)) {
+        //GlobalLogger.Error(HAL_JSON_ERR_MISSING_STRING_VALUE_KEY, key);
+        return false;
+    }
+    if (!jsonObj[key].is<const char*>()) {
+        GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, key);
+        return false;
+    }
+    const char* val = jsonObj[key].as<const char*>();
+    if (val == nullptr || strlen(val) == 0) {
+        GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY, key);
         return false;
     }
     return true;

@@ -83,11 +83,16 @@ namespace HAL_JSON {
 
     Device* OneWireTempGroup::findDevice(UIDPath& path) {
         uint64_t currLevelUID = 0;
+
         if (uid != 0) // current device uid
             currLevelUID = path.getNextUID();
         else  // current device uid == 0
             currLevelUID = path.getCurrentUID();
-        if (currLevelUID == UIDPath::UID_INVALID) return nullptr; // early break
+
+        if (currLevelUID == UIDPath::UID_INVALID) { GlobalLogger.Error(F("OneWireTempGroup::findDevice - currLevelUID == UIDPath::UID_INVALID")); return nullptr; } // early break
+        
+        HAL_JSON_DEBUG(F("OneWireTempGroup::findDevice - uid: "), decodeUID(uid).c_str());
+        HAL_JSON_DEBUG(F("OneWireTempGroup::findDevice - currLevelUID: "),decodeUID(currLevelUID).c_str());
 
         for (int i=0;i<busCount;i++)
         {
@@ -95,6 +100,7 @@ namespace HAL_JSON {
             if (!bus) continue;  // absolute failsafe
             if (bus->uid == currLevelUID) {
                 if (path.isLast()) return bus;
+                GlobalLogger.Info(F("bus->uid == currLevelUID"));
                 return bus->findDevice(path); // this is the final step
 
             } else if (bus->uid == 0 && !path.isLast()) {

@@ -22,7 +22,7 @@ namespace HAL_JSON {
         const char* romIdStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>();
         Convert::HexToBytes(romIdStr, romid, 8);
         // optional settings
-        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT)) {
+        if (ValidateJsonStringField_noLog(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT)) {
             const char* tempFormatStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT].as<const char*>();
             if (tempFormatStr[0] == 'c' || tempFormatStr[0] == 'C')
                 format = OneWireTempDeviceTempFormat::Celsius;

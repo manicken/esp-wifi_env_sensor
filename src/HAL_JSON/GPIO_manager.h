@@ -11,7 +11,7 @@
 #include <ESP8266WebServer.h>
 #define WEBSERVER_TYPE ESP8266WebServer
 #elif defined(ESP32)
-#include <fs_WebServer.h>
+#include "../Support/fs_WebServer.h"
 #define WEBSERVER_TYPE fs_WebServer
 #endif
 

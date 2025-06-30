@@ -21,6 +21,8 @@ namespace HAL_JSON {
     }
 
     std::string decodeUID(uint64_t uid) {
+        if (uid == 0) return "<zero>";
+        if (uid == UIDPath::UID_INVALID) return "<invalid>";
         char str[9] = {}; // 8 chars + null terminator
         for (int i = 0; i < 8; ++i) {
             // Extract each byte from most significant to least significant
@@ -103,6 +105,20 @@ namespace HAL_JSON {
     bool UIDPath::isLast() {
         if (itemCount == 0) return true; // ideally this wont happen
         return (currentItemIndex==(itemCount-1));
+    }
+
+    String UIDPath::ToString(ToStringType type) {
+        String ret;
+        for (int i=0;i<itemCount;i++) {
+            if (type == ToStringType::String) {
+                ret += String(decodeUID(items[i]).c_str());
+            } else if (type == ToStringType::Raw) {
+                ret += String(items[i],16);
+            }
+            if (i<itemCount-1)
+                ret += ":";
+        }
+        return ret;
     }
    /* uint64_t UIDPath::byIndex(uint32_t index) {
         return items[index];

@@ -10,3 +10,5 @@ bool containsKeyIgnoreCase(JsonObject obj, const char* keyToFind);
 JsonVariant getValueIgnoreCase(JsonObject obj, const char* keyToFind);
 
 bool ValidateJsonStringField(const JsonVariant &jsonObj, const char* key);
+
+bool ValidateJsonStringField_noLog(const JsonVariant &jsonObj, const char* key);

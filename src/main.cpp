@@ -311,9 +311,8 @@ void setup() {
     rego600.setup();
 #endif
 
-    if (HAL_JSON::Manager::ReadJSON("/hal/cfg.json") == false) {
-        GlobalLogger.printAllLogs(DEBUG_UART);
-    }
+    HAL_JSON::Manager::setup();
+    
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
