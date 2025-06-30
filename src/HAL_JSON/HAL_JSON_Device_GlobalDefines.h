@@ -20,27 +20,6 @@
 #define HAL_JSON_KEYNAME_REFRESHTIME_SEC                    "refreshtimesec"
 #define HAL_JSON_KEYNAME_REFRESHTIME_MIN                    "refreshtimemin"
 
-
-
-// Types
-/*
-#define HAL_JSON_TYPE_DOUT                 "DOUT"
-#define HAL_JSON_TYPE_DIN                  "DIN"
-#define HAL_JSON_TYPE_DPOUT                "DPOUT"
-#define HAL_JSON_TYPE_ADC                  "ADC"
-#define HAL_JSON_TYPE_TX433                "TX433"
-#define HAL_JSON_TYPE_DHT                  "DHT"
-#define HAL_JSON_TYPE_PWM_ANALOG_WRITE     "PWM_AW"
-#define HAL_JSON_TYPE_PWM_ANALOG_WRITE_CFG "PWM_AW_CFG"
-#define HAL_JSON_TYPE_PWM_LEDC             "PWM_LEDC"
-#define HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP  "1WTG"
-#define HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS    "1WTB"
-#define HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE "1WTD"
-#define HAL_JSON_TYPE_REGO600              "REGO600"
-*/
-
-
-
 // Single Pulse Output
 #define HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE       "istate"
 #define HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_DEFAULT_PULSE_LENGHT "plength"
