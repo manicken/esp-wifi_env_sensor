@@ -2,6 +2,11 @@
 
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
+// all HAL devices to use here
+#include "DeviceDrivers/HAL_JSON_CoreDevices.h"
+#include "DeviceDrivers/OneWireTemp/HAL_JSON_OneWireTemp.h"
+#include "DeviceDrivers/HAL_JSON_DHT.h"
+
 namespace HAL_JSON {
 
     const DeviceTypeDef DeviceRegistry[] = {
@@ -17,7 +22,7 @@ namespace HAL_JSON {
         {UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, OneWireTempBusAtRoot::Create, OneWireTempBus::VerifyJSON},
         {UseRootUID::Mandatory, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, OneWireTempDeviceAtRoot::Create, OneWireTempDeviceAtRoot::VerifyJSON},
 
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_DHT, nullptr, nullptr},
+        {UseRootUID::Mandatory, HAL_JSON_TYPE_DHT, DHT::Create, DHT::VerifyJSON}, // under development
         {UseRootUID::Mandatory, HAL_JSON_TYPE_TX433, nullptr, nullptr},
         {UseRootUID::Mandatory, HAL_JSON_TYPE_REGO600, nullptr, nullptr},
         {UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_LEDC, nullptr, nullptr},

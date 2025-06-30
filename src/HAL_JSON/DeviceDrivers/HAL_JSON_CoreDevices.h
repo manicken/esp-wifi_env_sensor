@@ -1,6 +1,8 @@
+
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <Ticker.h>
 #include "../../Support/Logger.h"
 #include "../HAL_JSON_Device.h"
@@ -21,8 +23,8 @@ namespace HAL_JSON {
     private:
         uint8_t pin = 0;
     public:
-        static bool VerifyJSON(const JsonVariant &json);
-        static Device* Create(const JsonVariant &json);
+        static bool VerifyJSON(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj);
         DigitalInput(const JsonVariant &jsonObj);
         //~DigitalInput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
