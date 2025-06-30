@@ -3,8 +3,8 @@
 
 namespace HAL_JSON {
 
-    Device* OneWireTempGroup::Create(const JsonVariant& jsonObj) {
-        return new OneWireTempGroup(jsonObj);
+    Device* OneWireTempGroup::Create(const JsonVariant& jsonObj, const char* type) {
+        return new OneWireTempGroup(jsonObj, type);
     }
 
     bool OneWireTempGroup::VerifyJSON(const JsonVariant &jsonObj) {
@@ -36,7 +36,7 @@ namespace HAL_JSON {
         }
         return true;
     }
-    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::Three),
+    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Three, type),
         autoRefresh(
             [this]() { requestTemperatures(); },
             [this]() { readAll(); })
@@ -68,7 +68,7 @@ namespace HAL_JSON {
         uint32_t index = 0;
         for (int i=0;i<itemCount;i++) {
             if (validBusses[i] == false) continue;
-            busses[index++] = new OneWireTempBus(static_cast<const JsonVariant&>(items[i]));
+            busses[index++] = new OneWireTempBus(static_cast<const JsonVariant&>(items[i]), type); // here type is not used so we just take the group one
         }
         delete[] validBusses;
     }
@@ -183,7 +183,7 @@ namespace HAL_JSON {
 
     String OneWireTempGroup::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP "\"";
+        ret += "\"type\":\""  +String(type)+  "\"";
         ret += "," + autoRefresh.ToString();
         ret += ",\"busses\":[";
         for (int i=0;i<busCount;i++) {

@@ -4,7 +4,7 @@
 #include "../../../Support/Logger.h"
 #include "../../../Support/ConvertHelper.h"
 #include "../../HAL_JSON_Device.h"
-#include "../../HAL_JSON_DeviceTypeDefNames.h"
+#include "../../HAL_JSON_Device_GlobalDefines.h"
 #include "../../ArduinoJSON_ext.h"
 
 #define HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS 1000

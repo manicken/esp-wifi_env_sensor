@@ -2,7 +2,7 @@
 
 namespace HAL_JSON {
 
-    Device::Device(UIDPathMaxLength uidMaxLength) : uidMaxLength(static_cast<uint8_t>(uidMaxLength)) { }
+    Device::Device(UIDPathMaxLength uidMaxLength, const char* type) : uidMaxLength(static_cast<uint8_t>(uidMaxLength)), type(type) { }
 
     Device::~Device() {}
 

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <ArduinoJSON.h>
 #include "../Support/Logger.h"
-#include "HAL_JSON_DeviceTypeDefNames.h"
+#include "HAL_JSON_Device_GlobalDefines.h"
 
 bool containsKeyIgnoreCase(JsonObject obj, const char* keyToFind);
 

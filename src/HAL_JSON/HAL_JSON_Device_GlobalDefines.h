@@ -23,6 +23,7 @@
 
 
 // Types
+/*
 #define HAL_JSON_TYPE_DOUT                 "DOUT"
 #define HAL_JSON_TYPE_DIN                  "DIN"
 #define HAL_JSON_TYPE_DPOUT                "DPOUT"
@@ -36,13 +37,9 @@
 #define HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS    "1WTB"
 #define HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE "1WTD"
 #define HAL_JSON_TYPE_REGO600              "REGO600"
+*/
 
 
-// DHT models
-#define HAL_JSON_TYPE_DHT_MODEL_DHT11       "DHT11"
-#define HAL_JSON_TYPE_DHT_MODEL_DHT22       "DHT22"
-#define HAL_JSON_TYPE_DHT_MODEL_AM2302      "AM2302"
-#define HAL_JSON_TYPE_DHT_MODEL_RHT03       "RTH03"
 
 // Single Pulse Output
 #define HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE       "istate"

@@ -18,7 +18,7 @@
 #include "../Support/Logger.h"
 #include "../Support/ConvertHelper.h"
 
-#include "HAL_JSON_DeviceTypeDefNames.h"
+#include "HAL_JSON_Device_GlobalDefines.h"
 
 /*
     this file is only intended to manage which functions that are assigned to a specific GPIO pin

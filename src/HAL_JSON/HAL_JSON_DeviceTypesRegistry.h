@@ -5,11 +5,11 @@
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_Device.h"
 
-#include "HAL_JSON_DeviceTypeDefNames.h"
+#include "HAL_JSON_Device_GlobalDefines.h"
 
 
 namespace HAL_JSON {
-    typedef Device* (*HAL_DEVICE_CREATE_FUNC)(const JsonVariant &json);
+    typedef Device* (*HAL_DEVICE_CREATE_FUNC)(const JsonVariant &json, const char* type);
     typedef bool (*HAL_DEVICE_VERIFY_JSON_FUNC)(const JsonVariant &json);
 
     enum class UseRootUID {

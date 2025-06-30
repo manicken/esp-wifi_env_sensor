@@ -5,7 +5,7 @@
 #include "../../../Support/Logger.h"
 #include "../../../Support/ConvertHelper.h"
 #include "../../HAL_JSON_Device.h"
-#include "../../HAL_JSON_DeviceTypeDefNames.h"
+#include "../../HAL_JSON_Device_GlobalDefines.h"
 #include "../../ArduinoJSON_ext.h"
 #include "HAL_JSON_OneWireTempBus.h"
 #include "HAL_JSON_OneWireTempAutoRefresh.h"
@@ -24,9 +24,9 @@ namespace HAL_JSON {
 
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
         
-        OneWireTempGroup(const JsonVariant &jsonObj);
+        OneWireTempGroup(const JsonVariant &jsonObj, const char* type);
         ~OneWireTempGroup();
         
         /** this function will search the busses and their devices to find the device with the uid */

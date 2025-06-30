@@ -8,24 +8,26 @@
 #include "DeviceDrivers/HAL_JSON_DHT.h"
 
 namespace HAL_JSON {
+    const char* test = "hello";
+    //char* test2 = "world"; // forbidden will generate warning
 
     const DeviceTypeDef DeviceRegistry[] = {
 
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_DIN, DigitalInput::Create, DigitalInput::VerifyJSON},
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_DOUT, DigitalOutput::Create, DigitalOutput::VerifyJSON},
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_DPOUT, SinglePulseOutput::Create, SinglePulseOutput::VerifyJSON},
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_ADC, AnalogInput::Create, AnalogInput::VerifyJSON},
-        {UseRootUID::Optional, HAL_JSON_TYPE_PWM_ANALOG_WRITE_CFG, PWMAnalogWrite::Create, PWMAnalogWrite::VerifyJSON},
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_ANALOG_WRITE, PWMAnalogWriteConfig::Create, PWMAnalogWriteConfig::VerifyJSON},
+        {UseRootUID::Mandatory, "DIN", DigitalInput::Create, DigitalInput::VerifyJSON},
+        {UseRootUID::Mandatory, "DOUT", DigitalOutput::Create, DigitalOutput::VerifyJSON},
+        {UseRootUID::Mandatory, "DPOUT", SinglePulseOutput::Create, SinglePulseOutput::VerifyJSON},
+        {UseRootUID::Mandatory, "ADC", AnalogInput::Create, AnalogInput::VerifyJSON},
+        {UseRootUID::Optional, "PWM_AW", PWMAnalogWrite::Create, PWMAnalogWrite::VerifyJSON},
+        {UseRootUID::Mandatory, "PWM_AW_CFG", PWMAnalogWriteConfig::Create, PWMAnalogWriteConfig::VerifyJSON},
 
-        {UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP, OneWireTempGroup::Create, OneWireTempGroup::VerifyJSON},
-        {UseRootUID::Optional, HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS, OneWireTempBusAtRoot::Create, OneWireTempBus::VerifyJSON},
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE, OneWireTempDeviceAtRoot::Create, OneWireTempDeviceAtRoot::VerifyJSON},
+        {UseRootUID::Optional, "1WTG", OneWireTempGroup::Create, OneWireTempGroup::VerifyJSON},
+        {UseRootUID::Optional, "1WTB", OneWireTempBusAtRoot::Create, OneWireTempBus::VerifyJSON},
+        {UseRootUID::Mandatory, "1WTD", OneWireTempDeviceAtRoot::Create, OneWireTempDeviceAtRoot::VerifyJSON},
 
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_DHT, DHT::Create, DHT::VerifyJSON}, // under development
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_TX433, nullptr, nullptr},
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_REGO600, nullptr, nullptr},
-        {UseRootUID::Mandatory, HAL_JSON_TYPE_PWM_LEDC, nullptr, nullptr},
+        {UseRootUID::Mandatory, "DHT", DHT::Create, DHT::VerifyJSON}, // under development
+        {UseRootUID::Mandatory, "TX433", nullptr, nullptr},
+        {UseRootUID::Mandatory, "REGO600", nullptr, nullptr},
+        {UseRootUID::Mandatory, "PWM_LEDC", nullptr, nullptr},
 
         {UseRootUID::Void, nullptr, nullptr, nullptr} // terminator
     };

@@ -3,16 +3,16 @@
 
 namespace HAL_JSON {
     
-    Template::Template(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
+    Template::Template(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One,type) {
 
     }
 
     bool Template::VerifyJSON(const JsonVariant &jsonObj) {
-
+        return false;
     }
 
-    Device* Template::Create(const JsonVariant &jsonObj) {
-        return new Template(jsonObj);
+    Device* Template::Create(const JsonVariant &jsonObj, const char* type) {
+        return new Template(jsonObj, type);
     }
 
     String Template::ToString() {

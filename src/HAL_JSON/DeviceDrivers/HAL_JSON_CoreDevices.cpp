@@ -10,8 +10,8 @@ namespace HAL_JSON {
     // ██   ██ ██ ██    ██ ██    ██    ██   ██ ██          ██ ██  ██ ██ ██      ██    ██    ██    
     // ██████  ██  ██████  ██    ██    ██   ██ ███████     ██ ██   ████ ██       ██████     ██   
 
-    Device* DigitalInput::Create(const JsonVariant &jsonObj) {
-        return new DigitalInput(jsonObj);
+    Device* DigitalInput::Create(const JsonVariant &jsonObj, const char* type) {
+        return new DigitalInput(jsonObj, type);
     }
 
     bool DigitalInput::VerifyJSON(const JsonVariant &jsonObj) {
@@ -21,7 +21,7 @@ namespace HAL_JSON {
         return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
-    DigitalInput::DigitalInput(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
+    DigitalInput::DigitalInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin);
         
@@ -44,7 +44,7 @@ namespace HAL_JSON {
 
     String DigitalInput::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_DIN "\"";
+        ret += "\"type\":\"" +String(type)+ "\"";
         ret += ",\"pin\":" + String(pin);
         ret += ",\"value\":" + String(digitalRead(pin));
         return ret;
@@ -56,8 +56,8 @@ namespace HAL_JSON {
     // ██   ██ ██ ██    ██ ██    ██    ██   ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
     // ██████  ██  ██████  ██    ██    ██   ██ ███████      ██████   ██████     ██    ██       ██████     ██    
     
-    Device* DigitalOutput::Create(const JsonVariant &jsonObj) {
-        return new DigitalOutput(jsonObj);
+    Device* DigitalOutput::Create(const JsonVariant &jsonObj, const char* type) {
+        return new DigitalOutput(jsonObj, type);
     }
 
     bool DigitalOutput::VerifyJSON(const JsonVariant &jsonObj) {
@@ -67,7 +67,7 @@ namespace HAL_JSON {
         return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
-    DigitalOutput::DigitalOutput(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
+    DigitalOutput::DigitalOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin);
 
@@ -98,7 +98,7 @@ namespace HAL_JSON {
 
     String DigitalOutput::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_DOUT "\"";
+        ret += "\"type\":\""  +String(type)+  "\"";
         ret += ",\"pin\":" + String(pin);
         ret += ",\"value\":" + String(value);
         return ret;
@@ -110,8 +110,8 @@ namespace HAL_JSON {
     // ██      ██    ██ ██           ██ ██          ██    ██ ██    ██    ██    ██      ██    ██    ██    
     // ██       ██████  ███████ ███████ ███████      ██████   ██████     ██    ██       ██████     ██    
 
-    Device* SinglePulseOutput::Create(const JsonVariant &jsonObj) {
-        return new SinglePulseOutput(jsonObj);
+    Device* SinglePulseOutput::Create(const JsonVariant &jsonObj, const char* type) {
+        return new SinglePulseOutput(jsonObj, type);
     }
 
     bool SinglePulseOutput::VerifyJSON(const JsonVariant &jsonObj) {
@@ -121,7 +121,7 @@ namespace HAL_JSON {
         return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
-    SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
+    SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin);
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -179,7 +179,7 @@ namespace HAL_JSON {
 
     String SinglePulseOutput::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_DPOUT "\"";
+        ret += "\"type\":\""  +String(type)+  "\"";
         ret += ",\"pin\":" + String(pin);
         ret += ",\"pulseLength\":" + String(pulseLength);
         return ret;
@@ -191,8 +191,8 @@ namespace HAL_JSON {
     // ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ██  ██ ██ ██      ██    ██    ██    
     // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
 
-    Device* AnalogInput::Create(const JsonVariant &jsonObj) {
-        return new AnalogInput(jsonObj);
+    Device* AnalogInput::Create(const JsonVariant &jsonObj, const char* type) {
+        return new AnalogInput(jsonObj, type);
     }
 
     bool AnalogInput::VerifyJSON(const JsonVariant &jsonObj) {
@@ -202,7 +202,7 @@ namespace HAL_JSON {
         return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
-    AnalogInput::AnalogInput(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
+    AnalogInput::AnalogInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin);
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -225,7 +225,7 @@ namespace HAL_JSON {
 
     String AnalogInput::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_ADC "\"";
+        ret += "\"type\":\""  +String(type)+  "\"";
         ret += ",\"pin\":" + String(pin);
         ret += ",\"value\":" + String(analogRead(pin));
         return ret;
@@ -241,8 +241,8 @@ namespace HAL_JSON {
     uint8_t PWMAnalogWriteConfig::resolution = 0;
     uint32_t PWMAnalogWriteConfig::frequency = 0;
 
-    Device* PWMAnalogWriteConfig::Create(const JsonVariant &jsonObj) {
-        return new PWMAnalogWriteConfig(jsonObj);
+    Device* PWMAnalogWriteConfig::Create(const JsonVariant &jsonObj, const char* type) {
+        return new PWMAnalogWriteConfig(jsonObj, type);
     }
 
     bool PWMAnalogWriteConfig::VerifyJSON(const JsonVariant &jsonObj) {
@@ -251,7 +251,7 @@ namespace HAL_JSON {
         return true;
     }
 
-    PWMAnalogWriteConfig::PWMAnalogWriteConfig(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
+    PWMAnalogWriteConfig::PWMAnalogWriteConfig(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
         PWMAnalogWriteConfig::frequency = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY].as<uint32_t>();
         PWMAnalogWriteConfig::resolution = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION].as<uint32_t>();
 
@@ -275,7 +275,7 @@ namespace HAL_JSON {
 
     String PWMAnalogWriteConfig::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_PWM_ANALOG_WRITE_CFG "\"";
+        ret += "\"type\":\""  +String(type)+  "\"";
         ret += ",\"freq\":" + String(PWMAnalogWriteConfig::frequency);
         ret += ",\"resolution\":" + String(PWMAnalogWriteConfig::resolution);
         return ret;
@@ -287,8 +287,8 @@ namespace HAL_JSON {
     // ██      ██ ███ ██ ██  ██  ██     ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ███ ██ ██   ██ ██    ██    ██      
     // ██       ███ ███  ██      ██     ██   ██ ██   ████ ██   ██ ███████  ██████   ██████       ███ ███  ██   ██ ██    ██    ███████ 
 
-    Device* PWMAnalogWrite::Create(const JsonVariant &jsonObj) {
-        return new PWMAnalogWrite(jsonObj);
+    Device* PWMAnalogWrite::Create(const JsonVariant &jsonObj, const char* type) {
+        return new PWMAnalogWrite(jsonObj, type);
     }
 
     bool PWMAnalogWrite::VerifyJSON(const JsonVariant &jsonObj) {
@@ -298,7 +298,7 @@ namespace HAL_JSON {
         return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
-    PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::One) {
+    PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin);
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -331,7 +331,7 @@ namespace HAL_JSON {
 
     String PWMAnalogWrite::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_PWM_ANALOG_WRITE "\"";
+        ret += "\"type\":\""  +String(type)+  "\"";
         ret += ",\"pin\":" + String(pin);
         ret += ",\"value\":" + String(value);
         ret += ",\"inv_out\":" + String(inv_out);

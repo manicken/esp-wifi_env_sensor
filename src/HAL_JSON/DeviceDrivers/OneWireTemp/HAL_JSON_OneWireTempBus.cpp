@@ -3,8 +3,8 @@
 
 namespace HAL_JSON {
 
-    Device* OneWireTempBusAtRoot::Create(const JsonVariant &jsonObj) {
-        return new OneWireTempBusAtRoot(jsonObj);
+    Device* OneWireTempBusAtRoot::Create(const JsonVariant &jsonObj, const char* type) {
+        return new OneWireTempBusAtRoot(jsonObj, type);
     }
 
     bool OneWireTempBus::VerifyJSON(const JsonVariant &jsonObj) {
@@ -36,7 +36,7 @@ namespace HAL_JSON {
         return GPIO_manager::CheckIfPinAvailableAndReserve(pin, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)));
     }
 
-    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj) : Device(UIDPathMaxLength::Two) {
+    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Two, type) {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
@@ -66,7 +66,7 @@ namespace HAL_JSON {
         uint32_t index = 0;
         for (int i=0;i<itemCount;i++) {
             if (validDevices[i] == false) continue;
-            devices[index++] = new OneWireTempDevice(static_cast<const JsonVariant&>(items[i]));
+            devices[index++] = new OneWireTempDevice(static_cast<const JsonVariant&>(items[i]), type); // here type is not used so we just take it from bus
         }
         delete[] validDevices;
     }
@@ -222,8 +222,8 @@ namespace HAL_JSON {
         return ret;
     }
 
-    OneWireTempBusAtRoot::OneWireTempBusAtRoot(const JsonVariant &jsonObj) 
-    : OneWireTempBus(jsonObj),
+    OneWireTempBusAtRoot::OneWireTempBusAtRoot(const JsonVariant &jsonObj, const char* type) 
+    : OneWireTempBus(jsonObj, type),
         autoRefresh(
               [this]() { requestTemperatures(); },
               [this]() { readAll(); })
@@ -241,7 +241,7 @@ namespace HAL_JSON {
 
     String OneWireTempBusAtRoot::ToString() {
         String ret;
-        ret += "\"type\":\"" HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS "\"";
+        ret += "\"type\":\""  +String(type)+  "\"";
         ret += "," + autoRefresh.ToString();
         ret += "," + OneWireTempBus::ToString();
         return ret;

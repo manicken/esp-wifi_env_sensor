@@ -7,7 +7,7 @@
 #include "HAL_JSON_Operations.h"
 #include "HAL_JSON_Device.h"
 
-#include "HAL_JSON_DeviceTypeDefNames.h"
+#include "HAL_JSON_Device_GlobalDefines.h"
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
 #include "../Support/Logger.h"

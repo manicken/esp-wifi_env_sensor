@@ -252,7 +252,7 @@ namespace HAL_JSON {
                     GlobalLogger.Error(F("CreateDeviceFromJSON - Create_Function == nullptr - something is very wrong if this happens"));
                     return nullptr; // should never happen as VerifyJson is called before and do actually verify that this pointer do point to something
                 }
-                return DeviceRegistry[i].Create_Function(jsonObj);
+                return DeviceRegistry[i].Create_Function(jsonObj, DeviceRegistry[i].type);
             }
         }
         // should never happen as VerifyJson is called before and do actually verify that this function should work

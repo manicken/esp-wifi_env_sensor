@@ -6,7 +6,7 @@
 #include <Ticker.h>
 #include "../../Support/Logger.h"
 #include "../HAL_JSON_Device.h"
-#include "../HAL_JSON_DeviceTypeDefNames.h"
+#include "../HAL_JSON_Device_GlobalDefines.h"
 
 // ASCII ART generated here:
 // https://patorjk.com/software/taag/#p=display&f=ANSI%20Regular&t=ASCII%20ART
@@ -24,8 +24,8 @@ namespace HAL_JSON {
         uint8_t pin = 0;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
-        DigitalInput(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
+        DigitalInput(const JsonVariant &jsonObj, const char* type);
         //~DigitalInput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
@@ -46,8 +46,8 @@ namespace HAL_JSON {
         uint32_t value = 0;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
-        DigitalOutput(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
+        DigitalOutput(const JsonVariant &jsonObj, const char* type);
         ~DigitalOutput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
@@ -73,8 +73,8 @@ namespace HAL_JSON {
         static void pulseTicker_Callback(SinglePulseOutput* context);
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
-        SinglePulseOutput(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
+        SinglePulseOutput(const JsonVariant &jsonObj, const char* type);
         ~SinglePulseOutput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
@@ -96,8 +96,8 @@ namespace HAL_JSON {
         uint8_t pin = 0;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
-        AnalogInput(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
+        AnalogInput(const JsonVariant &jsonObj, const char* type);
         ~AnalogInput();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
@@ -117,11 +117,11 @@ namespace HAL_JSON {
     class PWMAnalogWriteConfig  : public Device { // this do include the base class Device mostly so that the loaded devices can be printed for debug 
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
         static uint8_t resolution; // used together with inv_out to get correct value
         static uint32_t frequency;
         
-        PWMAnalogWriteConfig(const JsonVariant &jsonObj);
+        PWMAnalogWriteConfig(const JsonVariant &jsonObj, const char* type);
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
 #endif
@@ -144,8 +144,8 @@ namespace HAL_JSON {
         uint32_t getInvValue(uint32_t val);
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        static Device* Create(const JsonVariant &jsonObj);
-        PWMAnalogWrite(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
+        PWMAnalogWrite(const JsonVariant &jsonObj, const char* type);
         ~PWMAnalogWrite();
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;

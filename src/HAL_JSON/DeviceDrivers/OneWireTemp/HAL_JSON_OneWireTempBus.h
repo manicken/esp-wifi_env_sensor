@@ -7,7 +7,7 @@
 #include "../../../Support/Logger.h"
 #include "../../../Support/ConvertHelper.h"
 #include "../../HAL_JSON_Device.h"
-#include "../../HAL_JSON_DeviceTypeDefNames.h"
+#include "../../HAL_JSON_Device_GlobalDefines.h"
 #include "../../ArduinoJSON_ext.h"
 #include "HAL_JSON_OneWireTempDevice.h"
 #include "HAL_JSON_OneWireTempAutoRefresh.h"
@@ -25,7 +25,7 @@ namespace HAL_JSON {
         OneWireTempDevice **devices;
 
         static bool VerifyJSON(const JsonVariant &jsonObj);
-        OneWireTempBus(const JsonVariant &jsonObj);
+        OneWireTempBus(const JsonVariant &jsonObj, const char* type);
         ~OneWireTempBus();
         
         OneWireTempDevice* GetFirstDevice();
@@ -45,9 +45,9 @@ namespace HAL_JSON {
 
     public:
         
-        static Device* Create(const JsonVariant &jsonObj);
+        static Device* Create(const JsonVariant &jsonObj, const char* type);
 
-        OneWireTempBusAtRoot(const JsonVariant &jsonObj);
+        OneWireTempBusAtRoot(const JsonVariant &jsonObj, const char* type);
         ~OneWireTempBusAtRoot();
 
         void loop() override;
