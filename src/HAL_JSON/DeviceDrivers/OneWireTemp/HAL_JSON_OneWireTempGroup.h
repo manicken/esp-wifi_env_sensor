@@ -35,5 +35,7 @@ namespace HAL_JSON {
         void loop() override;
         bool read(const HALReadStringRequestValue &val) override;
 
+        String ToString() override;
+
     };
 }

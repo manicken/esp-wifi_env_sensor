@@ -10,7 +10,9 @@ so that "if one fail" -> "all fail" principe can be used"
 fix Operations so that a read string request can have a json string command scheme
 fix UID_Path so that multilevel paths can be used
 
-DS18B20
+make it so that if a device is not found while read/write it sends back that as a proper error
+
+DS18B20 working?
 
 REGO600
 

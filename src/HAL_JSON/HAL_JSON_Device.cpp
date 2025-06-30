@@ -19,8 +19,8 @@ namespace HAL_JSON {
 
     bool Device::DisabledInJson(const JsonVariant& jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_DISABLED) == false) return false;
-        if (jsonObj.is<bool>() == false) return false;
-        return jsonObj.as<bool>(); 
+        if (jsonObj[HAL_JSON_KEYNAME_DISABLED].is<bool>() == false) return false;
+        return jsonObj[HAL_JSON_KEYNAME_DISABLED].as<bool>(); 
     }
 
 } // namespace HAL

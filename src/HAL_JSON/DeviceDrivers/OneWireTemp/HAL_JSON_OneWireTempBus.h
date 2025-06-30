@@ -19,6 +19,7 @@ namespace HAL_JSON {
         uint8_t pin;
         OneWire* oneWire = nullptr;
         DallasTemperature* dTemp = nullptr;
+        bool haveDeviceWithRomID(OneWireAddress addr);
     public:
         uint32_t deviceCount = 0;
         OneWireTempDevice **devices;
@@ -34,8 +35,8 @@ namespace HAL_JSON {
         void readAll();
         bool read(const HALReadStringRequestValue& val) override;
 
-        String getAllDevices();
-
+        String getAllDevices(bool printTemp = false, bool onlyNewDevices = false);
+        String ToString() override;
     };
 
     class OneWireTempBusAtRoot : public OneWireTempBus {
@@ -50,8 +51,7 @@ namespace HAL_JSON {
         ~OneWireTempBusAtRoot();
 
         void loop() override;
-        // TODO implement the following methods to allow fine precision of paths
-       // Device* findDevice(UIDPath& path) override;
-
+        
+        String ToString() override;
     };
 }

@@ -92,9 +92,9 @@ namespace HAL_JSON {
     {
         for (int i=0;i<deviceCount;i++) {
             if (devices[i]->format == OneWireTempDeviceTempFormat::Celsius)
-                devices[i]->value = dTemp->getTempC(devices[i]->romid);
+                devices[i]->value = dTemp->getTempC(devices[i]->romid.bytes);
             else if (devices[i]->format == OneWireTempDeviceTempFormat::Fahrenheit)
-                devices[i]->value = dTemp->getTempF(devices[i]->romid);
+                devices[i]->value = dTemp->getTempF(devices[i]->romid.bytes);
         }
     }
 
@@ -107,8 +107,8 @@ namespace HAL_JSON {
 
         if (currLevelUID == UIDPath::UID_INVALID) { GlobalLogger.Error(F("OneWireTempBus::findDevice - currLevelUID == UIDPath::UID_INVALID")); return nullptr; } // early break
         
-        HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - uid: "), decodeUID(uid).c_str());
-        HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - currLevelUID: "), decodeUID(currLevelUID).c_str());
+        //HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - uid: "), decodeUID(uid).c_str());
+        //HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - currLevelUID: "), decodeUID(currLevelUID).c_str());
         
         for (int i=0;i<deviceCount;i++)
         {
@@ -121,33 +121,55 @@ namespace HAL_JSON {
 
     bool OneWireTempBus::read(const HALReadStringRequestValue& val) {
         if (val.cmd == F("getAllNewDevices")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
-            return false; // currently not implemented
+            val.out_value += getAllDevices(false, true);
+            return true;
+        }
+        else if (val.cmd == F("getAllNewDevicesWithTemp")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
+            val.out_value += getAllDevices(true, true);
+            return true;
         }
         else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
-            val.out_value += getAllDevices();
-            return true; // currently not implemented
+            val.out_value += getAllDevices(false, false);
+            return true;
         }
         else if (val.cmd == F("getAllTemperatures")) { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
-
-            return false; // currently not implemented
+            val.out_value += getAllDevices(true, false);
+            return true;
         }
         val.out_value = F("{\"error\":\"cmd not found\"}");
-        return true;  // cmd not found
+        return true;
     }
 
-    String OneWireTempBus::getAllDevices() {
+    bool OneWireTempBus::haveDeviceWithRomID(OneWireAddress addr) {
+        if (deviceCount == 0 || devices == nullptr) return false;
+        for (int i=0;i<deviceCount;i++) {
+            // cast the romid to uint64_t for fast and easy compare
+            if (devices[i]->romid.id == addr.id) return true;
+        }
+        return false;
+    }
+
+    String OneWireTempBus::getAllDevices(bool printTemp, bool onlyNewDevices) {
         byte i = 0;
         byte done = 0;
-        byte addr[8];
+        OneWireAddress addr;
         String returnStr;
         char hexString[3];
-        uint32_t count = 0;
+        bool first = true;
+
         returnStr.concat(F("{\"pin\":"));
         returnStr.concat(pin);
-        returnStr.concat(F(",\"items\":[\"\"")); // plus one first dummy item so that 
+        returnStr.concat(F(",\"items\":["));
+        if (printTemp) {
+            dTemp->setWaitForConversion(true);
+            dTemp->requestTemperatures();
+            dTemp->setWaitForConversion(false);
+        }
+        
+        oneWire->reset_search();
         while(!done)
         {
-            if (oneWire->search(addr) != 1)
+            if (oneWire->search(addr.bytes) != 1)
             {
                 
                 oneWire->reset_search();
@@ -155,21 +177,49 @@ namespace HAL_JSON {
             }
             else
             {
+                if (onlyNewDevices && haveDeviceWithRomID(addr)==true) continue;
+
+                if (!first) {
+                    returnStr.concat(F(","));
+                }
+                if (printTemp) {
+                    returnStr.concat("{\"romId\":");
+                }
                 returnStr.concat("\"");
                 for( i = 0; i < 7; i++) 
                 {
-                    sprintf(hexString, "%02X", addr[i]);
+                    sprintf(hexString, "%02X", addr.bytes[i]);
                     returnStr.concat(hexString);
                     returnStr.concat(":");
                 }
-                sprintf(hexString, "%02X", addr[7]);
-                    returnStr.concat(hexString);
-                returnStr.concat("\",");
-                count++;
+                sprintf(hexString, "%02X", addr.bytes[7]);
+                returnStr.concat(hexString);
+                returnStr.concat("\"");
+                if (printTemp) {
+                    returnStr.concat(",\"tempC\":");
+                    returnStr.concat(dTemp->getTempC(addr.bytes));
+                    returnStr.concat(",\"tempF\":");
+                    returnStr.concat(dTemp->getTempF(addr.bytes));
+                    returnStr.concat("}");
+                }
+                first = false;
             }
         }
-        returnStr.concat(F("\"\"]}")); // plus one dummy item so that , can be used between items
+        
+        returnStr.concat(F("]}"));
         return returnStr;
+    }
+
+    String OneWireTempBus::ToString() {
+        String ret;
+        ret += "\"pin\":" + String(pin);
+        ret += ",\"devices\":[";
+        for (int i=0;i<deviceCount;i++) {
+            ret += "{" + devices[i]->ToString() + "}"; 
+            if (i<deviceCount-1) ret += ",";
+        }
+        ret += "]";
+        return ret;
     }
 
     OneWireTempBusAtRoot::OneWireTempBusAtRoot(const JsonVariant &jsonObj) 
@@ -189,4 +239,11 @@ namespace HAL_JSON {
         autoRefresh.loop();
     }
 
+    String OneWireTempBusAtRoot::ToString() {
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_ONE_WIRE_TEMP_BUS "\"";
+        ret += "," + autoRefresh.ToString();
+        ret += "," + OneWireTempBus::ToString();
+        return ret;
+    }
 }

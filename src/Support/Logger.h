@@ -19,6 +19,7 @@ struct LogEntry {
       };
       char* text;
       bool isCode;
+      bool isNew = false;
       LogEntry();
       void Set(time_t time, Loglevel level, uint32_t errorCode);
       void Set(time_t time, Loglevel level, const __FlashStringHelper* message);
@@ -30,6 +31,8 @@ struct LogEntry {
       // Delete copy constructor and copy assignment
       LogEntry(const LogEntry&) = delete;
       LogEntry& operator=(const LogEntry&) = delete;
+
+      String MessageToString() const;
   };
 
 class Logger {
@@ -52,7 +55,8 @@ class Logger {
     void Warn(uint32_t code, const char* text);
     void Warn(const __FlashStringHelper* msg, const char* text);
     void Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
-    void printAllLogs(Stream &out = Serial) const;
+    void printAllLogs(Stream &out = Serial, bool onlyPrintNew = false);
+    const LogEntry& getLastEntry() const;
 
   private:
     static constexpr size_t LOG_BUFFER_SIZE = 128;

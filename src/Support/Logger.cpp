@@ -16,6 +16,7 @@ void LogEntry::Set(time_t time, Loglevel _level, uint32_t _errorCode) {
     errorCode = _errorCode;
     if (text != nullptr) { free(text); text = nullptr; }
     isCode = true;
+    isNew = true;
 }
 void LogEntry::Set(time_t time, Loglevel _level, const __FlashStringHelper* _message) {
     timestamp = time;
@@ -23,6 +24,7 @@ void LogEntry::Set(time_t time, Loglevel _level, const __FlashStringHelper* _mes
     message = _message;
     if (text != nullptr) { free(text); text = nullptr; }
     isCode = false;
+    isNew = true;
 }
 void LogEntry::Set(time_t time, Loglevel _level, uint32_t _errorCode, const char* _text) {
     timestamp = time;
@@ -35,6 +37,7 @@ void LogEntry::Set(time_t time, Loglevel _level, uint32_t _errorCode, const char
         text = nullptr;
     }
     isCode = true;
+    isNew = true;
 }
 void LogEntry::Set(time_t time, Loglevel _level, const __FlashStringHelper* _message, const char* _text) {
     timestamp = time;
@@ -47,12 +50,16 @@ void LogEntry::Set(time_t time, Loglevel _level, const __FlashStringHelper* _mes
         text = nullptr;
     }
     isCode = false;
+    isNew = true;
 }
 LogEntry::~LogEntry() {
     if (text) {
         free(text);
         text = nullptr;
     }
+}
+String LogEntry::MessageToString() const {
+    return String(message) + String(text);
 }
 
 Logger::Logger() {
@@ -129,13 +136,16 @@ void Logger::Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
 }
 
 
-void Logger::printAllLogs(Stream &out) const {
+void Logger::printAllLogs(Stream &out, bool onlyPrintNew) {
     size_t start = wrapped ? head : 0;
     size_t count = wrapped ? LOG_BUFFER_SIZE : head;
 
     for (size_t i = 0; i < count; ++i) {
         size_t index = (start + i) % LOG_BUFFER_SIZE;
-        const LogEntry& entry = buffer[index];
+        LogEntry& entry = buffer[index];
+
+        if (onlyPrintNew && entry.isNew == false) continue;
+        entry.isNew = false;
 
         out.print(F("["));
         struct tm* timeinfo;
@@ -165,4 +175,14 @@ void Logger::printAllLogs(Stream &out) const {
 void Logger::advance() {
     head = (head + 1) % LOG_BUFFER_SIZE;
     if (head == 0) wrapped = true;
+}
+
+const LogEntry& Logger::getLastEntry() const {
+    if (!wrapped && head == 0) {
+        // No entries yet, handle appropriately (return a dummy or assert)
+        static LogEntry dummy;
+        return dummy;
+    }
+    size_t lastIndex = (head + LOG_BUFFER_SIZE - 1) % LOG_BUFFER_SIZE;
+    return buffer[lastIndex];
 }

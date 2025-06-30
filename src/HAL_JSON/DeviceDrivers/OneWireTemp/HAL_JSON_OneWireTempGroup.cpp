@@ -91,8 +91,8 @@ namespace HAL_JSON {
 
         if (currLevelUID == UIDPath::UID_INVALID) { GlobalLogger.Error(F("OneWireTempGroup::findDevice - currLevelUID == UIDPath::UID_INVALID")); return nullptr; } // early break
         
-        HAL_JSON_DEBUG(F("OneWireTempGroup::findDevice - uid: "), decodeUID(uid).c_str());
-        HAL_JSON_DEBUG(F("OneWireTempGroup::findDevice - currLevelUID: "),decodeUID(currLevelUID).c_str());
+        //HAL_JSON_DEBUG(F("OneWireTempGroup::findDevice - uid: "), decodeUID(uid).c_str());
+        //HAL_JSON_DEBUG(F("OneWireTempGroup::findDevice - currLevelUID: "),decodeUID(currLevelUID).c_str());
 
         for (int i=0;i<busCount;i++)
         {
@@ -100,7 +100,7 @@ namespace HAL_JSON {
             if (!bus) continue;  // absolute failsafe
             if (bus->uid == currLevelUID) {
                 if (path.isLast()) return bus;
-                GlobalLogger.Info(F("bus->uid == currLevelUID"));
+                //GlobalLogger.Info(F("bus->uid == currLevelUID"));
                 return bus->findDevice(path); // this is the final step
 
             } else if (bus->uid == 0 && !path.isLast()) {
@@ -114,10 +114,7 @@ namespace HAL_JSON {
 
     bool OneWireTempGroup::read(const HALReadStringRequestValue& val) {
         if (val.cmd == F("getAllNewDevices")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
-            return false; // currently not implemented
-        }
-        else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
-            val.out_value = "{";
+            val.out_value = "[";
             for (int i=0;i<busCount;i++) {
                 OneWireTempBus* bus = busses[i];
                 if (bus == nullptr) continue;
@@ -125,11 +122,44 @@ namespace HAL_JSON {
                 if (i<busCount-1)
                     val.out_value += ",";
             }
-            val.out_value += "}";
+            val.out_value += "]";
+            return true;
+        }
+        else if (val.cmd == F("getAllNewDevicesWithTemp")) {
+            val.out_value = "[";
+            for (int i=0;i<busCount;i++) {
+                OneWireTempBus* bus = busses[i];
+                if (bus == nullptr) continue;
+                bus->read(val);
+                if (i<busCount-1)
+                    val.out_value += ",";
+            }
+            val.out_value += "]";
+            return true;
+        }
+        else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
+            val.out_value = "[";
+            for (int i=0;i<busCount;i++) {
+                OneWireTempBus* bus = busses[i];
+                if (bus == nullptr) continue;
+                bus->read(val);
+                if (i<busCount-1)
+                    val.out_value += ",";
+            }
+            val.out_value += "]";
             return true;
         }
         else if (val.cmd == F("getAllTemperatures")) { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
-            return false; // currently not implemented
+            val.out_value = "[";
+            for (int i=0;i<busCount;i++) {
+                OneWireTempBus* bus = busses[i];
+                if (bus == nullptr) continue;
+                bus->read(val);
+                if (i<busCount-1)
+                    val.out_value += ",";
+            }
+            val.out_value += "]";
+            return true;
         }
         val.out_value = F("{\"error\":\"cmd not found\"}");
         return true;  // cmd not found
@@ -149,5 +179,18 @@ namespace HAL_JSON {
 
     void OneWireTempGroup::loop() {
         autoRefresh.loop();
+    }
+
+    String OneWireTempGroup::ToString() {
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_ONE_WIRE_TEMP_GROUP "\"";
+        ret += "," + autoRefresh.ToString();
+        ret += ",\"busses\":[";
+        for (int i=0;i<busCount;i++) {
+            ret += "{"+busses[i]->ToString()+"}";
+            if (i<busCount-1) ret += ",";
+        }
+        ret += "]";
+        return ret;
     }
 }

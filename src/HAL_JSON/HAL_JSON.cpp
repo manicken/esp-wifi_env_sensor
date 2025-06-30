@@ -19,14 +19,27 @@ namespace HAL_JSON {
                 //PrintStreamAdapter adapter(*response);
                 //webserver->sendHeader("Content-Type", "application/json");
                 //webserver->send(200, "application/json", "");
-                GlobalLogger.printAllLogs();
-                request->send(200, "text/html", "fail");
+                GlobalLogger.printAllLogs(Serial, false); // TODO make this print back to request client
+
+                const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                request->send(200, "application/json", "{\"error\":\""+lastEntry.MessageToString()+"\"}");
                 
             }
             else
             {
-                request->send(200, "text/html", "ok");
+                request->send(200, "application/json", "{\"info\":\"JSON reload ok\"}");
             }
+        });
+        asyncWebserver->on(HAL_JSON_URL_PRINT_DEVICES, HTTP_ANY, [](AsyncWebServerRequest* request){
+            String ret = "{";
+            ret += "\"deviceCount\":" + String(deviceCount); 
+            ret += ",\"devices\":[";
+            for (int i=0;i<deviceCount;i++) {
+                ret += "{"+devices[i]->ToString()+"}";
+                if (i<deviceCount-1) ret += ",";
+            }
+            ret += "]}";
+            request->send(200, "application/json", ret);
         });
 
         asyncWebserver->on("/", HTTP_ANY, [](AsyncWebServerRequest *request){
@@ -42,7 +55,8 @@ namespace HAL_JSON {
         asyncWebserver->begin();
        
         if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()) == false) {
-            GlobalLogger.printAllLogs(Serial);
+            Serial.println("error happend while reading and parsing config JSON");
+            GlobalLogger.printAllLogs(Serial, false);
         }
     }
 
@@ -69,16 +83,22 @@ namespace HAL_JSON {
         if (p3 != -1) value = url.substring(p3 + 1);
 
         String message = "";
-        
+//#define REST_API_DEBUG_REQ
+#ifdef REST_API_DEBUG_REQ
         message += "\"debug\":{";
         message += "\"Command\":\"" + command + "\",";
         message += "\"Type\":\"" + type + "\",";
         message += "\"UID\":\"" + uid + "\",";
         message += "\"Value\":\"" + value + "\"},";
-
-
-        if (command == HAL_JSON_REST_API_WRITE_CMD) {
-            // Handle write command
+#endif
+        //  ██     ██ ██████  ██ ████████ ███████ 
+        //  ██     ██ ██   ██ ██    ██    ██      
+        //  ██  █  ██ ██████  ██    ██    █████   
+        //  ██ ███ ██ ██   ██ ██    ██    ██      
+        //   ███ ███  ██   ██ ██    ██    ███████ 
+        //                                        
+        if (command == HAL_JSON_REST_API_WRITE_CMD)
+        {
             if (value.length() > 0 || p3 != -1) {
                 if (type == HAL_JSON_REST_API_BOOL_TYPE) {
                     uint32_t uintValue = 0;
@@ -98,8 +118,9 @@ namespace HAL_JSON {
                     if (write(req))
                         message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
                     else {
-                        message += "\"error\":\"Failed to write value.\"";
-                        GlobalLogger.printAllLogs();
+                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+                        //GlobalLogger.printAllLogs();
                     }
                 }
                 else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
@@ -114,12 +135,12 @@ namespace HAL_JSON {
                     if (write(req))
                         message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
                     else {
-                        message += "\"error\":\"Failed to write value.\"";
-                        GlobalLogger.printAllLogs();
+                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+                        //GlobalLogger.printAllLogs();
                     }
 
                 } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
-                    // Convert value to string
                     UIDPath uidPath(uid.c_str());
                     String result;
                     HALWriteStringRequestValue strHalValue(value, result);
@@ -128,8 +149,9 @@ namespace HAL_JSON {
                     if (write(req))
                         message += "\"info\":{\"String written\":\"" + value + "\"}";
                     else {
-                        message += "\"error\":\"Failed to write string.\"";
-                        GlobalLogger.printAllLogs();
+                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+                        //GlobalLogger.printAllLogs();
                     }
 
                 } else if (type == HAL_JSON_REST_API_JSON_STR_TYPE) {
@@ -141,8 +163,9 @@ namespace HAL_JSON {
                     if (write(req))
                         message += "\"info\":{\"Json written\":" + value + "}";
                     else {
-                        message += "\"error\":\"Failed to write string.\"";
-                        GlobalLogger.printAllLogs();
+                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+                       // GlobalLogger.printAllLogs();
                     }
                 }
                 else {
@@ -151,12 +174,15 @@ namespace HAL_JSON {
             } else {
                 message += "\"error\":\"No value provided for writing.\"";
             }
-        } else if (command == HAL_JSON_REST_API_READ_CMD) {
+        }
+        //  ██████  ███████  █████  ██████  
+        //  ██   ██ ██      ██   ██ ██   ██ 
+        //  ██████  █████   ███████ ██   ██ 
+        //  ██   ██ ██      ██   ██ ██   ██ 
+        //  ██   ██ ███████ ██   ██ ██████  
+        else if (command == HAL_JSON_REST_API_READ_CMD)
+        {
             if (type == HAL_JSON_REST_API_BOOL_TYPE) {
-                // Handle read command
-                //uint32_t readValue = 0;
-                //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-
                 UIDPath uidPath(uid.c_str());
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
@@ -164,34 +190,45 @@ namespace HAL_JSON {
                 if (read(req)) {
                     message += "\"value\":\"" + String(halValue.asUInt()) + "\"";
                 } else {
-                    message += "\"error\":\"Failed to read value.\"";
-                    GlobalLogger.printAllLogs();
+                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+
+                    //GlobalLogger.printAllLogs();
                 }
             } else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
-                // Handle read command
-                //uint32_t readValue = 0;
-                //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
                 UIDPath uidPath(uid.c_str());
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
                 if (read(req)) {
                     message += "\"value\":\"" + String(halValue.asUInt()) + "\"";
                 } else {
-                    message += "\"error\":\"Failed to read value.\"";
-                    GlobalLogger.printAllLogs();
+                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+                    //GlobalLogger.printAllLogs();
                 }
             } else if (type == HAL_JSON_REST_API_FLOAT_TYPE) {
-                // Handle read command
-                //float readValue = 0;
-                //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
                 UIDPath uidPath(uid.c_str());
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
                 if (read(req)) {
                     message += "\"value\":\"" + String(halValue.asFloat()) + "\"";
                 } else {
-                    message += "\"error\":\"Failed to read value.\"";
-                    GlobalLogger.printAllLogs();
+                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+                    //GlobalLogger.printAllLogs();
+                }
+            } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
+                UIDPath uidPath(uid.c_str());
+                String result;
+                HALReadStringRequestValue strHalValue(value, result);
+                
+                HALReadStringRequest req(uidPath, strHalValue);
+                if (read(req))
+                    message += "\"value\":" + result;
+                else {
+                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
+                    //GlobalLogger.printAllLogs();
                 }
             } else {
                 message += "\"error\":\"Unknown type for reading.\"";
@@ -244,6 +281,7 @@ namespace HAL_JSON {
     }
 
     bool Manager::ParseJSON(const JsonArray &jsonArray) {
+        Serial.println("PArse json thianasoidnoasidnasoidnsaiodnsaodinasdoiandoisandiosndoiasnd");
         uint32_t deviceCount = 0;
         uint32_t arraySize = jsonArray.size();
         bool* validDevices = new bool[arraySize]; // dont' forget the delete[] call at end of function
@@ -252,12 +290,11 @@ namespace HAL_JSON {
         for (int i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
             bool valid = true;
-            if (jsonItem.is<const char*>() == true) valid = false; // comment item
-            if (valid && Device::DisabledInJson(jsonItem) == true) valid = false; // disabled
-            if (valid)
-                valid = VerifyDeviceJson(jsonItem);
+            if (jsonItem.is<const char*>() == true) { validDevices[i] = false;  continue; } // comment item
+            if (Device::DisabledInJson(jsonItem) == true) { validDevices[i] = false;  continue; } // disabled
+            valid = VerifyDeviceJson(jsonItem);
             validDevices[i] = valid;
-            if (valid == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
+            if (valid == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION; // could either be continue; or return false depending if strict mode is on/off
             deviceCount++;
         }
         
@@ -313,7 +350,7 @@ namespace HAL_JSON {
             if (device == nullptr) continue;
 #if defined(HAL_JSON_USE_EFFICIENT_FIND)
             if (device->uid == rootUID) {
-                Serial.println(F("device->uid == rootUID"));
+                //Serial.println(F("device->uid == rootUID"));
 				if ((device->uidMaxLength == 1) || (path.count() == 1))
 					return device;
 				else
@@ -325,7 +362,7 @@ namespace HAL_JSON {
 					
 			}
             else if (device->uid == 0) { // this will only happen on devices where uidMaxLenght>1
-                Serial.println(F("device->uid == 0"));
+                //Serial.println(F("device->uid == 0"));
 				Device* dev = device->findDevice(path);
 				if (dev != nullptr) return dev;
                 rootUID = path.resetAndGetFirst();
@@ -341,26 +378,26 @@ namespace HAL_JSON {
 
     bool Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device"),req.path.ToString().c_str()); return false; }
-        Serial.println(F("found device"));
+        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        //Serial.println(F("found device"));
         return device->read(req.out_value);
     }
     bool Manager::write(const HALWriteRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device"),req.path.ToString().c_str()); return false; }
-        Serial.println(F("found device"));
+        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        //Serial.println(F("found device"));
         return device->write(req.value);
     }
     bool Manager::read(const HALReadStringRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device"),req.path.ToString().c_str()); return false; }
-        Serial.println(F("found device"));
+        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        //Serial.println(F("found device"));
         return device->read(req.value);
     }
     bool Manager::write(const HALWriteStringRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device"),req.path.ToString().c_str()); return false; }
-        Serial.println(F("found device"));
+        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        //Serial.println(F("found device"));
         return device->write(req.value);
     }
 
@@ -379,7 +416,8 @@ namespace HAL_JSON {
             GlobalLogger.Error(F("ReadJSON - error could not load json file"),path);
             return false;
         }
-        DynamicJsonDocument jsonDoc(fileSize*2);
+        size_t jsonDocBufferSize = (size_t)((float)fileSize * 1.5f);
+        DynamicJsonDocument jsonDoc(jsonDocBufferSize);
         DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
         if (error)
         {
@@ -404,6 +442,7 @@ namespace HAL_JSON {
         }
         bool parseOk = ParseJSON(jsonItems);
         delete[] jsonBuffer;
+        if (parseOk == false) Serial.println("ParseJSON(jsonItems) fail");
         return parseOk;
     }
     void Manager::loop() {

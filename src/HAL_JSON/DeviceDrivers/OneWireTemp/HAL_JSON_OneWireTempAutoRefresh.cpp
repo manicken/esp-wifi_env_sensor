@@ -71,4 +71,10 @@ namespace HAL_JSON {
         }
         return static_cast<uint32_t>(round(rawSec * 1000));
     }
+
+    String OneWireTempAutoRefresh::ToString() {
+        String ret;
+        ret += "\"refreshTimeMs\":" + String(refreshTimeMs + HAL_JSON_ONE_WIRE_TEMP_CONVERSION_TIME_MS);
+        return ret;
+    }
 }

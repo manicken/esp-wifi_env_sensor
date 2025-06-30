@@ -42,13 +42,12 @@ namespace HAL_JSON {
         return true;
     }
 
-    /*bool DigitalInput::write(const HALValue &val req) {  // default is in HAL_JSON_Device
-        // read-only, do nothing
-        return false;
-    }*/
-
     String DigitalInput::ToString() {
-        return "DigitalInput(pin=" + String(pin) + ",val=" + String(digitalRead(pin)) + ")";
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_DIN "\"";
+        ret += ",\"pin\":" + String(pin);
+        ret += ",\"value\":" + String(digitalRead(pin));
+        return ret;
     }
 
     // ██████  ██  ██████  ██ ████████  █████  ██           ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
@@ -98,7 +97,11 @@ namespace HAL_JSON {
     }
 
     String DigitalOutput::ToString() {
-        return "DigitalOutput(pin=" +  String(pin) + ",val=" + String(value) +  + ")";
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_DOUT "\"";
+        ret += ",\"pin\":" + String(pin);
+        ret += ",\"value\":" + String(value);
+        return ret;
     }
 
     // ██████  ██    ██ ██      ███████ ███████      ██████  ██    ██ ████████ ██████  ██    ██ ████████ 
@@ -175,7 +178,11 @@ namespace HAL_JSON {
     }
 
     String SinglePulseOutput::ToString() {
-        return "SinglePulseOutput(pin=" +  String(pin) + ",val=" + String(pulseLength) +  + ")";
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_DPOUT "\"";
+        ret += ",\"pin\":" + String(pin);
+        ret += ",\"pulseLength\":" + String(pulseLength);
+        return ret;
     }
 
     //  █████  ███    ██  █████  ██       ██████   ██████      ██ ███    ██ ██████  ██    ██ ████████ 
@@ -216,13 +223,12 @@ namespace HAL_JSON {
         return true;
     }
 
-    /*bool AnalogInput::write(const HALValue &val req) {  // default is in HAL_JSON_Device
-        // read-only, do nothing
-        return false;
-    }*/
-
     String AnalogInput::ToString() {
-        return "AnalogInput(pin=" +  String(pin) + ",val=" + String(analogRead(pin)) + ")";
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_ADC "\"";
+        ret += ",\"pin\":" + String(pin);
+        ret += ",\"value\":" + String(analogRead(pin));
+        return ret;
     }
 
     // ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████      ██████ ███████  ██████  
@@ -230,6 +236,10 @@ namespace HAL_JSON {
     // ██████  ██  █  ██ ██ ████ ██     ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██  █  ██ ██████  ██    ██    █████       ██      █████   ██   ███ 
     // ██      ██ ███ ██ ██  ██  ██     ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ███ ██ ██   ██ ██    ██    ██          ██      ██      ██    ██ 
     // ██       ███ ███  ██      ██     ██   ██ ██   ████ ██   ██ ███████  ██████   ██████       ███ ███  ██   ██ ██    ██    ███████      ██████ ██       ██████  
+
+    // Define static members somewhere in the cpp file (outside any function)
+    uint8_t PWMAnalogWriteConfig::resolution = 0;
+    uint32_t PWMAnalogWriteConfig::frequency = 0;
 
     Device* PWMAnalogWriteConfig::Create(const JsonVariant &jsonObj) {
         return new PWMAnalogWriteConfig(jsonObj);
@@ -263,10 +273,12 @@ namespace HAL_JSON {
         return false;
     }
 
-    //bool PWMAnalogWriteConfig::read(HALReadRequest &req) { return false; } // default is in HAL_JSON_Device
-    //bool PWMAnalogWriteConfig::write(const HALValue &val req) { return false; } // default is in HAL_JSON_Device
     String PWMAnalogWriteConfig::ToString() {
-        return "PWMAnalogWriteConfig(freq=" + String(PWMAnalogWriteConfig::frequency) + ", resolution=" + String(PWMAnalogWriteConfig::resolution) + ")";
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_PWM_ANALOG_WRITE_CFG "\"";
+        ret += ",\"freq\":" + String(PWMAnalogWriteConfig::frequency);
+        ret += ",\"resolution\":" + String(PWMAnalogWriteConfig::resolution);
+        return ret;
     }
 
     // ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████ 
@@ -318,7 +330,12 @@ namespace HAL_JSON {
     }
 
     String PWMAnalogWrite::ToString() {
-        return "PWMAnalogWrite(pin=" +  String(pin) + ", val=" + String(value) + ", inv_out=" + String(inv_out) + ")";
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_PWM_ANALOG_WRITE "\"";
+        ret += ",\"pin\":" + String(pin);
+        ret += ",\"value\":" + String(value);
+        ret += ",\"inv_out\":" + String(inv_out);
+        return ret;
     }
 
     uint32_t PWMAnalogWrite::getInvValue(uint32_t val)

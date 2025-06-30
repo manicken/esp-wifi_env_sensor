@@ -38,6 +38,8 @@ namespace HAL_JSON {
         static double ParseRefreshTime(const JsonVariant &jsonObj);
         static uint32_t ParseRefreshTimeMs(const JsonVariant &value);
         void loop();
+
+        String ToString();
     };
 
     

@@ -21,7 +21,7 @@ namespace HAL_JSON {
     struct HALReadStringRequestValue {
         String& out_value;
         const String& cmd;
-        HALReadStringRequestValue(String& out_value, const String& cmd): out_value(out_value), cmd(cmd) {}
+        HALReadStringRequestValue(const String& cmd, String& out_value): out_value(out_value), cmd(cmd) {}
     };
 
     struct HALWriteStringRequestValue {

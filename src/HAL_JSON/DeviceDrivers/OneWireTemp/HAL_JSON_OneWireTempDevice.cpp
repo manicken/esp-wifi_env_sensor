@@ -2,9 +2,15 @@
 #include "HAL_JSON_OneWireTempDevice.h"
 
 namespace HAL_JSON {
-    Device* OneWireTempDeviceAtRoot::Create(const JsonVariant& jsonObj) {
-        return new OneWireTempDeviceAtRoot(jsonObj);
-    }
+    
+
+
+    //   ██████  ███    ██ ███████     ██     ██ ██ ██████  ███████     ████████ ███████ ███    ███ ██████      ██████  ███████ ██    ██ ██  ██████ ███████ 
+    //  ██    ██ ████   ██ ██          ██     ██ ██ ██   ██ ██             ██    ██      ████  ████ ██   ██     ██   ██ ██      ██    ██ ██ ██      ██      
+    //  ██    ██ ██ ██  ██ █████       ██  █  ██ ██ ██████  █████          ██    █████   ██ ████ ██ ██████      ██   ██ █████   ██    ██ ██ ██      █████   
+    //  ██    ██ ██  ██ ██ ██          ██ ███ ██ ██ ██   ██ ██             ██    ██      ██  ██  ██ ██          ██   ██ ██       ██  ██  ██ ██      ██      
+    //   ██████  ██   ████ ███████      ███ ███  ██ ██   ██ ███████        ██    ███████ ██      ██ ██          ██████  ███████   ████   ██  ██████ ███████ 
+    //                                                                                                                                                     
 
     bool OneWireTempDevice::VerifyJSON(const JsonVariant &jsonObj) {
         
@@ -20,7 +26,7 @@ namespace HAL_JSON {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
         const char* romIdStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>();
-        Convert::HexToBytes(romIdStr, romid, 8);
+        Convert::HexToBytes(romIdStr, romid.bytes, 8);
         // optional settings
         if (ValidateJsonStringField_noLog(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT)) {
             const char* tempFormatStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT].as<const char*>();
@@ -39,6 +45,27 @@ namespace HAL_JSON {
     bool OneWireTempDevice::read(HALValue& val) {
         val = value;
         return true;
+    }
+    
+    String OneWireTempDevice::ToString() {
+        String ret;
+        ret += "\"romid\":\"" + String(Convert::ByteArrayToString(romid.bytes, 8).c_str()) + "\"";
+        ret += ",\"format\":";
+        if (format == OneWireTempDeviceTempFormat::Celsius) ret += "\"C\"";
+        else if (format == OneWireTempDeviceTempFormat::Fahrenheit) ret += "\"F\"";
+        else ret += "\"other\"";
+        ret += ",\"value\":\"" + String(value) + "\""; 
+        return ret;
+    }
+
+    //   ██     ██     ██ ██ ██████  ███████     ████████ ███████ ███    ███ ██████      ██████  ███████ ██    ██ ██  ██████ ███████      ██████      ██████   ██████   ██████  ████████ 
+    //  ███     ██     ██ ██ ██   ██ ██             ██    ██      ████  ████ ██   ██     ██   ██ ██      ██    ██ ██ ██      ██          ██    ██     ██   ██ ██    ██ ██    ██    ██    
+    //   ██     ██  █  ██ ██ ██████  █████          ██    █████   ██ ████ ██ ██████      ██   ██ █████   ██    ██ ██ ██      █████       ██ ██ ██     ██████  ██    ██ ██    ██    ██    
+    //   ██     ██ ███ ██ ██ ██   ██ ██             ██    ██      ██  ██  ██ ██          ██   ██ ██       ██  ██  ██ ██      ██          ██ ██ ██     ██   ██ ██    ██ ██    ██    ██    
+    //   ██      ███ ███  ██ ██   ██ ███████        ██    ███████ ██      ██ ██          ██████  ███████   ████   ██  ██████ ███████      █ ████      ██   ██  ██████   ██████     ██    
+
+    Device* OneWireTempDeviceAtRoot::Create(const JsonVariant& jsonObj) {
+        return new OneWireTempDeviceAtRoot(jsonObj);
     }
 
     bool OneWireTempDeviceAtRoot::VerifyJSON(const JsonVariant &jsonObj) {
@@ -73,13 +100,23 @@ namespace HAL_JSON {
 
     void OneWireTempDeviceAtRoot::readAll() {
         if (format == OneWireTempDeviceTempFormat::Celsius)
-            value = dTemp->getTempC(romid);
+            value = dTemp->getTempC(romid.bytes);
         else if (format == OneWireTempDeviceTempFormat::Fahrenheit)
-            value = dTemp->getTempF(romid);
+            value = dTemp->getTempF(romid.bytes);
     }
 
     void OneWireTempDeviceAtRoot::loop() {
         autoRefresh.loop();
+    }
+
+    String OneWireTempDeviceAtRoot::ToString() {
+        String ret;
+        ret += "\"type\":\"" HAL_JSON_TYPE_ONE_WIRE_TEMP_DEVICE "\"";
+        ret += ",\"pin\":" + String(pin);
+        ret += "," + autoRefresh.ToString();
+        ret += "," + OneWireTempDevice::ToString();
+
+        return ret;
     }
 
 }

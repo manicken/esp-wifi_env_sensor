@@ -18,9 +18,16 @@ namespace HAL_JSON {
         Fahrenheit
     };
 
+    typedef struct {
+        union {
+            uint8_t bytes[8];
+            uint64_t id;
+        };
+    } OneWireAddress;
+
     class OneWireTempDevice : public Device {
     public:
-        uint8_t romid[8];
+        OneWireAddress romid;
         OneWireTempDeviceTempFormat format = OneWireTempDeviceTempFormat::Celsius;
         float value;
 
@@ -30,7 +37,8 @@ namespace HAL_JSON {
         ~OneWireTempDevice();
         
         bool read(HALValue& val) override;
-
+        
+        String ToString() override;
     };
 
     class OneWireTempDeviceAtRoot : public OneWireTempDevice {
@@ -51,5 +59,6 @@ namespace HAL_JSON {
 
         void loop() override;
 
+        String ToString() override;
     };
 }
