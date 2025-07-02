@@ -12,6 +12,8 @@
 #endif
 #include <WiFiManager.h>
 
+#include <ESPAsyncWebServer.h>
+
 #include "Support/Logger.h"
 
 // OTA
@@ -74,7 +76,7 @@
 #include "HearbeatLed.h"
 #include "MainConfig.h"
 
-#include "HAL_JSON/HAL_JSON.h"
+//#include "HAL_JSON/HAL_JSON.h"
 
 
 #define MAIN_URLS_JSON_CMD              F("/json_cmd")

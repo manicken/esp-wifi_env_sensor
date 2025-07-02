@@ -1,5 +1,7 @@
 #pragma once
 
+#define HAL_JSON_H_
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include "HAL_JSON_Value.h"

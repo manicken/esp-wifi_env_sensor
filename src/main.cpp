@@ -80,6 +80,7 @@ void Alarm_SendToRF433(const OnTickExtParameters *param)
         RF433::DecodeFromJSON(casted_param->jsonStr);
     }
 }
+#if defined(DEVICE_MANAGER_H)
 void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
 {
     DEBUG_UART.println("Alarm_SendToDeviceManager");
@@ -89,14 +90,17 @@ void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
        // DeviceManager::DecodeFromJSON(casted_param->jsonStr);
     }
 }
+#endif
 
-Scheduler::NameToFunction nameToFunctionList[5] = {
+Scheduler::NameToFunction nameToFunctionList[] = {
 //   name         , onTick            , onTickExt
-    {"ntp_sync"   , &Timer_SyncTime   , nullptr           },
-    {"sendEnvData", &Timer_SendEnvData, nullptr           },
-    {"fan"        , nullptr           , &Alarm_SetFanSpeed}, // this would be obsolete in favor of using SendToDeviceManager
-    {"rf433"      , nullptr           , &Alarm_SendToRF433}, // this would be obsolete in favor of using SendToDeviceManager
-    {"devmgr"     , nullptr           , &Alarm_SendToDeviceManager}
+    {"ntp_sync"   , &Timer_SyncTime   , nullptr           }
+    ,{"sendEnvData", &Timer_SendEnvData, nullptr           }
+    ,{"fan"        , nullptr           , &Alarm_SetFanSpeed} // this would be obsolete in favor of using SendToDeviceManager
+    ,{"rf433"      , nullptr           , &Alarm_SendToRF433} // this would be obsolete in favor of using SendToDeviceManager
+#if defined(DEVICE_MANAGER_H)
+    ,{"devmgr"     , nullptr           , &Alarm_SendToDeviceManager}
+#endif
 };
 
 #if defined(ESP32)
@@ -312,16 +316,18 @@ void setup() {
 #if defined(HEATPUMP)
     rego600.setup();
 #endif
-
+#ifdef HAL_JSON_H_
     HAL_JSON::Manager::setup();
-    
+#endif
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
 }
 
 void loop() {
+#ifdef HAL_JSON_H_
     HAL_JSON::Manager::loop();
+#endif
     //ws2812fx.service();
     //tcp2uart.BridgeMainTask();
     ArduinoOTA.handle();
