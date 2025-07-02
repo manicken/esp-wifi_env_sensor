@@ -28,7 +28,8 @@ namespace HAL_JSON {
         HAL_JSON_DEVICE_CONST_STR_DEFINE(type, "\"type\":\""); // type allways after uid
         
         HAL_JSON_DEVICE_CONST_STR_DEFINE(pin, ",\"pin\":");
-        HAL_JSON_DEVICE_CONST_STR_DEFINE(value, ",\"value\":");
+        HAL_JSON_DEVICE_CONST_STR_DEFINE(value, "\"value\":");
+        HAL_JSON_DEVICE_CONST_STR_DEFINE(valueStartWithComma, ",\"value\":");
         HAL_JSON_DEVICE_CONST_STR_DEFINE(refreshTimeMs, ",\"refreshTimeMs\":");
     }
 

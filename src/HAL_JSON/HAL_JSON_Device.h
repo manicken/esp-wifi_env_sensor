@@ -61,6 +61,7 @@ namespace HAL_JSON {
         HAL_JSON_DEVICE_CONST_STR_DECLARE(type);
         HAL_JSON_DEVICE_CONST_STR_DECLARE(pin);
         HAL_JSON_DEVICE_CONST_STR_DECLARE(value);
+        HAL_JSON_DEVICE_CONST_STR_DECLARE(valueStartWithComma);
         HAL_JSON_DEVICE_CONST_STR_DECLARE(refreshTimeMs);
     }
 } // namespace HAL

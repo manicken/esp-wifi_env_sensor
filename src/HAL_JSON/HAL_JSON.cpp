@@ -107,20 +107,24 @@ namespace HAL_JSON {
                     } else if (value == "false" || value == "0") {
                         uintValue = 0;
                     } else {
-                        message += "\"error\":\"Invalid boolean value.\"";
-                        request->send(200, "application/json", "{" +  message + "}");
+                        message += "{\"error\":\"Invalid boolean value.\"}";
+                        request->send(200, "application/json", message);
                         return;
                     }
                     UIDPath uidPath(uid.c_str());
                     HALValue halValue = uintValue;
                     HALWriteRequest req(uidPath, halValue);
                     //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-                    if (write(req))
-                        message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
+                    if (write(req)) {
+                        message += "\"info\":{\"Value written\":\"";
+                        message += uintValue;
+                        message += "\"}";
+                    }
                     else {
                         const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-                        //GlobalLogger.printAllLogs();
+                        message += "\"error\":\"";
+                        message += lastEntry.MessageToString();
+                        message += "\"";
                     }
                 }
                 else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
@@ -132,12 +136,16 @@ namespace HAL_JSON {
                     UIDPath uidPath(uid.c_str());
                     HALValue halValue = uintValue;
                     HALWriteRequest req(uidPath, halValue);
-                    if (write(req))
-                        message += "\"info\":{\"Value written\":\"" + String(uintValue) + "\"}";
+                    if (write(req)) {
+                        message += "\"info\":{\"Value written\":\"";
+                        message += uintValue;
+                        message += "\"}";
+                    }
                     else {
                         const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-                        //GlobalLogger.printAllLogs();
+                        message += "\"error\":\"";
+                        message += lastEntry.MessageToString();
+                        message += "\"";
                     }
 
                 } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
@@ -146,12 +154,16 @@ namespace HAL_JSON {
                     HALWriteStringRequestValue strHalValue(value, result);
                     
                     HALWriteStringRequest req(uidPath, strHalValue);
-                    if (write(req))
-                        message += "\"info\":{\"String written\":\"" + value + "\"}";
+                    if (write(req)) {
+                        message += "\"info\":{\"String written\":\"";
+                        message += value;
+                        message += "\"}";
+                    }
                     else {
                         const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-                        //GlobalLogger.printAllLogs();
+                        message += "\"error\":\"";
+                        message += lastEntry.MessageToString();
+                        message += "\"";
                     }
 
                 } else if (type == HAL_JSON_REST_API_JSON_STR_TYPE) {
@@ -160,12 +172,16 @@ namespace HAL_JSON {
                     HALWriteStringRequestValue strHalValue(value, result);
                     
                     HALWriteStringRequest req(uidPath, strHalValue);
-                    if (write(req))
-                        message += "\"info\":{\"Json written\":" + value + "}";
+                    if (write(req)) {
+                        message += "\"info\":{\"Json written\":";
+                        message += value;
+                        message += "}";
+                    }
                     else {
                         const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-                       // GlobalLogger.printAllLogs();
+                        message += "\"error\":\"";
+                        message += lastEntry.MessageToString();
+                        message += "\"";
                     }
                 }
                 else {
@@ -188,34 +204,61 @@ namespace HAL_JSON {
                 HALReadRequest req(uidPath, halValue);
 
                 if (read(req)) {
-                    message += "\"value\":\"" + String(halValue.asUInt()) + "\"";
+                    message += DeviceConstStrings::value;//"\"value\":\"";
+                    message += halValue.asUInt();
+                    //message += + "\"";
                 } else {
                     const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-
-                    //GlobalLogger.printAllLogs();
+                    message += "\"error\":\"";
+                    message += lastEntry.MessageToString();
+                    message += "\"";
                 }
             } else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
                 UIDPath uidPath(uid.c_str());
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
                 if (read(req)) {
-                    message += "\"value\":\"" + String(halValue.asUInt()) + "\"";
+                    message += DeviceConstStrings::value;//"\"value\":\"";
+                    message += halValue.asUInt();
+                    //message += "\"";
                 } else {
                     const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-                    //GlobalLogger.printAllLogs();
+                    message += "\"error\":\"";
+                    message += lastEntry.MessageToString();
+                    message += "\"";
                 }
             } else if (type == HAL_JSON_REST_API_FLOAT_TYPE) {
                 UIDPath uidPath(uid.c_str());
-                HALValue halValue;
-                HALReadRequest req(uidPath, halValue);
-                if (read(req)) {
-                    message += "\"value\":\"" + String(halValue.asFloat()) + "\"";
-                } else {
-                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-                    //GlobalLogger.printAllLogs();
+                if (value.length() == 0) {
+                    HALValue halValue;
+                    HALReadRequest req(uidPath, halValue);
+                
+                    if (read(req)) {
+                        message += DeviceConstStrings::value;//"\"value\":\"";
+                        message += halValue.asFloat();
+                        //message += "\"";
+                    } else {
+                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                        message += "\"error\":\"";
+                        message += lastEntry.MessageToString();
+                        message += "\"";
+                    }
+                }
+                else {
+                    HALValue halValue;
+                    HALReadValueByCmd valByCmd(halValue, value); // value here is cmd
+                    HALReadValueByCmdReq req(uidPath, valByCmd);
+                
+                    if (read(req)) {
+                        message += DeviceConstStrings::value;//"\"value\":\"";
+                        message += halValue.asFloat();
+                        //message += "\"";
+                    } else {
+                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                        message += "\"error\":\"";
+                        message += lastEntry.MessageToString();
+                        message += "\"";
+                    }
                 }
             } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
                 UIDPath uidPath(uid.c_str());
@@ -223,12 +266,17 @@ namespace HAL_JSON {
                 HALReadStringRequestValue strHalValue(value, result);
                 
                 HALReadStringRequest req(uidPath, strHalValue);
-                if (read(req))
-                    message += "\"value\":" + result;
+                if (read(req)) {
+                    message += DeviceConstStrings::value;//"\"value\":";
+                    message += "\"";
+                    message += result;
+                    message += "\"";
+                }
                 else {
                     const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                    message += "\"error\":\""+lastEntry.MessageToString()+"\"";
-                    //GlobalLogger.printAllLogs();
+                    message += "\"error\":\"";
+                    message += lastEntry.MessageToString();
+                    message += "\"";
                 }
             } else {
                 message += "\"error\":\"Unknown type for reading.\"";
@@ -236,8 +284,9 @@ namespace HAL_JSON {
         } else {
             message += "\"error\":\"Unknown command.\"";
         }
-
-        request->send(200, "application/json", "{" +  message + "}");
+        message = "{" + message;
+        message += "}";
+        request->send(200, "application/json", message);
     }
 
     void Manager::reloadJSON() {

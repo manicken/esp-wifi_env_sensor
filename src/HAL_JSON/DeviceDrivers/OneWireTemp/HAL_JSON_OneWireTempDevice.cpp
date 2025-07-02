@@ -58,7 +58,8 @@ namespace HAL_JSON {
         if (format == OneWireTempDeviceTempFormat::Celsius) ret += "\"C\"";
         else if (format == OneWireTempDeviceTempFormat::Fahrenheit) ret += "\"F\"";
         else ret += "\"other\"";
-        ret += DeviceConstStrings::value;
+        ret += ",";
+        ret += DeviceConstStrings::value;//StartWithComma;
         ret += value;
         //ret += "\"";
         return ret;

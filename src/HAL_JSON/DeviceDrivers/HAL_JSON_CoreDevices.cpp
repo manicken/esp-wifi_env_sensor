@@ -48,7 +48,8 @@ namespace HAL_JSON {
         ret += type;
         ret += DeviceConstStrings::pin;
         ret += pin;
-        ret += DeviceConstStrings::value;
+        ret += ",";
+        ret += DeviceConstStrings::value;//StartWithComma;
         ret += digitalRead(pin);
         return ret;
     }
@@ -106,7 +107,8 @@ namespace HAL_JSON {
         ret += "\"";
         ret += DeviceConstStrings::pin;
         ret += pin;
-        ret += DeviceConstStrings::value;
+        ret += ",";
+        ret += DeviceConstStrings::value;//StartWithComma;
         ret += value;
         return ret;
     }
@@ -241,7 +243,8 @@ namespace HAL_JSON {
         ret += "\"";
         ret += DeviceConstStrings::pin;
         ret += pin;
-        ret += DeviceConstStrings::value;
+        ret += ",";
+        ret += DeviceConstStrings::value;//StartWithComma;
         ret += analogRead(pin);
         return ret;
     }
@@ -357,7 +360,8 @@ namespace HAL_JSON {
         ret += "\"";
         ret += DeviceConstStrings::pin;
         ret += pin;
-        ret += DeviceConstStrings::value;
+        ret += ",";
+        ret += DeviceConstStrings::value;//StartWithComma;
         ret += value;
         ret += ",\"inv_out\":";
         ret += inv_out;

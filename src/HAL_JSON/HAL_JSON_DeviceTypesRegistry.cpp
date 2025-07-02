@@ -24,7 +24,7 @@ namespace HAL_JSON {
         {UseRootUID::Optional, "1WTB", OneWireTempBusAtRoot::Create, OneWireTempBus::VerifyJSON},
         {UseRootUID::Mandatory, "1WTD", OneWireTempDeviceAtRoot::Create, OneWireTempDeviceAtRoot::VerifyJSON},
 
-        {UseRootUID::Mandatory, "DHT", DHT::Create, DHT::VerifyJSON}, // under development
+        {UseRootUID::Mandatory, "DHT", DHT::Create, DHT::VerifyJSON},
         {UseRootUID::Mandatory, "TX433", nullptr, nullptr},
         {UseRootUID::Mandatory, "REGO600", nullptr, nullptr},
         {UseRootUID::Mandatory, "PWM_LEDC", nullptr, nullptr},

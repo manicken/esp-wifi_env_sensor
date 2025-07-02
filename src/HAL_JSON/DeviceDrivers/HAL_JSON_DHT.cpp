@@ -12,6 +12,8 @@ namespace HAL_JSON {
     }
 
     DHT::DHT(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin); // this is in most cases taken care of in VerifyJSON but there are situations where it's needed
         refreshTimeMs = ParseRefreshTimeMs(jsonObj, HAL_JSON_TYPE_DHT_DEFAULT_REFRESHRATE_MS);
@@ -49,6 +51,7 @@ namespace HAL_JSON {
         String ret;
         ret += DeviceConstStrings::uid;
         ret += decodeUID(uid).c_str();
+        ret += "\",";
         ret += DeviceConstStrings::type;
         ret += type;
         ret += "\"";
@@ -92,10 +95,10 @@ namespace HAL_JSON {
 
     bool DHT::read(const HALReadStringRequestValue &val) {
         if (val.cmd == "temp") {
-            val.out_value = "{\"value\":" + String(data.temperature) + "}";
+            val.out_value = "{\"temp\":" + String(data.temperature) + "}";
             return true;
         } else if (val.cmd == "humidity") {
-            val.out_value = "{\"value\":" + String(data.humidity) + "}";
+            val.out_value = "{\"humidity\":" + String(data.humidity) + "}";
             return true;
         }
         else {
