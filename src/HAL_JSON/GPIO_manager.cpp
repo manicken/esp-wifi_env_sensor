@@ -212,13 +212,20 @@ namespace GPIO_manager
         return false;
     }
 
+    bool ValidateJsonAndCheckIfPinAvailableAndReserve(const JsonVariant& jsonObj, uint8_t pinMode) {
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
+        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
+        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
+        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
+    }
+
     void ClearAllReservations() {
         for (int i=0;i<available_gpio_list_lenght;i++)
             reservedPins[i] = 0;
     }
     /** it's recommended to call CheckIfPinAvailable prior to using this function,
      * this function is very basic and do only set the actual pin to reserved state, 
-     * so calling it many times on the same pin do not matter */
+     * so calling it many times on the same pin have no effect */
     void ReservePin(uint8_t pin) {
         for (int i=0;i<available_gpio_list_lenght;i++) {
             if (available_gpio_list[i].pin == pin) {

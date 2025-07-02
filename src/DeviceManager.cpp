@@ -2,6 +2,8 @@
 #include <cstdlib> // For std::strtoul
 #include "Support/ConvertHelper.h"
 
+//#define DEVICE_MANAGER_USE_DEBUG_STRINGS
+
 namespace DeviceManager
 {
     std::string lastError;
@@ -196,7 +198,11 @@ namespace DeviceManager
     }
     bool isValid_JsonDevice_Item(JsonVariant jsonItem, const char*& type, uint32_t *uid) {
         // TODO use lastError
-        if (jsonItem == nullptr) { lastError += "@isValid_JsonDevice_Item: jsonItem == nullptr"; return false; }
+        if (jsonItem == nullptr) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+            lastError += "@isValid_JsonDevice_Item: jsonItem == nullptr";
+#endif
+            return false; }
         if (!jsonItem.is<JsonObject>()) { return false; }
         if (!jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_TYPE)) { return false; }
         if (!jsonItem[DEVICE_MANAGER_JSON_NAME_TYPE].is<const char*>()) { return false; }
@@ -212,9 +218,13 @@ namespace DeviceManager
             if (uid!=nullptr) { 
                 *uid = static_cast<uint32_t>(std::strtoul(uid_asciiHexString, &endptr, 16));
                 if (endptr == uid_asciiHexString) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
                     lastError += "Error @ isValid_JsonDevice_Item: No valid conversion could be performed (invalid input).\n";
+#endif
                 } else if (*endptr != '\0') {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
                     lastError += "Warning @ isValid_JsonDevice_Item: Additional characters after number: ";
+#endif
                     lastError += std::string(endptr);
                     lastError += "\n";
                 }
@@ -223,7 +233,9 @@ namespace DeviceManager
         }
         else {
             if (uid!=nullptr) *uid = 0;
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError += "@isValid_JsonDevice_Item: uid is either a number or a valid ascii hex number\n";
+#endif
             return false;
         }
         
@@ -245,10 +257,26 @@ namespace DeviceManager
     bool isValid_JsonOneWireTemp_Item(JsonVariant jsonItem, const char*& romid, uint32_t *bus)
     {
         // TODO use lastError
-        if (jsonItem == nullptr) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem == nullptr\n"; return false; } // failsafe
-        if (jsonItem.is<JsonObject>() == false) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem.is<JsonObject>() == false\n"; return false; } // failsafe
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_BUS) == false) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_BUS) == false\n"; return false; }
-        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_ROMID) == false) { lastError += "isValid_JsonOneWireTemp_Item: jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_ROMID) == false\n"; return false; }
+        if (jsonItem == nullptr) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+            lastError += "isValid_JsonOneWireTemp_Item: jsonItem == nullptr\n";
+#endif            
+            return false; } // failsafe
+        if (jsonItem.is<JsonObject>() == false) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+            lastError += "isValid_JsonOneWireTemp_Item: jsonItem.is<JsonObject>() == false\n";
+#endif
+            return false; } // failsafe
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_BUS) == false) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+            lastError += "isValid_JsonOneWireTemp_Item: jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_BUS) == false\n";
+#endif
+            return false; }
+        if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_ROMID) == false) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+            lastError += "isValid_JsonOneWireTemp_Item: jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_ROMID) == false\n";
+#endif
+            return false; }
 
         // allow uid to be both a integer-number or as a string interprented as a "8 nibble ascii hex number"(32bit value)
         if (jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].is<int>()) { 
@@ -256,12 +284,18 @@ namespace DeviceManager
         }
         else if (jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].is<const char*>()){
             const char* bus_asciiHexString = jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].as<const char*>();
-            if (bus_asciiHexString == nullptr) { lastError += "isValid_JsonOneWireTemp_Item: bus_asciiHexString == nullptr\n"; return false; }
+            if (bus_asciiHexString == nullptr) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+                lastError += "isValid_JsonOneWireTemp_Item: bus_asciiHexString == nullptr\n";
+#endif
+                return false; }
             if (bus!=nullptr) *bus = static_cast<uint32_t>(std::strtoul(bus_asciiHexString, nullptr, 16));
         }
         else {
             if (bus!=nullptr) *bus = 0;
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError += "isValid_JsonOneWireTemp_Item: bus uid is either a number or a ascii hex value\n";
+#endif
             return false;
         }
 
@@ -275,36 +309,48 @@ namespace DeviceManager
         if (!LittleFS.exists(DEVICE_MANAGER_FILES_PATH))
         {
             LittleFS.mkdir(DEVICE_MANAGER_FILES_PATH);
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError = "dir did not exist";
+#endif
             return false;
         }
         if (LittleFS.exists(DEVICE_MANAGER_CONFIG_JSON_FILE) == false) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError = "cfg file did not exist";
+#endif
             return false;
         }
         int size = LittleFS_ext::getFileSize(DEVICE_MANAGER_CONFIG_JSON_FILE);
         char jsonBuffer[size + 1]; // +1 for null char
         if (LittleFS_ext::load_from_file(DEVICE_MANAGER_CONFIG_JSON_FILE, jsonBuffer) == false)
         {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError = "error could not load json file";
+#endif
             return false;
         }
         DynamicJsonDocument jsonDoc(size*2);
         DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
         if (error)
         {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError = "deserialization failed: " + std::string(error.c_str());
+#endif
             return false;
         }
         DEBUG_UART.print("jsonDoc.memoryUsage="); DEBUG_UART.print(jsonDoc.memoryUsage()); DEBUG_UART.print(" of "); DEBUG_UART.println(jsonDoc.capacity());
         if (!jsonDoc.is<JsonArray>()) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError = "jsonDoc root is not a JsonArray\n";
+#endif
             return false;
         }
         lastError = "";
         JsonArray jsonItems = jsonDoc.as<JsonArray>();
         if (jsonItems == nullptr) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError = "jsonDoc root could not convert to a JsonArray\n";
+#endif
             return false;
         }
         int newDeviceCount = 0;
@@ -333,12 +379,20 @@ namespace DeviceManager
         }
         oneWireBusCount = newOneWireBusCount;
         oneWireBusses = new OneWireBus[oneWireBusCount];
-        if (oneWireBusses == nullptr){ lastError="could not allocate memory for onewirebusses list"; return false; }
+        if (oneWireBusses == nullptr){
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+            lastError="could not allocate memory for onewirebusses list";
+#endif
+            return false; }
         int currIndex = 0;
         for (int di = 0; di < jsonItemCount && currIndex < oneWireBusCount; di++) {
             const char* type = nullptr;
             uint32_t uid = 0;
-            if (isValid_JsonDevice_Item(jsonItems[di], type, &uid) == false) { lastError += "isValid_JsonDevice_Item == false\n"; continue; }
+            if (isValid_JsonDevice_Item(jsonItems[di], type, &uid) == false) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+                lastError += "isValid_JsonDevice_Item == false\n";
+#endif
+                continue; }
             if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_BUS, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_ONE_WIRE_BUS)-1) == 0)
             {
                 if (isValid_JsonOneWireBus_Item(jsonItems[di]) == false) continue;
@@ -363,7 +417,11 @@ namespace DeviceManager
         }
         deviceCount = newDeviceCount;
         devices = new Device*[deviceCount];
-        if (devices == nullptr) { lastError="could not allocate memory for device list"; return false; }
+        if (devices == nullptr) {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+            lastError="could not allocate memory for device list";
+#endif
+            return false; }
         // Initialize all pointers to nullptr
         for (int di=0;di<deviceCount;di++)
             devices[di] = nullptr;
@@ -379,11 +437,19 @@ namespace DeviceManager
             {
                 const char* romid = nullptr;
                 uint32_t busUid = 0;
-                if (isValid_JsonOneWireTemp_Item(jsonItem, romid, &busUid) == false) { devices[currIndex++] = nullptr; lastError+="not valid JsonOneWireTemp Item\n"; continue; }
+                if (isValid_JsonOneWireTemp_Item(jsonItem, romid, &busUid) == false) { devices[currIndex++] = nullptr;
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+                    lastError+="not valid JsonOneWireTemp Item\n";
+#endif
+                    continue; }
                 // here isValid_JsonOneWireTempItem have verified that the values can be retreived safely
 
                 int pin = getOneWireBusPin(busUid);
-                if (pin == -1) { devices[currIndex++] = nullptr; lastError += "could not get onewire bus pin\n"; continue; }
+                if (pin == -1) { devices[currIndex++] = nullptr;
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
+                    lastError += "could not get onewire bus pin\n";
+#endif
+                    continue; }
                 devices[currIndex++] = new OneWireTempDevice(uid, pin, romid);
             }
             else if (strncmp(type, DEVICE_MANAGER_JSON_NAME_TYPE_DHT, sizeof(DEVICE_MANAGER_JSON_NAME_TYPE_DHT)-1) == 0)
@@ -431,9 +497,11 @@ namespace DeviceManager
             }
             else
             {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
                 lastError += "invalid device type: ";
                 lastError += type;
                 lastError += "\n";
+#endif
             }
         }
 
@@ -555,13 +623,13 @@ namespace DeviceManager
         if (p3 != -1) value = url.substring(p3 + 1);
 
         String message = "";
-        
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
         message += "\"debug\":{";
         message += "\"Command\":\"" + command + "\",";
         message += "\"Type\":\"" + type + "\",";
         message += "\"UID\":\"" + uid + "\",";
         message += "\"Value\":\"" + value + "\"},";
-
+#endif
 
         if (command == DEVICE_MANAGER_REST_API_WRITE_CMD) {
             // Handle write command
@@ -573,7 +641,10 @@ namespace DeviceManager
                     } else if (value == "false" || value == "0") {
                         uintValue = 0;
                     } else {
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
                         message += "\"error\":\"Invalid boolean value.\"";
+#endif
+                        //message.concat("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"); // should take 26*4 bytes + some func overhead
                         request->send(200, "application/json", "{" +  message + "}");
                         return;
                     }
@@ -831,7 +902,9 @@ namespace DeviceManager
         Device* device = getDeviceInfo(uid);
         if (device == nullptr) {
             *value = 0;
+#ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");
+#endif
             return false;
         }
         if (device->type == DeviceType::OneWireTemp) {
@@ -924,11 +997,11 @@ namespace DeviceManager
     bool setValue(uint32_t uid, std::string value) {
         Device* device = getDeviceInfo(uid);
         if (device == nullptr) {
-            DEBUG_UART.println("could not find the device info, make sure that it's defined in the json");
+            DEBUG_UART.println(F("could not find the device info, make sure that it's defined in the json"));
             return false;
         }
         if (true) {
-            DEBUG_UART.println("setValue: device type not supported");
+            DEBUG_UART.println(F("setValue: device type not supported"));
             return false;
         }
         return true;

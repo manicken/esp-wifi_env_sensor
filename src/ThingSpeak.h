@@ -14,7 +14,7 @@
 #endif
 #include "LittleFS_ext.h"
 
-#include "DeviceManager.h"
+//#include "DeviceManager.h"
 #include "Support/ConvertHelper.h"
 
 //#define TS_DEBUG_PRINT_AFTER_JSON_READ
@@ -202,8 +202,9 @@ namespace ThingSpeak
         digitalWrite(TS_ACTIVITY_LED_PIN, HIGH); // TODO move this and make it more customaziable
         //DEBUG_UART.println("TS SendData");
         if (channels == nullptr) return;
+#if defined(DEVICE_MANAGER_H)
         if (DeviceManager::getAllOneWireTemperatures() == false) return;
-
+#endif
         for (int ci=0;ci<channelCount;ci++)
         {
             if (channels[ci].api_write_key.size() == 0) continue;
@@ -213,7 +214,9 @@ namespace ThingSpeak
             {
                 if (channels[ci].uids[fi] == -1) continue;
                 float value = 0;
+#if defined(DEVICE_MANAGER_H)
                 if (DeviceManager::getValue(channels[ci].uids[fi], &value) == false) continue;
+#endif
                 fieldData += "&field" + std::to_string(fi+1) + "=" + Convert::floatToString(value);
             }
             if (fieldData.length() == 0) continue;

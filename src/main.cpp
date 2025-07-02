@@ -86,7 +86,7 @@ void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
     const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
     if (casted_param != nullptr)
     {
-        DeviceManager::DecodeFromJSON(casted_param->jsonStr);
+       // DeviceManager::DecodeFromJSON(casted_param->jsonStr);
     }
 }
 
@@ -281,7 +281,9 @@ void setup() {
 #endif
     initWebServerHandlers();
     FSBrowser::setup(webserver);
+#if defined(DEVICE_MANAGER_H)
     DeviceManager::setup(webserver);
+#endif
     ThingSpeak::setup(webserver);
     Info::setup(webserver);
     webserver.begin();

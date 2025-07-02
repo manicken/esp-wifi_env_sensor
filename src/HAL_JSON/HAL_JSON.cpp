@@ -400,6 +400,12 @@ namespace HAL_JSON {
         //Serial.println(F("found device"));
         return device->write(req.value);
     }
+    bool Manager::read(const HALReadValueByCmdReq &req) {
+        Device* device = findDevice(req.path);
+        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        //Serial.println(F("found device"));
+        return device->read(req.valByCmd);
+    }
 
     bool Manager::ReadJSON(const char* path) {
         

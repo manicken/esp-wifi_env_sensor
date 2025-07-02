@@ -15,10 +15,7 @@ namespace HAL_JSON {
     }
 
     bool DigitalInput::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
+        return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
     DigitalInput::DigitalInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
@@ -44,9 +41,15 @@ namespace HAL_JSON {
 
     String DigitalInput::ToString() {
         String ret;
-        ret += "\"type\":\"" +String(type)+ "\"";
-        ret += ",\"pin\":" + String(pin);
-        ret += ",\"value\":" + String(digitalRead(pin));
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += DeviceConstStrings::pin;
+        ret += pin;
+        ret += DeviceConstStrings::value;
+        ret += digitalRead(pin);
         return ret;
     }
 
@@ -61,10 +64,7 @@ namespace HAL_JSON {
     }
 
     bool DigitalOutput::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
+        return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
     DigitalOutput::DigitalOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
@@ -98,9 +98,16 @@ namespace HAL_JSON {
 
     String DigitalOutput::ToString() {
         String ret;
-        ret += "\"type\":\""  +String(type)+  "\"";
-        ret += ",\"pin\":" + String(pin);
-        ret += ",\"value\":" + String(value);
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\"";
+        ret += DeviceConstStrings::pin;
+        ret += pin;
+        ret += DeviceConstStrings::value;
+        ret += value;
         return ret;
     }
 
@@ -115,10 +122,7 @@ namespace HAL_JSON {
     }
 
     bool SinglePulseOutput::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
+        return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
     SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
@@ -179,9 +183,16 @@ namespace HAL_JSON {
 
     String SinglePulseOutput::ToString() {
         String ret;
-        ret += "\"type\":\""  +String(type)+  "\"";
-        ret += ",\"pin\":" + String(pin);
-        ret += ",\"pulseLength\":" + String(pulseLength);
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\"";
+        ret += DeviceConstStrings::pin;
+        ret += pin;
+        ret += ",\"pulseLength\":";
+        ret += pulseLength;
         return ret;
     }
 
@@ -196,10 +207,7 @@ namespace HAL_JSON {
     }
 
     bool AnalogInput::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
+        return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, static_cast<uint8_t>(GPIO_manager::PinMode::IN));
     }
 
     AnalogInput::AnalogInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
@@ -225,9 +233,16 @@ namespace HAL_JSON {
 
     String AnalogInput::ToString() {
         String ret;
-        ret += "\"type\":\""  +String(type)+  "\"";
-        ret += ",\"pin\":" + String(pin);
-        ret += ",\"value\":" + String(analogRead(pin));
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\"";
+        ret += DeviceConstStrings::pin;
+        ret += pin;
+        ret += DeviceConstStrings::value;
+        ret += analogRead(pin);
         return ret;
     }
 
@@ -275,9 +290,15 @@ namespace HAL_JSON {
 
     String PWMAnalogWriteConfig::ToString() {
         String ret;
-        ret += "\"type\":\""  +String(type)+  "\"";
-        ret += ",\"freq\":" + String(PWMAnalogWriteConfig::frequency);
-        ret += ",\"resolution\":" + String(PWMAnalogWriteConfig::resolution);
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\",\"freq\":";
+        ret += PWMAnalogWriteConfig::frequency;
+        ret += ",\"resolution\":";
+        ret += PWMAnalogWriteConfig::resolution;
         return ret;
     }
 
@@ -292,10 +313,7 @@ namespace HAL_JSON {
     }
 
     bool PWMAnalogWrite::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_PIN) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_PIN)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_PIN].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PIN)); return false; }
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailable(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
+        return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
     }
 
     PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
@@ -331,10 +349,18 @@ namespace HAL_JSON {
 
     String PWMAnalogWrite::ToString() {
         String ret;
-        ret += "\"type\":\""  +String(type)+  "\"";
-        ret += ",\"pin\":" + String(pin);
-        ret += ",\"value\":" + String(value);
-        ret += ",\"inv_out\":" + String(inv_out);
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\"";
+        ret += DeviceConstStrings::pin;
+        ret += pin;
+        ret += DeviceConstStrings::value;
+        ret += value;
+        ret += ",\"inv_out\":";
+        ret += inv_out;
         return ret;
     }
 

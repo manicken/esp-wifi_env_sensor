@@ -29,10 +29,6 @@
 #define HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION                 "res"
 #define HAL_JSON_KEYNAME_PWM_INVOUT                         "invOut"
 
-// 1-wire temp
-#define HAL_JSON_KEYNAME_ONE_WIRE_ROMID       "romid"
-#define HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT "format"
-
 
 // the following must be at end
 #define HAL_JSON_ERR_MISSING_STRING_VALUE_KEY (F("Missing string value key: "))

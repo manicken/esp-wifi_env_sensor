@@ -71,6 +71,8 @@ namespace GPIO_manager
     void sendList();
     void setup(WEBSERVER_TYPE &srv);
     bool CheckIfPinAvailableAndReserve(uint8_t pin, uint8_t pinMode);
+    /** this is a nice function that can be used */
+    bool ValidateJsonAndCheckIfPinAvailableAndReserve(const JsonVariant& jsonObj, uint8_t pinMode);
     bool CheckIfPinAvailable(uint8_t pin, uint8_t pinMode);
     void ClearAllReservations();
     /** it's recommended to call CheckIfPinAvailable prior to using this function,

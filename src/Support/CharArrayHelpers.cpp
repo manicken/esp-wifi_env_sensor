@@ -24,4 +24,17 @@ namespace CharArray {
         }
         return indicies;
     }
+
+    
+
+    bool equalsIgnoreCase(const char* a, const char* b) {
+        while (*a && *b) {
+            if (std::tolower(*a) != std::tolower(*b)) {
+                return false;
+            }
+            ++a;
+            ++b;
+        }
+        return *a == *b; // Ensure both strings ended
+    }
 }

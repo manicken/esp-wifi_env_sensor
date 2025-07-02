@@ -49,12 +49,18 @@ namespace HAL_JSON {
     
     String OneWireTempDevice::ToString() {
         String ret;
-        ret += "\"romid\":\"" + String(Convert::ByteArrayToString(romid.bytes, 8).c_str()) + "\"";
-        ret += ",\"format\":";
+        ret.reserve(128);
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",\"romid\":\"";
+        ret += String(Convert::ByteArrayToString(romid.bytes, 8).c_str());
+        ret += "\",\"format\":";
         if (format == OneWireTempDeviceTempFormat::Celsius) ret += "\"C\"";
         else if (format == OneWireTempDeviceTempFormat::Fahrenheit) ret += "\"F\"";
         else ret += "\"other\"";
-        ret += ",\"value\":\"" + String(value) + "\""; 
+        ret += DeviceConstStrings::value;
+        ret += value;
+        //ret += "\"";
         return ret;
     }
 
@@ -70,18 +76,17 @@ namespace HAL_JSON {
 
     bool OneWireTempDeviceAtRoot::VerifyJSON(const JsonVariant &jsonObj) {
         if (OneWireTempDevice::VerifyJSON(jsonObj) == false) return false;
-        uint8_t pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>(); 
-        return GPIO_manager::CheckIfPinAvailableAndReserve(pin, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)));
+        return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)));
     }
 
     OneWireTempDeviceAtRoot::OneWireTempDeviceAtRoot(const JsonVariant &jsonObj, const char* type) 
         : OneWireTempDevice(jsonObj, type), 
           autoRefresh(
             [this](){ requestTemperatures(); },
-            [this](){ readAll(); }
+            [this](){ readAll(); },
+            ParseRefreshTimeMs(jsonObj,HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS)
         )
     {
-        autoRefresh.SetRefreshTimeMs(OneWireTempAutoRefresh::ParseRefreshTimeMs(jsonObj));
         pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
         GPIO_manager::ReservePin(pin); // this is in most cases taken care of in OneWireTempBus::VerifyJSON but there are situations where it's needed
 
@@ -111,11 +116,11 @@ namespace HAL_JSON {
 
     String OneWireTempDeviceAtRoot::ToString() {
         String ret;
-        ret += "\"type\":\""  +String(type)+  "\"";
-        ret += ",\"pin\":" + String(pin);
-        ret += "," + autoRefresh.ToString();
-        ret += "," + OneWireTempDevice::ToString();
-
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\",";
+        ret += OneWireTempDevice::ToString();
+        ret += autoRefresh.ToString();
         return ret;
     }
 

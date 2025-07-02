@@ -1,5 +1,7 @@
 #pragma once
 
+#define DEVICE_MANAGER_H
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <stdlib.h>

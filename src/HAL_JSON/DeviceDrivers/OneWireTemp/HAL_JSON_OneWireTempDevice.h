@@ -8,8 +8,11 @@
 #include "../../../Support/ConvertHelper.h"
 #include "../../HAL_JSON_Device.h"
 #include "../../HAL_JSON_Device_GlobalDefines.h"
-#include "../../ArduinoJSON_ext.h"
+#include "../../HAL_JSON_ArduinoJSON_ext.h"
 #include "HAL_JSON_OneWireTempAutoRefresh.h"
+
+#define HAL_JSON_KEYNAME_ONE_WIRE_ROMID       "romid"
+#define HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT "format"
 
 namespace HAL_JSON {
 

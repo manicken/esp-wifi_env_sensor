@@ -11,7 +11,7 @@
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
 #include "../Support/Logger.h"
-#include "ArduinoJSON_ext.h"
+#include "HAL_JSON_ArduinoJSON_ext.h"
 
 #include <ESPAsyncWebServer.h>
 
@@ -59,6 +59,7 @@ namespace HAL_JSON {
         static bool write(const HALWriteRequest &req);
         static bool read(const HALReadStringRequest &req);
         static bool write(const HALWriteStringRequest &req);
+        static bool read(const HALReadValueByCmdReq &req);
 
         // Maintenance
         static void loop();

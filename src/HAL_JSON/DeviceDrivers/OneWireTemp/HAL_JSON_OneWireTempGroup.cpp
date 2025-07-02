@@ -39,11 +39,10 @@ namespace HAL_JSON {
     OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Three, type),
         autoRefresh(
             [this]() { requestTemperatures(); },
-            [this]() { readAll(); })
+            [this]() { readAll(); },
+            ParseRefreshTimeMs(jsonObj,HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS)
+        )
     {
-        autoRefresh.SetRefreshTimeMs(OneWireTempAutoRefresh::ParseRefreshTimeMs(jsonObj));
-
-        // checked beforehand so extracting it here is safe
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);      
 
@@ -161,8 +160,9 @@ namespace HAL_JSON {
             val.out_value += "]";
             return true;
         }
-        val.out_value = F("{\"error\":\"cmd not found\"}");
-        return true;  // cmd not found
+        GlobalLogger.Warn(F("OneWireTempGroup::read - cmd not found: "), val.cmd.c_str()); // this can then be read by getting the last entry from logger
+        //val.out_value = F("{\"error\":\"cmd not found\"}");
+        return false;  // cmd not found
     }
 
     void OneWireTempGroup::requestTemperatures() {
@@ -183,11 +183,19 @@ namespace HAL_JSON {
 
     String OneWireTempGroup::ToString() {
         String ret;
-        ret += "\"type\":\""  +String(type)+  "\"";
-        ret += "," + autoRefresh.ToString();
+        
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\"";
+        ret += autoRefresh.ToString();
         ret += ",\"busses\":[";
         for (int i=0;i<busCount;i++) {
-            ret += "{"+busses[i]->ToString()+"}";
+            ret += "{";
+            ret += busses[i]->ToString();
+            ret += "}";
             if (i<busCount-1) ret += ",";
         }
         ret += "]";

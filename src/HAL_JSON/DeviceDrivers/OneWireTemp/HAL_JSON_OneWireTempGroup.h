@@ -6,7 +6,7 @@
 #include "../../../Support/ConvertHelper.h"
 #include "../../HAL_JSON_Device.h"
 #include "../../HAL_JSON_Device_GlobalDefines.h"
-#include "../../ArduinoJSON_ext.h"
+#include "../../HAL_JSON_ArduinoJSON_ext.h"
 #include "HAL_JSON_OneWireTempBus.h"
 #include "HAL_JSON_OneWireTempAutoRefresh.h"
 

@@ -35,6 +35,7 @@ namespace HAL_JSON {
         virtual bool write(const HALValue &val);
         virtual bool read(const HALReadStringRequestValue &val);
         virtual bool write(const HALWriteStringRequestValue &val);
+        virtual bool read(const HALReadValueByCmd &val);
         virtual void loop();
         /** used to find sub/leaf devices @ "group devices" */
         virtual Device* findDevice(UIDPath& path);
@@ -43,4 +44,23 @@ namespace HAL_JSON {
 
         static bool DisabledInJson(const JsonVariant& jsonObj);
     };
+
+#define HAL_JSON_DEVICE_CONST_STRINGS_USE_F_PREFIX
+
+#ifdef HAL_JSON_DEVICE_CONST_STRINGS_USE_F_PREFIX
+#define HAL_JSON_DEVICE_CONST_STR_DECLARE(name) extern const __FlashStringHelper* name
+#define HAL_JSON_DEVICE_CONST_STR_DEFINE(name, value) const __FlashStringHelper* name = F(value)
+#else
+#define HAL_JSON_DEVICE_CONST_STR_DECLARE(name) extern const char* name
+#define HAL_JSON_DEVICE_CONST_STR_DEFINE(name, value) const char* name = value
+#endif
+
+    namespace DeviceConstStrings {
+        HAL_JSON_DEVICE_CONST_STR_DECLARE(uid);
+        /** "\"type\":\"" */
+        HAL_JSON_DEVICE_CONST_STR_DECLARE(type);
+        HAL_JSON_DEVICE_CONST_STR_DECLARE(pin);
+        HAL_JSON_DEVICE_CONST_STR_DECLARE(value);
+        HAL_JSON_DEVICE_CONST_STR_DECLARE(refreshTimeMs);
+    }
 } // namespace HAL

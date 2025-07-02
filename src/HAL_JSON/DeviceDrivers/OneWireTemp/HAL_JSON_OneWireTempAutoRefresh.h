@@ -5,7 +5,7 @@
 #include "../../../Support/ConvertHelper.h"
 #include "../../HAL_JSON_Device.h"
 #include "../../HAL_JSON_Device_GlobalDefines.h"
-#include "../../ArduinoJSON_ext.h"
+#include "../../HAL_JSON_ArduinoJSON_ext.h"
 
 #define HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS 1000
 #define HAL_JSON_ONE_WIRE_TEMP_CONVERSION_TIME_MS 1000
@@ -33,10 +33,9 @@ namespace HAL_JSON {
     public:
         OneWireTempAutoRefresh() = delete;
         OneWireTempAutoRefresh(OneWireTempAutoRefresh&) = delete;
-        OneWireTempAutoRefresh(std::function<void()> _requestTemperatures, std::function<void()> _readAll);
+        OneWireTempAutoRefresh(std::function<void()> _requestTemperatures, std::function<void()> _readAll, uint32_t _refreshTimeMs);
         void SetRefreshTimeMs(uint32_t _refreshTimeMs);
-        static double ParseRefreshTime(const JsonVariant &jsonObj);
-        static uint32_t ParseRefreshTimeMs(const JsonVariant &value);
+        
         void loop();
 
         String ToString();

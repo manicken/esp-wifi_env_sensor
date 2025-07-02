@@ -67,7 +67,7 @@
 #include "Scheduler.h"
 //#include "NordPoolFetcher.h"
 
-#include "DeviceManager.h"
+//#include "DeviceManager.h"
 
 #include "Time_ext.h"
 
