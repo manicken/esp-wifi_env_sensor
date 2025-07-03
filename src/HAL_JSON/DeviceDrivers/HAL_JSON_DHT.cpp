@@ -12,13 +12,16 @@ namespace HAL_JSON {
     }
 
     DHT::DHT(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
-        uid = encodeUID(uidStr);
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        //uid = encodeUID(uidStr);
+        uid = encodeUID(GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_UID));
+        //pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN);
         GPIO_manager::ReservePin(pin); // this is in most cases taken care of in VerifyJSON but there are situations where it's needed
         refreshTimeMs = ParseRefreshTimeMs(jsonObj, HAL_JSON_TYPE_DHT_DEFAULT_REFRESHRATE_MS);
         if (refreshTimeMs < HAL_JSON_TYPE_DHT_DEFAULT_REFRESHRATE_MS) refreshTimeMs = HAL_JSON_TYPE_DHT_DEFAULT_REFRESHRATE_MS;
-        const char* modelStr = jsonObj[HAL_JSON_KEYNAME_DHT_MODEL].as<const char*>();
+        //const char* modelStr = jsonObj[HAL_JSON_KEYNAME_DHT_MODEL].as<const char*>();
+        const char* modelStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_DHT_MODEL);
         DHTesp::DHT_MODEL_t model = DHTesp::DHT_MODEL_t::AUTO_DETECT; // auto detect will not be used but we can use it as a default here;
         if (CharArray::equalsIgnoreCase(modelStr, HAL_JSON_TYPE_DHT_MODEL_DHT11))
             model = DHTesp::DHT_MODEL_t::DHT11;
@@ -35,9 +38,11 @@ namespace HAL_JSON {
 
     bool DHT::VerifyJSON(const JsonVariant &jsonObj) {
         if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_DHT_MODEL) == false) return false;
-        const char* modelStr = jsonObj[HAL_JSON_KEYNAME_DHT_MODEL].as<const char*>();
-        if (isValidDHTModel(modelStr) == false) {
-            GlobalLogger.Error(F("DHT model invalid: "), modelStr);
+        //const char* modelStr = jsonObj[HAL_JSON_KEYNAME_DHT_MODEL].as<const char*>();
+        const char* modelStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_DHT_MODEL); // this take 8bytes less than above
+
+        if (!modelStr || isValidDHTModel(modelStr) == false) {
+            GlobalLogger.Error(F("DHT model invalid/missing: "), modelStr);
             return false;
         }
         return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)));

@@ -19,7 +19,7 @@ namespace HAL_JSON {
     }
 
     DigitalInput::DigitalInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
         uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
         //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);
@@ -71,7 +71,7 @@ namespace HAL_JSON {
     }
 
     DigitalOutput::DigitalOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
         uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
         //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);
@@ -132,7 +132,7 @@ namespace HAL_JSON {
     }
 
     SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
         uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
         //GPIO_manager::ReservePin(pin);
         //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
@@ -209,7 +209,7 @@ namespace HAL_JSON {
     // ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██ ██ ██  ██ ██████  ██    ██    ██    
     // ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ██  ██ ██ ██      ██    ██    ██    
     // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
-
+#if defined(ESP32)
     Device* AnalogInput::Create(const JsonVariant &jsonObj, const char* type) {
         return new AnalogInput(jsonObj, type);
     }
@@ -219,7 +219,7 @@ namespace HAL_JSON {
     }
 
     AnalogInput::AnalogInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
         uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID)); 
         //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);
@@ -256,7 +256,7 @@ namespace HAL_JSON {
         ret += analogRead(pin);
         return ret;
     }
-
+#endif
     // ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████      ██████ ███████  ██████  
     // ██   ██ ██     ██ ████  ████     ██   ██ ████   ██ ██   ██ ██      ██    ██ ██           ██     ██ ██   ██ ██    ██    ██          ██      ██      ██       
     // ██████  ██  █  ██ ██ ████ ██     ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██  █  ██ ██████  ██    ██    █████       ██      █████   ██   ███ 
@@ -285,7 +285,7 @@ namespace HAL_JSON {
 
 #if defined(ESP8266)
         analogWriteResolution(PWMAnalogWriteConfig::resolution);
-        analogWriteFreq(frequPWMAnalogWriteConfig::frequencyency);
+        analogWriteFreq(PWMAnalogWriteConfig::frequency);
 #elif defined(ESP32)        
         analogWriteResolution(PWMAnalogWriteConfig::resolution);
         analogWriteFrequency(PWMAnalogWriteConfig::frequency);
@@ -330,7 +330,7 @@ namespace HAL_JSON {
     }
 
     PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
         uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
         //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);

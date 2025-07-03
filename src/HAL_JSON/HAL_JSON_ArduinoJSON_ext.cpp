@@ -90,7 +90,10 @@ namespace HAL_JSON {
     uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* name, uint32_t defaultValue) {
         return jsonObj[name] | defaultValue;
     }
+    uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* name) {
+        return jsonObj[name];
+    }
     const char* GetAsConstChar(const JsonVariant& jsonObj, const char* name) {
-        return jsonObj[name] | "";
+        return jsonObj[name];
     }
 }

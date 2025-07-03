@@ -12,13 +12,17 @@ fix UID_Path so that multilevel paths can be used
 
 make it so that if a device is not found while read/write it sends back that as a proper error
 
-DS18B20 working?
+DS18B20      done!
+DHT devices  done!!!
+
+TX433
 
 REGO600
 
+refactor the use of webserver in gpio_manager, either into a separate file or into hal_json root file
+so that no conflicts will happen between asyncwebserver and syncwebserver
 
 
-RF433 TX
 
 // maybe future devices
 

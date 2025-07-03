@@ -15,6 +15,9 @@
 #include "../Support/Logger.h"
 #include "HAL_JSON_ArduinoJSON_ext.h"
 
+#if defined(ESP8266)
+#define WEBSERVER_H
+#endif
 #include <ESPAsyncWebServer.h>
 
 #define HAL_JSON_REST_API_PORT 82
@@ -42,7 +45,7 @@ namespace HAL_JSON {
     class Manager {
     private:
         static Device** devices;
-        static uint32_t deviceCount;
+        static int deviceCount;
 
         static Device* CreateDeviceFromJSON(const JsonVariant &json);
         static bool VerifyDeviceJson(const JsonVariant &jsonObj);

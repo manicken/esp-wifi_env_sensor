@@ -21,7 +21,7 @@ namespace HAL_JSON {
         DallasTemperature* dTemp = nullptr;
         bool haveDeviceWithRomID(OneWireAddress addr);
     public:
-        uint32_t deviceCount = 0;
+        int deviceCount = 0;
         OneWireTempDevice **devices;
 
         static bool VerifyJSON(const JsonVariant &jsonObj);

@@ -40,10 +40,10 @@ void REGO600::RequestsWholeLCD_Task() {
         if (onUartQueryComplete == nullptr) return;
         
         String jsonStr = "{";
-        jsonStr += "\"" + String(requests[0].text) + "\":\"" + String(lcdData,20) + "\",";
-        jsonStr += "\"" + String(requests[1].text) + "\":\"" + String(&lcdData[20],20) + "\",";
-        jsonStr += "\"" + String(requests[2].text) + "\":\"" + String(&lcdData[40],20) + "\",";
-        jsonStr += "\"" + String(requests[3].text) + "\":\"" + String(&lcdData[60],20) + "\""; //charArrayToHex(String(&lcdData[60],20).c_str(),20) + "\"";
+        jsonStr += "\""; jsonStr += requests[0].text; jsonStr += "\":\""; jsonStr.concat(lcdData,20); jsonStr += "\",";
+        jsonStr += "\""; jsonStr += requests[1].text; jsonStr += "\":\""; jsonStr.concat(&lcdData[20],20); jsonStr += "\",";
+        jsonStr += "\""; jsonStr += requests[2].text; jsonStr += "\":\""; jsonStr.concat(&lcdData[40],20); jsonStr += "\",";
+        jsonStr += "\""; jsonStr += requests[3].text; jsonStr += "\":\""; jsonStr.concat(&lcdData[60],20); jsonStr += "\"";
         jsonStr += "}";
         onUartQueryComplete(jsonStr);
     }
@@ -65,7 +65,7 @@ const REGO600::Request RequestsAllTemperatures[RequestsAllTemperatures_Count] = 
 bool REGO600::GetTemperatureRegisterAddrFromName(const char *name, uint32_t *addr) {
     if (name == nullptr) return false;
     if (addr == nullptr) return false;
-    for (int i=0;i<RequestsAllTemperatures_Count;i++){
+    for (size_t i=0;i<RequestsAllTemperatures_Count;i++){
         if (strcmp(RequestsAllTemperatures[i].text, name) == 0) {
             *addr = RequestsAllTemperatures[i].address;
             return true;
@@ -93,7 +93,7 @@ void REGO600::RequestsAllTemperatures_Task() {
         if (onUartQueryComplete == nullptr) return;
 
         String jsonStr = "{";
-        for (int i=0;i<RequestsAllTemperatures_Count;i++) {
+        for (size_t i=0;i<RequestsAllTemperatures_Count;i++) {
             jsonStr += "\"" + String(requests[i].text) + "\":" + String((float)temperatures[i]/(float)10,1);
             if (i<RequestsAllTemperatures_Count-1) jsonStr += ",";
         }
@@ -125,7 +125,7 @@ const REGO600::Request RequestsAllStates[RequestsAllStates_Count] = {
 bool REGO600::GetStatusRegisterAddrFromName(const char *name, uint32_t *addr) {
     if (name == nullptr) return false;
     if (addr == nullptr) return false;
-    for (int i=0;i<RequestsAllStates_Count;i++){
+    for (size_t i=0;i<RequestsAllStates_Count;i++){
         if (strcmp(RequestsAllStates[i].text, name) == 0) {
             *addr = RequestsAllStates[i].address;
             return true;
@@ -153,7 +153,7 @@ void REGO600::RequestsAllStates_Task() {
         if (onUartQueryComplete == nullptr) return; // do nothing
 
         String jsonStr = "{";
-        for (int i=0;i<RequestsAllStates_Count;i++) {
+        for (size_t i=0;i<RequestsAllStates_Count;i++) {
             jsonStr += "\"" + String(requests[i].text) + "\":" + String(states[i]==1?"true":"false");
             if (i<RequestsAllStates_Count-1) jsonStr += ",";
         }
@@ -170,7 +170,7 @@ void REGO600::RequestOneState_Task() {
 }
 
 REGO600::REGO600()
-    : server(REGO600_WS_PORT), ws("/rego600ws"), UART2(Serial2) // Init UART2 as HardwareSerial(2)
+    : server(REGO600_WS_PORT), ws("/rego600ws"), UART(REGO600_UART_TO_USE) // Init UART2 as HardwareSerial(2)
 {}
 
 String toHex(const char *data, size_t len) {
@@ -185,7 +185,7 @@ String toHex(const char *data, size_t len) {
 
 String convertISO88591toUTF8(const String &input) {
   String output = "";
-  for (int i = 0; i < input.length(); i++) {
+  for (unsigned int i = 0; i < input.length(); i++) {
     unsigned char c = input[i];
     if (c == 1) output += "\u2581";
     else if (c == 2) output += "\u2582";
@@ -286,7 +286,7 @@ void REGO600::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
             }
         } else if (info->opcode == WS_BINARY) {
             lastAction = Action::WebSocketRaw;
-            UART2.write(data, len);
+            UART.write(data, len);
         } else {
             client->text("{\"error\":\"unsupported datatype:"+String(info->opcode)+"\"}");  // Sends a WebSocket text message to the client
         }
@@ -297,7 +297,11 @@ void REGO600::setup() {
     lastAction = Action::NotSet;
     requestIndex = 0;
     uartTxBuffer[0] = 0x81; // allways 0x81, never to be changed
-    UART2.begin(19200, SERIAL_8N1, 34, 33); // Set correct RX/TX pins for UART2
+#if defined(ESP32)
+    UART.begin(19200, SERIAL_8N1, 34, 33); // Set correct RX/TX pins for UART
+#elif defined(ESP8266)
+    UART.begin(19200, SERIAL_8N1);
+#endif
     ws.onEvent([this](AsyncWebSocket *s, AsyncWebSocketClient *c, AwsEventType t, void *a, uint8_t *d, size_t l) {
         this->onWsEvent(s, c, t, a, d, l);
     });
@@ -407,7 +411,7 @@ void REGO600::SendReq(uint16_t address) {
     uartRxBufferIndex = 0;
     SetRequestAddr(address);
     CalcAndSetTxChecksum();
-    UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
+    UART.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
 }
 
 void REGO600::Send(uint16_t address, uint16_t data) {
@@ -415,7 +419,7 @@ void REGO600::Send(uint16_t address, uint16_t data) {
     SetRequestAddr(address);
     SetRequestData(data);
     CalcAndSetTxChecksum();
-    UART2.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
+    UART.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
 }
 
 void REGO600::StartSendOneRegisterReadRequest(uint16_t address) {
@@ -453,16 +457,16 @@ uint16_t REGO600::GetValueFromUartRxBuff() {
 
 void REGO600::task_loop() {
     if (lastAction == Action::NotSet) {
-        while (UART2.available()) { // to make sure that any garbage gets collected
-            uint8_t dummy = UART2.read();
+        while (UART.available()) { // to make sure that any garbage gets collected
+            UART.read();
         }
         return;
     }
     if (lastAction == Action::WebSocketRaw) {
         // Read all available UART data
-        while (UART2.available()) {
+        while (UART.available()) {
             if (uartRxBufferIndex < REGO600_UART_RX_BUFFER_SIZE) {
-                uartRxBuffer[uartRxBufferIndex++] = UART2.read();
+                uartRxBuffer[uartRxBufferIndex++] = UART.read();
                 lastByteTime = millis(); // update last byte time
             }
         }
@@ -474,9 +478,9 @@ void REGO600::task_loop() {
         }
     }
     else {
-        while (UART2.available()) {
+        while (UART.available()) {
             if (uartRxBufferIndex < REGO600_UART_RX_BUFFER_SIZE) {
-                uartRxBuffer[uartRxBufferIndex++] = UART2.read();
+                uartRxBuffer[uartRxBufferIndex++] = UART.read();
                 if (uartRxBufferIndex == currentExpectedRxLength) {
                     // RX is done
                     if (lastAction == Action::ReadWholeLCD) {
@@ -494,7 +498,7 @@ void REGO600::task_loop() {
                     }
                 }
             } else {
-                uint8_t dummy = UART2.read(); // must read remaining to get out of loop
+                UART.read(); // must read remaining to get out of loop
                 if (this->ws.count() > 0) this->ws.textAll("{\"error\":\"uartRxBuffer full\"}\n");
             }
         }

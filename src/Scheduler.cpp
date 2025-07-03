@@ -18,7 +18,9 @@
 
 #include "Scheduler.h"
 
-AsStringParameter::AsStringParameter(JsonVariant json):OnTickExtParameters(0,1)
+#include "Support/ConstantStrings.h"
+
+AsStringParameter::AsStringParameter(const JsonVariant& json):OnTickExtParameters(0,1)
 {
     char buff[256];
     serializeJson(json, buff);
@@ -53,36 +55,37 @@ namespace Scheduler
 
     bool LoadJson(String filePath)
     {
-        DEBUG_UART.println(F("TimeAlarmsFromJson LoadJson start"));
+        DEBUG_UART.println(F("TAFJ LJ start"));
 
-        if (LittleFS.exists(filePath) == false) { DEBUG_UART.print(F("LoadJson file not found: ")); DEBUG_UART.println(filePath); return false; }
+        if (LittleFS.exists(filePath) == false) { DEBUG_UART.print(F("LJ FNF: ")); DEBUG_UART.println(filePath); return false; }
         
-        int size = LittleFS_ext::getFileSize(filePath);
-        if (size == -1) {DEBUG_UART.println(F("LoadJson file error getting file size -1")); return false; }
+        int fileSize = LittleFS_ext::getFileSize(filePath);
+        if (fileSize == -1) {DEBUG_UART.println(F("LJ FEGFS -1")); return false; }
         
-        DEBUG_UART.print(F("file size: ")); DEBUG_UART.println(size);
+        DEBUG_UART.print(F("file size: ")); DEBUG_UART.println(fileSize);
 
         //char* buff = (char*)malloc(size+2);
-        char *buff = new char[size+2];
-        if (buff == nullptr) { DEBUG_UART.println(F("LoadJson malloc fail")); return false; }
+        char *buff = new char[fileSize+2];
+        if (buff == nullptr) { DEBUG_UART.println(F("LJ mem err")); return false; }
 
         if (LittleFS_ext::load_from_file(filePath, buff) == false) {
-            DEBUG_UART.println(F("LoadJson LittleFS_ext::load_from_file error"));
+            DEBUG_UART.println(F("LJ LFSe LFFE")); // LoadJson LittleFS_ext::load_from_file error
             //free(buff);
             delete[] buff;
             return false;
         }
-        DynamicJsonDocument jsonDoc(2048);
+        size_t jsonDocBufferSize = (size_t)((float)fileSize * 1.5f);
+        DynamicJsonDocument jsonDoc(jsonDocBufferSize);
         DeserializationError jsonStatus = deserializeJson(jsonDoc, buff);
-        DEBUG_UART.print(F("deserialized json document size: ")); DEBUG_UART.println(jsonDoc.memoryUsage());
+        //DEBUG_UART.print(F("deserialized json document size: ")); DEBUG_UART.println(jsonDoc.memoryUsage());
         if (jsonStatus != DeserializationError::Ok) {
             //free(buff);
             delete[] buff;
-            DEBUG_UART.printf("LoadJson DeserializationError: "); DEBUG_UART.println((int)jsonStatus.code());
+            DEBUG_UART.printf("LJ err: "); DEBUG_UART.println((int)jsonStatus.code());
             return false;
         }
         size_t itemCount = jsonDoc.size();
-        DEBUG_UART.print(itemCount); DEBUG_UART.println(F(" found schedules"));
+        DEBUG_UART.print(itemCount); DEBUG_UART.println(F(" items"));
         
         // clear both timers and alarms (ALL)
         //for (uint8_t id = 0; id < dtNBR_ALARMS; id++) {
@@ -115,13 +118,13 @@ namespace Scheduler
         for (uint8_t i = 0; i < itemCount; i++) {
             ParseItem(jsonDoc[i]);
         }
-        DEBUG_UART.println(F("TimeAlarmsFromJson LoadJson end"));
+        DEBUG_UART.println(F("TAFJ LJ E")); // TimeAlarmsFromJson LoadJson en
         //free(buff);
         delete[] buff;
         return true;
     }
 
-    void ParseItem(JsonVariant json)
+    void ParseItem(const JsonVariant& json)
     {
         //Alarm.alarmOnce();
         //Alarm.alarmRepeat(); 
@@ -131,104 +134,105 @@ namespace Scheduler
         if (json.containsKey("disabled") == true) return;
         //if (json["enabled"] == false) return;
 
-        if (json.containsKey("mode") == false) return;
-        std::string mode = json["mode"];
-        if (mode == "timer") // timer repeat only
+        if (HAL_JSON::ValidateJsonStringField(json, "mode") == false) return;
+        const char* mode = HAL_JSON::GetAsConstChar(json, "mode");
+        if (CharArray::equalsIgnoreCase(mode, "timer")) // timer repeat only
         {
-            JsonBaseVars vars;
-            if (GetJsonBaseVars(json, vars) == false) return;
+            JsonBaseVars vars = GetJsonBaseVars(json);
+            if (vars.funcName == nullptr) return;
             AlarmID_t id=-1;
             if(json.containsKey("params")) {
-                AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
+                AsStringParameter *params = new AsStringParameter(json["params"]);
                 id = Scheduler->timerRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
             }
             else {
                 id = Scheduler->timerRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
 
-            DEBUG_UART.printf("added timer repeat %d:%d:%d  now:%s   Scheduler->read(id):%s   Scheduler->getNextTrigger():%s   Scheduler->getNextTrigger(id):%s\r\n", vars.h, vars.m, vars.s, Time_ext::GetTimeAsString(now()).c_str(), Time_ext::GetTimeAsString(Scheduler->read(id)).c_str() , Time_ext::GetTimeAsString(Scheduler->getNextTrigger()).c_str(), Time_ext::GetTimeAsString(Scheduler->getNextTrigger(id)).c_str());
+            //DEBUG_UART.printf("added timer repeat %d:%d:%d  now:%s   Scheduler->read(id):%s   Scheduler->getNextTrigger():%s   Scheduler->getNextTrigger(id):%s\r\n", vars.h, vars.m, vars.s, Time_ext::GetTimeAsString(now()).c_str(), Time_ext::GetTimeAsString(Scheduler->read(id)).c_str() , Time_ext::GetTimeAsString(Scheduler->getNextTrigger()).c_str(), Time_ext::GetTimeAsString(Scheduler->getNextTrigger(id)).c_str());
         
         }
-        else if (mode == "daily")
+        else if (CharArray::equalsIgnoreCase(mode, "daily"))
         {
-            JsonBaseVars vars;
-            if (GetJsonBaseVars(json, vars) == false) return;
+            JsonBaseVars vars = GetJsonBaseVars(json);
+            if (vars.funcName == nullptr) return;
+
             AlarmID_t id=-1;
             if(json.containsKey("params")) {
-                AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
+                AsStringParameter *params = new AsStringParameter(json["params"]);
                 id = Scheduler->alarmRepeat(vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
             }
             else {
                 id = Scheduler->alarmRepeat(vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
             
-            DEBUG_UART.printf("added timer daily %d:%d:%d  now:%s   Scheduler->read(id):%s   Scheduler->getNextTrigger():%s   Scheduler->getNextTrigger(id):%s\r\n", vars.h, vars.m, vars.s, Time_ext::GetTimeAsString(now()), Time_ext::GetTimeAsString(Scheduler->read(id)) , Time_ext::GetTimeAsString(Scheduler->getNextTrigger()), Time_ext::GetTimeAsString(Scheduler->getNextTrigger(id)));
+            //DEBUG_UART.printf("added timer daily %d:%d:%d  now:%s   Scheduler->read(id):%s   Scheduler->getNextTrigger():%s   Scheduler->getNextTrigger(id):%s\r\n", vars.h, vars.m, vars.s, Time_ext::GetTimeAsString(now()), Time_ext::GetTimeAsString(Scheduler->read(id)) , Time_ext::GetTimeAsString(Scheduler->getNextTrigger()), Time_ext::GetTimeAsString(Scheduler->getNextTrigger(id)));
         
         }
-        else if (mode == "weekly")
+        else if (CharArray::equalsIgnoreCase(mode, "weekly"))
         {
-            JsonBaseVars vars;
-            if (GetJsonBaseVars(json, vars) == false) return;
+            JsonBaseVars vars = GetJsonBaseVars(json);
+            if (vars.funcName == nullptr) return;
 
             if (json.containsKey("D") == false) return; // day of week
             timeDayOfWeek_t dow = GetTimerAlarmsDOW(json["D"]);
 
             if(json.containsKey("params")) {
-                AsStringParameter *params = new AsStringParameter(json["params"].as<JsonVariant>());
+                AsStringParameter *params = new AsStringParameter(json["params"]);
                 Scheduler->alarmRepeat(dow, vars.h,vars.m,vars.s, GetFunctionExt(vars.funcName), params);
             }
             else {
                 Scheduler->alarmRepeat(dow, vars.h,vars.m,vars.s, GetFunction(vars.funcName));
             }
-            DEBUG_UART.println("added alarm weekly");
+            //DEBUG_UART.println("added alarm weekly");
         }
-        else if (mode == "explicit")
+        else if (CharArray::equalsIgnoreCase(mode, "explicit"))
         {
             if (json.containsKey("func") == false) return;
-            std::string funcName = json["func"];
+            const char* funcName = HAL_JSON::GetAsConstChar(json,"func");
             tmElements_t tm;
-            if(json.containsKey("Y")) tm.Year = json["Y"]; else tm.Year = 0;
-            if(json.containsKey("M")) tm.Month = json["M"]; else tm.Month = 0;
-            if(json.containsKey("d")) tm.Day = json["d"]; else tm.Day = 0;
-            if(json.containsKey("h")) tm.Hour = json["h"]; else tm.Hour = 0;
-            if(json.containsKey("m")) tm.Minute = json["m"]; else tm.Minute = 0;
-            if(json.containsKey("s")) tm.Second = json["s"]; else tm.Second = 0;
+            tm.Year = HAL_JSON::GetAsUINT32(json,"Y", 0);
+            tm.Month = HAL_JSON::GetAsUINT32(json,"M", 0);
+            tm.Day = HAL_JSON::GetAsUINT32(json,"d", 0 );
+            tm.Hour = HAL_JSON::GetAsUINT32(json,"h", 0);
+            tm.Minute = HAL_JSON::GetAsUINT32(json,"m", 0);
+            tm.Second = HAL_JSON::GetAsUINT32(json,"s", 0);
             time_t dateTime = makeTime(tm);
             if(json.containsKey("params")) {
-                JsonVariant jsonVar = json["params"].as<JsonVariant>();
-                AsStringParameter *params = new AsStringParameter(jsonVar);
+                //JsonVariant jsonVar = json["params"].as<JsonVariant>();
+                AsStringParameter *params = new AsStringParameter(json["params"]);
                 Scheduler->triggerOnce(dateTime, GetFunctionExt(funcName), params);
             }
             else {
                 Scheduler->triggerOnce(dateTime, GetFunction(funcName));
             }
-            DEBUG_UART.println("added alarm explicit");
+            //DEBUG_UART.println("added alarm explicit");
         }
     }
 
-    OnTick_t GetFunction(std::string name) {
+    OnTick_t GetFunction(const char* name) {
         for (int i = 0; i < FuncCount; i++) {
-            if (nameToFuncList[i].name == name)
+            if (CharArray::equalsIgnoreCase(nameToFuncList[i].name, name))
                 return nameToFuncList[i].onTick;
         }
         return nullptr;
     }
-    OnTickExt_t GetFunctionExt(std::string name) {
+    OnTickExt_t GetFunctionExt(const char* name) {
         for (int i = 0; i < FuncCount; i++) {
-            if (nameToFuncList[i].name == name)
+            if (CharArray::equalsIgnoreCase(nameToFuncList[i].name, name))
                 return nameToFuncList[i].onTickExt;
         }
         return nullptr;
     }
 
-    bool GetJsonBaseVars(JsonVariant &json, JsonBaseVars &vars)
+    JsonBaseVars GetJsonBaseVars(const JsonVariant& json)
     {
-        if (json.containsKey("func") == false) return false;
-        vars.funcName = (std::string)json["func"].as<std::string>();
-        if(json.containsKey("h")) vars.h = json["h"]; else vars.h = 0;
-        if(json.containsKey("m")) vars.m = json["m"]; else vars.m = 0;
-        if(json.containsKey("s")) vars.s = json["s"]; else vars.s = 0;
-        return true;
+        if (json.containsKey("func") == false) return {nullptr,0,0,0};
+
+        return {HAL_JSON::GetAsConstChar(json, "func"),
+                static_cast<int>(HAL_JSON::GetAsUINT32(json,"h",0)),
+                static_cast<int>(HAL_JSON::GetAsUINT32(json,"m",0)),
+                static_cast<int>(HAL_JSON::GetAsUINT32(json,"s",0))};
     }
 
     timeDayOfWeek_t GetTimerAlarmsDOW(std::string sDOW) // short for: short DOW
@@ -275,33 +279,33 @@ namespace Scheduler
         setTime(now2.Hour+1, now2.Minute, now2.Second, now2.Day, now2.Month, year);
         
 
-        DEBUG_UART.printf("nameToFunctionList_Count:%d\r\n", funcDefListCount);
+        //DEBUG_UART.printf("nameToFunctionList_Count:%d\r\n", funcDefListCount);
         
         srv.on(SCHEDULER_URL_REFRESH, []() {
         if (LoadJson(SCHEDULER_CFG_FILE_PATH))
-            webserver->send(200,F("text/plain"), F("schedule load json OK"));
+            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, F("schedule ld OK"));
         else
-            webserver->send(200,F("text/plain"), F("schedule load json error"));
+            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, F("schedule ld err"));
         });
         srv.on(SCHEDULER_URL_GET_MAX_NUMBER_OF_ALARMS, []() {
             std::string ret = std::to_string(dtNBR_ALARMS);
-            webserver->send(200, F("text/plain"), ret.c_str());
+            webserver->send(200, CONSTSTR::htmlContentType_TextPlain, ret.c_str());
         });
         srv.on(SCHEDULER_URL_GET_FUNCTION_NAMES, []() {
 
             std::string jsonStr = "{";
 
             for (int i=0;i<FuncCount;i++) {
-                jsonStr += "\"" +  nameToFuncList[i].name + "\":\"" + ((nameToFuncList[i].onTickExt!=nullptr)?"p":"") + "\"";
+                jsonStr += "\""; jsonStr += nameToFuncList[i].name; jsonStr += "\":\""; jsonStr += ((nameToFuncList[i].onTickExt!=nullptr)?"p":""); jsonStr += "\"";
 
                 if (i < (FuncCount-1)) jsonStr += ",";
             }
             jsonStr += "}";
-            webserver->send(200,F("text/plain"), jsonStr.c_str());
+            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, jsonStr.c_str());
         });
         srv.on(SCHEDULER_URL_GET_SHORT_DOWS, []() {
             std::string ret = GetShortFormDowListAsJson();
-            webserver->send(200,F("text/plain"), ret.c_str());
+            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, ret.c_str());
         });
         srv.on(SCHEDULER_URL_GET_TIME, []() {
             std::string nowstr = "{\n\"now\":\"" + Time_ext::GetTimeAsString(now()) + "\",\n";

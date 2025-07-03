@@ -7,9 +7,11 @@
 #if defined(HEATPUMP)
 #include "REGO600.h"
 #endif
-
+#if defined(ESP32)
 #include "esp_core_dump.h"
+#endif
 
+#include "Support/ConstantStrings.h"
 
 
 unsigned long auto_last_change = 0;
@@ -151,7 +153,7 @@ bool InitSD_MMC()
     }
 }
 #endif
-
+#if defined(ESP32)
 void Start_MDNS()
 {
     DEBUG_UART.println("\n\n***** STARTING mDNS service ********");
@@ -169,6 +171,8 @@ void Start_MDNS()
     }
     DEBUG_UART.println("\n");
 }
+#endif
+#if defined(ESP32)
 #include "esp_task_wdt.h"
 
 void handleCoreDump(AsyncWebServerRequest *request=nullptr) {
@@ -178,7 +182,7 @@ void handleCoreDump(AsyncWebServerRequest *request=nullptr) {
     esp_err_t err = esp_core_dump_image_get(&addr, &size);
     if (err != ESP_OK || size == 0) {
         if (request != nullptr)
-            request->send(500, "text/plain", "No core dump found or failed to read");
+            request->send(500, CONSTSTR::htmlContentType_TextPlain, "No core dump found or failed to read");
         return;
     }
 
@@ -189,14 +193,14 @@ void handleCoreDump(AsyncWebServerRequest *request=nullptr) {
     // Ensure LittleFS is mounted
     if (!LittleFS.begin()) {
         if (request != nullptr)
-            request->send(500, "text/plain", "Failed to mount LittleFS");
+            request->send(500, CONSTSTR::htmlContentType_TextPlain, "Failed to mount LittleFS");
         return;
     }
 
     File file = LittleFS.open("/core_dump.bin", "w");
     if (!file) {
         if (request != nullptr)
-            request->send(500, "text/plain", "Failed to open file for writing");
+            request->send(500, CONSTSTR::htmlContentType_TextPlain, "Failed to open file for writing");
         return;
     }
 
@@ -205,14 +209,16 @@ void handleCoreDump(AsyncWebServerRequest *request=nullptr) {
 
     if (written != size) {
         if (request != nullptr)
-            request->send(500, "text/plain", "Failed to write full core dump to file");
+            request->send(500, CONSTSTR::htmlContentType_TextPlain, "Failed to write full core dump to file");
     } else {
         if (request != nullptr)
-            request->send(200, "text/plain", "Core dump saved to LittleFS as /core_dump.bin");
+            request->send(200, CONSTSTR::htmlContentType_TextPlain, "Core dump saved to LittleFS as /core_dump.bin");
     }
 }
-
+#endif
+#if defined(ESP32)
 AsyncWebServer *asyncServer;
+#endif
 void failsafeLoop()
 {
     // blink rapid to alert a crash
@@ -225,24 +231,33 @@ void failsafeLoop()
     DEBUG_UART.println(F("************************************"));
     DEBUG_UART.println(F("* Now entering failsafe OTA loop.. *"));
     DEBUG_UART.println(F("************************************"));
+#if defined(ESP32)
     asyncServer = new AsyncWebServer(80);
     asyncServer->on("/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, F("text/plain"), "The system will now reset and luckily go into normal mode.");
+        request->send(200, CONSTSTR::htmlContentType_TextPlain, "The system will now reset and luckily go into normal mode.");
         // Small delay to ensure the response is sent before restarting
         delay(100); // NOT blocking in this context, short enough to work
-
+#if defined(ESP32)
         esp_restart();  // Software reset
+#elif defined(ESP8266)
+        ESP.restart();
+#endif
     });
     //asyncServer->on("/core-dump",HTTP_GET, handleCoreDump); // skip this non working garbage for now
     asyncServer->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, F("text/plain"), "The system is in OTA failsafe loop.");
+        request->send(200, CONSTSTR::htmlContentType_TextPlain, "The system is in OTA failsafe loop.");
     });
     asyncServer->begin();
+#elif defined(ESP8266)
+    // init stuff here
+    webserver.begin();
+#endif
     //handleCoreDump(); // skip this non working garbage for now
     while (1)
     {
         ArduinoOTA.handle();
         HeartbeatLed::task();
+        webserver.handleClient();
     }
 }
 /**************************************************************************/
@@ -297,9 +312,9 @@ void setup() {
     DEBUG_UART.println(ret.c_str());
 #endif
     HeartbeatLed::setup(webserver);
-
+#if defined(ESP32)
     Start_MDNS();
-
+#endif
     
     ws2812fx.init();
     ws2812fx.setBrightness(127);
@@ -402,8 +417,9 @@ void initWebServerHandlers(void)
     webserver.on("/",  []() {
         if (LittleFS.exists(F("/index.html"))) FSBrowser::handleFileRead(F("/LittleFS/index.html"));
         else if (LittleFS.exists(F("/index.htm"))) FSBrowser::handleFileRead(F("/LittleFS/index.htm"));
-        else webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
+        else webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
+#if defined (AWS_IOT_H)
     webserver.on(MAIN_URLS_JSON_CMD, HTTP_POST, [](){ webserver.send(200); }, [](){
         HTTPUpload& upload = webserver.upload();
         if (upload.status == UPLOAD_FILE_START) {
@@ -415,7 +431,7 @@ void initWebServerHandlers(void)
             //AWS_IOT_messageReceived(nullptr, upload.buf, upload.currentSize);
         }
     });
-    
+#endif
     webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, []() {
         LITTLEFS_BEGIN_FUNC_CALL;
         if (LittleFS.format())
@@ -446,7 +462,7 @@ void initWebServerHandlers(void)
         //if (SD_MMC.begin("/sdcard", true, false, 20000)) {
             File root = SD_MMC.open("/");
             if (!root) {
-                webserver.send(200, F("text/plain"), "error while open sd card again");
+                webserver.send(200, CONSTSTR::htmlContentType_TextPlain, "error while open sd card again");
                 return;
             }
 
@@ -459,12 +475,12 @@ void initWebServerHandlers(void)
                 ret.concat(", Dir:"); ret.concat(file.isDirectory()?"true":"false");
                 ret.concat("\n");
             }
-            webserver.send(200, F("text/plain"), ret.c_str());
-       // }else {webserver.send(200, F("text/plain"), "could not open sd card a second time");}
+            webserver.send(200, CONSTSTR::htmlContentType_TextPlain, ret.c_str());
+       // }else {webserver.send(200, CONSTSTR::htmlContentType_TextPlain, "could not open sd card a second time");}
     });
 #endif
     webserver.on("/crashTest", []() {
-        webserver.send(200, F("text/plain"), "The system will now crash!!!, and luckily go into failsafe OTA upload mode.");
+        webserver.send(200, CONSTSTR::htmlContentType_TextPlain, "The system will now crash!!!, and luckily go into failsafe OTA upload mode.");
         int *ptr = nullptr; // Null pointer
         *ptr = 42;          // Dereference the null pointer (causes a crash)
     });
@@ -473,13 +489,17 @@ void initWebServerHandlers(void)
     webserver.onNotFound([]() {                              // If the client requests any URI
         String uri = webserver.uri();
         DEBUG_UART.println("onNotFound - hostHeader:" + webserver.hostHeader());
-        bool isDir = false;
+        //bool isDir = false;
         //DEBUG_UART.println("webserver on not found:" + uri);
         if (uri.startsWith("/LittleFS") == false && uri.startsWith("/sdcard") == false)
         {
+#if defined(ESP32)
             File fileToCheck = LittleFS.open(uri);
-            if (!fileToCheck) {
-                webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
+#elif defined(ESP8266)
+            File fileToCheck = LittleFS.open(uri, "r");
+#endif
+             if (!fileToCheck) {
+                webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
                 return;
             }
 
@@ -495,7 +515,7 @@ void initWebServerHandlers(void)
         }
 
         if (!FSBrowser::handleFileRead(uri))                  // send it if it exists
-            webserver.send(404, F("text/plain"), F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
+            webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
     
 }

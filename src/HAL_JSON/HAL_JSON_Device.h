@@ -44,8 +44,9 @@ namespace HAL_JSON {
 
         static bool DisabledInJson(const JsonVariant& jsonObj);
     };
-
+#if defined(ESP32)
 #define HAL_JSON_DEVICE_CONST_STRINGS_USE_F_PREFIX
+#endif
 
 #ifdef HAL_JSON_DEVICE_CONST_STRINGS_USE_F_PREFIX
 #define HAL_JSON_DEVICE_CONST_STR_DECLARE(name) extern const __FlashStringHelper* name

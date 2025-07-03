@@ -8,6 +8,8 @@
 #include "LittleFS_ext.h"
 #include "Time_ext.h"
 #include "NTP.h"
+#include "HAL_JSON/HAL_JSON_ArduinoJSON_ext.h"
+#include "Support/CharArrayHelpers.h"
 
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
@@ -22,7 +24,9 @@
 class AsStringParameter : public OnTickExtParameters
 {
 public:
-    AsStringParameter(JsonVariant json);
+    AsStringParameter(const JsonVariant& json);
+    AsStringParameter() = delete;
+    AsStringParameter(AsStringParameter&) = delete;
     std::string jsonStr;
 };
 
@@ -43,16 +47,17 @@ namespace Scheduler
     
 
     typedef struct NameToFunction {
-        std::string name;
+        const char* name;
         OnTick_t onTick; // function pointer for simple non parameter callback
         OnTickExt_t onTickExt; // function pointer for ext parameter based callbacks
     } Name2Func;
 
     typedef struct JsonBaseVars {
-        std::string funcName;
+        const char* funcName;
         int h;
         int m;
         int s;
+        JsonBaseVars(const char* funcName, int h, int m, int s): funcName(funcName), h(h),m(m),s(s) {}
     } JsonBaseVars;
 
     extern TimeAlarmsClass *Scheduler;
@@ -60,12 +65,12 @@ namespace Scheduler
     extern const DayLookupTable dayLookupTable[];
 
     bool LoadJson(String filePath);
-    void ParseItem(JsonVariant json);
+    void ParseItem(const JsonVariant& json);
 
-    OnTick_t GetFunction(std::string name);
-    OnTickExt_t GetFunctionExt(std::string name);
+    OnTick_t GetFunction(const char* name);
+    OnTickExt_t GetFunctionExt(const char* name);
 
-    bool GetJsonBaseVars(JsonVariant &json, JsonBaseVars &vars);
+    JsonBaseVars GetJsonBaseVars(const JsonVariant& json);
     timeDayOfWeek_t GetTimerAlarmsDOW(std::string sDOW);
     void HandleAlarms();
     std::string GetShortFormDowListAsJson();

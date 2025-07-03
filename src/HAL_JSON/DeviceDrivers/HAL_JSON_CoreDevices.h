@@ -91,7 +91,7 @@ namespace HAL_JSON {
 // ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██ ██ ██  ██ ██████  ██    ██    ██    
 // ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ██  ██ ██ ██      ██    ██    ██    
 // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
-
+#if defined(ESP32)
     class AnalogInput : public Device {
     private:
         uint8_t pin = 0;
@@ -106,7 +106,7 @@ namespace HAL_JSON {
         bool read(HALValue &val) override;
         String ToString() override;
     };
-
+#endif
     // TODO implement Analog Input Config to set resolution, but resolution could be individual as it can be set before each read
 
 // ██████  ██     ██ ███    ███      █████  ███    ██  █████  ██       ██████   ██████      ██     ██ ██████  ██ ████████ ███████      ██████ ███████  ██████  

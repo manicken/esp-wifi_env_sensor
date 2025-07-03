@@ -12,7 +12,7 @@
 #endif
 #include <WiFiManager.h>
 
-#include <ESPAsyncWebServer.h>
+
 
 #include "Support/Logger.h"
 
@@ -38,6 +38,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #elif defined(ESP32)
+#include <ESPAsyncWebServer.h>
 #include <HTTPClient.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>

@@ -2,6 +2,8 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <stdlib.h>
+#include "Support/CharArrayHelpers.h"
+#include "HAL_JSON/HAL_JSON_ArduinoJSON_ext.h"
 
 namespace RF433 {
 
@@ -16,7 +18,11 @@ namespace RF433 {
 
     //#define RF433_FC_REPEATS 5
     //#define RF433_LC_REPEATS 5
-
+    struct FixedCode {
+        char ch;
+        char btn;
+        char state;
+    };
 
     #define U8 uint8_t
     #define U32 uint32_t

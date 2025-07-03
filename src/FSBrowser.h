@@ -263,7 +263,7 @@ namespace FSBrowser {
         // use the same string for every line
         String output;
         output.reserve(64);
-
+        
 
         while (file = dir.openNextFile()) {
 #ifdef USE_SPIFFS
@@ -301,7 +301,8 @@ namespace FSBrowser {
         }
 
         // send last string
-        output += "]";
+        if(output.length() != 0)
+            output += "]";
         server->sendContent(output);
         server->chunkedResponseFinalize();
     }
@@ -456,7 +457,11 @@ namespace FSBrowser {
         }
 
         // Otherwise delete its contents first
+#if defined(ESP32)
         File dir = fileSystem->open(path);
+#elif defined(ESP8266)
+        File dir = fileSystem->open(path, "r");
+#endif
 
         while (dir.openNextFile()) { deleteRecursive(path + '/' + dir.name()); }
 
@@ -582,32 +587,46 @@ namespace FSBrowser {
         server->client().stop();
     }
 
+    void what() {
+
+    }
+
     void setup(WEBSERVER_TYPE &srv) {
         server = &srv;
-
+#if defined(ESP32)
         // Filesystem status 
-        server->on("/status", HTTP_GET, handleStatus);//[this](){this->handleStatus(); });
 
+        server->on("/status", HTTP_GET, handleStatus);//[this](){this->handleStatus(); });
         // List directory
         server->on("/list", HTTP_GET, handleFileList);//[this](){this->handleFileList(); });
-
         // Load editor
         server->on("/edit", HTTP_GET, handleGetEdit);//[this](){this->handleGetEdit(); });
-
         // Create file
         server->on("/edit", HTTP_PUT, handleFileCreate);//[this](){this->handleFileCreate(); });
-
         // Delete file
         server->on("/edit", HTTP_DELETE, handleFileDelete);//[this](){this->handleFileDelete(); });
-
-
         server->on("/edit/upload", HTTP_GET, handleFailsafeUploadPage);//[this](){this->handleFailsafeUpload(); });                 // if the client requests the upload page
-
         server->on("/edit/upload", HTTP_POST, [](){ DBG_OUTPUT_PORT.println("send OK"); server->send(200); }, []() { handleFileUploadFailsafe("/edit", "/edit/upload"); });                      // if the client posts to the upload page
-
         // Upload file
         // - first callback is called after the request has ended with all parsed arguments
         // - second callback handles file upload at that location
         server->on("/edit", HTTP_POST, [](){ server->send(200); }, handleFileUpload);//[this](){this->replyOK();}, [this](){this->handleFileUpload();});
+#elif defined(ESP8266)
+        server->on("/status", HTTPMethod::HTTP_GET, handleStatus);
+        // List directory
+        server->on("/list", HTTPMethod::HTTP_GET, handleFileList);
+        // Load editor
+        server->on("/edit", HTTPMethod::HTTP_GET, handleGetEdit);
+        // Create file
+        server->on("/edit", HTTPMethod::HTTP_PUT, handleFileCreate);
+        // Delete file
+        server->on("/edit", HTTPMethod::HTTP_DELETE, handleFileDelete);
+        server->on("/edit/upload", HTTPMethod::HTTP_GET, handleFailsafeUploadPage);                // if the client requests the upload page
+        server->on("/edit/upload", HTTPMethod::HTTP_POST, [](){ DBG_OUTPUT_PORT.println("send OK"); server->send(200); }, []() { handleFileUploadFailsafe("/edit", "/edit/upload"); });                      // if the client posts to the upload page
+        // Upload file
+        // - first callback is called after the request has ended with all parsed arguments
+        // - second callback handles file upload at that location
+        server->on("/edit", HTTPMethod::HTTP_POST, [](){ server->send(200); }, handleFileUpload);
+#endif
     }
 }

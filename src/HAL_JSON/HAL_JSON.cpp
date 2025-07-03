@@ -4,11 +4,11 @@
 namespace HAL_JSON {
 
     Device** Manager::devices = nullptr;
-    uint32_t Manager::deviceCount = 0;
+    int Manager::deviceCount = 0;
     AsyncWebServer *asyncWebserver = nullptr;
 
     void Manager::setup() {
-
+        
         asyncWebserver = new AsyncWebServer(HAL_JSON_REST_API_PORT);
         asyncWebserver->on(HAL_JSON_REST_API_WRITE_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
         asyncWebserver->on(HAL_JSON_REST_API_READ_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
@@ -330,13 +330,13 @@ namespace HAL_JSON {
     }
 
     bool Manager::ParseJSON(const JsonArray &jsonArray) {
-        Serial.println("PArse json thianasoidnoasidnasoidnsaiodnsaodinasdoiandoisandiosndoiasnd");
+        //Serial.println("PArse json thianasoidnoasidnasoidnsaiodnsaodinasdoiandoisandiosndoiasnd");
         uint32_t deviceCount = 0;
-        uint32_t arraySize = jsonArray.size();
+        size_t arraySize = jsonArray.size();
         bool* validDevices = new bool[arraySize]; // dont' forget the delete[] call at end of function
         GPIO_manager::ClearAllReservations(); // when devices are verified they also reservate the pins to include checks for duplicate use
         // First pass: count valid entries
-        for (int i=0;i<arraySize;i++) {
+        for (size_t i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
             bool valid = true;
             if (jsonItem.is<const char*>() == true) { validDevices[i] = false;  continue; } // comment item
@@ -375,7 +375,7 @@ namespace HAL_JSON {
         GPIO_manager::ClearAllReservations(); 
         // Second pass: actually create and store devices
         uint32_t index = 0;
-        for (int i=0;i<arraySize;i++) {
+        for (size_t i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
             //if (VerifyDeviceJson(jsonItem) == false) continue; // ************************************************************ now as we dont run this again the pins are not allocated anymore but we don't really need to take care of that as it's part of the validate device check anyway
             if (validDevices[i] == false) continue;

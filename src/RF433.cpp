@@ -3,7 +3,7 @@
 
 namespace RF433
 {
-    uint32_t pin = -1;
+    int pin = -1;
     uint32_t RF433_FC_SHORT = 470;   // fixed code short
     uint32_t RF433_FC_LONG = 1410;   // fixed code long
     uint32_t RF433_FC_SYNC = 14500;  // fixed code sync
@@ -174,12 +174,12 @@ namespace RF433
         delayMicroseconds(RF433_LC_START);
     }
 
-    void SendTo433_AFC(char ch_, char button_, char on_off) // 433MHz Advanced Fixed Code "NEXA"
+    void SendTo433_AFC(const FixedCode& fc) // 433MHz Advanced Fixed Code "NEXA"
     {
         if (pin == -1) return;
-        int i;
-        U8 button = Get1AsciiHexValue(button_);
-        U8 ch = Get1AsciiHexValue(ch_);
+        uint32_t i;
+        U8 button = Get1AsciiHexValue(fc.btn);
+        U8 ch = Get1AsciiHexValue(fc.ch);
 
         for (i = 0; i < RF433_FC_REPEATS; i++)
         {
@@ -207,15 +207,18 @@ namespace RF433
             Send433FC_Float();
             Send433FC_Float();
             Send433FC_Float();
-            if (on_off == '1') Send433FC_Float();
+            if (fc.state == '1') Send433FC_Float();
             else               Send433FC_Zero();
         }
 
     }
-    void SendTo433_SFC(char ch, char button, char on_off) // 433MHz Simple Fixed Code "NEXA"
+    void SendTo433_SFC(const FixedCode& fc) // 433MHz Simple Fixed Code "NEXA"
     {
         if (pin == -1) return;
-        int i;
+        uint32_t i;
+        char ch = fc.ch;
+        char button = fc.btn;
+        char on_off = fc.state;
 
         for (i = 0; i < RF433_FC_REPEATS; i++)
         {
@@ -284,7 +287,7 @@ namespace RF433
     void SendTo433_SLC(U32 uId, U8 groupBtn, U8 enable, U8 btnCode) // 433MHz "Simple Learning Code" (NEXA)
     {
         if (pin == -1) return;
-        int i;
+        uint32_t i;
         
         btnCode = Get1AsciiHexValue(btnCode);
         //Serial.print("uid: ");
@@ -316,7 +319,7 @@ namespace RF433
     void SendTo433_ALC(const char *strData) // 433MHz "Advanced Learning Code" (NEXA)
     {
         if (pin == -1) return;
-        int i;
+        uint32_t i;
         U32 data = GetAsciiHexValue(strData, 8);
         for (i = 0; i < RF433_LC_REPEATS; i++)
         {
@@ -325,116 +328,134 @@ namespace RF433
             Send433LC_Sync();
         }
     }
+    bool ExtractValues_FC(const JsonVariant &jsonObj, FixedCode& fc) {
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"ch")) return false;
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"btn")) return false;
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"state")) return false;
 
+        const char* chStr = HAL_JSON::GetAsConstChar(jsonObj,"ch");
+        const char* btnStr = HAL_JSON::GetAsConstChar(jsonObj,"btn");
+        const char* stateStr = HAL_JSON::GetAsConstChar(jsonObj,"state");
+        fc.ch = chStr[0];
+        fc.btn = btnStr[0];
+        fc.state = stateStr[0];
+        return true;
+    }
     
-    void DecodeFromJSON_SFC(const JsonVariant &json)
+    void DecodeFromJSON_SFC(const JsonVariant &jsonObj)
     {
         if (pin == -1) return;
-        if (!json.containsKey("ch")) return;
-        std::string ch = json["ch"];
-        if (!json.containsKey("btn")) return;
-        std::string btn = json["btn"];
-        if (!json.containsKey("state")) return;
-        std::string state = json["state"];
+        FixedCode fc;
+        if (ExtractValues_FC(jsonObj, fc) == false) return;
+        SendTo433_SFC(fc);
+        /*
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"ch")) return;
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"btn")) return;
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"state")) return;
+
+        const char* ch = HAL_JSON::GetAsConstChar(jsonObj,"ch");
+        const char* btn = HAL_JSON::GetAsConstChar(jsonObj,"btn");
+        const char* state = HAL_JSON::GetAsConstChar(jsonObj,"state");
+        
         SendTo433_SFC(ch[0], btn[0], state[0]);
+        */
     }
-    void DecodeFromJSON_AFC(const JsonVariant &json)
+    void DecodeFromJSON_AFC(const JsonVariant &jsonObj)
     {
         if (pin == -1) return;
-        if (!json.containsKey("ch")) return;
-        std::string ch = json["ch"];
-        if (!json.containsKey("btn")) return;
-        std::string btn = json["btn"];
-        if (!json.containsKey("state")) return;
-        std::string state = json["state"];
+        char ch=0,btn=0,state=0;
+        FixedCode fc;
+        if (ExtractValues_FC(jsonObj, fc) == false) return;
+        SendTo433_AFC(fc);
+        /*
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"ch")) return;
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"btn")) return;
+        if (!HAL_JSON::ValidateJsonStringField_noLog(jsonObj,"state")) return;
+
+        const char* ch = HAL_JSON::GetAsConstChar(jsonObj,"ch");
+        const char* btn = HAL_JSON::GetAsConstChar(jsonObj,"btn");
+        const char* state = HAL_JSON::GetAsConstChar(jsonObj,"state");
         SendTo433_AFC(ch[0], btn[0], state[0]);
+        */
     }
-    void DecodeFromJSON_SLC(const JsonVariant &json)
+    void GetLCSettings(const JsonVariant &jsonObj) {
+        RF433_LC_SYNC = HAL_JSON::GetAsUINT32(jsonObj, "pl_sync", RF433_LC_SYNC);//.as<uint32_t>();
+        RF433_LC_START = HAL_JSON::GetAsUINT32(jsonObj, "pl_start", RF433_LC_START);//.as<uint32_t>();
+        RF433_LC_SHORT = HAL_JSON::GetAsUINT32(jsonObj, "pl_short", RF433_LC_SHORT);//.as<uint32_t>();
+        RF433_LC_LONG = HAL_JSON::GetAsUINT32(jsonObj, "pl_long", RF433_LC_LONG);//.as<uint32_t>();
+        RF433_LC_REPEATS = HAL_JSON::GetAsUINT32(jsonObj, "pl_repeats", RF433_LC_REPEATS);//.as<uint32_t>();
+    }
+    void DecodeFromJSON_SLC(const JsonVariant &jsonObj)
     {
         if (pin == -1) return;
-        std::string grp_btn = "", btn = "";
+        
+        
         Serial1.println("slc type");
         U32 uid = 0;
-        if (json.containsKey("hexid")){
-            std::string uidStr = json["hexid"].as<std::string>();
-            uid = GetAsciiHexValue(uidStr.c_str(), 6);
-        } else if (json.containsKey("anid")) {
-            std::string uidStr = json["anid"].as<std::string>();
-            uid = decode5AlphaNumericTo4byteId(uidStr);
+        if (jsonObj.containsKey("hexid")){
+            //const char* uidStr = jsonObj["hexid"].as<const char*>();
+            //uid = GetAsciiHexValue(uidStr, 6);
+            uid = GetAsciiHexValue(HAL_JSON::GetAsConstChar(jsonObj, "hexid"), 6);
+        } else if (jsonObj.containsKey("anid")) {
+            //const char* uidStr = jsonObj["anid"].as<const char*>();
+            //uid = decode5AlphaNumericTo4byteId(uidStr);
+            uid = decode5AlphaNumericTo4byteId(HAL_JSON::GetAsConstChar(jsonObj, "anid"));
         } else {
             Serial1.println("No UID found");
             return;
         } 
-        //std::string uid = json["uid"];
-        if (json.containsKey("grp_btn")) // grp_btn can be '1' or '0'
+        //std::string uid = jsonObj["uid"];
+        //if (jsonObj.containsKey("grp_btn")) // grp_btn can be '1' or '0'
             
-            grp_btn = (std::string)json["grp_btn"].as<std::string>();
-        else
-            grp_btn = "0";
-        if (!json.containsKey("state")) return;
-        std::string state = json["state"];
-        if (json.containsKey("btn")) // can be any number 1-4
-            btn = (std::string)json["btn"].as<std::string>();
-        else
-            btn = "0";
+        const char* grp_btn_str = HAL_JSON::GetAsConstChar(jsonObj,"grp_btn");// | "0";
+        uint8_t grp_btn = '0';
+        if (grp_btn_str != nullptr) grp_btn = grp_btn_str[0];
+        //if (!jsonObj.containsKey("state")) return;
+        const char* stateStr = HAL_JSON::GetAsConstChar(jsonObj,"state");
+        if (!stateStr) return;
+        uint8_t state = stateStr[0];
+        
+        const char* btnStr = HAL_JSON::GetAsConstChar(jsonObj,"btn");//jsonObj["btn"] | "0";// can be any number 1-4
+        uint8_t btn = '0';
+        if (btnStr != nullptr) btn = btnStr[0];
 
-        if (json.containsKey("pl_sync"))
-            RF433_LC_SYNC = (uint32_t)json["pl_sync"].as<uint32_t>();
-        if (json.containsKey("pl_start"))
-            RF433_LC_START = (uint32_t)json["pl_start"].as<uint32_t>();
-        if (json.containsKey("pl_short"))
-            RF433_LC_SHORT = (uint32_t)json["pl_short"].as<uint32_t>();
-        if (json.containsKey("pl_long"))
-            RF433_LC_LONG = (uint32_t)json["pl_long"].as<uint32_t>();
-        if (json.containsKey("pl_repeats"))
-            RF433_LC_REPEATS = (uint32_t)json["pl_repeats"].as<uint32_t>();
+        GetLCSettings(jsonObj);
     
         Serial1.println("slc sending");
-        SendTo433_SLC(uid, grp_btn[0], state[0], btn[0]);
+        SendTo433_SLC(uid, grp_btn, state, btn);
     }
-    void DecodeFromJSON_ALC(const JsonVariant &json)
+    void DecodeFromJSON_ALC(const JsonVariant &jsonObj)
     {
         if (pin == -1) return;
-        if (!json.containsKey("raw")) return;
-        std::string raw = json["raw"];
-        if (json.containsKey("pl_sync"))
-            RF433_LC_SYNC = (uint32_t)json["pl_sync"].as<uint32_t>();
-        if (json.containsKey("pl_start"))
-            RF433_LC_START = (uint32_t)json["pl_start"].as<uint32_t>();
-        if (json.containsKey("pl_short"))
-            RF433_LC_SHORT = (uint32_t)json["pl_short"].as<uint32_t>();
-        if (json.containsKey("pl_long"))
-            RF433_LC_LONG = (uint32_t)json["pl_long"].as<uint32_t>();
-        if (json.containsKey("pl_repeats"))
-            RF433_LC_REPEATS = (uint32_t)json["pl_repeats"].as<uint32_t>();
+        if (!jsonObj.containsKey("raw")) return;
+        const char* raw = HAL_JSON::GetAsConstChar(jsonObj,"raw");
+        
+        GetLCSettings(jsonObj);
     
-        SendTo433_ALC(raw.c_str());
+        SendTo433_ALC(raw);
     }
 
-    void DecodeFromJSON(const JsonVariant &json) {
+    void DecodeFromJSON(const JsonVariant &jsonObj) {
         if (pin == -1) return;
-        if (!json.containsKey("type")) return;
-        std::string type = json["type"];
-
-        for (char &c : type)
-            c = std::tolower(c);
+        if (!jsonObj.containsKey("type")) return;
+        const char* type = HAL_JSON::GetAsConstChar(jsonObj,"type");
             
-        if (type == "sfc") //simple fixed code
-            DecodeFromJSON_SFC(json);
-        else if (type == "afc") // advanced fixed code
-            DecodeFromJSON_AFC(json);
-        else if (type == "slc") // simple learning code
-            DecodeFromJSON_SLC(json);
-        else if (type == "alc") // advanced learning code
-            DecodeFromJSON_ALC(json);
+        if (CharArray::equalsIgnoreCase(type,"sfc")) //simple fixed code
+            DecodeFromJSON_SFC(jsonObj);
+        else if (CharArray::equalsIgnoreCase(type,"afc")) // advanced fixed code
+            DecodeFromJSON_AFC(jsonObj);
+        else if (CharArray::equalsIgnoreCase(type,"slc")) // simple learning code
+            DecodeFromJSON_SLC(jsonObj);
+        else if (CharArray::equalsIgnoreCase(type,"alc")) // advanced learning code
+            DecodeFromJSON_ALC(jsonObj);
     }
 
     void DecodeFromJSON(std::string jsonStr)
     {
         if (pin == -1) return;
-        StaticJsonDocument<256> json;
-        deserializeJson(json, jsonStr.c_str());
-        DecodeFromJSON(json);
+        StaticJsonDocument<256> jsonObj;
+        deserializeJson(jsonObj, jsonStr.c_str());
+        DecodeFromJSON(jsonObj);
     }
 
 }

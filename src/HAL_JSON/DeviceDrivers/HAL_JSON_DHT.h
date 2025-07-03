@@ -25,10 +25,6 @@ namespace HAL_JSON {
     private:
         DHTesp dht;
         uint8_t pin = 0;
-        bool readTemperature = false; // default not to read this in loop function
-        /** the default value used when using the read function is only returning the humidity part of this, 
-         * to read the temp as well the string read function need to be used with cmd set to temp
-         */
         TempAndHumidity data;
         uint32_t refreshTimeMs = HAL_JSON_TYPE_DHT_DEFAULT_REFRESHRATE_MS;
         uint32_t lastUpdateMs = 0;

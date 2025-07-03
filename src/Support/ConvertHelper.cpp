@@ -52,7 +52,7 @@ namespace Convert
     std::string ByteArrayToString(uint8_t* byteArray, size_t arraySize)
     {
         std::string str = "";
-        for (int i=0;i<arraySize;i++) {
+        for (size_t i=0;i<arraySize;i++) {
             str.append(ByteToHexString(byteArray[i]));
             if (i<(arraySize-1)) str.append(":");
         }

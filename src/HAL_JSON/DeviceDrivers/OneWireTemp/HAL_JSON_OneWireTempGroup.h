@@ -17,7 +17,7 @@ namespace HAL_JSON {
     private:
         OneWireTempAutoRefresh autoRefresh;
         OneWireTempBus **busses;
-        uint32_t busCount = 0;
+        int busCount = 0;
 
         void requestTemperatures();
         void readAll();

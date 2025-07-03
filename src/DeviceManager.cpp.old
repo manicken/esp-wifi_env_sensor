@@ -741,10 +741,10 @@ namespace DeviceManager
         }
         
         asyncWebserver = new AsyncWebServer(DEVICE_MANAGER_REST_API_PORT);
-        asyncWebserver->on(DEVICE_MANAGER_REST_API_WRITE_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
-        asyncWebserver->on(DEVICE_MANAGER_REST_API_READ_URL "*", HTTP_ANY, restAPI_handleWriteOrRead);
+        asyncWebserver->on(DEVICE_MANAGER_REST_API_WRITE_URL "*", WebRequestMethod::HTTP_ANY, restAPI_handleWriteOrRead);
+        asyncWebserver->on(DEVICE_MANAGER_REST_API_READ_URL "*", WebRequestMethod::HTTP_ANY, restAPI_handleWriteOrRead);
 
-        asyncWebserver->on("/", HTTP_ANY, [](AsyncWebServerRequest *request){
+        asyncWebserver->on("/", WebRequestMethod::HTTP_ANY, [](AsyncWebServerRequest *request){
             String message = "Device Manager - REST API<br>";
             message += "<a href=\"/<cmd>/<type>/<uid>/<optional_value>\">Device command</a><br>";
             request->send(200, "text/html", message);
