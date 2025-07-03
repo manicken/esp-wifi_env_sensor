@@ -83,4 +83,14 @@ namespace HAL_JSON {
         }
         return static_cast<uint32_t>(round(rawSec * 1000));;
     }
+    bool IsUINT32(const JsonVariant& jsonObj, const char* name) {
+        return jsonObj[name].is<uint32_t>();
+    }
+
+    uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* name, uint32_t defaultValue) {
+        return jsonObj[name] | defaultValue;
+    }
+    const char* GetAsConstChar(const JsonVariant& jsonObj, const char* name) {
+        return jsonObj[name] | "";
+    }
 }

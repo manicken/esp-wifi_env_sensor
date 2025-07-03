@@ -16,4 +16,8 @@ namespace HAL_JSON {
 
     double ParseRefreshTime(const JsonVariant &jsonObj);
     uint32_t ParseRefreshTimeMs(const JsonVariant &jsonObj, const uint32_t defaultRefreshTimeMs);
+
+    uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* name, uint32_t defaultValue);
+    bool IsUINT32(const JsonVariant& jsonObj, const char* name);
+    const char* GetAsConstChar(const JsonVariant& jsonObj, const char* name);
 }

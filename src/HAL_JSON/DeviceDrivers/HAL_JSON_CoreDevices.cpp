@@ -19,11 +19,13 @@ namespace HAL_JSON {
     }
 
     DigitalInput::DigitalInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
+        //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);
         
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
-        uid = encodeUID(uidStr);
+        //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
+        //uid = encodeUID(uidStr);
 
         pinMode(pin, INPUT);
     }
@@ -69,11 +71,13 @@ namespace HAL_JSON {
     }
 
     DigitalOutput::DigitalOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
+        //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);
 
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
-        uid = encodeUID(uidStr);
+        //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
+        //uid = encodeUID(uidStr);
 
         pinMode(pin, OUTPUT);
     }
@@ -128,21 +132,23 @@ namespace HAL_JSON {
     }
 
     SinglePulseOutput::SinglePulseOutput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
-        GPIO_manager::ReservePin(pin);
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
-        uid = encodeUID(uidStr);
-
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE)) {
-            inactiveState = jsonObj[HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE].as<uint8_t>();
-        } else {
-            inactiveState = 0;
-        }
-        if (jsonObj.containsKey(HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_DEFAULT_PULSE_LENGHT)) {
-            pulseLength = jsonObj[HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_DEFAULT_PULSE_LENGHT].as<uint32_t>();
-        } else {
-            pulseLength = 0; // will hopefully be set at write
-        }
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
+        //GPIO_manager::ReservePin(pin);
+        //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+         // jsonObj[HAL_JSON_KEYNAME_UID]);// | "");
+        inactiveState = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE, 0);
+        pulseLength = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_DEFAULT_PULSE_LENGHT, 0);
+        //if (jsonObj.containsKey(HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE)) {
+           // inactiveState = jsonObj[HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_INACTIVE_STATE];// | 0;//.as<uint8_t>();
+        //} else {
+        //    inactiveState = 0;
+        //}
+        //if (jsonObj.containsKey(HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_DEFAULT_PULSE_LENGHT)) {
+            //pulseLength = jsonObj[HAL_JSON_KEYNAME_SINGLE_PULSE_OUTPUT_DEFAULT_PULSE_LENGHT];// | 0;//.as<uint32_t>();
+        //} else {
+        //    pulseLength = 0; // will hopefully be set at write
+        //}
         pinMode(pin, OUTPUT);
         digitalWrite(pin, inactiveState);
     }
@@ -213,10 +219,12 @@ namespace HAL_JSON {
     }
 
     AnalogInput::AnalogInput(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID)); 
+        //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
-        uid = encodeUID(uidStr);
+        //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
+        //uid = encodeUID(uidStr);
         pinMode(pin, ANALOG);
     }
 
@@ -264,14 +272,16 @@ namespace HAL_JSON {
     }
 
     bool PWMAnalogWriteConfig::VerifyJSON(const JsonVariant &jsonObj) {
-        if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY].is<uint32_t>() == false) { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY)); return false; }
-        if (jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION].is<uint32_t>() == false) { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION)); return false; }
+        if (IsUINT32(jsonObj, HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY) == false) { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY)); return false; }
+        if (IsUINT32(jsonObj, HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION) == false) { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION)); return false; }
         return true;
     }
 
     PWMAnalogWriteConfig::PWMAnalogWriteConfig(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        PWMAnalogWriteConfig::frequency = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY].as<uint32_t>();
-        PWMAnalogWriteConfig::resolution = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION].as<uint32_t>();
+        //PWMAnalogWriteConfig::frequency = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY];//.as<uint32_t>();
+        //PWMAnalogWriteConfig::resolution = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION];//.as<uint32_t>();
+        PWMAnalogWriteConfig::frequency = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY, 0);
+        PWMAnalogWriteConfig::resolution = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION, 0);
 
 #if defined(ESP8266)
         analogWriteResolution(PWMAnalogWriteConfig::resolution);
@@ -320,10 +330,12 @@ namespace HAL_JSON {
     }
 
     PWMAnalogWrite::PWMAnalogWrite(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        pin = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PIN, 0);// jsonObj[HAL_JSON_KEYNAME_PIN];// | 0;//.as<uint8_t>();
+        uid = encodeUID(GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_UID));
+        //pin = jsonObj[HAL_JSON_KEYNAME_PIN];//.as<uint8_t>();
         GPIO_manager::ReservePin(pin);
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
-        uid = encodeUID(uidStr);
+        //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
+        //uid = encodeUID(uidStr);
 
         pinMode(pin, OUTPUT);
     }

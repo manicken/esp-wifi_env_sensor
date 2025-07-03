@@ -7,6 +7,7 @@
 #include "../../Support/Logger.h"
 #include "../HAL_JSON_Device.h"
 #include "../HAL_JSON_Device_GlobalDefines.h"
+#include "../HAL_JSON_ArduinoJSON_ext.h"
 
 // ASCII ART generated here:
 // https://patorjk.com/software/taag/#p=display&f=ANSI%20Regular&t=ASCII%20ART
