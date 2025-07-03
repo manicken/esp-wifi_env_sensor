@@ -65,6 +65,7 @@ namespace HAL_JSON {
         static bool read(const HALReadStringRequest &req);
         static bool write(const HALWriteStringRequest &req);
         static bool read(const HALReadValueByCmdReq &req);
+        static bool write(const HALWriteValueByCmdReq &req);
 
         // Maintenance
         static void loop();

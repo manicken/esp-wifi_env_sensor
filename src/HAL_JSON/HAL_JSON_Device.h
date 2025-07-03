@@ -31,11 +31,12 @@ namespace HAL_JSON {
         uint64_t uid;
         const uint8_t uidMaxLength;
 
-        virtual bool read(HALValue &val);
-        virtual bool write(const HALValue &val);
-        virtual bool read(const HALReadStringRequestValue &val);
-        virtual bool write(const HALWriteStringRequestValue &val);
-        virtual bool read(const HALReadValueByCmd &val);
+        virtual bool read(HALValue& val);
+        virtual bool write(const HALValue& val);
+        virtual bool read(const HALReadStringRequestValue& val);
+        virtual bool write(const HALWriteStringRequestValue& val);
+        virtual bool read(const HALReadValueByCmd& val);
+        virtual bool write(const HALWriteValueByCmd& val);
         virtual void loop();
         /** used to find sub/leaf devices @ "group devices" */
         virtual Device* findDevice(UIDPath& path);
@@ -64,5 +65,6 @@ namespace HAL_JSON {
         HAL_JSON_DEVICE_CONST_STR_DECLARE(value);
         HAL_JSON_DEVICE_CONST_STR_DECLARE(valueStartWithComma);
         HAL_JSON_DEVICE_CONST_STR_DECLARE(refreshTimeMs);
+
     }
 } // namespace HAL

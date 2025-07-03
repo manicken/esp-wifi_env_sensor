@@ -5,6 +5,17 @@
 #include "HAL_JSON_UID_Path.h"
 
 namespace HAL_JSON {
+    struct HALWriteValueByCmd {
+        const HALValue& value;
+        const String& cmd;
+        HALWriteValueByCmd(const HALValue& value, const String& cmd): value(value), cmd(cmd) {}
+    };
+    struct HALWriteValueByCmdReq {
+        UIDPath& path;
+        const HALWriteValueByCmd& valByCmd;
+        HALWriteValueByCmdReq(UIDPath& p, const HALWriteValueByCmd& valByCmd) : path(p), valByCmd(valByCmd) {}
+    };
+
     struct HALReadValueByCmd {
         HALValue& out_value;
         const String& cmd;

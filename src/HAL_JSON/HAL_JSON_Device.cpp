@@ -16,6 +16,7 @@ namespace HAL_JSON {
     bool Device::read(const HALReadStringRequestValue &val) { return false; }
     bool Device::write(const HALWriteStringRequestValue &val) { return false; }
     bool Device::read(const HALReadValueByCmd &val) { return false; }
+    bool Device::write(const HALWriteValueByCmd& val) { return false; }
 
     bool Device::DisabledInJson(const JsonVariant& jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_DISABLED) == false) return false;
@@ -31,6 +32,7 @@ namespace HAL_JSON {
         HAL_JSON_DEVICE_CONST_STR_DEFINE(value, "\"value\":");
         HAL_JSON_DEVICE_CONST_STR_DEFINE(valueStartWithComma, ",\"value\":");
         HAL_JSON_DEVICE_CONST_STR_DEFINE(refreshTimeMs, ",\"refreshTimeMs\":");
+
     }
 
 } // namespace HAL
