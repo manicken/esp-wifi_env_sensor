@@ -6,7 +6,7 @@
 #include "DeviceDrivers/HAL_JSON_CoreDevices.h"
 #include "DeviceDrivers/OneWireTemp/HAL_JSON_OneWireTemp.h"
 #include "DeviceDrivers/HAL_JSON_DHT.h"
-#include "DeviceDrivers/HAL_JSON_TX433.h"
+#include "DeviceDrivers/RF433/HAL_JSON_TX433.h"
 
 namespace HAL_JSON {
     const char* test = "hello";
