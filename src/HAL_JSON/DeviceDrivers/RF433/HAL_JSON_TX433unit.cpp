@@ -10,7 +10,7 @@ namespace HAL_JSON {
         return true;
     }
     
-    TX433unit::TX433unit(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One,type) {
+    TX433unit::TX433unit(const JsonVariant &jsonObj, const char* type, const uint32_t pin) : Device(UIDPathMaxLength::One,type), pin(pin) {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
         const char* model = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL);
@@ -46,6 +46,7 @@ namespace HAL_JSON {
     }
 
     bool TX433unit::write(const HALValue &val) {
+        RF433::init(pin); // ensure that the correct pin is used and that it's set to a output
         if (model == TX433_MODEL::FixedCode) {
             if (fixedState == false)
                 RF433::SendTo433_FC(staticData, val.asUInt());

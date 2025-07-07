@@ -378,6 +378,14 @@ namespace RF433
             DecodeFromJSON_LC(jsonObj);
     }
 
+    void DecodeFromJSON(const String& jsonStr)
+    {
+        if (pin == -1) return;
+        size_t jsonDocBufferSize = (size_t)((float)jsonStr.length() * 1.5f);
+        DynamicJsonDocument jsonObj(jsonDocBufferSize);
+        deserializeJson(jsonObj, jsonStr.c_str());
+        DecodeFromJSON(jsonObj);
+    }
     void DecodeFromJSON(std::string jsonStr)
     {
         if (pin == -1) return;

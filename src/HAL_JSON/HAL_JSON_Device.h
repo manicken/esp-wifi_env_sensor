@@ -23,6 +23,7 @@ namespace HAL_JSON {
     class Device {
     protected:
         Device() = delete;
+        Device(Device&) = delete;
         const char* type;
     public:
         Device(UIDPathMaxLength uidMaxLength, const char* type);

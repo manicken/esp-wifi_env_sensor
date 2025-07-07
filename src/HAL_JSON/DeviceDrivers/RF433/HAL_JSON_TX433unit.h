@@ -22,6 +22,8 @@ namespace HAL_JSON {
 
     class TX433unit : public Device {
     private:
+        /** this is set from root TX433 device and used when sending */
+        const uint32_t pin;
         /** defines which type to send state to while using the standard write function */
         TX433_MODEL model;
         /** the part of the data that is fixed */
@@ -36,7 +38,8 @@ namespace HAL_JSON {
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
         
-        TX433unit(const JsonVariant &jsonObj, const char* type);
+        TX433unit(const JsonVariant &jsonObj, const char* type, const uint32_t pin);
+        TX433unit(TX433unit&) = delete;
         bool write(const HALValue &val);
 
         String ToString() override;

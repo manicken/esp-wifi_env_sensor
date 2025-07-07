@@ -40,7 +40,7 @@ namespace MainConfig {
             return false;
         }
         if (jsonDoc.containsKey("mDNSname")) {
-            if (jsonDoc["mDNSname"].is<const char*>() == false) {
+            if (HAL_JSON::IsConstChar(jsonDoc,"mDNSname") == false) {
                 SetDefault_mDNS_name();
             }
             else {

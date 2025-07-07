@@ -25,7 +25,7 @@ namespace HAL_JSON {
         size_t validItemCount = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
-            if (item.is<const char*>() == true) continue; // comment item
+            if (IsConstChar(item) == true) continue; // comment item
             if (Device::DisabledInJson(item) == true) continue; // disabled
             if (OneWireTempBus::VerifyJSON(item) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
             validItemCount++;
@@ -53,11 +53,9 @@ namespace HAL_JSON {
         // first pass count valid busses
         for (int i=0;i<itemCount;i++) {
             const JsonVariant& item = items[i];
-            bool valid = true;
-            if (item.is<const char*>() == true) valid = false; // comment item
-            if (valid && Device::DisabledInJson(item) == true) valid = false; // disabled
-            if (valid)
-                valid = OneWireTempBus::VerifyJSON(item);
+            if (IsConstChar(item) == true) { validBusses[i] = false; continue; } // comment item
+            if (Device::DisabledInJson(item) == true) { validBusses[i] = false; continue; } // disabled
+            bool valid = OneWireTempBus::VerifyJSON(item);
             validBusses[i] = valid;
             if (valid == false) continue;
             busCount++;

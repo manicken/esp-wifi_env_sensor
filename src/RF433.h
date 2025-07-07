@@ -87,6 +87,7 @@ namespace RF433 {
     void DecodeFromJSON_LC(const JsonVariant &jsonObj);
 
     void DecodeFromJSON(const JsonVariant &jsonObj);
+    void DecodeFromJSON(const String& jsonStr);
     void DecodeFromJSON(std::string jsonStr);
 
     bool VerifyLC_JSON(const JsonVariant &jsonObj);

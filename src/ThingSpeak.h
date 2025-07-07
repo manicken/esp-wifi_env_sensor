@@ -16,6 +16,7 @@
 
 //#include "DeviceManager.h"
 #include "Support/ConvertHelper.h"
+#include "HAL_JSON/HAL_JSON_ArduinoJSON_ext.h"
 
 //#define TS_DEBUG_PRINT_AFTER_JSON_READ
 
@@ -155,7 +156,7 @@ namespace ThingSpeak
                 if (fkv.value().is<int>()) {
                     uid = fkv.value().as<int>();
                 }
-                else if (fkv.value().is<const char*>()) {
+                else if (HAL_JSON::IsConstChar(fkv.value())) {
                     const char* uid_asciiHexString = fkv.value().as<const char*>();
                     if (uid_asciiHexString == nullptr) { lastError+="uid could not convert to a string @ fieldIndex key:" + std::to_string(fieldIndex) + "\n"; return false; }
                     char* endptr = nullptr;

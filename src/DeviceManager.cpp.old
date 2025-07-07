@@ -205,13 +205,13 @@ namespace DeviceManager
             return false; }
         if (!jsonItem.is<JsonObject>()) { return false; }
         if (!jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_TYPE)) { return false; }
-        if (!jsonItem[DEVICE_MANAGER_JSON_NAME_TYPE].is<const char*>()) { return false; }
+        if (!IsConstChar(jsonItem,DEVICE_MANAGER_JSON_NAME_TYPE)) { return false; }
         if (jsonItem.containsKey(DEVICE_MANAGER_JSON_NAME_UID) == false) { return false; }
         // allow uid to be both a integer-number or as a string interprented as a "8 nibble ascii hex number"(32bit value)
         if (jsonItem[DEVICE_MANAGER_JSON_NAME_UID].is<int>()) { 
             if (uid!=nullptr) *uid = jsonItem[DEVICE_MANAGER_JSON_NAME_UID].as<int>();
         }
-        else if (jsonItem[DEVICE_MANAGER_JSON_NAME_UID].is<const char*>()){
+        else if (IsConstChar(jsonItem,DEVICE_MANAGER_JSON_NAME_UID)){
             const char* uid_asciiHexString = jsonItem[DEVICE_MANAGER_JSON_NAME_UID].as<const char*>();
             if (uid_asciiHexString == nullptr) { return false; }
             char* endptr = nullptr;
@@ -282,7 +282,7 @@ namespace DeviceManager
         if (jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].is<int>()) { 
             if (bus!=nullptr) *bus = jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].as<int>();
         }
-        else if (jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].is<const char*>()){
+        else if (IsConstChar(jsonItem,DEVICE_MANAGER_JSON_NAME_BUS)){
             const char* bus_asciiHexString = jsonItem[DEVICE_MANAGER_JSON_NAME_BUS].as<const char*>();
             if (bus_asciiHexString == nullptr) {
 #ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS

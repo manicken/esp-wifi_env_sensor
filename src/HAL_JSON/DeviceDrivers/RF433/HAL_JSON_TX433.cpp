@@ -2,12 +2,20 @@
 #include "HAL_JSON_TX433.h"
 
 namespace HAL_JSON {
-    
-    TX433::TX433(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One,type) {
-
-    }
 
     bool TX433::VerifyJSON(const JsonVariant &jsonObj) {
+        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID) == false) { return false; }
+
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_TX433_UNITS) && jsonObj[HAL_JSON_KEYNAME_TX433_UNITS].is<JsonArray>()) {
+            JsonArray units = jsonObj[HAL_JSON_KEYNAME_TX433_UNITS].as<JsonArray>();
+            int unitCount = units.size();
+            for (int i=0;i<unitCount;i++) {
+                const JsonVariant& unit = units[i];
+                if (IsConstChar(unit) == true) continue; // comment item
+                if (Device::DisabledInJson(unit) == true) continue; // disabled
+                if (TX433unit::VerifyJSON(unit) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
+            }
+        }
         // this is a check only to verify that the pin cfg exist
         return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT)));
     }
@@ -15,16 +23,62 @@ namespace HAL_JSON {
     Device* TX433::Create(const JsonVariant &jsonObj, const char* type) {
         return new TX433(jsonObj, type);
     }
+    TX433::TX433(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Two,type) {
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+        pin = GetAsUINT32(jsonObj,HAL_JSON_KEYNAME_PIN);//].as<uint8_t>();
+        GPIO_manager::ReservePin(pin); // in case we forgot to do it somewhere
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_TX433_UNITS) && jsonObj[HAL_JSON_KEYNAME_TX433_UNITS].is<JsonArray>()) {
+            JsonArray _units = jsonObj[HAL_JSON_KEYNAME_TX433_UNITS].as<JsonArray>();
+            int _unitCount = _units.size();
+            bool* validUnits = new bool[_unitCount];
+            unitCount = 0;
+            // first pass count valid units(devices)
+            for (int i=0;i<_unitCount;i++) {
+                const JsonVariant& unit = _units[i];
+                if (IsConstChar(unit) == true) { validUnits[i] = false;  continue; }  // comment item
+                if (Device::DisabledInJson(unit) == true) { validUnits[i] = false;  continue; } // disabled
+                bool valid = TX433unit::VerifyJSON(unit);
+                validUnits[i] = valid;
+                if (valid == false) continue;
+                unitCount++;
+            }
+            // second pass create units(devices)
+            units = new (std::nothrow) TX433unit*[unitCount];
+            uint32_t index = 0;
+            for (int i=0;i<_unitCount;i++) {
+                if (validUnits[i] == false) continue;
+                const JsonVariant& unit = _units[i];
+                units[index++] = new TX433unit(unit, nullptr, pin); // here type is not used so we just take it from current to avoid creating new const strings, or use nullstr do also work
+            }
+            delete[] validUnits;
+        }
+
+
+    }
+    TX433::~TX433() {
+        pinMode(pin, INPUT); // reset to input so other devices can safely use it
+    }
 
     Device* TX433::findDevice(UIDPath& path) {
+        if (units == nullptr) return nullptr;
+        else if (unitCount == 0) return nullptr;
+
+        uint64_t uidToFind = path.peekNextUID();
+        if (uidToFind == UIDPath::UID_INVALID) { GlobalLogger.Error(F("TX433::findDevice - uidToFind == UID_INVALID")); return nullptr; } // early break
+        
+        
+        for (int i=0;i<unitCount;i++) {
+            TX433unit* unit = units[i];
+            if (!unit) continue; // absolute failsafe
+            if (unit->uid == uidToFind) return unit;
+        }
         return nullptr;
     }
 
-    bool TX433::write(const HALValue &val) {
-        return false;
-    }
-
     bool TX433::write(const HALWriteStringRequestValue &val) {
+        RF433::init(pin); // this only sets the pin and set the pin to output
+        RF433::DecodeFromJSON(val.value);
         return false;
     }
 
@@ -38,6 +92,15 @@ namespace HAL_JSON {
         ret += "\"";
         ret += DeviceConstStrings::pin;
         ret += pin;
+        ret += "\"units\":[";
+        for (int i=0;i<unitCount;i++) {
+            ret += "{";
+            ret += units[i]->ToString();
+            ret += "}";
+            if (i<unitCount-1)
+                ret += ",";
+        }
+        ret += "]";
         return ret;
     }
 

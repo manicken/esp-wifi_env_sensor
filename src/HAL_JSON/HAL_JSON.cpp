@@ -338,10 +338,9 @@ namespace HAL_JSON {
         // First pass: count valid entries
         for (size_t i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
-            bool valid = true;
-            if (jsonItem.is<const char*>() == true) { validDevices[i] = false;  continue; } // comment item
+            if (IsConstChar(jsonItem) == true) { validDevices[i] = false;  continue; } // comment item
             if (Device::DisabledInJson(jsonItem) == true) { validDevices[i] = false;  continue; } // disabled
-            valid = VerifyDeviceJson(jsonItem);
+            bool valid = VerifyDeviceJson(jsonItem);
             validDevices[i] = valid;
             if (valid == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION; // could either be continue; or return false depending if strict mode is on/off
             deviceCount++;
@@ -404,9 +403,13 @@ namespace HAL_JSON {
 					return device;
 				else
 				{
-					Device* dev = device->findDevice(path);
+					/*Device* dev = device->findDevice(path);
 					if (dev != nullptr) return dev;
-                    rootUID = path.resetAndGetFirst();
+                    rootUID = path.resetAndGetFirst();*/
+                    // if here then the device will not be found as then
+                    // here the root uid have a match then there is no more devices to match
+                    // so the following should then be used
+                    return device->findDevice(path);
 				}
 					
 			}

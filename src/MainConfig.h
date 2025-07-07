@@ -7,6 +7,7 @@
 #include <LittleFS.h>
 #include "LittleFS_ext.h"
 #include "Support/ConvertHelper.h"
+#include "HAL_JSON/HAL_JSON_ArduinoJSON_ext.h"
 
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>

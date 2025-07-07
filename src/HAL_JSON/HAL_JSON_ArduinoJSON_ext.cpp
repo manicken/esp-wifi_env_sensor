@@ -26,7 +26,7 @@ namespace HAL_JSON {
             GlobalLogger.Error(HAL_JSON_ERR_MISSING_STRING_VALUE_KEY, key);
             return false;
         }
-        if (!jsonObj[key].is<const char*>()) {
+        if (!IsConstChar(jsonObj,key)) {
             GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, key);
             return false;
         }
@@ -40,7 +40,7 @@ namespace HAL_JSON {
 
     bool ValidateJsonStringField_noContains(const JsonVariant &jsonObj, const char* key) {
         
-        if (!jsonObj[key].is<const char*>()) {
+        if (!IsConstChar(jsonObj,key)) {
             GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, key);
             return false;
         }
@@ -55,7 +55,7 @@ namespace HAL_JSON {
     double ParseRefreshTime(const JsonVariant &value) {
         if (value.is<float>() || value.is<double>()) {
             return value.as<double>();
-        } else if (value.is<const char*>()) {
+        } else if (IsConstChar(value)) {
             return atof(value.as<const char*>());
         } else if (value.is<uint32_t>()) {
             return static_cast<double>(value.as<uint32_t>());
@@ -93,6 +93,7 @@ namespace HAL_JSON {
     const char* GetAsConstChar(const JsonVariant& jsonObj, const char* name) {
         return jsonObj[name];
     }
+    
 
     
 }
