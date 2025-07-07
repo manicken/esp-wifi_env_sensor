@@ -6,9 +6,10 @@ implement a global defines that can be switched on/off
   #define HAL_JSON_VALIDATE_FAIL_OPERATION continue
   #define HAL_JSON_VALIDATE_FAIL_OPERATION return false
 so that "if one fail" -> "all fail" principe can be used"
+above is done!
 
-fix Operations so that a read string request can have a json string command scheme
-fix UID_Path so that multilevel paths can be used
+fix Operations so that a read string request can have a json string command scheme --- done!
+fix UID_Path so that multilevel paths can be used --- done!
 
 make it so that if a device is not found while read/write it sends back that as a proper error
 

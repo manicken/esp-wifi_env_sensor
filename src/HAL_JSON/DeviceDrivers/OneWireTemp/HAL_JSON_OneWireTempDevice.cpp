@@ -17,19 +17,19 @@ namespace HAL_JSON {
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) return false;
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_ROMID)) return false;
         
-        const char* romIdStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>();
+        const char* romIdStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_ONE_WIRE_ROMID);//].as<const char*>();
         if (strlen(romIdStr) == 0) { GlobalLogger.Error(F("OneWireTempDevice romId is zero lenght")); return false; }
         return Convert::HexToBytes(romIdStr, nullptr, 8);
     }
 
     OneWireTempDevice::OneWireTempDevice(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        const char* uidStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_UID);//].as<const char*>();
         uid = encodeUID(uidStr);
-        const char* romIdStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_ROMID].as<const char*>();
+        const char* romIdStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_ONE_WIRE_ROMID);//].as<const char*>();
         Convert::HexToBytes(romIdStr, romid.bytes, 8);
         // optional settings
-        if (ValidateJsonStringField_noLog(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT)) {
-            const char* tempFormatStr = jsonObj[HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT].as<const char*>();
+        if (jsonObj.containsKey(HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT) && ValidateJsonStringField_noContains(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT)) {
+            const char* tempFormatStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_TEMPFORMAT);//].as<const char*>();
             if (tempFormatStr[0] == 'c' || tempFormatStr[0] == 'C')
                 format = OneWireTempDeviceTempFormat::Celsius;
             else if (tempFormatStr[0] == 'f' || tempFormatStr[0] == 'F')
@@ -88,7 +88,7 @@ namespace HAL_JSON {
             ParseRefreshTimeMs(jsonObj,HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS)
         )
     {
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        pin = GetAsUINT32(jsonObj,HAL_JSON_KEYNAME_PIN);//].as<uint8_t>();
         GPIO_manager::ReservePin(pin); // this is in most cases taken care of in OneWireTempBus::VerifyJSON but there are situations where it's needed
 
         oneWire = new OneWire(pin);

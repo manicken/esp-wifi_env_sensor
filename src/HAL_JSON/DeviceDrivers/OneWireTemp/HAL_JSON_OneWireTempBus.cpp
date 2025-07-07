@@ -17,7 +17,7 @@ namespace HAL_JSON {
             GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_ITEMS " not array"));
             return false;
         }
-        const JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
+        const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
         if (items.size() == 0) { GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("OneWireTempBus")); return false;}
         size_t itemCount = items.size();
         size_t validItemCount = 0;
@@ -39,9 +39,9 @@ namespace HAL_JSON {
     }
 
     OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Two, type) {
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        const char* uidStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_UID);//].as<const char*>();
         uid = encodeUID(uidStr);
-        pin = jsonObj[HAL_JSON_KEYNAME_PIN].as<uint8_t>();
+        pin = GetAsUINT32(jsonObj,HAL_JSON_KEYNAME_PIN);//].as<uint8_t>();
         GPIO_manager::ReservePin(pin); // this is in most cases taken care of in OneWireTempBus::VerifyJSON but there are situations where it's needed
 
         oneWire = new OneWire(pin);

@@ -346,7 +346,7 @@ namespace DeviceManager
             return false;
         }
         lastError = "";
-        JsonArray jsonItems = jsonDoc.as<JsonArray>();
+        JsonArray jsonItems =  jsonDoc.as<JsonArray>();
         if (jsonItems == nullptr) {
 #ifdef DEVICE_MANAGER_USE_DEBUG_STRINGS
             lastError = "jsonDoc root could not convert to a JsonArray\n";

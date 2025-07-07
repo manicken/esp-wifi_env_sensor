@@ -12,7 +12,7 @@ namespace HAL_JSON {
 
     bool ValidateJsonStringField(const JsonVariant &jsonObj, const char* key);
 
-    bool ValidateJsonStringField_noLog(const JsonVariant &jsonObj, const char* key);
+    bool ValidateJsonStringField_noContains(const JsonVariant &jsonObj, const char* key);
 
     double ParseRefreshTime(const JsonVariant &jsonObj);
     uint32_t ParseRefreshTimeMs(const JsonVariant &jsonObj, const uint32_t defaultRefreshTimeMs);
@@ -21,4 +21,5 @@ namespace HAL_JSON {
     uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* name);
     bool IsUINT32(const JsonVariant& jsonObj, const char* name);
     const char* GetAsConstChar(const JsonVariant& jsonObj, const char* name);
+
 }

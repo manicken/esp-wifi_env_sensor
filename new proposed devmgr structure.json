@@ -44,8 +44,6 @@
 	  {"uid":"GT11","addr":"020E","regname":"GT11","note":"cold fluid out"},
 	]
   },
-  "this is a future implementation where devices can be adressed using both group id and bus id ex. 1WT2:B2:D1 ",
-  ":B2:D1",
   {"uid":"1WT2","type":"1WTG","refreshtimesec":1,"note":"temperatures",
     "items":[
 	  {"uid":"B1","pin":25,"note":"inne","items":[

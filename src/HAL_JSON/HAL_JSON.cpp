@@ -494,13 +494,8 @@ namespace HAL_JSON {
             GlobalLogger.Error(F("jsonDoc root is not a JsonArray"));
             return false;
         }
-        JsonArray jsonItems = jsonDoc.as<JsonArray>();
-        if (jsonItems == nullptr)
-        {
-            delete[] jsonBuffer;
-            GlobalLogger.Error(F("jsonDoc root could not convert to a JsonArray"));
-            return false;
-        }
+        const JsonArray& jsonItems = jsonDoc.as<JsonArray>();
+        
         bool parseOk = ParseJSON(jsonItems);
         delete[] jsonBuffer;
         if (parseOk == false) Serial.println("ParseJSON(jsonItems) fail");

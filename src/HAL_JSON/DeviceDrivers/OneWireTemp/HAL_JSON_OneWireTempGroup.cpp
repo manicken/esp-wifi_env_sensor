@@ -43,7 +43,7 @@ namespace HAL_JSON {
             ParseRefreshTimeMs(jsonObj,HAL_JSON_ONE_WIRE_TEMP_DEFAULT_REFRESHRATE_MS)
         )
     {
-        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        const char* uidStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_UID);//].as<const char*>();
         uid = encodeUID(uidStr);      
 
         busCount = 0;
