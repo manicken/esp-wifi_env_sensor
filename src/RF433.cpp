@@ -251,34 +251,6 @@ namespace RF433
             staticData &= 0xFFFFFFEF;
         SendTo433_LC(staticData);
     }
-/*
-    void SendTo433_SLC(const char *strUniqueHexId, arch_word_t groupBtn, arch_word_t enable, arch_word_t btnCode)
-    {
-        SendTo433_SLC(GetAsciiHexValue(strUniqueHexId, 6), groupBtn, enable, btnCode);
-    }
-
-    void SendTo433_SLC(uint32_t uId, arch_word_t groupBtn, arch_word_t state, arch_word_t btnCode) // 433MHz "Simple Learning Code" (NEXA)
-    {
-        if (pin == -1) return;
-        uint32_t i;
-        
-        btnCode = Get1AsciiHexValue(btnCode) & 0x0F;
-
-        uint32_t data = (uId << 8) & 0xFFFFFF00;
-        data |= 0x80; // constant bit of uid 
-        if (groupBtn == '1')
-            data |= 0x20;
-        if (state == '1')
-            data |= 0x10;
-        data |= btnCode;
-        SendTo433_LC(data);
-    }
-*/
-    /*void SendTo433_ALC(const char *strData) // 433MHz "Advanced Learning Code" (NEXA)
-    {
-        uint32_t data = GetAsciiHexValue(strData, 8);
-        SendTo433_LC(data);
-    }*/
 
     //  ███████ ███████ ███    ██ ██████      ██████  ██    ██          ██ ███████  ██████  ███    ██ 
     //  ██      ██      ████   ██ ██   ██     ██   ██  ██  ██           ██ ██      ██    ██ ████   ██ 

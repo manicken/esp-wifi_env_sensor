@@ -20,12 +20,6 @@ namespace RF433 {
     constexpr uint32_t VALUE_2_POW_23 = 1u << 23;
     constexpr uint32_t VALUE_2_POW_3 = 1u << 3;
 
-    /*struct FixedCode {
-        char ch;
-        char btn;
-        char state;
-    };*/
-
 #if defined(__AVR__)
     using arch_word_t = uint8_t;
 #elif defined(__arm__) || defined(__ARM__) || defined(__aarch32__) || defined(__ARM_ARCH_ISA_THUMB)
@@ -62,8 +56,6 @@ namespace RF433 {
     void SendTo433_FC_bits(uint32_t data, uint32_t mask);
     void SendTo433_FC(uint32_t data);
     void SendTo433_FC(uint32_t staticData, arch_word_t state);
-    //uint32_t Get433_SFC_Data(const FixedCode& fc);
-    //uint32_t Get433_AFC_Data(const FixedCode& fc);
 
     //  ██      ███████  █████  ██████  ███    ██ ██ ███    ██  ██████       ██████  ██████  ██████  ███████ 
     //  ██      ██      ██   ██ ██   ██ ████   ██ ██ ████   ██ ██           ██      ██    ██ ██   ██ ██      
@@ -78,9 +70,6 @@ namespace RF433 {
     void SendTo433_LC_bits(uint32_t data, uint32_t mask);
     void SendTo433_LC(uint32_t data);
     void SendTo433_LC(uint32_t staticData, arch_word_t state);
-    //void SendTo433_ALC(const char *strData); // obsolete ?? in favor of more usable SendTo433_LC whic
-    //void SendTo433_SLC(const char *strUniqueHexId, arch_word_t groupBtn, arch_word_t enable, arch_word_t btnCode);
-    //void SendTo433_SLC(uint32_t uId, arch_word_t groupBtn, arch_word_t state, arch_word_t btnCode);
 
     //  ███████ ███████ ███    ██ ██████      ██████  ██    ██          ██ ███████  ██████  ███    ██ 
     //  ██      ██      ████   ██ ██   ██     ██   ██  ██  ██           ██ ██      ██    ██ ████   ██ 
@@ -89,7 +78,6 @@ namespace RF433 {
     //  ███████ ███████ ██   ████ ██████      ██████     ██         █████  ███████  ██████  ██   ████ 
 
     bool Validate_FC_JSON(const JsonVariant &jsonObj);
-    //void ExtractValues_FC(const JsonVariant &jsonObj, FixedCode& fc);
     uint32_t Get433_SFC_Data(const JsonVariant &jsonObj);
     uint32_t Get433_AFC_Data(const JsonVariant &jsonObj);
     void DecodeFromJSON_SFC(const JsonVariant &jsonObj);
@@ -97,7 +85,6 @@ namespace RF433 {
 
     void GetLCSettings(const JsonVariant &jsonObj);
     void DecodeFromJSON_LC(const JsonVariant &jsonObj);
-    //void DecodeFromJSON_ALC(const JsonVariant &jsonObj); // obsolete
 
     void DecodeFromJSON(const JsonVariant &jsonObj);
     void DecodeFromJSON(std::string jsonStr);
