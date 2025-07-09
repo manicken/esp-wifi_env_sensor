@@ -5,9 +5,9 @@
 #include <ArduinoJson.h>
 #include <stdlib.h>
 #include <LittleFS.h>
-#include "LittleFS_ext.h"
-#include "Time_ext.h"
-#include "NTP.h"
+#include "Support/LittleFS_ext.h"
+#include "Support/Time_ext.h"
+#include "Support/NTP.h"
 #include "HAL_JSON/HAL_JSON_ArduinoJSON_ext.h"
 #include "Support/CharArrayHelpers.h"
 

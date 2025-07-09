@@ -3,10 +3,10 @@
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
 // all HAL devices to use here
-#include "DeviceDrivers/HAL_JSON_CoreDevices.h"
-#include "DeviceDrivers/OneWireTemp/HAL_JSON_OneWireTemp.h"
-#include "DeviceDrivers/HAL_JSON_DHT.h"
-#include "DeviceDrivers/RF433/HAL_JSON_TX433.h"
+#include "Devices/HAL_JSON_CoreDevices.h"
+#include "Devices/OneWireTemp/HAL_JSON_OneWireTemp.h"
+#include "Devices/HAL_JSON_DHT.h"
+#include "Devices/RF433/HAL_JSON_TX433.h"
 
 namespace HAL_JSON {
     const char* test = "hello";

@@ -7,8 +7,8 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <time.h>
-#include "NTP.h"
-#include "LittleFS_ext.h"
+#include "../Support/NTP.h"
+#include "../Support/LittleFS_ext.h"
 
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>

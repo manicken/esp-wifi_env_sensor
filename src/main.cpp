@@ -3,10 +3,8 @@
 */
 #include "main.h"
 
-//#include "UART2websocket.h"
-#if defined(HEATPUMP)
-#include "REGO600.h"
-#endif
+
+
 #if defined(ESP32)
 #include "esp_core_dump.h"
 #endif

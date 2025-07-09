@@ -67,4 +67,8 @@
     {"uid":"D2","romid":"28:61:64:35:18:27:D4:DB","note":"nere"},
   ]},
   {"type":"1WTD","uid":"1WTD0","pin":28,"refreshtimesec":1,"romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
+  {"type":"TX433","uid":"TX433","pin":32,"units":[
+	  {"uid":"D0","model":"lc","anid":"hello","grp_btn":0,"btn":0,"state":0,}
+	  {"uid":"D1","model":"lc","anid":"hello"},
+  ]}
 ]

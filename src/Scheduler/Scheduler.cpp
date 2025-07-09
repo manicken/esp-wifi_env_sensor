@@ -4,9 +4,9 @@
 #include <ArduinoJson.h>
 #include <stdlib.h>
 #include <LittleFS.h>
-#include "LittleFS_ext.h"
-#include "Time_ext.h"
-#include "NTP.h"
+#include "../Support/LittleFS_ext.h"
+#include "../Support/Time_ext.h"
+#include "../Support/NTP.h"
 
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>

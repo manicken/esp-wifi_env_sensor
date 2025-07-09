@@ -16,8 +16,9 @@ make it so that if a device is not found while read/write it sends back that as 
 DS18B20      done!
 DHT devices  done!!!
 
-TX433
+TX433 done!!!
 
+// next TODO after i tested TX433
 REGO600
 
 refactor the use of webserver in gpio_manager, either into a separate file or into hal_json root file

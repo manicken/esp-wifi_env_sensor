@@ -8,7 +8,7 @@
 #include "../../../Support/Logger.h"
 #include "../../HAL_JSON_Device.h"
 #include "../../HAL_JSON_Device_GlobalDefines.h"
-#include "../../../RF433.h"
+#include "../../../Drivers/RF433.h"
 
 #define HAL_JSON_KEYNAME_TX433_MODEL "model"
 

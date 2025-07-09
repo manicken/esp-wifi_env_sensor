@@ -17,14 +17,14 @@
 #include "Support/Logger.h"
 
 // OTA
-#include "OTA.h"
+#include "System/OTA.h"
 
 // Amazon AWS IoT
 //#include "AWS_IOT.h"
 
 
 // Thingspeak
-#include "ThingSpeak.h"
+#include "Services/ThingSpeak.h"
 
 // sensors
 #include <DHTesp.h>
@@ -63,19 +63,27 @@
 #include <ArduinoJson.h>
 #include <TimeLib.h>
 #include <TimeAlarms.h>
-#include "Info.h"
-#include "FSBrowser.h"
-#include "RF433.h"
-#include "FAN.h"
-#include "Scheduler.h"
+#include "Support/Info.h"
+#include "System/FSBrowser.h"
+
+#include "Scheduler/Scheduler.h"
 //#include "NordPoolFetcher.h"
 
 //#include "DeviceManager.h"
 
-#include "Time_ext.h"
+#include "Support/Time_ext.h"
 
-#include "HearbeatLed.h"
-#include "MainConfig.h"
+
+#include "System/MainConfig.h"
+
+
+#if defined(HEATPUMP)
+#include "Drivers/REGO600.h" // this should not be here in final version (should only be accessible through HAL interface)
+#endif
+#include "Drivers/RF433.h" // this should not be here in final version (should only be accessible through HAL interface)
+#include "Drivers/FAN.h" // this should not be here in final version (should only be accessible through HAL interface)
+#include "Drivers/HearbeatLed.h" // this should not be here in final version (should only be accessible through HAL interface)
+//#include "Drivers/UART2websocket.h" // this should not be here in final version (should only be accessible through HAL interface)
 
 #include "HAL_JSON/HAL_JSON.h"
 
