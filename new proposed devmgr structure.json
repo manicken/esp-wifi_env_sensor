@@ -70,5 +70,16 @@
   {"type":"TX433","uid":"TX433","pin":32,"units":[
 	  {"uid":"D0","model":"lc","anid":"hello","grp_btn":0,"btn":0,"state":0,}
 	  {"uid":"D1","model":"lc","anid":"hello"},
+  ]},
+  {"type":"REGO600","uid":"REGO600","rxpin":32,"txpin":33,"items": [
+	  {"uid":"GT1","cmd":"02","addr":"0209"},
+	  {"uid":"GT2","cmd":"02","addr":"020A"},
+	  {"uid":"GT3","cmd":"02","addr":"020B"},
+	  {"uid":"GT5","cmd":"02","addr":"020D"},
+	  {"uid":"GT6","cmd":"02","addr":"020E"},
+	  {"uid":"GT8","cmd":"02","addr":"020F"},
+	  {"uid":"GT9","cmd":"02","addr":"0210"},
+	  {"uid":"GT10","cmd":"02","addr":"0211"},
+	  {"uid":"GT11","cmd":"02","addr":"0212"}
   ]}
 ]

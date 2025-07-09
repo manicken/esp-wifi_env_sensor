@@ -121,4 +121,38 @@ namespace Convert
         return bin;
     }
 
+
+    String toHex(const char *data, size_t len) {
+        String hex = "";
+        for (size_t i = 0; i < len; i++) {
+            if (data[i] < 16) hex += "0";  // Pad single digits
+            hex += String(data[i], HEX);
+            if (i<len-1) hex += ",";
+        }
+        return hex;
+    }
+
+    String convertISO88591toUTF8(const String &input) {
+        String output = "";
+        for (unsigned int i = 0; i < input.length(); i++) {
+            unsigned char c = input[i];
+            if (c == 1) output += "\u2581";
+            else if (c == 2) output += "\u2582";
+            else if (c == 3) output += "\u2583";
+            else if (c == 4) output += "\u2584";
+            else if (c == 5) output += "\u2585";
+            else if (c == 6) output += "\u2586";
+            else if (c == 7) output += "\u2587";
+            else if (c == 8) output += "\u2588";
+            else if (c < 32) output += "{"+String(c,16)+"}";
+            else if (c < 128) {
+            output += (char)c;
+            } else {
+            output += (char)(0xC0 | (c >> 6));
+            output += (char)(0x80 | (c & 0x3F));
+            }
+        }
+        return output;
+    }
+
 }

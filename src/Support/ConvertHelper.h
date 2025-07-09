@@ -24,4 +24,9 @@ namespace Convert
 
     String PadTo8Bits(uint8_t value);
 
+    /** with padding */
+    String toHex(const char *data, size_t len);
+    String convertISO88591toUTF8(const String &input);
+
+
 } // namespace Convert
