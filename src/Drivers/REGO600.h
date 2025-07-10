@@ -24,6 +24,7 @@ public:
         enum class Type {
             Value,
             Text,
+            ErrorLogItem,
             WriteConfirm
         };
 
@@ -37,6 +38,7 @@ public:
 
         Request() = delete;
         Request(uint16_t address, Type type);
+        void SetFromBuffer(uint8_t* buff);
 
         ~Request();
 
@@ -51,19 +53,18 @@ public:
         uint32_t size;
         Request::Type type;
     };
-    class RequestList {
-        Request** list;
-        int count = 0;
-        int index = 0;
-    };
+
+    /** theese are the states the main task can be in */
     enum class RequestMode {
-        Main,
-        Temp
+        RefreshLoop,
+        Lcd,
+        FrontPanelLeds,
+        OneTime
     };
 
     REGO600();
     void setup(int8_t rxPin, int8_t txPin);
-    void task_loop();
+    void loop();
     static const CmdVsResponseSize* getCmdInfo(uint8_t opcode);
     
 private:
@@ -71,9 +72,15 @@ private:
     uint8_t uartTxBuffer[REGO600_UART_TX_BUFFER_SIZE]; 
     uint8_t uartRxBuffer[REGO600_UART_RX_BUFFER_SIZE];
     size_t uartRxBufferIndex = 0;
+    size_t currentExpectedRxLength = 0;
     
-    RequestList* mainList;
-    RequestList* temporaryList;
+    Request** refreshLoopList;
+    int refreshLoopCount = 0;
+    int refreshLoopIndex = 0;
 
-    RequestMode mode = RequestMode::Main;
+    RequestMode mode = RequestMode::RefreshLoop;
+    /** set to true when currently waiting for data to be received */
+    bool waitForResponse = false;
+    /** set to true when manual interventioon need to be executed */
+    bool wantToManuallySend = false;
 };

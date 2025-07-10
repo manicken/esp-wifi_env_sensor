@@ -18,6 +18,8 @@ DHT devices  done!!!
 
 TX433 done!!!
 
+implement so that GlobalLogger includes a websocket server, so that if any client is connected then the log gets automatically printed 
+
 // next TODO after i tested TX433
 REGO600
 
