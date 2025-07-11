@@ -25,20 +25,24 @@ const REGO600::CmdVsResponseSize* REGO600::getCmdInfo(uint8_t opcode) {
     return nullptr; // Not found
 }
 
-REGO600::Request::Request(uint16_t address, Type type) : type(type), address(address) {
+REGO600::Request::Request(uint32_t opcode, uint16_t address, uint32_t& externalValue) : opcode(opcode), type(Type::Value), address(address) {
+    response.value = &externalValue;
+}
+
+REGO600::Request::Request(uint32_t opcode, uint16_t address, Type type) : opcode(opcode), type(type), address(address) {
     if (type == Type::Text) {
         response.text = new char[21](); 
     }
     else if (type == Type::Value) {
-        response.value = 0;
+        response.value = nullptr;
     }
     else if (type == Type::ErrorLogItem) {
         response.text = new char[20](); // 3 digit error code + space + 6 char date + space + 8 char time + null terminator
     }
 }
 void REGO600::Request::SetFromBuffer(uint8_t* buff) {
-    if (type == Type::Value) {
-        response.value = (buff[1] << 14) + (buff[2] << 7) + buff[3];
+    if (type == Type::Value && response.value) {
+        *response.value = (buff[1] << 14) + (buff[2] << 7) + buff[3];
 
     } else if (type == Type::Text) {
         for (int bi=1,ti=0;ti<20;bi+=2,ti++) {
@@ -59,12 +63,18 @@ void REGO600::Request::SetFromBuffer(uint8_t* buff) {
     } // there are currently no more types right now
 }
 REGO600::Request::~Request() {
-    if (type == Type::Text && response.text != nullptr) {
+    if ((type == Type::Text || type == Type::ErrorLogItem) && response.text != nullptr) {
         delete[] response.text;
     }
 }
 
-void REGO600::setup(int8_t rxPin, int8_t txPin) {
+//  ██████  ███████  ██████   ██████   ██████   ██████   ██████  
+//  ██   ██ ██      ██       ██    ██ ██       ██  ████ ██  ████ 
+//  ██████  █████   ██   ███ ██    ██ ███████  ██ ██ ██ ██ ██ ██ 
+//  ██   ██ ██      ██    ██ ██    ██ ██    ██ ████  ██ ████  ██ 
+//  ██   ██ ███████  ██████   ██████   ██████   ██████   ██████  
+
+REGO600::REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList) : refreshLoopList(refreshLoopList) {
     uartTxBuffer[0] = 0x81; // constant
     #if defined(ESP32)
     REGO600_UART_TO_USE.begin(19200, SERIAL_8N1, rxPin, txPin); // Set correct RX/TX pins for UART
@@ -73,11 +83,45 @@ void REGO600::setup(int8_t rxPin, int8_t txPin) {
 #endif
 }
 
+REGO600::~REGO600() {
+    
+}
+
+void REGO600::begin() {
+    RefreshLoop_Restart();
+}
+
+void REGO600::OneTimeRequest(std::unique_ptr<Request> req, RequestCallback cb) {
+    manualRequestCallback = cb;
+    if (mode != RequestMode::RefreshLoop) { 
+        GlobalLogger.Error(F("manual request allready in progress"));
+        return;
+    }
+    manuallyRequest = std::move(req);
+    if (waitForResponse == false) {
+        waitForResponse = true;
+        manuallyModeReq = RequestMode::OneTime;
+        
+        DecodeManualRequest(); // this will start send the request
+    }
+    else {
+        wantToManuallySend = true;
+        manuallyModeReq = RequestMode::OneTime;
+    }
+}
+
+void REGO600::RequestWholeLCD(RequestCallback cb) {
+    manualRequestCallback = cb;
+}
+void REGO600::RequestFrontPanelLeds(RequestCallback cb) {
+    manualRequestCallback = cb;
+}
+
 void REGO600::RefreshLoop_SendCurrent() {
     uartTxBuffer[1] = refreshLoopList[refreshLoopIndex]->opcode;
     SetRequestAddr(refreshLoopList[refreshLoopIndex]->address);
     CalcAndSetTxChecksum();
-    auto info = getCmdInfo(uartTxBuffer[1]);
+    auto info = getCmdInfo(refreshLoopList[refreshLoopIndex]->opcode);
     currentExpectedRxLength = info->size;
     REGO600_UART_TO_USE.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
 }
@@ -98,13 +142,18 @@ void REGO600::RefreshLoop_Continue() {
         waitForResponse = false; // wait until refresh time 
     }
 }
-
+#define REGO600_UART_RX_MAX_FAILSAFECOUNT 100
 void REGO600::loop() {
+    uint32_t failsafeReadCount = 0;
     if (waitForResponse == false) { //  here we just take care of any glitches and receive garbage data if any
-        while (REGO600_UART_TO_USE.available()) { // to make sure that any garbage gets collected
+        while (REGO600_UART_TO_USE.available() && failsafeReadCount++ < REGO600_UART_RX_MAX_FAILSAFECOUNT) { // to make sure that any garbage gets collected
             REGO600_UART_TO_USE.read();
         }
+        if (failsafeReadCount == REGO600_UART_RX_MAX_FAILSAFECOUNT) {
+            GlobalLogger.Error(F("REGO600 - read failsafe overflow"));
+        }
         if (mode != RequestMode::RefreshLoop) return;
+        if (refreshLoopList == nullptr) return;
 
         uint32_t now = millis();
         if (now - lastUpdateMs >= refreshTimeMs) {
@@ -114,8 +163,8 @@ void REGO600::loop() {
         }
         return;
     }
-#define REGO600_UART_RX_MAX_FAILSAFECOUNT 100
-    uint32_t failsafeReadCount = 0;
+
+    
     while (REGO600_UART_TO_USE.available() && failsafeReadCount++ < REGO600_UART_RX_MAX_FAILSAFECOUNT) {
         if (uartRxBufferIndex < REGO600_UART_RX_BUFFER_SIZE) {
             uartRxBuffer[uartRxBufferIndex++] = REGO600_UART_TO_USE.read();
@@ -140,10 +189,15 @@ void REGO600::loop() {
                         readLCD_Text[ti+readLCD_RowIndex*20] = uartRxBuffer[bi]*16 + uartRxBuffer[bi];
                     }
                     if (readLCD_RowIndex == 3) { // this was the last row
+                        
+                        // execute a callback here
+                        if (manualRequestCallback != nullptr)
+                            manualRequestCallback(readLCD_Text, manuallyModeReq);
+                        else
+                            GlobalLogger.Error(F("LCD - mReqCB not set"));
+
                         mode = RequestMode::RefreshLoop;
                         manuallyModeReq = RequestMode::RefreshLoop;
-                        // execute a callback here
-
                         RefreshLoop_Continue();
                     } else {
                         readLCD_RowIndex++;
@@ -160,22 +214,29 @@ void REGO600::loop() {
                         uartTxBuffer[8] = readFrontPanelLedsIndex + 0x12;
                         REGO600_UART_TO_USE.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
                     } else {
+                        
+                        if (manualRequestCallback != nullptr)
+                            manualRequestCallback(&readFrontPanelLeds_Data, manuallyModeReq);
+                        else
+                            GlobalLogger.Error(F("FP - mReqCB not set"));
+
                         mode = RequestMode::RefreshLoop;
                         manuallyModeReq = RequestMode::RefreshLoop;
-                        // execute callback here with contents of readFrontPanelLeds_Data (note we can use (void*) together with type info to send any kind of data pointers)
-                        
                         RefreshLoop_Continue();
                     }
                 } else if (mode == RequestMode::OneTime) {
-                    manuallyRequest->SetFromBuffer(uartRxBuffer);
+                    
+                    if (manualRequestCallback != nullptr) {
+                        manuallyRequest->SetFromBuffer(uartRxBuffer); // only set here, there is no point settign the data if there are no receiver
+                        manualRequestCallback(&manuallyRequest->response, manuallyModeReq);
+                    }
+                    else
+                        GlobalLogger.Error(F("OT - mReqCB not set"));
+
+                    manuallyRequest.reset();
+
                     mode = RequestMode::RefreshLoop;
                     manuallyModeReq = RequestMode::RefreshLoop;
-
-                    // execute a callback here with manuallyRequest as param
-                    // now safe to delete
-                    delete manuallyRequest;
-                    manuallyRequest = nullptr;
-                    
                     RefreshLoop_Continue();
                 }
 

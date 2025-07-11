@@ -19,6 +19,8 @@
 
 class REGO600 {
 public:
+    
+    
 
     // theese are the only available op-codes (verified by rom-dump)
     enum class OpCodes : uint8_t {
@@ -44,17 +46,22 @@ public:
             WriteConfirm
         };
 
-        uint32_t opcode;
-        uint16_t address;
-        Type type = Type::Value;
+        const uint32_t opcode;
+        const uint16_t address;
+        const Type type = Type::Value;
 
         union {
-            uint32_t value;
+            uint32_t* value;
             char* text;
         } response;
 
         Request() = delete;
-        Request(uint16_t address, Type type);
+        /**  */
+        Request(uint32_t opcode, uint16_t address, Type type);
+        /** externalValue is a non-owning pointer to external data. 
+          * Do not delete; must remain valid during Request's lifetime.
+          */
+        Request(uint32_t opcode, uint16_t address, uint32_t& externalValue);
         void SetFromBuffer(uint8_t* buff);
 
         ~Request();
@@ -65,6 +72,8 @@ public:
         Request(Request&&) = delete;
         Request& operator=(Request&&) = delete;
     };
+    
+
     struct CmdVsResponseSize {
         OpCodes opcode;
         uint32_t size;
@@ -79,9 +88,21 @@ public:
         OneTime
     };
 
-    REGO600();
-    void setup(int8_t rxPin, int8_t txPin);
+    using RequestCallback = void (*)(void*, RequestMode);
+
+
+    REGO600() = delete;
+    REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList);
+    ~REGO600();
+    void begin();
     void loop();
+    /** please note that this uses std::unique_ptr 
+     * to ensure that the created object (Request) is moved into this function
+     * and to make sure that it can be deleted internally if one wants that */
+    void OneTimeRequest(std::unique_ptr<Request> req, RequestCallback cb);
+    void RequestWholeLCD(RequestCallback cb);
+    void RequestFrontPanelLeds(RequestCallback cb);
+
     static const CmdVsResponseSize* getCmdInfo(uint8_t opcode);
     
 private:
@@ -93,7 +114,7 @@ private:
     
     uint32_t refreshTimeMs = 5000; // this needs to calculated depending on how many items in refreshLoopList (max items is 17 -> 17*0.2 = 3.4 sec) but also what the json cfg have
     uint32_t lastUpdateMs = 0;
-    Request** refreshLoopList;
+    Request* const* refreshLoopList; // a const pointer to a list of mutable Request object pointers
     int refreshLoopCount = 0;
     int refreshLoopIndex = 0;
 
@@ -111,7 +132,9 @@ private:
     bool wantToManuallySend = false;
 
     RequestMode manuallyModeReq = RequestMode::RefreshLoop; // default value
-    Request* manuallyRequest = nullptr; // this is used when simple values need to be read/written i.e. when manuallyModeReq == RequestMode::OneTime
+    std::unique_ptr<Request> manuallyRequest = nullptr; // this is used when simple values need to be read/written i.e. when manuallyModeReq == RequestMode::OneTime
+    RequestCallback manualRequestCallback = nullptr;
+    
     bool DecodeManualRequest();
     void SetRequestAddr(uint16_t address);
     void SetRequestData(uint16_t data);
