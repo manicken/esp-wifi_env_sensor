@@ -77,7 +77,10 @@ namespace Drivers {
     //  ██   ██ ██      ██    ██ ██    ██ ██    ██ ████  ██ ████  ██ 
     //  ██   ██ ███████  ██████   ██████   ██████   ██████   ██████  
 
-    REGO600::REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList) : refreshLoopList(refreshLoopList) {
+    REGO600::REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList, int refreshLoopCount) : 
+        refreshLoopList(refreshLoopList), 
+        refreshLoopCount(refreshLoopCount) 
+    {
         uartTxBuffer[0] = 0x81; // constant
         #if defined(ESP32)
         REGO600_UART_TO_USE.begin(19200, SERIAL_8N1, rxPin, txPin); // Set correct RX/TX pins for UART
@@ -179,7 +182,7 @@ namespace Drivers {
     }
 
     void REGO600::RefreshLoop_Restart() {
-        refreshLoopCount = 0;
+        refreshLoopIndex = 0;
         RefreshLoop_SendCurrent();
     }
 

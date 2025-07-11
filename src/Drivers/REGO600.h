@@ -94,7 +94,8 @@ namespace Drivers {
 
 
         REGO600() = delete;
-        REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList);
+        REGO600(REGO600&) = delete;
+        REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList, int refreshLoopCount);
         ~REGO600();
         void begin();
         void loop();
@@ -118,7 +119,7 @@ namespace Drivers {
         uint32_t refreshTimeMs = 5000; // this needs to calculated depending on how many items in refreshLoopList (max items is 17 -> 17*0.2 = 3.4 sec) but also what the json cfg have
         uint32_t lastUpdateMs = 0;
         Request* const* refreshLoopList; // a const pointer to a list of mutable Request object pointers
-        int refreshLoopCount = 0;
+        const int refreshLoopCount;
         int refreshLoopIndex = 0;
         bool refreshLoopDone = false;
 

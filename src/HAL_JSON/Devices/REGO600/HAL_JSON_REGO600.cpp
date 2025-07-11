@@ -13,7 +13,7 @@ namespace HAL_JSON {
             // here value is passed by ref so that REGO600 driver can access and change the value so REGO600register read function can then get the correct value
             requestList[i] = new Drivers::REGO600::Request(registerItems[i]->opcode, registerItems[i]->address, registerItems[i]->value); 
         }
-        rego600 = new Drivers::REGO600(rxPin, txPin, requestList);
+        rego600 = new Drivers::REGO600(rxPin, txPin, requestList, itemCount);
     }
     REGO600::~REGO600() {
         if (rego600 != nullptr)
