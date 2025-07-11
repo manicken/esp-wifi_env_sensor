@@ -50,7 +50,7 @@ public:
         const uint16_t address;
         const Type type = Type::Value;
 
-        union {
+        union Response { // type name this so that it can be passed
             uint32_t* value;
             char* text;
         } response;
@@ -131,11 +131,11 @@ private:
     /** set to true when manual interventioon need to be executed */
     bool wantToManuallySend = false;
 
-    RequestMode manuallyModeReq = RequestMode::RefreshLoop; // default value
-    std::unique_ptr<Request> manuallyRequest = nullptr; // this is used when simple values need to be read/written i.e. when manuallyModeReq == RequestMode::OneTime
+    RequestMode manualModeReq = RequestMode::RefreshLoop; // default value
+    std::unique_ptr<Request> manualRequest = nullptr; // this is used when simple values need to be read/written i.e. when manuallyModeReq == RequestMode::OneTime
     RequestCallback manualRequestCallback = nullptr;
-    
-    bool DecodeManualRequest();
+    void ManualRequest_Schedule(RequestMode reqMode);
+    bool ManualRequest_PrepareAndSend();
     void SetRequestAddr(uint16_t address);
     void SetRequestData(uint16_t data);
     void SendReq(uint16_t address);

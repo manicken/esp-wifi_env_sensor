@@ -91,30 +91,73 @@ void REGO600::begin() {
     RefreshLoop_Restart();
 }
 
+void REGO600::ManualRequest_Schedule(RequestMode reqMode) {
+    manualModeReq = reqMode;
+    if (waitForResponse == false) {
+        waitForResponse = true;
+        ManualRequest_PrepareAndSend(); // this will start send the request
+    }
+    else {
+        wantToManuallySend = true;
+    }
+}
+bool REGO600::ManualRequest_PrepareAndSend() {
+    if (manualModeReq == RequestMode::Lcd) {
+        uartTxBuffer[1] = static_cast<uint8_t>(OpCodes::ReadDisplay);
+        readLCD_RowIndex = 0;
+        SetRequestAddr(0x00);
+        uartTxBuffer[8] = 0x00;
+        if (readLCD_Text == nullptr) // initialize it, if this is the first use
+            readLCD_Text = new char[20*4+1]();
+        
+
+    } else if (manualModeReq == RequestMode::FrontPanelLeds) {
+        readFrontPanelLeds_Data = 0x00;
+        uartTxBuffer[1] = static_cast<uint8_t>(OpCodes::ReadFrontPanel);
+        readFrontPanelLedsIndex = 0;
+        SetRequestAddr(0x12);
+        CalcAndSetTxChecksum();
+        
+    } else if (manualModeReq == RequestMode::OneTime && manualRequest != nullptr) {
+        uartTxBuffer[1] = manualRequest->opcode;
+        SetRequestAddr(manualRequest->address);
+        CalcAndSetTxChecksum();
+        
+    } else {
+        return false;
+    }
+    mode = manualModeReq;
+    auto info = getCmdInfo(uartTxBuffer[1]);
+    currentExpectedRxLength = info->size;
+    REGO600_UART_TO_USE.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
+    return true;
+}
+
 void REGO600::OneTimeRequest(std::unique_ptr<Request> req, RequestCallback cb) {
-    manualRequestCallback = cb;
     if (mode != RequestMode::RefreshLoop) { 
         GlobalLogger.Error(F("manual request allready in progress"));
         return;
     }
-    manuallyRequest = std::move(req);
-    if (waitForResponse == false) {
-        waitForResponse = true;
-        manuallyModeReq = RequestMode::OneTime;
-        
-        DecodeManualRequest(); // this will start send the request
-    }
-    else {
-        wantToManuallySend = true;
-        manuallyModeReq = RequestMode::OneTime;
-    }
+    manualRequestCallback = cb;
+    manualRequest = std::move(req); // could also do req.release() to return the raw ptr, but then the raw ptr needs to be deleted when used
+    ManualRequest_Schedule(RequestMode::OneTime);
 }
 
 void REGO600::RequestWholeLCD(RequestCallback cb) {
+    if (mode != RequestMode::RefreshLoop) { 
+        GlobalLogger.Error(F("manual request allready in progress"));
+        return;
+    }
     manualRequestCallback = cb;
+    ManualRequest_Schedule(RequestMode::Lcd);
 }
 void REGO600::RequestFrontPanelLeds(RequestCallback cb) {
+    if (mode != RequestMode::RefreshLoop) { 
+        GlobalLogger.Error(F("manual request allready in progress"));
+        return;
+    }
     manualRequestCallback = cb;
+    ManualRequest_Schedule(RequestMode::FrontPanelLeds);
 }
 
 void REGO600::RefreshLoop_SendCurrent() {
@@ -179,7 +222,7 @@ void REGO600::loop() {
                     refreshLoopList[refreshLoopIndex]->SetFromBuffer(uartRxBuffer);
                     if (wantToManuallySend) {
                         wantToManuallySend = false;
-                        if (DecodeManualRequest() == true)
+                        if (ManualRequest_PrepareAndSend() == true)
                             return;
                     }
                     RefreshLoop_Continue();
@@ -192,12 +235,12 @@ void REGO600::loop() {
                         
                         // execute a callback here
                         if (manualRequestCallback != nullptr)
-                            manualRequestCallback(readLCD_Text, manuallyModeReq);
+                            manualRequestCallback(readLCD_Text, manualModeReq);
                         else
                             GlobalLogger.Error(F("LCD - mReqCB not set"));
 
                         mode = RequestMode::RefreshLoop;
-                        manuallyModeReq = RequestMode::RefreshLoop;
+                        manualModeReq = RequestMode::RefreshLoop;
                         RefreshLoop_Continue();
                     } else {
                         readLCD_RowIndex++;
@@ -216,31 +259,32 @@ void REGO600::loop() {
                     } else {
                         
                         if (manualRequestCallback != nullptr)
-                            manualRequestCallback(&readFrontPanelLeds_Data, manuallyModeReq);
+                            manualRequestCallback(&readFrontPanelLeds_Data, manualModeReq);
                         else
                             GlobalLogger.Error(F("FP - mReqCB not set"));
 
                         mode = RequestMode::RefreshLoop;
-                        manuallyModeReq = RequestMode::RefreshLoop;
+                        manualModeReq = RequestMode::RefreshLoop;
                         RefreshLoop_Continue();
                     }
                 } else if (mode == RequestMode::OneTime) {
                     
                     if (manualRequestCallback != nullptr) {
-                        manuallyRequest->SetFromBuffer(uartRxBuffer); // only set here, there is no point settign the data if there are no receiver
-                        manualRequestCallback(&manuallyRequest->response, manuallyModeReq);
+                        // only set here, there is no point setting the data if there are no receiver
+                        manualRequest->SetFromBuffer(uartRxBuffer); 
+                        //Request* request = manuallyRequest.release();
+                        manualRequestCallback(manualRequest.get(), manualModeReq);
+                        //delete request;
                     }
-                    else
+                    else {
+                        //manuallyRequest.reset(); // free the current data
                         GlobalLogger.Error(F("OT - mReqCB not set"));
-
-                    manuallyRequest.reset();
-
+                    }
+                    manualRequest.reset(); // free the current data
                     mode = RequestMode::RefreshLoop;
-                    manuallyModeReq = RequestMode::RefreshLoop;
+                    manualModeReq = RequestMode::RefreshLoop;
                     RefreshLoop_Continue();
                 }
-
-                
                 return; // now we can return here
             }
         } else {
@@ -255,43 +299,6 @@ void REGO600::loop() {
     }
 }
 
-bool REGO600::DecodeManualRequest() {
-    if (manuallyModeReq == RequestMode::Lcd) {
-        uartTxBuffer[1] = static_cast<uint8_t>(OpCodes::ReadDisplay);
-        readLCD_RowIndex = 0;
-        SetRequestAddr(0x00);
-        uartTxBuffer[8] = 0x00;
-        if (readLCD_Text == nullptr) // initialize it if this is the first use
-            readLCD_Text = new char[20*4+1]();
-        
-
-    } else if (manuallyModeReq == RequestMode::FrontPanelLeds) {
-        readFrontPanelLeds_Data = 0x00;
-        uartTxBuffer[1] = static_cast<uint8_t>(OpCodes::ReadFrontPanel);
-        readFrontPanelLedsIndex = 0;
-        SetRequestAddr(0x12);
-        CalcAndSetTxChecksum();
-        
-    } else if (manuallyModeReq == RequestMode::OneTime && manuallyRequest != nullptr) {
-        uartTxBuffer[1] = manuallyRequest->opcode;
-        SetRequestAddr(manuallyRequest->address);
-        CalcAndSetTxChecksum();
-        
-    } else {
-        return false;
-    }
-    mode = manuallyModeReq;
-    auto info = getCmdInfo(uartTxBuffer[1]);
-    currentExpectedRxLength = info->size;
-    REGO600_UART_TO_USE.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
-    return true;
-}
-/*
-void REGO600::SendNextRequest() {
-    
-    SendReq(refreshLoopList[refreshLoopIndex++]->address);
-}
-*/
 void REGO600::SendReq(uint16_t address) {
     uartRxBufferIndex = 0;
     SetRequestAddr(address);
@@ -306,13 +313,7 @@ void REGO600::Send(uint16_t address, uint16_t data) {
     CalcAndSetTxChecksum();
     REGO600_UART_TO_USE.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
 }
-/*
-void REGO600::StartSendOneRegisterReadRequest(uint16_t address) {
-    currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadRegister;
-    uartTxBuffer[1] = (uint8_t)Command::ReadRegister;
-    SendReq(address);
-}
-*/
+
 void REGO600::SetRequestAddr(uint16_t address) {
     uartTxBuffer[2] = (address >> 14) & 0x7F;
     uartTxBuffer[3] = (address >> 7) & 0x7F;
@@ -339,54 +340,3 @@ void REGO600::CalcAndSetTxChecksum() {
 uint16_t REGO600::GetValueFromUartRxBuff() {
     return (uartRxBuffer[1] << 14) + (uartRxBuffer[2] << 7) + uartRxBuffer[3];
 }
-
-/*
-
-const size_t RequestsWholeLCD_Count = 4;
-const REGO600::Request RequestsWholeLCD[RequestsWholeLCD_Count] = {
-    {0x0000, "1"},
-    {0x0001, "2"},
-    {0x0002, "3"},
-    {0x0003, "4"}
-};
-String charArrayToHex(const char* data, size_t length) {
-    String hexStr = "";
-    for (size_t i = 0; i < length; ++i) {
-        if (data[i] < 16) hexStr += "0";  // Add leading zero for single-digit hex
-        hexStr += String((uint8_t)data[i], HEX);
-        hexStr += " ";
-    }
-    return hexStr;
-}
-void REGO600::BeginRetreiveWholeLCD() { // maybe some callback function should be passed into this
-    lastAction = Action::ReadWholeLCD;
-    currentExpectedRxLength = (uint8_t)CommandRxDataLenght::ReadLcd;
-    requestCount = RequestsWholeLCD_Count;
-    requestIndex = 0;
-    requests = RequestsWholeLCD;
-    uartTxBuffer[1] = (uint8_t)Command::ReadLcd;
-    SendNextRequest();
-}
-void REGO600::RequestsWholeLCD_Task() {
-    // current line of lcd is calculated from requestIndex
-    uint8_t lcdRowIndex = requestIndex-1;
-    uint8_t lcdColIndex = 0;
-    for (int i=1;i<41;i+=2) {
-        lcdData[lcdRowIndex*20+lcdColIndex++] = uartRxBuffer[i]*16 + uartRxBuffer[i+1];
-    }
-    if (requestIndex < requestCount) { delay(100); SendNextRequest(); }
-    else {
-        // we are done rx whole LCD, send data back to whatever requested it
-        lastAction = Action::NotSet;
-        if (onUartQueryComplete == nullptr) return;
-        
-        String jsonStr = "{";
-        jsonStr += "\""; jsonStr += requests[0].text; jsonStr += "\":\""; jsonStr.concat(lcdData,20); jsonStr += "\",";
-        jsonStr += "\""; jsonStr += requests[1].text; jsonStr += "\":\""; jsonStr.concat(&lcdData[20],20); jsonStr += "\",";
-        jsonStr += "\""; jsonStr += requests[2].text; jsonStr += "\":\""; jsonStr.concat(&lcdData[40],20); jsonStr += "\",";
-        jsonStr += "\""; jsonStr += requests[3].text; jsonStr += "\":\""; jsonStr.concat(&lcdData[60],20); jsonStr += "\"";
-        jsonStr += "}";
-        onUartQueryComplete(jsonStr);
-    }
-}
-    */
