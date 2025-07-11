@@ -28,6 +28,7 @@ namespace HAL_JSON {
             else
             {
                 request->send(200, "application/json", "{\"info\":\"JSON reload ok\"}");
+                begin(); // call the begin function on all loaded hal devices
             }
         });
         asyncWebserver->on(HAL_JSON_URL_PRINT_DEVICES, HTTP_ANY, [](AsyncWebServerRequest* request){
@@ -57,6 +58,9 @@ namespace HAL_JSON {
         if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()) == false) {
             Serial.println("error happend while reading and parsing config JSON");
             GlobalLogger.printAllLogs(Serial, false);
+        }
+        else {
+            begin(); // call the begin function on all loaded hal devices
         }
     }
 
@@ -504,6 +508,14 @@ namespace HAL_JSON {
         if (parseOk == false) Serial.println("ParseJSON(jsonItems) fail");
         return parseOk;
     }
+    void Manager::begin() {
+        for (int i=0;i<deviceCount;i++) {
+            Device* device = devices[i];
+            if (device == nullptr) continue;
+            device->begin();
+        }
+    }
+
     void Manager::loop() {
         if ((devices == nullptr) || (deviceCount == 0)) return;
 

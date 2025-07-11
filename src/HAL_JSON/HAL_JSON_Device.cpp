@@ -7,6 +7,7 @@ namespace HAL_JSON {
     Device::~Device() {}
 
     void Device::loop() {}
+    void Device::begin() {}
     bool Device::LoopTaskDone() {
         if (loopTaskDone == false)
             return false;

@@ -39,7 +39,10 @@ namespace HAL_JSON {
         virtual bool write(const HALWriteStringRequestValue& val);
         virtual bool read(const HALReadValueByCmd& val);
         virtual bool write(const HALWriteValueByCmd& val);
+        /** called regulary from the main loop */
         virtual void loop();
+        /** called when all hal devices has been loaded */
+        virtual void begin();
         /** used to find sub/leaf devices @ "group devices" */
         virtual Device* findDevice(UIDPath& path);
 

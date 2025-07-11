@@ -46,6 +46,8 @@ namespace HAL_JSON {
     private:
         static Device** devices;
         static int deviceCount;
+        /** calls the begin function on all loaded hal devices */
+        static void begin();
 
         static Device* CreateDeviceFromJSON(const JsonVariant &json);
         static bool VerifyDeviceJson(const JsonVariant &jsonObj);
@@ -69,6 +71,7 @@ namespace HAL_JSON {
 
         // Maintenance
         static void loop();
+        
 
         // Debug / Testing
         static void TEST();
