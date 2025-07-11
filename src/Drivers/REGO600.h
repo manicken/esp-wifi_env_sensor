@@ -98,13 +98,14 @@ public:
     void loop();
     /** please note that this uses std::unique_ptr 
      * to ensure that the created object (Request) is moved into this function
-     * and to make sure that it can be deleted internally if one wants that */
+     * and to make sure that it can be deleted internally */
     void OneTimeRequest(std::unique_ptr<Request> req, RequestCallback cb);
     void RequestWholeLCD(RequestCallback cb);
     void RequestFrontPanelLeds(RequestCallback cb);
 
     static const CmdVsResponseSize* getCmdInfo(uint8_t opcode);
-    
+    /** this is a "latching flag"/"one-shot flag", i.e. if read and was true it automatically resets the internal flag to false */
+    bool RefreshLoopDone();
 private:
     
     uint8_t uartTxBuffer[REGO600_UART_TX_BUFFER_SIZE]; 
@@ -117,6 +118,7 @@ private:
     Request* const* refreshLoopList; // a const pointer to a list of mutable Request object pointers
     int refreshLoopCount = 0;
     int refreshLoopIndex = 0;
+    bool refreshLoopDone = false;
 
     /** make this dynamicaly allocated to save memory if not used */
     char* readLCD_Text = nullptr;
@@ -128,14 +130,15 @@ private:
     RequestMode mode = RequestMode::RefreshLoop;
     /** set to true when currently waiting for data to be received */
     bool waitForResponse = false;
+    
     /** set to true when manual interventioon need to be executed */
-    bool wantToManuallySend = false;
-
-    RequestMode manualModeReq = RequestMode::RefreshLoop; // default value
+    bool manualRequest_Pending = false;
+    RequestMode manualRequest_Mode = RequestMode::RefreshLoop; // default value
     std::unique_ptr<Request> manualRequest = nullptr; // this is used when simple values need to be read/written i.e. when manuallyModeReq == RequestMode::OneTime
-    RequestCallback manualRequestCallback = nullptr;
+    RequestCallback manualRequest_Callback = nullptr;
     void ManualRequest_Schedule(RequestMode reqMode);
     bool ManualRequest_PrepareAndSend();
+
     void SetRequestAddr(uint16_t address);
     void SetRequestData(uint16_t data);
     void SendReq(uint16_t address);

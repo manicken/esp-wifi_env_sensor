@@ -92,17 +92,17 @@ void REGO600::begin() {
 }
 
 void REGO600::ManualRequest_Schedule(RequestMode reqMode) {
-    manualModeReq = reqMode;
+    manualRequest_Mode = reqMode;
     if (waitForResponse == false) {
         waitForResponse = true;
         ManualRequest_PrepareAndSend(); // this will start send the request
     }
     else {
-        wantToManuallySend = true;
+        manualRequest_Pending = true;
     }
 }
 bool REGO600::ManualRequest_PrepareAndSend() {
-    if (manualModeReq == RequestMode::Lcd) {
+    if (manualRequest_Mode == RequestMode::Lcd) {
         uartTxBuffer[1] = static_cast<uint8_t>(OpCodes::ReadDisplay);
         readLCD_RowIndex = 0;
         SetRequestAddr(0x00);
@@ -111,14 +111,14 @@ bool REGO600::ManualRequest_PrepareAndSend() {
             readLCD_Text = new char[20*4+1]();
         
 
-    } else if (manualModeReq == RequestMode::FrontPanelLeds) {
+    } else if (manualRequest_Mode == RequestMode::FrontPanelLeds) {
         readFrontPanelLeds_Data = 0x00;
         uartTxBuffer[1] = static_cast<uint8_t>(OpCodes::ReadFrontPanel);
         readFrontPanelLedsIndex = 0;
         SetRequestAddr(0x12);
         CalcAndSetTxChecksum();
         
-    } else if (manualModeReq == RequestMode::OneTime && manualRequest != nullptr) {
+    } else if (manualRequest_Mode == RequestMode::OneTime && manualRequest != nullptr) {
         uartTxBuffer[1] = manualRequest->opcode;
         SetRequestAddr(manualRequest->address);
         CalcAndSetTxChecksum();
@@ -126,7 +126,7 @@ bool REGO600::ManualRequest_PrepareAndSend() {
     } else {
         return false;
     }
-    mode = manualModeReq;
+    mode = manualRequest_Mode;
     auto info = getCmdInfo(uartTxBuffer[1]);
     currentExpectedRxLength = info->size;
     REGO600_UART_TO_USE.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
@@ -138,7 +138,7 @@ void REGO600::OneTimeRequest(std::unique_ptr<Request> req, RequestCallback cb) {
         GlobalLogger.Error(F("manual request allready in progress"));
         return;
     }
-    manualRequestCallback = cb;
+    manualRequest_Callback = cb;
     manualRequest = std::move(req); // could also do req.release() to return the raw ptr, but then the raw ptr needs to be deleted when used
     ManualRequest_Schedule(RequestMode::OneTime);
 }
@@ -148,7 +148,7 @@ void REGO600::RequestWholeLCD(RequestCallback cb) {
         GlobalLogger.Error(F("manual request allready in progress"));
         return;
     }
-    manualRequestCallback = cb;
+    manualRequest_Callback = cb;
     ManualRequest_Schedule(RequestMode::Lcd);
 }
 void REGO600::RequestFrontPanelLeds(RequestCallback cb) {
@@ -156,7 +156,7 @@ void REGO600::RequestFrontPanelLeds(RequestCallback cb) {
         GlobalLogger.Error(F("manual request allready in progress"));
         return;
     }
-    manualRequestCallback = cb;
+    manualRequest_Callback = cb;
     ManualRequest_Schedule(RequestMode::FrontPanelLeds);
 }
 
@@ -179,11 +179,18 @@ void REGO600::RefreshLoop_Continue() {
         refreshLoopIndex++;
         RefreshLoop_SendCurrent();
     } else {
+        refreshLoopDone = true;
         // one loop done
         // exec some cb here, or set some flags
         
         waitForResponse = false; // wait until refresh time 
     }
+}
+bool REGO600::RefreshLoopDone() {
+    if (refreshLoopDone == false)
+        return false;
+    refreshLoopDone = false;
+    return true;
 }
 #define REGO600_UART_RX_MAX_FAILSAFECOUNT 100
 void REGO600::loop() {
@@ -220,8 +227,8 @@ void REGO600::loop() {
                 // RX is done
                 if (mode == RequestMode::RefreshLoop) {
                     refreshLoopList[refreshLoopIndex]->SetFromBuffer(uartRxBuffer);
-                    if (wantToManuallySend) {
-                        wantToManuallySend = false;
+                    if (manualRequest_Pending) {
+                        manualRequest_Pending = false;
                         if (ManualRequest_PrepareAndSend() == true)
                             return;
                     }
@@ -234,13 +241,13 @@ void REGO600::loop() {
                     if (readLCD_RowIndex == 3) { // this was the last row
                         
                         // execute a callback here
-                        if (manualRequestCallback != nullptr)
-                            manualRequestCallback(readLCD_Text, manualModeReq);
+                        if (manualRequest_Callback != nullptr)
+                            manualRequest_Callback(readLCD_Text, manualRequest_Mode);
                         else
                             GlobalLogger.Error(F("LCD - mReqCB not set"));
 
                         mode = RequestMode::RefreshLoop;
-                        manualModeReq = RequestMode::RefreshLoop;
+                        manualRequest_Mode = RequestMode::RefreshLoop;
                         RefreshLoop_Continue();
                     } else {
                         readLCD_RowIndex++;
@@ -258,22 +265,22 @@ void REGO600::loop() {
                         REGO600_UART_TO_USE.write(uartTxBuffer, REGO600_UART_TX_BUFFER_SIZE);
                     } else {
                         
-                        if (manualRequestCallback != nullptr)
-                            manualRequestCallback(&readFrontPanelLeds_Data, manualModeReq);
+                        if (manualRequest_Callback != nullptr)
+                            manualRequest_Callback(&readFrontPanelLeds_Data, manualRequest_Mode);
                         else
                             GlobalLogger.Error(F("FP - mReqCB not set"));
 
                         mode = RequestMode::RefreshLoop;
-                        manualModeReq = RequestMode::RefreshLoop;
+                        manualRequest_Mode = RequestMode::RefreshLoop;
                         RefreshLoop_Continue();
                     }
                 } else if (mode == RequestMode::OneTime) {
                     
-                    if (manualRequestCallback != nullptr) {
+                    if (manualRequest_Callback != nullptr) {
                         // only set here, there is no point setting the data if there are no receiver
                         manualRequest->SetFromBuffer(uartRxBuffer); 
                         //Request* request = manuallyRequest.release();
-                        manualRequestCallback(manualRequest.get(), manualModeReq);
+                        manualRequest_Callback(manualRequest.get(), manualRequest_Mode);
                         //delete request;
                     }
                     else {
@@ -282,7 +289,7 @@ void REGO600::loop() {
                     }
                     manualRequest.reset(); // free the current data
                     mode = RequestMode::RefreshLoop;
-                    manualModeReq = RequestMode::RefreshLoop;
+                    manualRequest_Mode = RequestMode::RefreshLoop;
                     RefreshLoop_Continue();
                 }
                 return; // now we can return here

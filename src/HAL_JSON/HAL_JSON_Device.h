@@ -25,13 +25,14 @@ namespace HAL_JSON {
         Device() = delete;
         Device(Device&) = delete;
         const char* type;
+        bool loopTaskDone = false;
     public:
         Device(UIDPathMaxLength uidMaxLength, const char* type);
         virtual ~Device();
 
         uint64_t uid;
         const uint8_t uidMaxLength;
-
+        bool LoopTaskDone();
         virtual bool read(HALValue& val);
         virtual bool write(const HALValue& val);
         virtual bool read(const HALReadStringRequestValue& val);

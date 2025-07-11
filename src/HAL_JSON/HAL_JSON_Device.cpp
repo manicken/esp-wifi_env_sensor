@@ -7,6 +7,12 @@ namespace HAL_JSON {
     Device::~Device() {}
 
     void Device::loop() {}
+    bool Device::LoopTaskDone() {
+        if (loopTaskDone == false)
+            return false;
+        loopTaskDone = false;
+        return true;
+    }
     Device* Device::findDevice(UIDPath& path) { return nullptr; }
 
     String Device::ToString() { return ""; }

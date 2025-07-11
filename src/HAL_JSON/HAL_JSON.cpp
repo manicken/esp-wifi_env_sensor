@@ -508,8 +508,15 @@ namespace HAL_JSON {
         if ((devices == nullptr) || (deviceCount == 0)) return;
 
         for (int i=0;i<deviceCount;i++) {
-            if (devices[i] == nullptr) continue;
-            devices[i]->loop();
+            Device* device = devices[i];
+            if (device == nullptr) continue;
+            device->loop();
+            if (device->LoopTaskDone()) {
+                // do something here
+                // here we can have a callback
+                // right now the only use for this would be to signal to RuleManager (future implementation, next in queue)
+                // so that reads from rules are synced with refresh rates of the different devices
+            }
         }
     }
 
