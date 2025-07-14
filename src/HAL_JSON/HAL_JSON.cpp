@@ -299,13 +299,13 @@ namespace HAL_JSON {
 
     Device* Manager::CreateDeviceFromJSON(const JsonVariant &jsonObj) {
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
-        for (int i=0;DeviceRegistry[i].type != nullptr;i++) {
-            if (strcmp(type, DeviceRegistry[i].type) == 0) {
+        for (int i=0;DeviceRegistry[i].typeName != nullptr;i++) {
+            if (strcmp(type, DeviceRegistry[i].typeName) == 0) {
                 if (DeviceRegistry[i].Create_Function == nullptr) {
                     GlobalLogger.Error(F("CreateDeviceFromJSON - Create_Function == nullptr - something is very wrong if this happens"));
                     return nullptr; // should never happen as VerifyJson is called before and do actually verify that this pointer do point to something
                 }
-                return DeviceRegistry[i].Create_Function(jsonObj, DeviceRegistry[i].type);
+                return DeviceRegistry[i].Create_Function(jsonObj, DeviceRegistry[i].typeName);
             }
         }
         // should never happen as VerifyJson is called before and do actually verify that this function should work
@@ -318,8 +318,8 @@ namespace HAL_JSON {
         
 
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
-        for (int i=0;DeviceRegistry[i].type != nullptr;i++) {
-            if (strcmp(type, DeviceRegistry[i].type) == 0) {
+        for (int i=0;DeviceRegistry[i].typeName != nullptr;i++) {
+            if (strcmp(type, DeviceRegistry[i].typeName) == 0) {
                 if (DeviceRegistry[i].useRootUID == UseRootUID::Mandatory)
                     if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) return false;
 

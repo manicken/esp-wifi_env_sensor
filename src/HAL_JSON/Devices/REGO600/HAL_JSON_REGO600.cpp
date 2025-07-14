@@ -4,6 +4,10 @@
 namespace HAL_JSON {
     
     REGO600::REGO600(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One,type) {
+        rxPin = GetAsUINT8(jsonObj, HAL_JSON_KEYNAME_RXPIN);
+        txPin = GetAsUINT8(jsonObj, HAL_JSON_KEYNAME_TXPIN);
+        GPIO_manager::ReservePin(rxPin);
+        GPIO_manager::ReservePin(txPin);
 
         JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS];
         size_t itemCount = items.size();
@@ -11,14 +15,21 @@ namespace HAL_JSON {
         registerItemCount = 0;
         // first pass count valid items
         for (int i=0;i<itemCount;i++) {
-
-
+            const JsonVariant item = items[i];
+            if (IsConstChar(item) == true) { validItems[i] = false; continue; } // comment item
+            if (Device::DisabledInJson(item) == true) { validItems[i] = false; continue; } // disabled
+#ifndef HAL_JSON_VALIDATE_JSON_STRICT
+            if (REGO600register::VerifyJSON(item) == false) { validItems[i] = false; continue; }
+#endif
+            validItems[i] = true;
+            registerItemCount++;
         }
         // second pass
         requestList = new (std::nothrow) Drivers::REGO600::Request*[registerItemCount];
         registerItems = new (std::nothrow) REGO600register*[registerItemCount];
         int index = 0;
         for (int i=0;i<itemCount;i++) {
+            if (validItems[i] == false) continue;
             const JsonVariant& item = items[i];
             registerItems[index] = new REGO600register(item, nullptr);
             const char* opcodeStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_REGO600_OPCODE);

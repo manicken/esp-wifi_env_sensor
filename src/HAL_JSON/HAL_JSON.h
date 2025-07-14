@@ -53,7 +53,6 @@ namespace HAL_JSON {
         static bool VerifyDeviceJson(const JsonVariant &jsonObj);
         static Device* findDevice(UIDPath& path);
         static void restAPI_handleWriteOrRead(AsyncWebServerRequest *request);
-        static void restAPI_printAllLoadedDevices(AsyncWebServerRequest *request);
     public:
         static void setup();
         static void reloadJSON();
