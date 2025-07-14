@@ -1,0 +1,11 @@
+"filename", "language", "C++", "comment", "blank", "total"
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTemp.h", "C++", 4, 3, 2, 9
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempAutoRefresh.cpp", "C++", 43, 5, 8, 56
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempAutoRefresh.h", "C++", 30, 0, 15, 45
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempBus.cpp", "C++", 222, 8, 33, 263
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempBus.h", "C++", 44, 1, 12, 57
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempDevice.cpp", "C++", 89, 14, 25, 128
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempDevice.h", "C++", 52, 0, 15, 67
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempGroup.cpp", "C++", 178, 6, 18, 202
+"g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempGroup.h", "C++", 29, 1, 11, 41
+"Total", "-", 691, 38, 139, 868

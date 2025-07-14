@@ -8,7 +8,7 @@
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_UID_Path.h"
 #include "HAL_JSON_Operations.h"
-#include "GPIO_manager.h"
+#include "HAL_JSON_GPIO_Manager.h"
 
 
 namespace HAL_JSON {
