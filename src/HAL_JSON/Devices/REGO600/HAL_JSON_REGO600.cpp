@@ -40,7 +40,8 @@ namespace HAL_JSON {
             requestList[index] = new Drivers::REGO600::Request(opcode, address, registerItems[i]->value); 
             index++;
         }
-        rego600 = new Drivers::REGO600(rxPin, txPin, requestList, registerItemCount);
+        refreshTimeMs = ParseRefreshTimeMs(jsonObj, 0); // default to zero, note here REGO600 constructor will calculate minimum based on registerItemCount
+        rego600 = new Drivers::REGO600(rxPin, txPin, requestList, registerItemCount, refreshTimeMs);
     }
 
     REGO600::~REGO600() {

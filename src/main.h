@@ -80,8 +80,8 @@
 #if defined(HEATPUMP)
 #include "Drivers/REGO600.h" // this should not be here in final version (should only be accessible through HAL interface)
 #endif
-#include "Drivers/RF433.h" // this should not be here in final version (should only be accessible through HAL interface)
-#include "Drivers/FAN.h" // this should not be here in final version (should only be accessible through HAL interface)
+//#include "Drivers/RF433.h" // this should not be here in final version (should only be accessible through HAL interface)
+//#include "Drivers/FAN.h" // this should not be here in final version (should only be accessible through HAL interface)
 #include "Drivers/HearbeatLed.h" // this should not be here in final version (should only be accessible through HAL interface)
 //#include "Drivers/UART2websocket.h" // this should not be here in final version (should only be accessible through HAL interface)
 

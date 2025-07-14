@@ -11,6 +11,7 @@
 #define HAL_JSON_KEYNAME_TX433_STATE "state"
 #define HAL_JSON_KEYNAME_TX433_BTN "btn"
 #define HAL_JSON_KEYNAME_TX433_CH "ch"
+#define HAL_JSON_DEVICE_RF433
 
 namespace RF433 {
 

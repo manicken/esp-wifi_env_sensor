@@ -37,13 +37,22 @@ namespace HAL_JSON {
         void set(uint32_t v);
         void set(float v);
 
+        // Set operators
         HALValue& operator=(int32_t v);
         HALValue& operator=(uint32_t v);
         HALValue& operator=(float v);
 
+        // Conversion Operators
         operator uint8_t() const;
         operator uint32_t() const;
         operator int32_t() const;
         operator float() const;
     };
+    // Comparison Operators
+    bool operator==(const HALValue& lhs, const HALValue& rhs);
+    bool operator!=(const HALValue& lhs, const HALValue& rhs);
+    bool operator<(const HALValue& lhs, const HALValue& rhs);
+    bool operator>(const HALValue& lhs, const HALValue& rhs);
+    bool operator<=(const HALValue& lhs, const HALValue& rhs);
+    bool operator>=(const HALValue& lhs, const HALValue& rhs);
 }

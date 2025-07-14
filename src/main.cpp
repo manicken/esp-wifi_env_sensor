@@ -61,16 +61,18 @@ void Timer_SendEnvData()
 
     }
 }
-
+#ifdef FAN_H_
 void Alarm_SetFanSpeed(const OnTickExtParameters *param)
 {
     DEBUG_UART.println("\nAlarm_SetFanSpeed");
     const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
     if (casted_param != nullptr)
     {
-        FAN::DecodeFromJSON(casted_param->jsonStr);
+        //FAN::DecodeFromJSON(casted_param->jsonStr);
     }
 }
+#endif
+#ifdef HAL_JSON_DEVICE_RF433
 void Alarm_SendToRF433(const OnTickExtParameters *param)
 {
     DEBUG_UART.println("Alarm_SendToRF433");
@@ -80,6 +82,7 @@ void Alarm_SendToRF433(const OnTickExtParameters *param)
         RF433::DecodeFromJSON(casted_param->jsonStr);
     }
 }
+#endif
 #if defined(DEVICE_MANAGER_H)
 void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
 {
@@ -96,8 +99,12 @@ Scheduler::NameToFunction nameToFunctionList[] = {
 //   name         , onTick            , onTickExt
     {"ntp_sync"   , &Timer_SyncTime   , nullptr           }
     ,{"sendEnvData", &Timer_SendEnvData, nullptr           }
+#ifdef FAN_H_
     ,{"fan"        , nullptr           , &Alarm_SetFanSpeed} // this would be obsolete in favor of using SendToDeviceManager
+#endif
+#ifdef HAL_JSON_DEVICE_RF433
     ,{"rf433"      , nullptr           , &Alarm_SendToRF433} // this would be obsolete in favor of using SendToDeviceManager
+#endif
 #if defined(DEVICE_MANAGER_H)
     ,{"devmgr"     , nullptr           , &Alarm_SendToDeviceManager}
 #endif
@@ -330,7 +337,7 @@ void setup() {
     rego600.setup();
 #endif
 #ifdef HAL_JSON_H_
-    HAL_JSON::Manager::setup();
+    HAL_JSON::begin(webserver);
 #endif
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
@@ -339,7 +346,7 @@ void setup() {
 
 void loop() {
 #ifdef HAL_JSON_H_
-    HAL_JSON::Manager::loop();
+    HAL_JSON::loop();
 #endif
     //ws2812fx.service();
     //tcp2uart.BridgeMainTask();

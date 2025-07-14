@@ -25,6 +25,21 @@ namespace CharArray {
         return indicies;
     }
 
+    const char** getPointers(const char* str, char ch, uint32_t& outCount) {
+        outCount = countChar(str, ch);
+        if (outCount == 0) return nullptr;
+        const char** indicies = new const char*[outCount];
+        uint32_t index = 0;
+        while (*str) {
+            if (*str == ch) { 
+                indicies[index++] = str;
+            }
+            str++;
+            //strIndex++;
+        }
+        return indicies;
+    }
+
     
 
     bool equalsIgnoreCase(const char* a, const char* b) {

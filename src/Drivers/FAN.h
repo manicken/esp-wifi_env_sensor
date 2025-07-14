@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <stdlib.h>
+#define FAN_H_
 
 namespace FAN {
 

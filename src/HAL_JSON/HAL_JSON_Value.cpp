@@ -30,7 +30,12 @@ namespace HAL_JSON {
     }
 
     float HALValue::asFloat() const {
-        return fval;
+        if (type == Type::FLOAT)
+            return fval;
+        else if (type == Type::INT || type == Type::UINT)
+            return static_cast<float>(uval);
+        else
+            return 0.0f;
     }
 
     String HALValue::toString() const {
@@ -91,6 +96,32 @@ namespace HAL_JSON {
     void HALValue::set(float v) {
         type = Type::FLOAT;
         fval = v;
+    }
+
+
+
+    bool operator==(const HALValue& lhs, const HALValue& rhs) {
+        return lhs.asFloat() == rhs.asFloat();
+    }
+
+    bool operator!=(const HALValue& lhs, const HALValue& rhs) {
+        return !(lhs == rhs);
+    }
+
+    bool operator<(const HALValue& lhs, const HALValue& rhs) {
+        return lhs.asFloat() < rhs.asFloat();
+    }
+
+    bool operator>(const HALValue& lhs, const HALValue& rhs) {
+        return lhs.asFloat() > rhs.asFloat();
+    }
+
+    bool operator<=(const HALValue& lhs, const HALValue& rhs) {
+        return lhs.asFloat() <= rhs.asFloat();
+    }
+
+    bool operator>=(const HALValue& lhs, const HALValue& rhs) {
+        return lhs.asFloat() >= rhs.asFloat();
     }
 
 }

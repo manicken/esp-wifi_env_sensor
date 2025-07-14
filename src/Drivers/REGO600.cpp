@@ -77,10 +77,18 @@ namespace Drivers {
     //  ██   ██ ██      ██    ██ ██    ██ ██    ██ ████  ██ ████  ██ 
     //  ██   ██ ███████  ██████   ██████   ██████   ██████   ██████  
 
-    REGO600::REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList, int refreshLoopCount) : 
+    REGO600::REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList, int refreshLoopCount, uint32_t _refreshTimeMs) : 
         refreshLoopList(refreshLoopList), 
-        refreshLoopCount(refreshLoopCount) 
+        refreshLoopCount(refreshLoopCount),
+        refreshTimeMs(_refreshTimeMs)
     {
+        uint32_t minRefreshTimeMs = refreshLoopCount * REGO600_DRIVER_READ_REGISTER_TIME_MS_ON_STATE;
+        // subtract min from wanted to get total refresh time
+        refreshTimeMs -= minRefreshTimeMs; 
+        // ensure it's at least minRefreshTimeMs
+        if (refreshTimeMs < minRefreshTimeMs) refreshTimeMs = minRefreshTimeMs; 
+        
+
         uartTxBuffer[0] = 0x81; // constant
         #if defined(ESP32)
         REGO600_UART_TO_USE.begin(19200, SERIAL_8N1, rxPin, txPin); // Set correct RX/TX pins for UART
@@ -182,6 +190,7 @@ namespace Drivers {
     }
 
     void REGO600::RefreshLoop_Restart() {
+        lastUpdateMs = millis();
         refreshLoopIndex = 0;
         RefreshLoop_SendCurrent();
     }
@@ -206,22 +215,21 @@ namespace Drivers {
     }
     #define REGO600_UART_RX_MAX_FAILSAFECOUNT 100
     void REGO600::loop() {
-        uint32_t failsafeReadCount = 0;
-        if (requestInProgress == false) { //  here we just take care of any glitches and receive garbage data if any
+        
+        if (requestInProgress == false) { 
+            //  here we just take care of any glitches and receive garbage data if any
             ClearUARTRxBuffer(REGO600_UART_TO_USE);
             if (mode != RequestMode::RefreshLoop) return;
             if (refreshLoopList == nullptr) return;
 
             uint32_t now = millis();
             if (now - lastUpdateMs >= refreshTimeMs) {
-                lastUpdateMs = millis();
-                // need to start refreshLoop thingy again
-                RefreshLoop_Restart();
+                RefreshLoop_Restart(); // this will also take care of updating lastUpdateMs
             }
             return;
         }
 
-        
+        uint32_t failsafeReadCount = 0;
         while (REGO600_UART_TO_USE.available() && failsafeReadCount++ < REGO600_UART_RX_MAX_FAILSAFECOUNT) {
             if (uartRxBufferIndex < REGO600_UART_RX_BUFFER_SIZE) {
                 uartRxBuffer[uartRxBufferIndex++] = REGO600_UART_TO_USE.read();

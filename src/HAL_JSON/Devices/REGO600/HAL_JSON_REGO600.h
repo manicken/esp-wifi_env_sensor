@@ -14,6 +14,7 @@ namespace HAL_JSON {
 
     class REGO600 : public Device {
     private:
+        uint32_t refreshTimeMs = 0;
         uint8_t rxPin = 0;
         uint8_t txPin = 0;
         /** this is only logical devices */

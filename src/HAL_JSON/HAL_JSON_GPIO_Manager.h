@@ -3,17 +3,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <stdlib.h>
-#include <LittleFS.h>
-#include "Support/LittleFS_ext.h"
-
-#include <WiFiClient.h>
-#if defined(ESP8266)
-#include <ESP8266WebServer.h>
-#define WEBSERVER_TYPE ESP8266WebServer
-#elif defined(ESP32)
-#include "../Support/fs_WebServer.h"
-#define WEBSERVER_TYPE fs_WebServer
-#endif
 
 #include "../Support/Logger.h"
 #include "../Support/ConvertHelper.h"
@@ -34,8 +23,7 @@
 namespace HAL_JSON {
     namespace GPIO_manager
     {
-        #define GPIO_MANAGER_ROOT                 "/GPIO_manager"
-        #define GPIO_MANAGER_GET_AVAILABLE_GPIO_LIST    F(GPIO_MANAGER_ROOT "/getAvailableGPIOs")
+        
 
         enum class PinMode : uint8_t {
             Reserved = 0x01,
@@ -58,19 +46,20 @@ namespace HAL_JSON {
             Hex,
             Binary
         };
-        // Templated makePinMask function
-        /*template<typename... Modes>
-        constexpr uint8_t makePinMask(Modes... modes) {
-            return (static_cast<uint8_t>(modes) | ...);  // C++17 fold expression
-        }*/
 
         typedef struct {
             uint8_t pin;
             uint8_t mode;
         } gpio_pin;
 
-        void sendList();
-        void setup(WEBSERVER_TYPE &srv);
+        extern const gpio_pin available_gpio_list[];
+        extern const uint8_t available_gpio_list_lenght;
+
+        extern const PinModeDef PinModeStrings[];
+        extern const uint8_t PinModeStrings_length;
+
+        std::string describePinMode(uint8_t mask);
+        
         bool CheckIfPinAvailableAndReserve(uint8_t pin, uint8_t pinMode);
         /** this is a nice function that can be used */
         bool ValidateJsonAndCheckIfPinAvailableAndReserve(const JsonVariant& jsonObj, uint8_t pinMode);

@@ -17,6 +17,12 @@
 #define REGO600_UART_TO_USE Serial
 #endif
 
+// 240-270mS is the measured range so 300mS would be safe
+// note this is while the REGO600 is in "on" state
+// if it's turned off by the front panel button the read time is ~10x less
+#define REGO600_DRIVER_READ_REGISTER_TIME_MS_ON_STATE 300
+#define REGO600_DRIVER_READ_REGISTER_TIME_MS_OFF_STATE 30
+
 namespace Drivers {
 
     class REGO600 {
@@ -95,7 +101,7 @@ namespace Drivers {
 
         REGO600() = delete;
         REGO600(REGO600&) = delete;
-        REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList, int refreshLoopCount);
+        REGO600(int8_t rxPin, int8_t txPin, Request** refreshLoopList, int refreshLoopCount, uint32_t refreshTimeMs);
         ~REGO600();
         void begin();
         void loop();
