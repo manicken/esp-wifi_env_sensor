@@ -9,6 +9,7 @@
 #include "../../../Drivers/REGO600.h"
 #include "HAL_JSON_REGO600register.h"
 
+
 namespace HAL_JSON {
 
     class REGO600 : public Device {

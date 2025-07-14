@@ -27,6 +27,6 @@ namespace Convert
     /** with padding */
     String toHex(const char *data, size_t len);
     String convertISO88591toUTF8(const String &input);
-
+    bool IsValidHexString(const char* str);
 
 } // namespace Convert

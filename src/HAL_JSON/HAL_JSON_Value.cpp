@@ -45,10 +45,20 @@ namespace HAL_JSON {
         set(v);
         return *this;
     }
+    HALValue& HALValue::operator=(int32_t v) {
+        set(v);
+        return *this;
+    }
 
     HALValue& HALValue::operator=(float v) {
         set(v);
         return *this;
+    }
+
+    HALValue::operator int32_t() const {
+        if (type == Type::INT) return uval;
+        // Handle error or conversion
+        return 0;
     }
 
     HALValue::operator uint32_t() const {
@@ -70,6 +80,11 @@ namespace HAL_JSON {
 
     void HALValue::set(uint32_t v) {
         type = Type::UINT;
+        uval = v;
+    }
+
+    void HALValue::set(int32_t v) {
+        type = Type::INT;
         uval = v;
     }
 

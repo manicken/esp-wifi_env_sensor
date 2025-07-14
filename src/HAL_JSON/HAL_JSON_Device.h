@@ -12,7 +12,7 @@
 
 
 namespace HAL_JSON {
-
+    
     enum class UIDPathMaxLength : uint8_t {
         One = 1,
         Two = 2,
@@ -72,4 +72,6 @@ namespace HAL_JSON {
         HAL_JSON_DEVICE_CONST_STR_DECLARE(refreshTimeMs);
 
     }
+
+    
 } // namespace HAL

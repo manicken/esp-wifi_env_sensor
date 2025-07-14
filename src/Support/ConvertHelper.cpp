@@ -155,4 +155,14 @@ namespace Convert
         return output;
     }
 
+    bool IsValidHexString(const char* str) {
+        if (str == nullptr || strlen(str) == 0) return false; // failsafe
+        for (;*str;str++) {
+            if (!std::isxdigit(static_cast<unsigned char>(*str))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

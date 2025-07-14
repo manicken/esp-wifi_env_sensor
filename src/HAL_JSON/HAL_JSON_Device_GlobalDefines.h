@@ -15,6 +15,8 @@
 #define HAL_JSON_KEYNAME_TYPE                               "type"
 #define HAL_JSON_KEYNAME_UID                                "uid"
 #define HAL_JSON_KEYNAME_PIN                                "pin"
+#define HAL_JSON_KEYNAME_RXPIN                              "rxpin"
+#define HAL_JSON_KEYNAME_TXPIN                              "txpin"
 #define HAL_JSON_KEYNAME_NOTE                               "note"
 #define HAL_JSON_KEYNAME_ITEMS                              "items"
 #define HAL_JSON_KEYNAME_REFRESHTIME_SEC                    "refreshtimesec"

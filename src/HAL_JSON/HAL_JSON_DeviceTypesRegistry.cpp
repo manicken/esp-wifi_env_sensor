@@ -7,6 +7,7 @@
 #include "Devices/OneWireTemp/HAL_JSON_OneWireTemp.h"
 #include "Devices/HAL_JSON_DHT.h"
 #include "Devices/RF433/HAL_JSON_TX433.h"
+#include "Devices/REGO600/HAL_JSON_REGO600.h"
 
 namespace HAL_JSON {
     const char* test = "hello";
@@ -29,7 +30,7 @@ namespace HAL_JSON {
 
         {UseRootUID::Mandatory, "DHT", DHT::Create, DHT::VerifyJSON},
         {UseRootUID::Mandatory, "TX433", TX433::Create, TX433::VerifyJSON},
-        {UseRootUID::Mandatory, "REGO600", nullptr, nullptr},
+        {UseRootUID::Mandatory, "REGO600", REGO600::Create, REGO600::VerifyJSON},
 #if defined(ESP32)
         {UseRootUID::Mandatory, "PWM_LEDC", nullptr, nullptr},
 #endif

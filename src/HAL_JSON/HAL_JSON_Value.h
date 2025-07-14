@@ -6,7 +6,7 @@ namespace HAL_JSON {
 
     class HALValue {
     public:
-        enum class Type { NONE, UINT, FLOAT/*, STRING*/ };
+        enum class Type { NONE, UINT, INT, FLOAT/*, STRING*/ };
 
     private:
         Type type;
@@ -33,14 +33,17 @@ namespace HAL_JSON {
 
         String toString() const;
 
+        void set(int32_t v);
         void set(uint32_t v);
         void set(float v);
 
+        HALValue& operator=(int32_t v);
         HALValue& operator=(uint32_t v);
         HALValue& operator=(float v);
 
         operator uint8_t() const;
         operator uint32_t() const;
+        operator int32_t() const;
         operator float() const;
     };
 }

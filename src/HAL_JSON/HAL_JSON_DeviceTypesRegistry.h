@@ -20,10 +20,11 @@ namespace HAL_JSON {
 
     typedef struct DeviceTypeDef {
         UseRootUID useRootUID;
-        const char* type;
+        const char* typeName;
         HAL_DEVICE_CREATE_FUNC Create_Function;
         HAL_DEVICE_VERIFY_JSON_FUNC Verify_JSON_Function;
     } DeviceTypeDef ;
 
     extern const DeviceTypeDef DeviceRegistry[];
+
 }

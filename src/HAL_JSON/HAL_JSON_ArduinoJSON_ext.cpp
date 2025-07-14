@@ -21,32 +21,32 @@ namespace HAL_JSON {
         return JsonVariant(); // null
     }
 
-    bool ValidateJsonStringField(const JsonVariant &jsonObj, const char* key) {
-        if (!jsonObj.containsKey(key)) {
-            GlobalLogger.Error(HAL_JSON_ERR_MISSING_STRING_VALUE_KEY, key);
+    bool ValidateJsonStringField(const JsonVariant &jsonObj, const char* keyName) {
+        if (!jsonObj.containsKey(keyName)) {
+            GlobalLogger.Error(HAL_JSON_ERR_MISSING_STRING_VALUE_KEY, keyName);
             return false;
         }
-        if (!IsConstChar(jsonObj,key)) {
-            GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, key);
+        if (!IsConstChar(jsonObj,keyName)) {
+            GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, keyName);
             return false;
         }
-        const char* val = jsonObj[key].as<const char*>();
+        const char* val = jsonObj[keyName].as<const char*>();
         if (val == nullptr || strlen(val) == 0) {
-            GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY, key);
+            GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY, keyName);
             return false;
         }
         return true;
     }
 
-    bool ValidateJsonStringField_noContains(const JsonVariant &jsonObj, const char* key) {
+    bool ValidateJsonStringField_noContains(const JsonVariant &jsonObj, const char* keyName) {
         
-        if (!IsConstChar(jsonObj,key)) {
-            GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, key);
+        if (!IsConstChar(jsonObj,keyName)) {
+            GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE_NOT_STRING, keyName);
             return false;
         }
-        const char* val = jsonObj[key].as<const char*>();
+        const char* val = jsonObj[keyName].as<const char*>();
         if (val == nullptr || strlen(val) == 0) {
-            GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY, key);
+            GlobalLogger.Error(HAL_JSON_ERR_STRING_EMPTY, keyName);
             return false;
         }
         return true;
@@ -80,18 +80,32 @@ namespace HAL_JSON {
         }
         return static_cast<uint32_t>(round(rawSec * 1000));;
     }
-    bool IsUINT32(const JsonVariant& jsonObj, const char* name) {
-        return jsonObj[name].is<uint32_t>();
+    bool ValidateUINT8(const JsonVariant& jsonObj, const char* keyName) {
+        if (!jsonObj.containsKey(keyName)) {
+            GlobalLogger.Error(HAL_JSON_ERR_MISSING_STRING_VALUE_KEY, keyName);
+            return false;
+        }
+        if (!jsonObj[keyName].is<uint8_t>()){
+            GlobalLogger.Error(F("Value type: "), keyName);
+            return false;
+        }
+        return true;
+    }
+    bool IsUINT32(const JsonVariant& jsonObj, const char* keyName) {
+        return jsonObj[keyName].is<uint32_t>();
     }
 
-    uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* name, uint32_t defaultValue) {
-        return jsonObj[name] | defaultValue;
+    uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* keyName, uint32_t defaultValue) {
+        return jsonObj[keyName] | defaultValue;
     }
-    uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* name) {
-        return jsonObj[name];
+    uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* keyName) {
+        return jsonObj[keyName];
     }
-    const char* GetAsConstChar(const JsonVariant& jsonObj, const char* name) {
-        return jsonObj[name];
+    uint8_t GetAsUINT8(const JsonVariant& jsonObj, const char* keyName) {
+        return jsonObj[keyName];
+    }
+    const char* GetAsConstChar(const JsonVariant& jsonObj, const char* keyName) {
+        return jsonObj[keyName];
     }
     
 

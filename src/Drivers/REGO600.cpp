@@ -105,8 +105,8 @@ namespace Drivers {
 
     void REGO600::ManualRequest_Schedule(RequestMode reqMode) {
         manualRequest_Mode = reqMode;
-        if (waitForResponse == false) {
-            waitForResponse = true;
+        if (requestInProgress == false) {
+            requestInProgress = true;
             ManualRequest_PrepareAndSend(); // this will start send the request
         }
         else {
@@ -195,7 +195,7 @@ namespace Drivers {
             // one loop done
             // exec some cb here, or set some flags
             
-            waitForResponse = false; // wait until refresh time 
+            requestInProgress = false; // wait until refresh time 
         }
     }
     bool REGO600::RefreshLoopDone() {
@@ -207,7 +207,7 @@ namespace Drivers {
     #define REGO600_UART_RX_MAX_FAILSAFECOUNT 100
     void REGO600::loop() {
         uint32_t failsafeReadCount = 0;
-        if (waitForResponse == false) { //  here we just take care of any glitches and receive garbage data if any
+        if (requestInProgress == false) { //  here we just take care of any glitches and receive garbage data if any
             ClearUARTRxBuffer(REGO600_UART_TO_USE);
             if (mode != RequestMode::RefreshLoop) return;
             if (refreshLoopList == nullptr) return;
@@ -298,7 +298,7 @@ namespace Drivers {
                     return; // now we can return here
                 }
             } else {
-                waitForResponse = false; // to make the remaining data reads faster, if any 
+                requestInProgress = false; // to make the remaining data reads faster, if any 
                 ClearUARTRxBuffer(REGO600_UART_TO_USE);
                 GlobalLogger.Error(F("REGO600 - uartRxBuffer full"));
                 //if (this->ws.count() > 0) this->ws.textAll("{\"error\":\"uartRxBuffer full\"}\n");

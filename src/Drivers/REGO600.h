@@ -132,7 +132,7 @@ namespace Drivers {
 
         RequestMode mode = RequestMode::RefreshLoop;
         /** set to true when currently waiting for data to be received */
-        bool waitForResponse = false;
+        bool requestInProgress = false;
         
         /** set to true when manual interventioon need to be executed */
         bool manualRequest_Pending = false;

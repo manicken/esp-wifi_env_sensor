@@ -13,13 +13,13 @@ namespace HAL_JSON {
     TX433unit::TX433unit(const JsonVariant &jsonObj, const char* type, const uint32_t pin) : Device(UIDPathMaxLength::One,type), pin(pin) {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
-        const char* model = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL);
+        const char* modelStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL);
         
-        if (CharArray::equalsIgnoreCase(model, "lc"))
+        if (CharArray::equalsIgnoreCase(modelStr, "lc"))
             staticData = RF433::Get433_LC_Data(jsonObj);
-        else if (CharArray::equalsIgnoreCase(model, "sfc"))
+        else if (CharArray::equalsIgnoreCase(modelStr, "sfc"))
             staticData = RF433::Get433_SFC_Data(jsonObj);
-        else if (CharArray::equalsIgnoreCase(model, "afc"))
+        else if (CharArray::equalsIgnoreCase(modelStr, "afc"))
             staticData = RF433::Get433_AFC_Data(jsonObj);
         //else this will never happen if VerifyJSON is used beforehand
 
@@ -30,16 +30,16 @@ namespace HAL_JSON {
         if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID) == false) { return false; }
         if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL) == false) { return false; }
 
-        const char* model = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL);
+        const char* modelStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL);
 
-        if (CharArray::equalsIgnoreCase(model, "lc")) {
+        if (CharArray::equalsIgnoreCase(modelStr, "lc")) {
             if (!RF433::VerifyLC_JSON(jsonObj)) return false;
-        } else if (CharArray::equalsIgnoreCase(model, "sfc")) {
+        } else if (CharArray::equalsIgnoreCase(modelStr, "sfc")) {
            if (!VerifyFC_JSON(jsonObj)) return false;
-        } else if (CharArray::equalsIgnoreCase(model, "afc")) {
+        } else if (CharArray::equalsIgnoreCase(modelStr, "afc")) {
            if (!VerifyFC_JSON(jsonObj)) return false;
         } else {
-            GlobalLogger.Error(F("TX433unit - invalid model type: "),model);
+            GlobalLogger.Error(F("TX433unit - invalid model type: "),modelStr);
             return false;
         }
         return true;
