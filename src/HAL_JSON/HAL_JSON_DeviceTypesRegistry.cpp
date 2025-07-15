@@ -3,6 +3,7 @@
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
 // all HAL devices to use here
+#include "Devices/HAL_JSON_RuleVariable.h"
 #include "Devices/HAL_JSON_CoreDevices.h"
 #include "Devices/OneWireTemp/HAL_JSON_OneWireTemp.h"
 #include "Devices/HAL_JSON_DHT.h"
@@ -14,6 +15,7 @@ namespace HAL_JSON {
     //char* test2 = "world"; // forbidden will generate warning
 
     const DeviceTypeDef DeviceRegistry[] = {
+        {UseRootUID::Mandatory, "VAR", RuleVariable::Create, RuleVariable::VerifyJSON},
 
         {UseRootUID::Mandatory, "DIN", DigitalInput::Create, DigitalInput::VerifyJSON},
         {UseRootUID::Mandatory, "DOUT", DigitalOutput::Create, DigitalOutput::VerifyJSON},

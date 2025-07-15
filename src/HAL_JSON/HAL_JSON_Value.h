@@ -31,6 +31,7 @@ namespace HAL_JSON {
         Type getType() const;
         bool isNumber() const;
 
+        int32_t asInt() const;
         uint32_t asUInt() const;
         float asFloat() const;
 

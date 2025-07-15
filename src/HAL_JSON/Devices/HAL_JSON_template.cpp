@@ -18,9 +18,14 @@ namespace HAL_JSON {
 
     String Template::ToString() {
         String ret;
-        ret += "\"type\":\"" "template" "\"";
-        ret += ",\"pin\":";
-        ret += String(pin);
+        ret += DeviceConstStrings::uid;
+        ret += decodeUID(uid).c_str();
+        ret += "\",";
+        ret += DeviceConstStrings::type;
+        ret += type;
+        ret += "\"";
+        ret += DeviceConstStrings::pin;
+        ret += pin;
         return ret;
     }
 

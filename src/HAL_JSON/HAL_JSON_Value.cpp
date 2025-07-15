@@ -29,6 +29,10 @@ namespace HAL_JSON {
         return uval;
     }
 
+    int32_t HALValue::asInt() const {
+        return static_cast<int32_t>(uval);
+    }
+
     float HALValue::asFloat() const {
         if (type == Type::FLOAT)
             return fval;
