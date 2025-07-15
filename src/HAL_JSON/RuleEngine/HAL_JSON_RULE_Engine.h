@@ -35,15 +35,16 @@ namespace HAL_JSON {
     };
 
     enum class ActionType {
-        SetLocalVariable,
+        //SetLocalVariable,
         //Increment,
         HalWrite,
+        HalRead
         //Toggle,
         // Extend later
     };
     enum class OperandType {
         Path,
-        LocalValue,
+        //LocalValue,
         Value
     };
 
@@ -52,7 +53,7 @@ namespace HAL_JSON {
         union {
             UIDPath* path;
             HALValue value;
-            uint32_t localValueIndex;
+            //uint32_t localValueIndex;
         };
     };
 
@@ -62,16 +63,17 @@ namespace HAL_JSON {
         ConditionType type;
     };
 
-    struct ActionTarget {
+   /* struct ActionTarget {
         OperandType type;
         union {
             UIDPath* path;
             uint32_t localValueIndex;
         };
-    };
+    };*/
 
     struct Action {
-        ActionTarget target;
+        UIDPath* path;
+        //ActionTarget target;
         ActionType type;
         HALValue value;
     };
@@ -82,16 +84,16 @@ namespace HAL_JSON {
         bool allConditionsMustPass = true;  // AND/OR behavior
     };
 
-    inline constexpr int RULE_MGR_MAX_VARIABLES = 32;
+    //static const int RULE_MGR_MAX_VARIABLES = 32;
 
     class RuleEngine {
         //inline constexpr int MAX_VARIABLES = 16;
     private:
         
-        static CharArray::StringView tempVarNames[RULE_MGR_MAX_VARIABLES];
+        //static CharArray::StringView tempVarNames[RULE_MGR_MAX_VARIABLES];
         static std::vector<Rule> rules;
         //static Rule rules[16]; // use when im sure that everything else works
-        static HALValue variables[RULE_MGR_MAX_VARIABLES];
+        //static HALValue variables[RULE_MGR_MAX_VARIABLES];
         static HALValue resolveOperand(const Operand& op);
         static bool evaluateCondition(const Condition& cond);
         static void executeAction(const Action& action);

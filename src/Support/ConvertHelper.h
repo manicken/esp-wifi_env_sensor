@@ -12,7 +12,7 @@ using String = std::string;
 #elif defined(ESP32)
 #define DEBUG_UART Serial
 #endif
-
+#include <cstring>
 #include "Logger.h"
 
 namespace Convert
@@ -27,11 +27,13 @@ namespace Convert
 
     uint64_t reverseMACaddress(uint64_t addr);
 
-    String PadTo8Bits(uint8_t value);
-
     /** with padding */
     String toHex(const char *data, size_t len);
     String convertISO88591toUTF8(const String &input);
     bool IsValidHexString(const char* str);
+
+    std::string toHex(uint32_t value);
+    std::string toHex(uint64_t value);
+    std::string toBin(uint8_t value);
 
 } // namespace Convert

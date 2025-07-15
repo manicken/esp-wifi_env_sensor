@@ -104,8 +104,8 @@ namespace HAL_JSON {
                     }
                     if ((pinMode & available_gpio_list[i].mode) == pinMode)
                         return true;
-                    String err = Convert::PadTo8Bits(pinMode) + " & " + Convert::PadTo8Bits(available_gpio_list[i].mode);
-                    GlobalLogger.Error(F("CheckIfPinAvailable error - pinmode mismatch: "),err.c_str());
+                    std::string errStr = Convert::toBin(pinMode) + " & " + Convert::toBin(available_gpio_list[i].mode);
+                    GlobalLogger.Error(F("CheckIfPinAvailable error - pinmode mismatch: "),errStr.c_str());
                     return false;
                 }
             }

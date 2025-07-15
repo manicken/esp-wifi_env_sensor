@@ -4,15 +4,17 @@
 
 namespace HAL_JSON {
 
+    std::vector<Rule> RuleEngine::rules;
+
     HALValue RuleEngine::resolveOperand(const Operand& op) {
         if (op.type == OperandType::Path) {
             HALValue value;
             HALReadRequest req(*op.path, value);
             Manager::read(req);
             return value;
-        } else if (op.type == OperandType::LocalValue) {
+        }/* else if (op.type == OperandType::LocalValue) {
             return variables[op.localValueIndex];
-        } else if (op.type == OperandType::Value) {
+        }*/ else if (op.type == OperandType::Value) {
             return op.value;
         }
         return HALValue(); // default
@@ -33,14 +35,13 @@ namespace HAL_JSON {
     }
     void RuleEngine::executeAction(const Action& action) {
         HALValue value = action.value;
-        switch (action.type) {
-            case ActionType::SetLocalVariable:
-                variables[action.target.localValueIndex] = value;
-                break;
-            case ActionType::HalWrite:
-                HALWriteRequest req = HALWriteRequest(*action.target.path, value);
-                Manager::write(req);
-                break;
+        if (action.type == ActionType::HalWrite) {
+            HALWriteRequest req = HALWriteRequest(*action.path, value);
+            Manager::write(req);
+        }
+        else if (action.type == ActionType::HalRead) {
+            HALReadRequest req = HALReadRequest(*action.path, value);
+            Manager::read(req);
         }
     }
     void RuleEngine::evaluateRules() {

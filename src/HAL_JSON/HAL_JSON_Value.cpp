@@ -38,10 +38,10 @@ namespace HAL_JSON {
             return 0.0f;
     }
 
-    String HALValue::toString() const {
+    std::string HALValue::toString() const {
         switch (type) {
-            case Type::UINT: return String(uval);
-            case Type::FLOAT: return String(fval, 2);
+            case Type::UINT: return std::to_string(uval);
+            case Type::FLOAT: return std::to_string(fval);
             default: return "";
         }
     }

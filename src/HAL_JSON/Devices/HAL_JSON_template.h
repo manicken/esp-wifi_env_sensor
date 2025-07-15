@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <string>
 #include <ArduinoJson.h>
 #include "../../Support/Logger.h"
 #include "../HAL_JSON_Device.h"

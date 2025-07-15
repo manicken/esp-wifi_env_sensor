@@ -82,13 +82,14 @@ void Logger::Error(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg, text);
     advance();
 }
+#ifndef _WIN32
 void Logger::Error(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
     String jsonStr;
     serializeJson(jsonObj, jsonStr);
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg, jsonStr.c_str());
     advance();
 }
-
+#endif
 void Logger::Info(uint32_t code) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, code);
     advance();
@@ -105,13 +106,14 @@ void Logger::Info(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg, text);
     advance();
 }
+#ifndef _WIN32
 void Logger::Info(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
     String jsonStr;
     serializeJson(jsonObj, jsonStr);
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg, jsonStr.c_str());
     advance();
 }
-
+#endif
 void Logger::Warn(uint32_t code) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, code);
     advance();
@@ -128,12 +130,14 @@ void Logger::Warn(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg, text);
     advance();
 }
+#ifndef _WIN32
 void Logger::Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
     String jsonStr;
     serializeJson(jsonObj, jsonStr);
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg, jsonStr.c_str());
     advance();
 }
+#endif
 
 
 void Logger::printAllLogs(Stream &out, bool onlyPrintNew) {

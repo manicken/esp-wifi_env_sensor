@@ -20,12 +20,14 @@ namespace HAL_JSON {
         }
     }
 
-    String Manager::ToString() {
-        String ret = "{";
-        ret += "\"deviceCount\":" + String(deviceCount); 
+    std::string Manager::ToString() {
+        std::string ret = "{";
+        ret += "\"deviceCount\":" + std::to_string(deviceCount); 
         ret += ",\"devices\":[";
         for (int i=0;i<deviceCount;i++) {
-            ret += "{"+devices[i]->ToString()+"}";
+            ret += "{";
+            ret += devices[i]->ToString().c_str();
+            ret += "}";
             if (i<deviceCount-1) ret += ",";
         }
         ret += "]}";
@@ -118,7 +120,7 @@ namespace HAL_JSON {
             if (validDevices[i] == false) continue;
             devices[index++] = CreateDeviceFromJSON(jsonItem);
         }
-        String devCountStr = String(deviceCount);
+        std::string devCountStr = std::to_string(deviceCount);
         GlobalLogger.Info(F("Created %u devices\n"), devCountStr.c_str());
         delete[] validDevices; // free memory
         return true;
@@ -227,7 +229,7 @@ namespace HAL_JSON {
             GlobalLogger.Error(F("ReadJSON - deserialization failed: "), error.c_str());
             return false;
         }
-        String memUsage = String(jsonDoc.memoryUsage()) + " of " + String(jsonDoc.capacity());
+        std::string memUsage = std::to_string(jsonDoc.memoryUsage()) + " of " + std::to_string(jsonDoc.capacity());
         GlobalLogger.Info(F("jsonDoc.memoryUsage="), memUsage.c_str());
         if (!jsonDoc.is<JsonArray>())
         {
@@ -267,15 +269,15 @@ namespace HAL_JSON {
     }
 
     void Manager::TEST() {
-        String result;
-        String cmd = "getDevices";
+        std::string result;
+        std::string cmd = "getDevices";
 
         HALReadStringRequestValue strVal = {cmd, result};
         UIDPath path("1WTG");
         HALReadStringRequest req{path, strVal};
         if (read(req)) {
 
-            Serial.println(result);
+            Serial.println(result.c_str());
         }
 
         HALValue value;

@@ -4,6 +4,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <string>
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_UID_Path.h"
 #include "HAL_JSON_Operations.h"
@@ -49,7 +50,7 @@ namespace HAL_JSON {
         // Maintenance
         static void loop();
         
-        static String ToString();
+        static std::string ToString();
 
         // Debug / Testing
         static void TEST();

@@ -2,10 +2,12 @@
 #pragma once
 
 #ifdef _WIN32
-#include <string>    // std::string for Windows
+
 #include <cstdint>
-using String = std::string;
+//using String = std::string;
 #endif
+
+#include <string>
 
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_UID_Path.h"
@@ -13,8 +15,8 @@ using String = std::string;
 namespace HAL_JSON {
     struct HALWriteValueByCmd {
         const HALValue& value;
-        const String& cmd;
-        HALWriteValueByCmd(const HALValue& value, const String& cmd): value(value), cmd(cmd) {}
+        const std::string& cmd;
+        HALWriteValueByCmd(const HALValue& value, const std::string& cmd): value(value), cmd(cmd) {}
     };
     struct HALWriteValueByCmdReq {
         UIDPath& path;
@@ -24,8 +26,8 @@ namespace HAL_JSON {
 
     struct HALReadValueByCmd {
         HALValue& out_value;
-        const String& cmd;
-        HALReadValueByCmd(HALValue& out, const String& cmd): out_value(out), cmd(cmd) {}
+        const std::string& cmd;
+        HALReadValueByCmd(HALValue& out, const std::string& cmd): out_value(out), cmd(cmd) {}
     };
 
     struct HALReadValueByCmdReq {
@@ -47,15 +49,15 @@ namespace HAL_JSON {
     };
 
     struct HALReadStringRequestValue {
-        String& out_value;
-        const String& cmd;
-        HALReadStringRequestValue(const String& cmd, String& out_value): out_value(out_value), cmd(cmd) {}
+        std::string& out_value;
+        const std::string& cmd;
+        HALReadStringRequestValue(const std::string& cmd, std::string& out_value): out_value(out_value), cmd(cmd) {}
     };
 
     struct HALWriteStringRequestValue {
-        const String& value;
-        String& result;
-        HALWriteStringRequestValue(const String& value, String& result): value(value), result(result) {}
+        const std::string& value;
+        std::string& result;
+        HALWriteStringRequestValue(const std::string& value, std::string& result): value(value), result(result) {}
     };
 
     struct HALReadStringRequest {

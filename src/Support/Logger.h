@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #else
+#include <cstring>
+#define strdup _strdup
 #define __FlashStringHelper char 
 #include <string>    // std::string for Windows
 #include <cstdint>

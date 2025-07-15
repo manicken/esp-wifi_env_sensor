@@ -4,7 +4,9 @@
 #include <Arduino.h>
 #endif
 #include <cctype>
+#include <string>
 #include <cstring>
+#include <cstdint>
 
 namespace CharArray {
     uint32_t countChar(const char* str, char ch);

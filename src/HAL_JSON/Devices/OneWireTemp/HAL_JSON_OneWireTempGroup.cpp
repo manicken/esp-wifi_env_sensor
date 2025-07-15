@@ -110,7 +110,7 @@ namespace HAL_JSON {
     }
 
     bool OneWireTempGroup::read(const HALReadStringRequestValue& val) {
-        if (val.cmd == F("getAllNewDevices")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
+        if (val.cmd == "getAllNewDevices") { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
             val.out_value = "[";
             for (int i=0;i<busCount;i++) {
                 OneWireTempBus* bus = busses[i];
@@ -122,7 +122,7 @@ namespace HAL_JSON {
             val.out_value += "]";
             return true;
         }
-        else if (val.cmd == F("getAllNewDevicesWithTemp")) {
+        else if (val.cmd == "getAllNewDevicesWithTemp") {
             val.out_value = "[";
             for (int i=0;i<busCount;i++) {
                 OneWireTempBus* bus = busses[i];
@@ -134,7 +134,7 @@ namespace HAL_JSON {
             val.out_value += "]";
             return true;
         }
-        else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
+        else if (val.cmd == "getAllDevices") { // (as json) return a complete list of all devices found for all busses
             val.out_value = "[";
             for (int i=0;i<busCount;i++) {
                 OneWireTempBus* bus = busses[i];
@@ -146,7 +146,7 @@ namespace HAL_JSON {
             val.out_value += "]";
             return true;
         }
-        else if (val.cmd == F("getAllTemperatures")) { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
+        else if (val.cmd == "getAllTemperatures") { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
             val.out_value = "[";
             for (int i=0;i<busCount;i++) {
                 OneWireTempBus* bus = busses[i];

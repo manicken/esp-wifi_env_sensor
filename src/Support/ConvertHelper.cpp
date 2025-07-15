@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include "ConvertHelper.h"
 
 namespace Convert
@@ -63,7 +62,7 @@ namespace Convert
     {
         if (!hexString) { // if byteArray is nullptr then this function is only used to verify a hexString
             GlobalLogger.Error(F("HexToBytes - Invalid input 1"));
-            DEBUG_UART.println(F("HexToBytes - Invalid input 1"));
+            //DEBUG_UART.println(F("HexToBytes - Invalid input 1"));
             return false; // Invalid input 1
         }
         size_t hexStrLen = strlen(hexString);
@@ -73,16 +72,16 @@ namespace Convert
         else if (hexStrLen == (arraySize*3)-1)// any desired deliminator between hex-byte numbers
             incr = 3;
         else {
-            GlobalLogger.Error(F("HexToBytes - hexStrLen mismatch:"),String(hexStrLen).c_str());
-            DEBUG_UART.print(F("HexToBytes - hexStrLen mismatch:"));
-            DEBUG_UART.println(String(hexStrLen));
+            GlobalLogger.Error(F("HexToBytes - hexStrLen mismatch:"),std::to_string(hexStrLen).c_str());
+           // DEBUG_UART.print(F("HexToBytes - hexStrLen mismatch:"));
+            //DEBUG_UART.println(String(hexStrLen));
             return false; // Invalid input 2
         }
         size_t byteIndex = 0;
         for (size_t i = 0; i < hexStrLen; i+=incr) {
             if (byteIndex >= arraySize) {
                 GlobalLogger.Error(F("HexToBytes - Exceeded array size"));
-                DEBUG_UART.println(F("HexToBytes - Exceeded array size"));
+                //DEBUG_UART.println(F("HexToBytes - Exceeded array size"));
                 return false; // Exceeded array size
             }
             char highNibble = hexString[i];
@@ -90,7 +89,7 @@ namespace Convert
 
             if (!std::isxdigit(highNibble) || !std::isxdigit(lowNibble)) {
                 GlobalLogger.Error(F("HexToBytes - Non-hex character found"));
-                DEBUG_UART.println(F("HexToBytes - Non-hex character found"));
+                //DEBUG_UART.println(F("HexToBytes - Non-hex character found"));
                 return false; // Non-hex character found
             }
             if (byteArray != nullptr) // if byteArray is nullptr then this is only a convert pre-validate
@@ -112,15 +111,6 @@ namespace Convert
                                     (macAddrPtr[5]);
         return macAddrBigEndian;
     }
-
-    String PadTo8Bits(uint8_t value) {
-        String bin = String(value, BIN);  // Convert to binary
-        while (bin.length() < 8) {
-            bin = "0" + bin;
-        }
-        return bin;
-    }
-
 
     String toHex(const char *data, size_t len) {
         String hex = "";
@@ -163,6 +153,43 @@ namespace Convert
             }
         }
         return true;
+    }
+
+    std::string toHex(uint32_t value) {
+        char hexStr[9];
+        uint32_t divider = 0x10000000;
+        for (int i=7;i>0;i--) {
+            uint32_t nibble = (value/divider)&0xF;
+            hexStr[i] = (nibble >= 10) ? (nibble - ('A'-10)) : (nibble + '0');
+            value %=divider;
+            divider>>=4;
+        }
+        hexStr[8] = 0x00;
+        return std::string(hexStr);
+    }
+    std::string toHex(uint64_t value) {
+        char hexStr[17];
+        uint64_t divider = 0x1000000000000000;
+        for (int i=0;i<9;i++) {
+            uint32_t nibble = (value/divider)&0xF;
+            hexStr[i] = (nibble >= 10) ? (nibble - ('A'-10)) : (nibble + '0');
+            value %=divider;
+            divider>>=4;
+        }
+        hexStr[16] = 0x00;
+        return std::string(hexStr);
+    }
+
+    std::string toBin(uint8_t value) {
+        char bitStr[9];
+        uint32_t divider = 0x80;
+        for (int i=0;i<8;i++) {
+            bitStr[i] = ((value / divider) & 0x01) + '0';
+            value %= divider;
+            divider >>=1;
+        }
+        bitStr[8] = 0;
+        return std::string(bitStr);
     }
 
 }

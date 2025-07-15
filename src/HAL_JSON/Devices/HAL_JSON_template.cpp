@@ -19,7 +19,8 @@ namespace HAL_JSON {
     String Template::ToString() {
         String ret;
         ret += "\"type\":\"" "template" "\"";
-        ret += ",\"pin\":" + String(pin);
+        ret += ",\"pin\":";
+        ret += String(pin);
         return ret;
     }
 

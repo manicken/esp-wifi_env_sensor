@@ -35,7 +35,7 @@ namespace HAL_JSON {
         void readAll();
         bool read(const HALReadStringRequestValue& val) override;
 
-        String getAllDevices(bool printTemp = false, bool onlyNewDevices = false);
+        std::string getAllDevices(bool printTemp = false, bool onlyNewDevices = false);
         String ToString() override;
     };
 

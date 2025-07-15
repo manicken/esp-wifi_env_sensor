@@ -55,13 +55,13 @@ namespace HAL_JSON {
         items = new (std::nothrow) uint64_t[itemCount];
         if (items == nullptr) {
             delete[] indicies;
-            GlobalLogger.Error(F("new UIDPath - Allocation for items failed, count: "), String(itemCount).c_str());
+            GlobalLogger.Error(F("new UIDPath - Allocation for items failed, count: "), std::to_string(itemCount).c_str());
             itemCount = 0; // allways used at reads so setting it to zero would make reads impossible
             return;
         }
         //items2 = new HAL_UID[itemCount];
         int currStrIndex = 0;
-        for (int i=0;i<itemCount;i++) {
+        for (uint32_t i=0;i<itemCount;i++) {
             if (i<indiciesCount) {
                 items[i] = encodeUID(&uidStr[currStrIndex], indicies[i]-currStrIndex);
                 currStrIndex = indicies[i]+1;
@@ -107,13 +107,13 @@ namespace HAL_JSON {
         return (currentItemIndex==(itemCount-1));
     }
 
-    String UIDPath::ToString(ToStringType type) {
-        String ret;
-        for (int i=0;i<itemCount;i++) {
+    std::string UIDPath::ToString(ToStringType type) {
+        std::string ret;
+        for (uint32_t i=0;i<itemCount;i++) {
             if (type == ToStringType::String) {
-                ret += String(decodeUID(items[i]).c_str());
+                ret += std::string(decodeUID(items[i]).c_str());
             } else if (type == ToStringType::Raw) {
-                ret += String(items[i],16);
+                ret += Convert::toHex((uint64_t)items[i]);
             }
             if (i<itemCount-1)
                 ret += ":";

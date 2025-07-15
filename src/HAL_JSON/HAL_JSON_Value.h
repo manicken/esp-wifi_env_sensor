@@ -1,12 +1,10 @@
 #pragma once
 #ifndef _WIN32
 #include <Arduino.h> // for String
-#else
-#include <string>    // std::string for Windows
-#include <cstdint>
-using String = std::string;
 #endif
 #include <cstdint>
+#include <string>
+
 namespace HAL_JSON {
 
     class HALValue {
@@ -36,7 +34,7 @@ namespace HAL_JSON {
         uint32_t asUInt() const;
         float asFloat() const;
 
-        String toString() const;
+        std::string toString() const;
 
         void set(int32_t v);
         void set(uint32_t v);

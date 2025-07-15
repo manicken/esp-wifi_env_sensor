@@ -7,11 +7,10 @@
 #ifndef _WIN32
 #include <Arduino.h> // Needed for String class
 #else
-#include <string>    // std::string for Windows
-#include <cstdint>
-using String = std::string;
+#define F(x) x
 #endif
 #include "../Support/CharArrayHelpers.h"
+#include "../Support/ConvertHelper.h"
 #include "../Support/Logger.h"
 
 namespace HAL_JSON {
@@ -65,7 +64,7 @@ namespace HAL_JSON {
         uint64_t peekNextUID();
         bool isLast();
 
-        String ToString(ToStringType type = ToStringType::String);
+        std::string ToString(ToStringType type = ToStringType::String);
 
         //uint64_t byIndex(uint32_t index); // usage of this function don't make any sense
     };

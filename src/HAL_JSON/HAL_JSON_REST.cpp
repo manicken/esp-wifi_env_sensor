@@ -29,7 +29,7 @@ namespace HAL_JSON {
             }
         });
         asyncWebserver->on(HAL_JSON_URL_PRINT_DEVICES, HTTP_ANY, [](AsyncWebServerRequest* request){
-            request->send(200, "application/json", Manager::ToString());
+            request->send(200, "application/json", Manager::ToString().c_str());
         });
 
         asyncWebserver->on("/", HTTP_ANY, [](AsyncWebServerRequest *request){
@@ -64,8 +64,8 @@ namespace HAL_JSON {
         if (p2 != -1 && p3 != -1) {
             uid = url.substring(p2 + 1, p3);
         }
-        String value = "";
-        if (p3 != -1) value = url.substring(p3 + 1);
+        std::string value = "";
+        if (p3 != -1) value = url.substring(p3 + 1).c_str();
 
         String message = "";
 //#define REST_API_DEBUG_REQ
@@ -135,13 +135,13 @@ namespace HAL_JSON {
 
                 } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
                     UIDPath uidPath(uid.c_str());
-                    String result;
+                    std::string result;
                     HALWriteStringRequestValue strHalValue(value, result);
                     
                     HALWriteStringRequest req(uidPath, strHalValue);
                     if (Manager::write(req)) {
                         message += "\"info\":{\"String written\":\"";
-                        message += value;
+                        message += value.c_str();
                         message += "\"}";
                     }
                     else {
@@ -153,13 +153,13 @@ namespace HAL_JSON {
 
                 } else if (type == HAL_JSON_REST_API_JSON_STR_TYPE) {
                     UIDPath uidPath(uid.c_str());
-                    String result;
+                    std::string result;
                     HALWriteStringRequestValue strHalValue(value, result);
                     
                     HALWriteStringRequest req(uidPath, strHalValue);
                     if (Manager::write(req)) {
                         message += "\"info\":{\"Json written\":";
-                        message += value;
+                        message += value.c_str();
                         message += "}";
                     }
                     else {
@@ -247,14 +247,14 @@ namespace HAL_JSON {
                 }
             } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
                 UIDPath uidPath(uid.c_str());
-                String result;
+                std::string result;
                 HALReadStringRequestValue strHalValue(value, result);
                 
                 HALReadStringRequest req(uidPath, strHalValue);
                 if (Manager::read(req)) {
                     message += DeviceConstStrings::value;//"\"value\":";
                     message += "\"";
-                    message += result;
+                    message += result.c_str();
                     message += "\"";
                 }
                 else {

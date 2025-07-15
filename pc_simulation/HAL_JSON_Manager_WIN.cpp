@@ -9,6 +9,6 @@ namespace HAL_JSON {
         return true;
     }
     bool Manager::write(const HALWriteRequest &req) {
-
+        return true;
     }
 }

@@ -100,10 +100,10 @@ namespace HAL_JSON {
 
     bool DHT::read(const HALReadStringRequestValue &val) {
         if (val.cmd == "temp") {
-            val.out_value = "{\"temp\":" + String(data.temperature) + "}";
+            val.out_value = "{\"temp\":" + std::to_string(data.temperature) + "}";
             return true;
         } else if (val.cmd == "humidity") {
-            val.out_value = "{\"humidity\":" + String(data.humidity) + "}";
+            val.out_value = "{\"humidity\":" + std::to_string(data.humidity) + "}";
             return true;
         }
         else {

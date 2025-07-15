@@ -120,19 +120,19 @@ namespace HAL_JSON {
     }
 
     bool OneWireTempBus::read(const HALReadStringRequestValue& val) {
-        if (val.cmd == F("getAllNewDevices")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
+        if (val.cmd == "getAllNewDevices") { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
             val.out_value += getAllDevices(false, true);
             return true;
         }
-        else if (val.cmd == F("getAllNewDevicesWithTemp")) { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
+        else if (val.cmd == "getAllNewDevicesWithTemp") { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
             val.out_value += getAllDevices(true, true);
             return true;
         }
-        else if (val.cmd == F("getAllDevices")) { // (as json) return a complete list of all devices found for all busses
+        else if (val.cmd == "getAllDevices") { // (as json) return a complete list of all devices found for all busses
             val.out_value += getAllDevices(false, false);
             return true;
         }
-        else if (val.cmd == F("getAllTemperatures")) { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
+        else if (val.cmd == "getAllTemperatures") { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
             val.out_value += getAllDevices(true, false);
             return true;
         }
@@ -149,17 +149,17 @@ namespace HAL_JSON {
         return false;
     }
 
-    String OneWireTempBus::getAllDevices(bool printTemp, bool onlyNewDevices) {
+    std::string OneWireTempBus::getAllDevices(bool printTemp, bool onlyNewDevices) {
         byte i = 0;
         byte done = 0;
         OneWireAddress addr;
-        String returnStr;
+        std::string returnStr;
         char hexString[3];
         bool first = true;
 
-        returnStr.concat(F("{\"pin\":"));
-        returnStr.concat(pin);
-        returnStr.concat(F(",\"items\":["));
+        returnStr.append("{\"pin\":");
+        returnStr += std::to_string(pin);
+        returnStr.append(",\"items\":[");
         if (printTemp) {
             dTemp->setWaitForConversion(true);
             dTemp->requestTemperatures();
@@ -180,33 +180,33 @@ namespace HAL_JSON {
                 if (onlyNewDevices && haveDeviceWithRomID(addr)==true) continue;
 
                 if (!first) {
-                    returnStr.concat(F(","));
+                    returnStr.append(",");
                 }
                 if (printTemp) {
-                    returnStr.concat(F("{\"romId\":"));
+                    returnStr.append("{\"romId\":");
                 }
-                returnStr.concat("\"");
+                returnStr.append("\"");
                 for( i = 0; i < 7; i++) 
                 {
                     sprintf(hexString, "%02X", addr.bytes[i]);
-                    returnStr.concat(hexString);
-                    returnStr.concat(":");
+                    returnStr.append(hexString);
+                    returnStr.append(":");
                 }
                 sprintf(hexString, "%02X", addr.bytes[7]);
-                returnStr.concat(hexString);
-                returnStr.concat("\"");
+                returnStr.append(hexString);
+                returnStr.append("\"");
                 if (printTemp) {
-                    returnStr.concat(F(",\"tempC\":"));
-                    returnStr.concat(dTemp->getTempC(addr.bytes));
-                    returnStr.concat(F(",\"tempF\":"));
-                    returnStr.concat(dTemp->getTempF(addr.bytes));
-                    returnStr.concat("}");
+                    returnStr.append(",\"tempC\":");
+                    returnStr += std::to_string(dTemp->getTempC(addr.bytes));
+                    returnStr.append(",\"tempF\":");
+                    returnStr += std::to_string(dTemp->getTempF(addr.bytes));
+                    returnStr.append("}");
                 }
                 first = false;
             }
         }
         
-        returnStr.concat(F("]}"));
+        returnStr.append("]}");
         return returnStr;
     }
 
