@@ -1,7 +1,12 @@
 #pragma once
 
+#ifndef _WIN32
 #include <Arduino.h>
-
+#else
+#include <string>    // std::string for Windows
+using String = std::string;
+#include <cstdint>
+#endif
 #if defined(ESP8266)
 #define DEBUG_UART Serial1
 #elif defined(ESP32)

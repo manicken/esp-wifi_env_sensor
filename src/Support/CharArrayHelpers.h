@@ -1,4 +1,8 @@
+#pragma once
+
+#ifndef _WIN32
 #include <Arduino.h>
+#endif
 #include <cctype>
 #include <cstring>
 
@@ -13,12 +17,12 @@ namespace CharArray {
         const char* ptr;
         size_t len;
 
-        StringView() : ptr(nullptr), len(0) {}
-        StringView(const char* p, size_t l) : ptr(p), len(l) {}
+        StringView();
+        StringView(const char* p, size_t l);
 
-        bool empty() const { return len == 0; }
+        bool empty() const;
 
-        std::string toString() const { return std::string(ptr, len); } // for debug/logging
+        std::string toString() const;
     };
 
 }

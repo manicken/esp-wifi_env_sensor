@@ -1,9 +1,10 @@
 
 
-#include "HAL_JSON_RULE_Manager.h"
+#include "HAL_JSON_RULE_Engine.h"
 
 namespace HAL_JSON {
-    HALValue RuleManager::resolveOperand(const Operand& op) {
+
+    HALValue RuleEngine::resolveOperand(const Operand& op) {
         if (op.type == OperandType::Path) {
             HALValue value;
             HALReadRequest req(*op.path, value);
@@ -17,7 +18,7 @@ namespace HAL_JSON {
         return HALValue(); // default
     }
 
-    bool RuleManager::evaluateCondition(const Condition& cond) {
+    bool RuleEngine::evaluateCondition(const Condition& cond) {
         HALValue left = resolveOperand(cond.left);
         HALValue right = resolveOperand(cond.right);
         switch (cond.type) {
@@ -30,7 +31,7 @@ namespace HAL_JSON {
         }
         return false;
     }
-    void RuleManager::executeAction(const Action& action) {
+    void RuleEngine::executeAction(const Action& action) {
         HALValue value = action.value;
         switch (action.type) {
             case ActionType::SetLocalVariable:
@@ -42,7 +43,7 @@ namespace HAL_JSON {
                 break;
         }
     }
-    void RuleManager::evaluateRules() {
+    void RuleEngine::evaluateRules() {
         for (const auto& rule : rules) {
             if (rule.conditions.empty())
                 continue;
@@ -62,7 +63,7 @@ namespace HAL_JSON {
             }
         }
     }
-    bool RuleManager::validateRuleSet(const char* ruleSet) {
+    bool RuleEngine::validateRuleSet(const char* ruleSet) {
         uint32_t newLineIndicies_Count = 0;
         const char** newLinePointers = CharArray::getPointers(ruleSet, '\n', newLineIndicies_Count);
         if (newLineIndicies_Count == 0) {
@@ -92,7 +93,7 @@ namespace HAL_JSON {
         return allValid;
     }
 
-    bool RuleManager::decodeRuleLineType(const char* lineStr, const char* str) {
+    bool RuleEngine::decodeRuleLineType(const char* lineStr, const char* str) {
         const char* found = strstr(lineStr, str);
         if (!found) {
             // str not found at all
@@ -106,7 +107,7 @@ namespace HAL_JSON {
         }
     }
 
-    bool RuleManager::validateRuleLine(const char* ruleStr, size_t length) {
+    bool RuleEngine::validateRuleLine(const char* ruleStr, size_t length) {
         
         if (length == 0) length = strlen(ruleStr);
         if (decodeRuleLineType(ruleStr, "on")){
@@ -118,7 +119,7 @@ namespace HAL_JSON {
 
     }
 
-    void RuleManager::addRule(const char* ruleStr) {
+    void RuleEngine::addRule(const char* ruleStr) {
         
     }
 }

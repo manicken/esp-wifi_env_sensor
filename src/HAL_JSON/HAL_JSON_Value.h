@@ -1,6 +1,11 @@
 #pragma once
-
+#ifndef _WIN32
 #include <Arduino.h> // for String
+#else
+#include <string>    // std::string for Windows
+#include <cstdint>
+using String = std::string;
+#endif
 #include <cstdint>
 namespace HAL_JSON {
 

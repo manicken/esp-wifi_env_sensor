@@ -1,18 +1,24 @@
 
 #pragma once
 
+#ifndef _WIN32
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#endif
 #include <stdlib.h>
 
-#include "../Support/Logger.h"
-#include "../Support/ConvertHelper.h"
+#include "../../Support/Logger.h"
+#include "../../Support/ConvertHelper.h"
 
-#include "HAL_JSON_Device_GlobalDefines.h"
-#include "HAL_JSON_Manager.h"
-#include "HAL_JSON_UID_Path.h"
-#include "HAL_JSON_Value.h"
-#include "HAL_JSON_Operations.h"
+#include "../HAL_JSON_Device_GlobalDefines.h"
+#ifndef _WIN32
+#include "../HAL_JSON_Manager.h"
+#else
+#include "../../../pc_simulation/HAL_JSON_Manager_WIN.h"
+#endif
+#include "../HAL_JSON_UID_Path.h"
+#include "../HAL_JSON_Value.h"
+#include "../HAL_JSON_Operations.h"
 
 #include <vector> // have this for easy prototyping
 #include <variant>
@@ -78,7 +84,7 @@ namespace HAL_JSON {
 
     inline constexpr int RULE_MGR_MAX_VARIABLES = 32;
 
-    class RuleManager {
+    class RuleEngine {
         //inline constexpr int MAX_VARIABLES = 16;
     private:
         

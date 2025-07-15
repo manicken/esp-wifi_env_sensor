@@ -4,7 +4,13 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#ifndef _WIN32
 #include <Arduino.h> // Needed for String class
+#else
+#include <string>    // std::string for Windows
+#include <cstdint>
+using String = std::string;
+#endif
 #include "../Support/CharArrayHelpers.h"
 #include "../Support/Logger.h"
 

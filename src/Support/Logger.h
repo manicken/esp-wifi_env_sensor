@@ -1,7 +1,17 @@
 #pragma once
 
+#ifndef _WIN32
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#else
+#define __FlashStringHelper char 
+#include <string>    // std::string for Windows
+#include <cstdint>
+using String = std::string;
+#define F(x) x
+#include "Stream_WIN.h"
+static Stream Serial(std::cout);  // Simulate Arduino Serial
+#endif
 #include <time.h>
 
 enum class Loglevel : uint8_t {
@@ -44,18 +54,27 @@ class Logger {
     void Error(const __FlashStringHelper* msg);
     void Error(uint32_t code, const char* text);
     void Error(const __FlashStringHelper* msg, const char* text);
+#ifndef _WIN32
     void Error(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
+#endif
     void Info(uint32_t code);
     void Info(const __FlashStringHelper* msg);
     void Info(uint32_t code, const char* text);
     void Info(const __FlashStringHelper* msg, const char* text);
+#ifndef _WIN32
     void Info(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
+#endif
     void Warn(uint32_t code);
     void Warn(const __FlashStringHelper* msg);
     void Warn(uint32_t code, const char* text);
     void Warn(const __FlashStringHelper* msg, const char* text);
+#ifndef _WIN32
     void Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
     void printAllLogs(Stream &out = Serial, bool onlyPrintNew = false);
+#else
+    void printAllLogs(Stream &out = Serial, bool onlyPrintNew = false);
+#endif
+    
     const LogEntry& getLastEntry() const;
 
   private:
@@ -66,7 +85,7 @@ class Logger {
     void addAndAdvance(LogEntry&& entry);
     void advance();
 };
-
+/*
 class PrintStreamAdapter : public Stream {
 public:
   PrintStreamAdapter(Print &p) : _print(p) {}
@@ -81,7 +100,7 @@ public:
 private:
   Print &_print;
 };
-
+*/
 
 // Declare a global instance
 extern Logger GlobalLogger;

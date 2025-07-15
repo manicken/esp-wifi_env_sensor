@@ -52,4 +52,9 @@ namespace CharArray {
         }
         return *a == *b; // Ensure both strings ended
     }
+
+    StringView::StringView() : ptr(nullptr), len(0) {}
+    StringView::StringView(const char* p, size_t l) : ptr(p), len(l) {}
+    bool StringView::empty() const { return len == 0; }
+    std::string StringView::toString() const { return std::string(ptr, len); } // for debug/logging
 }

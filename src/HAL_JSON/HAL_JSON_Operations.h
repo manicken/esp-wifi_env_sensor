@@ -1,6 +1,12 @@
 
 #pragma once
 
+#ifdef _WIN32
+#include <string>    // std::string for Windows
+#include <cstdint>
+using String = std::string;
+#endif
+
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_UID_Path.h"
 
