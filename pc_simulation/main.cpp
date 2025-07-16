@@ -10,6 +10,10 @@
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.h"
     #include "../src/Support/ConvertHelper.h"
 
+    void ReportError(const char* msg, int line, int column) {
+        std::cout << "Error (line " << line << ", column " << column << "): " << msg << std::endl;
+    }
+
     int CountTokens(char* buffer) {
         int count = 0;
         char* p = buffer;
@@ -33,9 +37,6 @@
         const char* text;
         int line;
         int column;
-        std::string ToString() {
-            return "line:" + std::to_string(line) + ", col:" + std::to_string(column) + " " + std::string(text);
-        }
     };
     bool Tokenize(char* buffer, Token* tokens, int tokenCount) {
         int line = 1;
@@ -152,24 +153,34 @@
         enum Type { IF, ON } type;
         int tokenIndex;
     };
+    int Count_IfTokens(Token* tokens, int tokenCount) {
+        int count = 0;
+        for (int i = 0; i < tokenCount; i++) {
+            if (CharArray::equalsIgnoreCase(tokens[i].text, "if"))
+                count++;
+        }
+        return count;
+    }
     bool VerifyBlocks(Token* tokens, int tokenCount) {
         int onLevel = 0;
         int ifLevel = 0;
-        std::vector<Token> ifStack;
+        int ifTokenCount = Count_IfTokens(tokens, tokenCount);
+        Token* ifStack = new Token[ifTokenCount];
+        int ifStackIndex = 0;
         Token lastOn = {nullptr, 0, 0};
         bool otherErrors = false;
 
         bool expecting_do = false;
 
         for (int i = 0; i < tokenCount; i++) {
-            if (strcmp(tokens[i].text, "if") == STRCMP_TRUE) {
+            if (CharArray::equalsIgnoreCase(tokens[i].text, "if")) {
                 ifLevel++;
-                ifStack.push_back(tokens[i]);
+                ifStack[ifStackIndex++] = tokens[i];
                 expecting_do = true;
             }
-            else if (strcmp(tokens[i].text, "on") == STRCMP_TRUE) {
+            else if (CharArray::equalsIgnoreCase(tokens[i].text, "on")) {
                 if (ifLevel != 0 || onLevel != 0) {
-                    std::cout << "Error: 'on' block cannot be nested @ line:" << tokens[i].line << ", col:" << tokens[i].column<< std::endl;
+                    ReportError("'on' block cannot be nested", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 } else {
                     lastOn = tokens[i];
@@ -177,52 +188,56 @@
                     expecting_do = true;
                 }
             }
-            else if (strcmp(tokens[i].text, "do") == STRCMP_TRUE) {
+            else if (CharArray::equalsIgnoreCase(tokens[i].text, "do")) {
                 if (!expecting_do) {
-                    std::cout << "Error: 'do' without preceding 'if' or 'on' @ line:" << tokens[i].line << ", col:" << tokens[i].column<< std::endl;
+                    ReportError("'do' without preceding 'if' or 'on'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 }
                 expecting_do = false;
             }
-            else if (strcmp(tokens[i].text, "endif") == STRCMP_TRUE) {
-                if (ifLevel == 0) {// || (block_stack.top() != BlockType::IF)) {
-                    std::cout << "Error: 'endif' without matching 'if' @ line:" << tokens[i].line << ", col:" << tokens[i].column << std::endl;
+            else if (CharArray::equalsIgnoreCase(tokens[i].text, "endif")) {
+                if (ifLevel == 0) {
+                    ReportError("'endif' without matching 'if'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 }
                 else {
-                    ifStack.pop_back();
+                    if (ifStackIndex > 0)
+                        ifStackIndex--;
                     ifLevel--;
                 }
 
                 if (expecting_do) {
-                    std::cout << "Error: missing 'do' after last 'if' @ line:" << tokens[i].line << ", col:" << tokens[i].column << std::endl;
+                    ReportError("missing 'do' after last 'if'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 }
             }
-            else if (strcmp(tokens[i].text, "endon") == STRCMP_TRUE) {
+            else if (CharArray::equalsIgnoreCase(tokens[i].text, "endon")) {
                 if (onLevel == 0) {
-                    std::cout << "Error: 'endon' without matching 'on' @ line:" << tokens[i].line << ", col:" << tokens[i].column << std::endl;
+                    ReportError("'endon' without matching 'on'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 } else
                     onLevel--;
 
                 if (expecting_do) {
-                    std::cout << "Error: missing 'do' after last 'on' @ line:" << tokens[i].line << ", col:" << tokens[i].column << std::endl;
+                    ReportError("missing 'do' after last 'on'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 }
+            } else if (onLevel == 0 && ifLevel == 0) {
+                ReportError("tokens cannot be outside blocks", tokens[i].line, tokens[i].column);
+                otherErrors = true;
             }
         }
 
         if (ifLevel != 0) {
-            //std::cout << "Error: Unmatched 'if' blocks detected:" << ifLevel << std::endl;
-            for (auto& ifItem : ifStack) {
-                std::cout << "Error: Unmatched 'if' block @ line:" << ifItem.line << ", col:" << ifItem.column << std::endl;
+            for (int i=0;i<ifStackIndex;i++) { // only print last 'errors'
+                ReportError("Unmatched 'if' block", ifStack[i].line, ifStack[i].column);
             }
             
         }
-        if (onLevel != 0)
-            std::cout << "Error: Unmatched 'on' block @ line:" << lastOn.line << ", col:" << lastOn.column << std::endl;
-
+        if (onLevel != 0) {
+            ReportError("Unmatched 'on' block", lastOn.line, lastOn.column);
+        }
+        delete[] ifStack;
         return (ifLevel == 0) && (onLevel == 0) && (otherErrors == false);
     }
 
@@ -255,6 +270,9 @@
             std::cout << std::endl << "VerifyBlocksBetterError: " << std::endl;
             if (VerifyBlocks(tokens, tokenCount) == true) {
                 std::cout << "[OK]" << std::endl;
+                // if here then we can safely parse all blocks
+                
+
             }
             else {
                 std::cout << "[FAIL]" << std::endl;

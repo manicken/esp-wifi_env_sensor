@@ -1,4 +1,4 @@
-on relay#toggle do
+/*on relay#toggle do
   if relay#state==1 do
     led = 1
 	if <condition> do
@@ -6,16 +6,13 @@ on relay#toggle do
 	endif
   endif
 endon
-
+//this cannot be here except if's a comment
 on relay#toggle do
 
-endon
-/*
+endon*/
+
 on relay#toggle do
-  if relay#state==1 do
-    led = 1
-  endif
-  if relay#state >= 2 do
+  if relay#state >= 2 and var#relayLastState == 1 do
     led = 0
   endif
   //endon/* early break
@@ -38,4 +35,3 @@ if
 do
 endif
 */
-rr
