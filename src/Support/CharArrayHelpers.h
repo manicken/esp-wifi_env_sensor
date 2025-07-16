@@ -17,6 +17,8 @@ namespace CharArray {
 
     int count_tokens(const char* str, const char* delimiters);
     char *my_strtok(char **str, const char *delimiters);
+
+    bool EndsWith(const char* str, const char* suffix);
     /*
     struct StringView {
         const char* ptr;

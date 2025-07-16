@@ -241,12 +241,26 @@
         return (ifLevel == 0) && (onLevel == 0) && (otherErrors == false);
     }
 
-    struct UID_Test {
-        union {
-            uint64_t uidVal;
-            char uidStr[8];
-        };
-    };
+    void MergeConditions(Token* tokens, int& tokenCount) {
+
+        const char* ops[] = {">=", "<=", "==", "!=", ">", "<"};
+        const size_t ops_len[] = {2, 2, 2, 2, 1, 1};
+        const int opCount = sizeof(ops) / sizeof(ops[0]);
+
+        for (int i = 0; i < tokenCount; ++i) {
+            size_t strLen = strlen(tokens[i].text);
+            for (int j = 0; j < opCount; j++) {
+                size_t opLen = ops_len[j];
+                if ((strncmp(tokens[i].text, ops[j], opLen) == 0)) {
+                    if ((strLen > opLen)) {
+                        std::cout << "Merge opportunity, found token (" << tokens[i].line << "):[" << tokens[i].text << "]" << std::endl;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
 
     int main() {
         std::cout << "Running on Windows (MinGW)" << std::endl;
@@ -271,8 +285,11 @@
             if (VerifyBlocks(tokens, tokenCount) == true) {
                 std::cout << "[OK]" << std::endl;
                 // if here then we can safely parse all blocks
-                
-
+                MergeConditions(tokens, tokenCount);
+                // debug print
+                for (int i=0;i<tokenCount;i++) {
+                    std::cout << "Token("<<i<<"): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ")\t" << tokens[i].text << std::endl;
+                }
             }
             else {
                 std::cout << "[FAIL]" << std::endl;

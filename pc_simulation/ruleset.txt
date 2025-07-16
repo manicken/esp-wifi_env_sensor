@@ -12,17 +12,15 @@ on relay#toggle do
 endon*/
 
 on relay#toggle do
-  if relay#state >= 2 and var#relayLastState == 1 do
+  if relay#state>=2 do
     led = 0
   endif
-  //endon/* early break
-  if relay#state>=2 do
+  if relay#state >= 2 do
     led = 0
   endif
   if relay#state>= 2 do
     led = 0
   endif
-  // this is a comment
   if relay#state >=2 do
     led = 0
   endif

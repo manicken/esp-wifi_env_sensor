@@ -66,7 +66,14 @@ enum class BlockType {
 
         return true;
     }
+    
 
+    struct UID_Test {
+        union {
+            uint64_t uidVal;
+            char uidStr[8];
+        };
+    };
     //HAL_JSON::RuleEngine::validateRuleSet(fileContets);
         /*
         std::cout << Convert::toHex((uint64_t)0x123456789ABCDEF0) << std::endl;
