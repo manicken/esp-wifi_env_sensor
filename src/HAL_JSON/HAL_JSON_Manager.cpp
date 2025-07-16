@@ -31,6 +31,7 @@ namespace HAL_JSON {
             if (i<deviceCount-1) ret += ",";
         }
         ret += "]}";
+        return ret;
     }
 
     Device* Manager::CreateDeviceFromJSON(const JsonVariant &jsonObj) {
@@ -286,7 +287,5 @@ namespace HAL_JSON {
         if (read(req2)) {
             Serial.println(value.asFloat());
         }
-
-        //if (dispatchWrite())
     }
 }

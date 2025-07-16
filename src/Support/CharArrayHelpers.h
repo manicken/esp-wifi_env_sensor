@@ -15,6 +15,9 @@ namespace CharArray {
     /** case insensitive compare */
     bool equalsIgnoreCase(const char* a, const char* b);
 
+    int count_tokens(const char* str, const char* delimiters);
+    char *my_strtok(char **str, const char *delimiters);
+    /*
     struct StringView {
         const char* ptr;
         size_t len;
@@ -25,6 +28,6 @@ namespace CharArray {
         bool empty() const;
 
         std::string toString() const;
-    };
+    };*/
 
 }

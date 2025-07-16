@@ -53,8 +53,55 @@ namespace CharArray {
         return *a == *b; // Ensure both strings ended
     }
 
+    // Counts tokens in the input string without modifying the original
+    int count_tokens(const char* str, const char* delimiters) {
+        int count = 0;
+        bool inToken = false;
+        while (*str) {
+            if (strchr(delimiters, *str)) {
+                inToken = false;
+            } else if (!inToken) {
+                inToken = true;
+                ++count;
+            }
+            ++str;
+        }
+        return count;
+    }
+
+    // Simplified pseudo-implementation
+    //static char *current_position = NULL;
+
+    char *my_strtok(char **str, const char *delimiters) {
+        if (*str == NULL) {
+            return NULL;
+        }
+
+        // Skip leading delimiters
+        *str += strspn(*str, delimiters);
+        if (**str == '\0') {
+            return NULL;
+        }
+
+        char *token_start = *str;
+
+        // Find end of token
+        *str += strcspn(*str, delimiters);
+
+        if (**str != '\0') {
+            **str = '\0';   // Null-terminate token
+            (*str)++;       // Advance past null terminator
+        } else {
+            *str = NULL;    // End of string reached
+        }
+
+        return token_start;
+    }
+
+/*
     StringView::StringView() : ptr(nullptr), len(0) {}
     StringView::StringView(const char* p, size_t l) : ptr(p), len(l) {}
     bool StringView::empty() const { return len == 0; }
     std::string StringView::toString() const { return std::string(ptr, len); } // for debug/logging
+    */
 }

@@ -1,0 +1,41 @@
+on relay#toggle do
+  if relay#state==1 do
+    led = 1
+	if <condition> do
+	//	<action>
+	endif
+  endif
+endon
+
+on relay#toggle do
+
+endon
+/*
+on relay#toggle do
+  if relay#state==1 do
+    led = 1
+  endif
+  if relay#state >= 2 do
+    led = 0
+  endif
+  //endon/* early break
+  if relay#state>=2 do
+    led = 0
+  endif
+  if relay#state>= 2 do
+    led = 0
+  endif
+  // this is a comment
+  if relay#state >=2 do
+    led = 0
+  endif
+endon
+/*
+if
+    on
+    do
+    endon
+do
+endif
+*/
+rr

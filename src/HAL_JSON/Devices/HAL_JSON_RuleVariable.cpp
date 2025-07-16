@@ -19,9 +19,11 @@ namespace HAL_JSON {
 
     bool RuleVariable::read(HALValue& val) {
         val = value;
+        return true;
     }
     bool RuleVariable::write(const HALValue& val) {
         value = val;
+        return true;
     }
 
     String RuleVariable::ToString() {

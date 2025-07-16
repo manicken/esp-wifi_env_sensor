@@ -158,9 +158,9 @@ namespace Convert
     std::string toHex(uint32_t value) {
         char hexStr[9];
         uint32_t divider = 0x10000000;
-        for (int i=7;i>0;i--) {
+        for (int i=0;i<8;i++) {
             uint32_t nibble = (value/divider)&0xF;
-            hexStr[i] = (nibble >= 10) ? (nibble - ('A'-10)) : (nibble + '0');
+            hexStr[i] = (nibble >= 10) ? (nibble + ('A'-10)) : (nibble + '0');
             value %=divider;
             divider>>=4;
         }
@@ -170,9 +170,9 @@ namespace Convert
     std::string toHex(uint64_t value) {
         char hexStr[17];
         uint64_t divider = 0x1000000000000000;
-        for (int i=0;i<9;i++) {
+        for (int i=0;i<16;i++) {
             uint32_t nibble = (value/divider)&0xF;
-            hexStr[i] = (nibble >= 10) ? (nibble - ('A'-10)) : (nibble + '0');
+            hexStr[i] = (nibble >= 10) ? (nibble + ('A'-10)) : (nibble + '0');
             value %=divider;
             divider>>=4;
         }

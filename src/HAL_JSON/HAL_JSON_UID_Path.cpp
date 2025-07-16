@@ -14,7 +14,7 @@ namespace HAL_JSON {
     uint64_t encodeUID(const char* str, uint32_t count) {
         if (!str || (strlen(str) == 0) || (count == 0)) return 0;
         uint64_t out = 0;
-        for (int i = 0; i < 8 && i < count && str[i]; ++i) {
+        for (uint32_t i = 0; i < 8 && i < count && str[i]; ++i) {
             out |= ((uint64_t)(uint8_t)str[i]) << (8 * (7 - i)); // big-endian
         }
         return out;

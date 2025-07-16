@@ -1,0 +1,84 @@
+
+
+enum class BlockType {
+        IF,
+        ON
+    };
+
+    bool VerifyBlocks(char** tokens, int tokenCount) {
+        // TODO convert this into a fixed size array custom stack
+        std::stack<BlockType> block_stack;
+        
+        bool expecting_do = false;
+
+        for (int i = 0; i < tokenCount; i++) {
+            if (strcmp(tokens[i], "if") == 0) {
+                block_stack.push(BlockType::IF);
+                expecting_do = true;
+            }
+            else if (strcmp(tokens[i], "on") == 0) {
+                if (!block_stack.empty()) {
+                    std::cout << "Error: 'on' block cannot be nested, tokenindex=" << i << std::endl;
+                    return false;
+                }
+                block_stack.push(BlockType::ON);
+                expecting_do = true;
+            }
+            else if (strcmp(tokens[i], "do") == 0) {
+                if (!expecting_do) {
+                    std::cout << "Error: 'do' without preceding 'if' or 'on', tokenindex=" << i << std::endl;
+                    //return false;
+                }
+                expecting_do = false;
+            }
+            else if (strcmp(tokens[i], "endif") == 0) {
+                if (block_stack.empty() || (block_stack.top() != BlockType::IF)) {
+                    std::cout << "Error: 'endif' without matching 'if', tokenindex=" << i << std::endl;
+                    //return false;
+                }
+                block_stack.pop();
+            }
+            else if (strcmp(tokens[i], "endon") == 0) {
+                if (block_stack.empty() || (block_stack.top() != BlockType::ON)) {
+                    std::cout << "Error: 'endon' without matching 'on', tokenindex=" << i << std::endl;
+                    //return false;
+                }
+                block_stack.pop();
+            }
+        }
+        
+
+        if (!block_stack.empty()) {
+            while (!block_stack.empty()) {
+                if (block_stack.top() == BlockType::IF)
+                    std::cout << "Unmatched 'if' block detected." << std::endl;
+                else if (block_stack.top() == BlockType::ON)
+                    std::cout << "Unmatched 'on' block detected." << std::endl;
+                block_stack.pop();
+            }
+            return false;
+        }
+
+        if (expecting_do) {
+            std::cout << "Error: missing 'do' after last 'if' or 'on'" << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    //HAL_JSON::RuleEngine::validateRuleSet(fileContets);
+        /*
+        std::cout << Convert::toHex((uint64_t)0x123456789ABCDEF0) << std::endl;
+        std::cout << Convert::toHex(HAL_JSON::encodeUID("ABCDEFGHIJ")) << std::endl;
+        UID_Test uid;
+        uid.uidVal = HAL_JSON::encodeUID("ABCDEFGH");
+        std::cout << std::string(uid.uidStr,7) << std::endl;
+        std::cout << Convert::toHex((uint32_t)0x12345678) << std::endl;
+        std::cout << Convert::toHex((uint32_t)0x123456789) << std::endl;
+
+        std::cout << Convert::toBin((uint32_t)0xAA) << std::endl;
+        std::cout << Convert::toBin((uint32_t)0x55) << std::endl;
+        std::cout << Convert::toBin((uint32_t)0x18) << std::endl;
+        std::cout << Convert::toBin((uint32_t)0x81) << std::endl;
+        */
