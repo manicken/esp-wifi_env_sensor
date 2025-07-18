@@ -10,6 +10,9 @@
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.h"
     #include "../src/Support/ConvertHelper.h"
 
+    void ReportInfo(const char* msg, int line, int column) {
+        std::cout << "Info (line " << line << ", column " << column << "): " << msg << std::endl;
+    }
     void ReportError(const char* msg, int line, int column) {
         std::cout << "Error (line " << line << ", column " << column << "): " << msg << std::endl;
     }
@@ -251,15 +254,15 @@
     // but then i thought again, i could just replace the AND/OR with the optional usage of && and ||
     // then all contents between if and do/then could be easly merged to one line
     void MergeConditions(Token* tokens, int& tokenCount) {
-        for (int i = 0; i < tokenCount; ++i) {
-            if (strcmp(tokens[i].text, "if") != 0) continue;
+        for (int i = 0; i < tokenCount; i++) {
+            if (CharArray::equalsIgnoreCase(tokens[i].text, "if") == false) continue;
 
             int start = i + 1;
             int end = -1;
-
+            
             // Find "do" or "then"
             for (int j = start; j < tokenCount; ++j) {
-                if (strcmp(tokens[j].text, "do") == 0 || strcmp(tokens[j].text, "then") == 0) {
+                if (CharArray::equalsIgnoreCase(tokens[j].text, "do") || CharArray::equalsIgnoreCase(tokens[j].text, "then")) {
                     end = j;
                     break;
                 }
@@ -281,8 +284,8 @@
 
             for (int j = start+1; j < end; ++j) {
                 const char* t = tokens[j].text;
-                if (strcmp(t, "AND") == 0) t = "&&";
-                else if (strcmp(t, "OR") == 0) t = "||";
+                if (CharArray::equalsIgnoreCase(t, "AND")) t = "&&";
+                else if (CharArray::equalsIgnoreCase(t, "OR")) t = "||";
 
                 strcat(writePtr, t);
             }
@@ -298,6 +301,90 @@
         }
     }
 
+
+    void MergeActions(Token* tokens, int& tokenCount) {
+        //Token newTokens[tokenCount];
+       // int newCount = 0;
+
+        for (int i = 0; i < tokenCount; i++) {
+            const char* text = tokens[i].text;
+            if (!(CharArray::equalsIgnoreCase(text, "then") ||
+                 CharArray::equalsIgnoreCase(text, "do") ||
+                 CharArray::equalsIgnoreCase(text, "and") ||
+                 CharArray::equalsIgnoreCase(text, "endif"))) {
+                    //newTokens[newCount++] = tokens[i];
+                    continue;
+            } 
+            //newTokens[newCount++] = tokens[i];
+            int start = i + 1;
+            int end = -1;
+            ReportInfo("MergeActions found start:", tokens[i].line, tokens[i].column);
+            
+            for (int j = start; j < tokenCount; ++j) {
+                const char* text = tokens[j].text;
+                if (tokens[j].line == 23) { std::cout << "@ line 23: " << std::string(tokens[j].text) << std::endl;
+                    //return;
+                }
+                if (!(CharArray::equalsIgnoreCase(text, "and") ||
+                      CharArray::equalsIgnoreCase(text, "if") ||
+                      CharArray::equalsIgnoreCase(text, "endon") ||
+                      CharArray::equalsIgnoreCase(text, "endif"))) continue;
+
+                end = j;
+                break;
+            }
+            if (start == end) {
+                //  this is not even a warning
+                ReportInfo("MergeActions - empty action", tokens[i].line, tokens[i].column);
+                continue;
+            }
+
+            if (end == -1) {
+                ReportError("MergeActions - malformed action block", tokens[i].line, tokens[i].column);
+                continue;
+            }
+
+            ReportInfo("MergeActions found end:", tokens[end].line, tokens[end].column);
+
+            // Merge tokens from [start, end)
+            char* writePtr = (char*)tokens[start].text;
+            int lineIndex = tokens[start].line;
+            //int extraLineCount = 0;
+
+            for (int j = start+1; j < end; ++j) {
+                if (lineIndex != tokens[j].line) { // consider as a separate action token
+                    //ReportInfo("MergeActions - found new line",tokens[j].line, tokens[j].column);
+
+                    // compact between start+1 and j-1 (merged)
+                    int shiftCount = j - start - 1;
+                    if (shiftCount > 0) {
+                        for (int k = start + 1; k + shiftCount < tokenCount; ++k) {
+                            tokens[k] = tokens[k + shiftCount];
+                        }
+                        tokenCount -= shiftCount;
+                        j -= shiftCount;
+                    }
+                    start = j;
+                    writePtr = (char*)tokens[j].text;
+                    lineIndex = tokens[j].line;
+                    //extraLineCount++;
+                    continue;
+                }
+                const char* t = tokens[j].text;
+                strcat(writePtr, t);
+                
+            }
+
+            // Remove tokens between start+1 and end-1
+            int shiftCount = end - start - 1;
+            if (shiftCount > 0) {
+                for (int j = start + 1; j + shiftCount < tokenCount; ++j) {
+                    tokens[j] = tokens[j + shiftCount];
+                }
+                tokenCount -= shiftCount;
+            }
+        }
+    }
 
     int main() {
         std::cout << "Running on Windows (MinGW)" << std::endl;
@@ -322,8 +409,12 @@
             if (VerifyBlocks(tokens, tokenCount) == true) {
                 std::cout << "[OK]" << std::endl << std::endl;
                 // if here then we can safely parse all blocks
+                std::cout << std::endl << "Mergin Conditions:" << std::endl;
                 MergeConditions(tokens, tokenCount);
-                
+                std::cout << "[OK]" << std::endl;
+                std::cout << std::endl << "Mergin Actions:" << std::endl;
+                MergeActions(tokens, tokenCount);
+                std::cout << "[OK]" << std::endl;
                 std::cout << std::endl;
                 // debug print
                 for (int i=0;i<tokenCount;i++) {
