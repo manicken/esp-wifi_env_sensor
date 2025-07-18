@@ -303,19 +303,14 @@
 
 
     void MergeActions(Token* tokens, int& tokenCount) {
-        //Token newTokens[tokenCount];
-       // int newCount = 0;
-
         for (int i = 0; i < tokenCount; i++) {
             const char* text = tokens[i].text;
             if (!(CharArray::equalsIgnoreCase(text, "then") ||
                  CharArray::equalsIgnoreCase(text, "do") ||
                  CharArray::equalsIgnoreCase(text, "and") ||
                  CharArray::equalsIgnoreCase(text, "endif"))) {
-                    //newTokens[newCount++] = tokens[i];
                     continue;
             } 
-            //newTokens[newCount++] = tokens[i];
             int start = i + 1;
             int end = -1;
             ReportInfo("MergeActions found start:", tokens[i].line, tokens[i].column);
@@ -349,41 +344,26 @@
             // Merge tokens from [start, end)
             char* writePtr = (char*)tokens[start].text;
             int lineIndex = tokens[start].line;
-            //int extraLineCount = 0;
 
             for (int j = start+1; j < end; ++j) {
                 if (lineIndex != tokens[j].line) { // consider as a separate action token
-                    //ReportInfo("MergeActions - found new line",tokens[j].line, tokens[j].column);
-
-                    // compact between start+1 and j-1 (merged)
-                    int shiftCount = j - start - 1;
-                    if (shiftCount > 0) {
-                        for (int k = start + 1; k + shiftCount < tokenCount; ++k) {
-                            tokens[k] = tokens[k + shiftCount];
-                        }
-                        tokenCount -= shiftCount;
-                        j -= shiftCount;
-                    }
-                    start = j;
                     writePtr = (char*)tokens[j].text;
                     lineIndex = tokens[j].line;
-                    //extraLineCount++;
                     continue;
                 }
                 const char* t = tokens[j].text;
                 strcat(writePtr, t);
-                
-            }
-
-            // Remove tokens between start+1 and end-1
-            int shiftCount = end - start - 1;
-            if (shiftCount > 0) {
-                for (int j = start + 1; j + shiftCount < tokenCount; ++j) {
-                    tokens[j] = tokens[j + shiftCount];
-                }
-                tokenCount -= shiftCount;
+                tokens[j].line = -1; // mark consumed
             }
         }
+        // cleanup
+        int writeIdx = 0;
+        for (int readIdx = 0; readIdx < tokenCount; ++readIdx) {
+            if (tokens[readIdx].line == -1) continue;
+            if (writeIdx != readIdx) tokens[writeIdx] = tokens[readIdx];
+            ++writeIdx;
+        }
+        tokenCount = writeIdx;
     }
 
     int main() {
@@ -417,9 +397,13 @@
                 std::cout << "[OK]" << std::endl;
                 std::cout << std::endl;
                 // debug print
+                //int count = 0;
                 for (int i=0;i<tokenCount;i++) {
+                    //if (tokens[i].line == -1) continue;
+                    //count++;
                     std::cout << "Token("<<i<<"): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ")\t" << tokens[i].text << std::endl;
                 }
+                //std::cout << "Token count after action merge: " << count << std::endl;
             }
             else {
                 std::cout << "[FAIL]" << std::endl;
