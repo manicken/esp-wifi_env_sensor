@@ -13,6 +13,9 @@
     void ReportError(const char* msg, int line, int column) {
         std::cout << "Error (line " << line << ", column " << column << "): " << msg << std::endl;
     }
+    void ReportWarning(const char* msg, int line, int column) {
+        std::cout << "Warning (line " << line << ", column " << column << "): " << msg << std::endl;
+    }
 
     int CountTokens(char* buffer) {
         int count = 0;
@@ -170,13 +173,13 @@
         Token lastOn = {nullptr, 0, 0};
         bool otherErrors = false;
 
-        bool expecting_do = false;
+        bool expecting_do_then = false;
 
         for (int i = 0; i < tokenCount; i++) {
             if (CharArray::equalsIgnoreCase(tokens[i].text, "if")) {
                 ifLevel++;
                 ifStack[ifStackIndex++] = tokens[i];
-                expecting_do = true;
+                expecting_do_then = true;
             }
             else if (CharArray::equalsIgnoreCase(tokens[i].text, "on")) {
                 if (ifLevel != 0 || onLevel != 0) {
@@ -185,15 +188,15 @@
                 } else {
                     lastOn = tokens[i];
                     onLevel++;
-                    expecting_do = true;
+                    expecting_do_then = true;
                 }
             }
-            else if (CharArray::equalsIgnoreCase(tokens[i].text, "do")) {
-                if (!expecting_do) {
-                    ReportError("'do' without preceding 'if' or 'on'", tokens[i].line, tokens[i].column);
+            else if (CharArray::equalsIgnoreCase(tokens[i].text, "do") || CharArray::equalsIgnoreCase(tokens[i].text, "then")) {
+                if (!expecting_do_then) {
+                    ReportError("'do'/'then' without preceding 'if' or 'on'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 }
-                expecting_do = false;
+                expecting_do_then = false;
             }
             else if (CharArray::equalsIgnoreCase(tokens[i].text, "endif")) {
                 if (ifLevel == 0) {
@@ -206,7 +209,7 @@
                     ifLevel--;
                 }
 
-                if (expecting_do) {
+                if (expecting_do_then) {
                     ReportError("missing 'do' after last 'if'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 }
@@ -218,7 +221,7 @@
                 } else
                     onLevel--;
 
-                if (expecting_do) {
+                if (expecting_do_then) {
                     ReportError("missing 'do' after last 'on'", tokens[i].line, tokens[i].column);
                     otherErrors = true;
                 }
@@ -240,23 +243,57 @@
         delete[] ifStack;
         return (ifLevel == 0) && (onLevel == 0) && (otherErrors == false);
     }
-
+    
+    // the function before did overcomplicate things that they dont need to be
+    // a easier way is simply just to merge all items between a if and do/then
+    // however if a AND/OR token is found between if and do/then
+    // it in my first thought i was planning to keep it at place
+    // but then i thought again, i could just replace the AND/OR with the optional usage of && and ||
+    // then all contents between if and do/then could be easly merged to one line
     void MergeConditions(Token* tokens, int& tokenCount) {
-
-        const char* ops[] = {">=", "<=", "==", "!=", ">", "<"};
-        const size_t ops_len[] = {2, 2, 2, 2, 1, 1};
-        const int opCount = sizeof(ops) / sizeof(ops[0]);
-
         for (int i = 0; i < tokenCount; ++i) {
-            size_t strLen = strlen(tokens[i].text);
-            for (int j = 0; j < opCount; j++) {
-                size_t opLen = ops_len[j];
-                if ((strncmp(tokens[i].text, ops[j], opLen) == 0)) {
-                    if ((strLen > opLen)) {
-                        std::cout << "Merge opportunity, found token (" << tokens[i].line << "):[" << tokens[i].text << "]" << std::endl;
-                    }
+            if (strcmp(tokens[i].text, "if") != 0) continue;
+
+            int start = i + 1;
+            int end = -1;
+
+            // Find "do" or "then"
+            for (int j = start; j < tokenCount; ++j) {
+                if (strcmp(tokens[j].text, "do") == 0 || strcmp(tokens[j].text, "then") == 0) {
+                    end = j;
                     break;
                 }
+            }
+            if (start == end) {
+                ReportWarning("MergeConditions - empty if condition", tokens[i].line, tokens[i].column);
+                continue;
+            }
+
+            // malformed if-block, skip (should never happen, as that is taken care of in VerifyBlocks)
+            if (end == -1) {
+                ReportError("MergeConditions - malformed if", tokens[i].line, tokens[i].column);
+                continue;
+            }
+
+            // Merge tokens from [start, end)
+            char* writePtr = (char*)tokens[start].text;
+
+
+            for (int j = start+1; j < end; ++j) {
+                const char* t = tokens[j].text;
+                if (strcmp(t, "AND") == 0) t = "&&";
+                else if (strcmp(t, "OR") == 0) t = "||";
+
+                strcat(writePtr, t);
+            }
+
+            // Remove tokens between start+1 and end-1
+            int shiftCount = end - start - 1;
+            if (shiftCount > 0) {
+                for (int j = start + 1; j + shiftCount < tokenCount; ++j) {
+                    tokens[j] = tokens[j + shiftCount];
+                }
+                tokenCount -= shiftCount;
             }
         }
     }
@@ -283,9 +320,11 @@
 
             std::cout << std::endl << "VerifyBlocksBetterError: " << std::endl;
             if (VerifyBlocks(tokens, tokenCount) == true) {
-                std::cout << "[OK]" << std::endl;
+                std::cout << "[OK]" << std::endl << std::endl;
                 // if here then we can safely parse all blocks
                 MergeConditions(tokens, tokenCount);
+                
+                std::cout << std::endl;
                 // debug print
                 for (int i=0;i<tokenCount;i++) {
                     std::cout << "Token("<<i<<"): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ")\t" << tokens[i].text << std::endl;

@@ -5,9 +5,14 @@ namespace HAL_JSON {
 
     Device** Manager::devices = nullptr;
     int Manager::deviceCount = 0;
+    int Manager::reloadVersion = 0;
     
     int Manager::DeviceCount() {
         return deviceCount;
+    }
+
+    int Manager::ReloadVersion() {
+        return reloadVersion;
     }
 
     void Manager::setup() {
@@ -243,6 +248,7 @@ namespace HAL_JSON {
         bool parseOk = ParseJSON(jsonItems);
         delete[] jsonBuffer;
         if (parseOk == false) Serial.println("ParseJSON(jsonItems) fail");
+        if (parseOk == true) reloadVersion++;
         return parseOk;
     }
     void Manager::begin() {

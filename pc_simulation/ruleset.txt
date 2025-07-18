@@ -11,17 +11,39 @@ on relay#toggle do
 
 endon*/
 
-on relay#toggle do
-  if relay#state>=2 do
+on relay#toggle then
+  if relay#state>=2 then
+    led = 0 and led=1 and var1 = temp1
+  endif
+  if relay#state>=2 then
+	var1 = temp1
+    var1 += 1
+	var1 -= 1
+	var1 /= 1
+	var1 *= 1
+	var1 %= 1
+	var1 &= 1
+	var1 |= 1
+	var1 = var1 + 1
+	var1 = var1 - 1
+	var1 = var1 / 1
+	var1 = var1 * 1
+	var1 = var1 % 1
+	var1 = var1 & 1
+	var1 = var1 | 1
+  endif
+  if then
+  endif
+  if relay#state >= 2 then
     led = 0
   endif
-  if relay#state >= 2 do
+  if relay#state>= 2 then
     led = 0
   endif
-  if relay#state>= 2 do
+  if relay#state >=2 && temp2>50 then
     led = 0
   endif
-  if relay#state >=2 do
+  if temp1>=20 AND temp1<=30 OR temp1>=50 then
     led = 0
   endif
 endon

@@ -98,6 +98,17 @@ namespace CharArray {
         return token_start;
     }
 
+    bool EndsWith(const char* str, const char* suffix) {
+        if (!str || !suffix) return false;
+
+        size_t str_len = strlen(str);
+        size_t suffix_len = strlen(suffix);
+
+        if (suffix_len > str_len) return false;
+
+        return strcmp(str + (str_len - suffix_len), suffix) == 0;
+    }
+
 /*
     StringView::StringView() : ptr(nullptr), len(0) {}
     StringView::StringView(const char* p, size_t l) : ptr(p), len(l) {}

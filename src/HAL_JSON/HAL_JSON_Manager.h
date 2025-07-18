@@ -26,11 +26,13 @@ namespace HAL_JSON {
         
         static Device* CreateDeviceFromJSON(const JsonVariant &json);
         static bool VerifyDeviceJson(const JsonVariant &jsonObj);
-        static Device* findDevice(UIDPath& path);
+        
+        static int reloadVersion;
 
     public:
         // getters
         static int DeviceCount();
+        static int ReloadVersion();
         // init
         /** calls the begin function on all loaded hal devices */
         static void begin();
@@ -40,6 +42,7 @@ namespace HAL_JSON {
         static bool ReadJSON(const char* path);
 
         // Device operations
+        static Device* findDevice(UIDPath& path);
         static bool read(const HALReadRequest &req);
         static bool write(const HALWriteRequest &req);
         static bool read(const HALReadStringRequest &req);
