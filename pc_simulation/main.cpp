@@ -360,7 +360,7 @@
         int writeIdx = 0;
         for (int readIdx = 0; readIdx < tokenCount; ++readIdx) {
             if (tokens[readIdx].line == -1) continue;
-            if (writeIdx != readIdx) tokens[writeIdx] = tokens[readIdx];
+            /*if (writeIdx != readIdx)*/ tokens[writeIdx] = tokens[readIdx];
             ++writeIdx;
         }
         tokenCount = writeIdx;
