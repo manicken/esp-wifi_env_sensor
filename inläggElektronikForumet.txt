@@ -1,0 +1,175 @@
+Hej
+tänkte dela med mig av mitt/mina senaste projekt baserat på ESP8266 och sedan ESP32
+https://github.com/manicken/esp-wifi_env_sensor
+Innan jag börjar med bakgrundsinformation så vill jag säga
+att jag vet om att tasmota/espeasy esphome finns,
+men då de mestadels är skriven i Arduino stil (med massa ino filer)
+och har ett tillvägagånsätt som jag inte gillar, t.ex rule cfg endast ifrån cmd-line)
+också när detta projekt börjades så visste jag inte om allt vad de kunde göra
+tasmota har ganska omfattande funktionalitet egentligen
+
+Kan säga att det kommer även vara lite sidprojekts-beskrivningar, 
+men i princip är allt relaterat på något sätt
+
+Bakgrund: 
+
+Detta började med att jag behövde logga luftfuktighet samt temperatur detta gjordes med en DHT11
+till detta valde jag thingspeak.
+Ifrån början så var allting statiskt konfiguerat t.o.m. nätverkslösenord samt thingspeak api key
+detta ändrades snabbt till att jag började använda WifiManager, för att jag ville att detta projekt ska vara öppet
+och sedan implementerades secrets som var helt enkelt filer som inte laddas upp till github
+sedan gick jag över till att använda AWS iot för fjärrstyrning/direkt avläsning och detta krävde stora api keys,
+och efterssom jag vill ha flera enheter som lätt skulle kunda konfigureras utan att man skulle behöva omkompilera 
+samt ha flera cfgs för de olika enheterna för att förenkla detta används FSBrowser vilket är en webbbaserad fileditor
+ där man kan editera esp:s LittleFS:s filer direkt, samt började också använda ArduinoJSON lib (inte den officiella Arduino_JSON)
+ för att definera vilka filer som skulle användas (ville helst inte hårdkoda filnamnen heller)
+ Efter detta tyckte jag inte heller om att hårdkoda updaterings tider för uppladdning till thingspeak
+ och ville också ha mer flexibilitet vad det gäller övriga eventuella updateringar
+ detta gjorde att jag sökte runt efter ett alarm lib och fastnade för TimeAlarms
+ detta var begränsat och "callbacks" kunde inte ha parametrar, 
+ vilket jag behövde för nästa implementering att kunna kontrollera en fläkt via pwn
+ egentligen kunde detta fixas med extern kod
+ men ville ha så enkel användning som möjligt, så jag gjorde förändringar till detta lib 
+dessa finns här https://github.com/manicken/TimeAlarms.git
+har även implementerat så upp till 256 time alam events kan användas
+med dynamisk allokering för att spara minne
+
+och naturligtvis så används JSON till att också konfigurea TimeAlarms
+
+eftersom temperatur-sensorn i DHT11 inte är så nogrann så inkluderades även DS18B20
+
+Då vi skaffat ett stort tunnelväxthus som nu äntligen stog färdigt
+förra året någonstans efter sommarn, och efterssom jag ville veta hur bra
+det är mot kylan så gjordes nu ytterligare förändringar av mjukvaran
+HAL implementering ifrån JSON
+
+och denna json cfg implementerades:
+[
+  {"uid":"1B1","type":"1WB","pin":25},
+  {"uid":"1B2","type":"1WB","pin":26},
+  {"uid":"1B3","type":"1WB","pin":27},
+  {"uid":"1D1","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:20:9E:8D","note":"temp inne uppe"},
+  {"uid":"1D2","type":"1WT","bus":"1B1","romid":"28:61:64:35:18:27:D4:DB","note":"temp inne nere"},
+  {"uid":"1D3","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:18:C3:F0","note":"temp ute fram"},
+  {"uid":"1D4","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:1F:79:D2","note":"temp ute bak"},
+  {"uid":"1D5","type":"1WT","bus":"1B2","romid":"28:61:64:35:18:21:D5:2F","note":"temp inne mitten"},
+  {"uid":"1D6","type":"1WT","bus":"1B3","romid":"28:87:17:43:d4:bd:0a:46","note":"temp ute jord"},
+  {"uid":"1D7","type":"1WT","bus":"1B3","romid":"28:F0:5F:43:D4:CD:3C:59","note":"temp inne jord"},
+  {"uid":"D11","type":"DHT","dht":"DHT11","pin":18,"note":"fuktighet inne"},
+  {"uid":"FA1","type":"PWM","pin":22,"freq":10000,"bits":10,"invOut":1,"note":"främre takfläkt"},
+  {"uid":"433","type":"TX433","pin":19,"note":"till fjärrstyrning"}
+]
+samt även cfg för thingspeak:
+{
+  "debug":{"debug_output":0},
+  "<apikey>":{
+      "1":"1D1",
+      "2":"1D5",
+      "3":"1D2",
+      "4":"1D3",
+      "5":"1D4",
+      "6":"1D6",
+      "7":"1D7",
+      "8":"D11"
+  }
+}
+time alarms cfg:
+[
+  {"mode":"timer","m":10,"func":"sendEnvData"}
+]
+
+Här började även utveckling av en webbbaserad databas
+för att kategorisera min sambos ganska omfattande frösammling
+detta gjorde att jag fick massa kunskap om webserver https samt backendutveckling
+som körs på node.js (tycket inte om pythons påtvingande whitespace, samt jobbiga oop stil)
+hade säkert kunnat göra det även i c++, men tycker javascript/typescrip duger bra än så länge
+frontend utvecklingskunskapen har jag fått ifrån
+https://github.com/manicken/manicken.github.io https://manicken.github.io/
+som är en omfattande upgradering av den officiella versionen
+
+Uppehåll av utvecklingen (samt ytterligare idespåning):
+
+I slutes av mars så blev det ett rejält hål på värmempumpens 
+varmvattenberedare,
+värmempumpen är en IVT Greenline HT Plus C9 som har en REGO600 styrbox
+
+som tur var att den tidigare ägaren hade sparat den gamla vedpannan, 
+vilken var seriekopplad med värmepumpen, så att istället för att köpa 
+en ny vv tank till värmepumpen, och kanske senare så går nått annat sönder
+så står man bara där med en dyr vv beredare, så tänkte jag att det
+går ju egentligen att koppla in vedpannan som vv-beredare vilket jag gjorde princip bara med
+de gamla rören samt lite nya klämmkopplingar (mkt billigare än ny tank),
+tog ut den gamla tanken för ytterligare inspektion 
+(tung och otymplig så ytterligare ett skäl att inte sätta dit en ny)
+(isåfall hade den fått stått vid sidan om, eller ja i rummet intil)
+
+detta gjorde plats för att istället ha expansionskärlet däri.
+Egentligen ifrån början så ville jag koppla upp värmepumpen
+till internet för att enklare justera värmen
+och hade gjort efterforskningar om att det skulle gå
+finns även en färdig pryl som Husdata säljer (som är baserad på ESP32),
+
+nu när det finns mycket plats kvar i vp så valde jag att flytta styrboxen samt
+det kort där service porten sitter för lättare åtkomst till dessa
+passade även på att byta ut glättringskondesatorerna i styrboxen då dessa säkert 
+var gamla (vilket är ett vanligt problem på denna vp)
+har även läst av mjukvaran då den finns i löstagbara flashminnen
+ifrån mjuvaran har jag verifierat att kommando-tabellen har inga andra kommandon
+https://rago600.sourceforge.io/#HW
+använde ghidra för att 'reverse engineer' mjukvaran 
+
+
+Nuvarande utveckling:
+
+Nu kom jag till det steget som är det nuvarande projektets slutgiltiga fas
+min HAL json var till början ganska begränsad och all HAL implementering 
+var i en och samma källkodsfil, 
+vilken var svårt att underhålla och lägga till nya funktioner/enheter,
+
+nu tänkte jag att bäst att göra det riktigt bra ifrån början:
+
+
+Så allt Börjar med Device base class:
+
+namespace HAL_JSON {
+    
+    enum class UIDPathMaxLength : uint8_t {
+        One = 1,
+        Two = 2,
+        Three = 3,
+        Four = 4 // not used at the moment
+    };
+
+    class Device {
+    protected:
+        Device() = delete;
+        Device(Device&) = delete;
+        const char* type;
+        bool loopTaskDone = false;
+    public:
+        Device(UIDPathMaxLength uidMaxLength, const char* type);
+        virtual ~Device();
+
+        uint64_t uid;
+        const uint8_t uidMaxLength;
+        bool LoopTaskDone();
+        virtual bool read(HALValue& val);
+        virtual bool write(const HALValue& val);
+        virtual bool read(const HALReadStringRequestValue& val);
+        virtual bool write(const HALWriteStringRequestValue& val);
+        virtual bool read(const HALReadValueByCmd& val);
+        virtual bool write(const HALWriteValueByCmd& val);
+        /** called regulary from the main loop */
+        virtual void loop();
+        /** called when all hal devices has been loaded */
+        virtual void begin();
+        /** used to find sub/leaf devices @ "group devices" */
+        virtual Device* findDevice(UIDPath& path);
+
+        virtual String ToString();
+
+        static bool DisabledInJson(const JsonVariant& jsonObj);
+    };
+}
+
+Allting är i namespace HAL_JSON samt alla relaterade filer börjar också på HAL_JSON

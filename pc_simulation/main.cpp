@@ -184,6 +184,9 @@
                 ifStack[ifStackIndex++] = tokens[i];
                 expecting_do_then = true;
             }
+            else if (CharArray::equalsIgnoreCase(tokens[i].text, "elseif")) {
+                expecting_do_then = true;
+            }
             else if (CharArray::equalsIgnoreCase(tokens[i].text, "on")) {
                 if (ifLevel != 0 || onLevel != 0) {
                     ReportError("'on' block cannot be nested", tokens[i].line, tokens[i].column);
@@ -229,7 +232,7 @@
                     otherErrors = true;
                 }
             } else if (onLevel == 0 && ifLevel == 0) {
-                ReportError("tokens cannot be outside blocks", tokens[i].line, tokens[i].column);
+                ReportError("tokens cannot be outside root blocks", tokens[i].line, tokens[i].column);
                 otherErrors = true;
             }
         }
@@ -308,6 +311,7 @@
             if (!(CharArray::equalsIgnoreCase(text, "then") ||
                  CharArray::equalsIgnoreCase(text, "do") ||
                  CharArray::equalsIgnoreCase(text, "and") ||
+                 CharArray::equalsIgnoreCase(text, "else") ||
                  CharArray::equalsIgnoreCase(text, "endif"))) {
                     continue;
             } 
@@ -322,6 +326,8 @@
                 }
                 if (!(CharArray::equalsIgnoreCase(text, "and") ||
                       CharArray::equalsIgnoreCase(text, "if") ||
+                      CharArray::equalsIgnoreCase(text, "else") ||
+                      CharArray::equalsIgnoreCase(text, "elseif") ||
                       CharArray::equalsIgnoreCase(text, "endon") ||
                       CharArray::equalsIgnoreCase(text, "endif"))) continue;
 
@@ -360,6 +366,11 @@
         int writeIdx = 0;
         for (int readIdx = 0; readIdx < tokenCount; ++readIdx) {
             if (tokens[readIdx].line == -1) continue;
+            // one line action tokens
+            if (CharArray::equalsIgnoreCase(tokens[readIdx].text, "and")) continue;
+            // then and do are no longer nessesary
+            if (CharArray::equalsIgnoreCase(tokens[readIdx].text, "then")) continue;
+            if (CharArray::equalsIgnoreCase(tokens[readIdx].text, "do")) continue;
             /*if (writeIdx != readIdx)*/ tokens[writeIdx] = tokens[readIdx];
             ++writeIdx;
         }

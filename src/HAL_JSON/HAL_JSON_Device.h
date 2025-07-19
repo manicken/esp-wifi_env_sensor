@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-#include <Arduino.h> // Needed for String class
+#include <Arduino.h>
 #include <ArduinoJson.h>
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_UID_Path.h"
