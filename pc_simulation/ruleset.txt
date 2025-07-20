@@ -108,14 +108,17 @@ on relay#toggle then // itemcount 6
 		<action1>
 		<action2>
 		<action3>
-	elseif <condition2a> && <condition2b> then // itemcount 1
+	elseif (<condition2a> && <condition2b>) then // itemcount 1
 		<action4>
 	//elseif then
 	//	<action5>
 	else
 		<action5>
 	endif
-	if <cond> then
+	//if <cond> then // no actions here will throw error
+	//endif
+	if var2>5 && 5>var3 then // could maybe in the future be written as var2>5>var3
+		<action>
 	endif
 	var1 = temp1
 	var1 = var1 + 1

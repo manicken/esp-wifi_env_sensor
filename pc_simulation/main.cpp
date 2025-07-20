@@ -476,6 +476,26 @@
         return anyError == false;
     }
 
+    bool VerifyConditionBlocks(Token* tokens, int tokenCount) {
+        bool anyError = false;
+        for (int i = 0; i < tokenCount; ++i) {
+            Token& token = tokens[i];
+            if ((IsType(token, "if") || IsType(token, "elseif")) == false) continue;
+            const char* conditions = tokens[i+1].text;
+            // parantesis could be allowed in a later version
+            // do checks here
+            // first 'split' by ||
+            // and then by &&
+            // or as this is only a check, then I could 'split' by either && or ||
+            // loop here and verify each condition
+            // verify that they only contain one relational operator each
+            // verify the left and right operands
+            // that they are valid device names and valid const values
+
+        }
+        return anyError == false;
+    }
+
     bool ParseRuleSet(Token* tokens, char* fileContents, int tokenCount) {
         if (Tokenize(fileContents, tokens, tokenCount) == false) {
             std::cout << "Error: could not Tokenize" << std::endl;
@@ -516,6 +536,12 @@
         for (int i=0;i<tokenCount;i++) {
             std::cout << "Token(" << i << "): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ", itemCount:" << tokens[i].itemsInBlock << ")\t" << tokens[i].text << std::endl;
         }
+
+        std::cout << std::endl << "VerifyConditionBlocks: " << std::endl;
+        if (VerifyConditionBlocks(tokens, tokenCount) == false) {
+            std::cout << "[FAIL]" << std::endl;
+            return false;
+        }
         return true;
     }
 
@@ -554,6 +580,5 @@
             // maybe do something here
         } else {
             // maybe do something here
-        }
-        
+        }        
     }
