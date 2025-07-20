@@ -10,17 +10,26 @@
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.h"
     #include "../src/Support/ConvertHelper.h"
 
-    void ReportInfo(const char* msg, int line, int column) {
-        std::cout << "Info (line " << line << ", column " << column << "): " << msg << std::endl;
+    inline bool StrEqualsIC(const char* strA, const char* strB) { return CharArray::equalsIgnoreCase(strA, strB); }
+    
+    struct Token {
+        const char* text;
+        int line;
+        int column;
+        int itemsInBlock;
+    };
+    inline bool IsType(const Token& t, const char* str) { return StrEqualsIC(t.text, str); }
+
+    void ReportTokenInfo(const char* msg, const Token& t) {
+        std::cout << "Info (line " << t.line << ", column " << t.column << "): " << msg << std::endl;
     }
-    void ReportError(const char* msg, int line, int column) {
-        std::cout << "Error (line " << line << ", column " << column << "): " << msg << std::endl;
+    void ReportTokenError(const char* msg, const Token& t) {
+        std::cout << "Error (line " << t.line << ", column " << t.column << "): " << msg << std::endl;
     }
-    void ReportWarning(const char* msg, int line, int column) {
-        std::cout << "Warning (line " << line << ", column " << column << "): " << msg << std::endl;
+    void ReportTokenWarning(const char* msg, const Token& t) {
+        std::cout << "Warning (line " << t.line << ", column " << t.column << "): " << msg << std::endl;
     }
 
-    inline bool StrEqualsIC(const char* strA, const char* strB) { return CharArray::equalsIgnoreCase(strA, strB); }
     
 
     int CountTokens(char* buffer) {
@@ -43,13 +52,7 @@
         return count;
     }
 
-    struct Token {
-        const char* text;
-        int line;
-        int column;
-        int itemsInBlock;
-    };
-    inline bool IsType(const Token& t, const char* str) { return StrEqualsIC(t.text, str); }
+    
     
 
     bool Tokenize(char* buffer, Token* tokens, int tokenCount) {
@@ -100,6 +103,7 @@
         if (!file) return nullptr;
 
         outSize = file.tellg();
+        if (outSize == 0) return nullptr;
         file.seekg(0);
 
         // Allocate mutable buffer (+1 for null terminator if needed)
@@ -208,7 +212,7 @@
             }
             else if (IsType(token, "on")) {
                 if (ifLevel != 0 || onLevel != 0) {
-                    ReportError("'on' block cannot be nested", token.line, token.column);
+                    ReportTokenError("'on' block cannot be nested", token);
                     otherErrors = true;
                 } else {
                     lastOn = token;
@@ -219,18 +223,18 @@
             }
             else if (IsType(token, "do") || IsType(token, "then")) {
                 if (!expecting_do_then) {
-                    ReportError("'do'/'then' without preceding 'if' or 'on'", token.line, token.column);
+                    ReportTokenError("'do'/'then' without preceding 'if' or 'on'", token);
                     otherErrors = true;
                 }
                 else if (lastControlIndex + 1 == i) {
-                    ReportError("Missing condition between 'if/on/elseif' and 'then/do'", token.line, token.column);
+                    ReportTokenError("Missing condition between 'if/on/elseif' and 'then/do'", token);
                     otherErrors = true;
                 }
                 expecting_do_then = false;
             }
             else if (IsType(token, "endif")) {
                 if (ifLevel == 0) {
-                    ReportError("'endif' without matching 'if'", token.line, token.column);
+                    ReportTokenError("'endif' without matching 'if'", token);
                     otherErrors = true;
                 }
                 else {
@@ -240,35 +244,35 @@
                 }
 
                 if (expecting_do_then) {
-                    ReportError("missing 'do' after last 'if'", token.line, token.column);
+                    ReportTokenError("missing 'do' after last 'if'", token);
                     otherErrors = true;
                 }
             }
             else if (IsType(token, "endon")) {
                 if (onLevel == 0) {
-                    ReportError("'endon' without matching 'on'", token.line, token.column);
+                    ReportTokenError("'endon' without matching 'on'", token);
                     otherErrors = true;
                 } else
                     onLevel--;
 
                 if (expecting_do_then) {
-                    ReportError("missing 'do' after last 'on'", token.line, token.column);
+                    ReportTokenError("missing 'do' after last 'on'", token);
                     otherErrors = true;
                 }
             } else if (onLevel == 0 && ifLevel == 0) {
-                ReportError("tokens cannot be outside root blocks", token.line, token.column);
+                ReportTokenError("tokens cannot be outside root blocks", token);
                 otherErrors = true;
             }
         }
 
         if (ifLevel != 0) {
             for (int i=0;i<ifStackIndex;i++) { // only print last 'errors'
-                ReportError("Unmatched 'if' block", ifStack[i].line, ifStack[i].column);
+                ReportTokenError("Unmatched 'if' block", ifStack[i]);
             }
             
         }
         if (onLevel != 0) {
-            ReportError("Unmatched 'on' block", lastOn.line, lastOn.column);
+            ReportTokenError("Unmatched 'on' block", lastOn);
         }
         delete[] ifStack;
         return (ifLevel == 0) && (onLevel == 0) && (otherErrors == false);
@@ -296,13 +300,13 @@
             }
             // as this is actually taken care of in VerifyBlocks this check don't really need to be here
             if (start == end) { 
-                ReportError("MergeConditions - empty if condition", tokens[i].line, tokens[i].column);
+                ReportTokenError("MergeConditions - empty if condition", tokens[i]);
                 continue;
             }
 
             // malformed if-block, skip (should never happen, as that is taken care of in VerifyBlocks)
             if (end == -1) {
-                ReportError("MergeConditions - malformed if", tokens[i].line, tokens[i].column);
+                ReportTokenError("MergeConditions - malformed if", tokens[i]);
                 continue;
             }
 
@@ -343,7 +347,7 @@
             } 
             int start = i + 1;
             int end = -1;
-            //ReportInfo("MergeActions found start:", tokens[i].line, tokens[i].column);
+            //ReportTokenInfo("MergeActions found start:", tokens[i]);
             
             for (int j = start; j < tokenCount; ++j) {
                 const char* text = tokens[j].text;
@@ -366,16 +370,16 @@
                 // this should not currently be a warning
                 // can be taken care of in later checks or at construct time where other checks
                 // need to be taken care of beforehand
-                //ReportWarning("MergeActions - empty action", tokens[i].line, tokens[i].column);
+                //ReportTokenWarning("MergeActions - empty action", tokens[i]);
                 continue;
             }
 
             if (end == -1) {
-                //ReportError("MergeActions - malformed action block", tokens[i].line, tokens[i].column);
+                //ReportTokenError("MergeActions - malformed action block", tokens[i]);
                 continue;
             }
 
-            //ReportInfo("MergeActions found end:", tokens[end].line, tokens[end].column);
+            //ReportTokenInfo("MergeActions found end:", tokens[end]);
 
             // Merge tokens from [start, end)
             char* writePtr = (char*)tokens[start].text;
@@ -410,63 +414,118 @@
 
     void CountBlockItems(Token* tokens, int tokenCount) {
         for (int i = 0; i < tokenCount; ++i) {
-            Token& tok = tokens[i];
+            Token& token = tokens[i];
 
-            if (IsType(tok, "on")) {
+            if (IsType(token, "on")) {
                 int count = 0;
                 for (int j = i + 1; j < tokenCount; ++j) {
-                    Token& innerTok = tokens[j];
-                    if (IsType(innerTok, "endon")) {
+                    Token& innerToken = tokens[j];
+                    if (IsType(innerToken, "endon")) {
                         break;
                     }
                     count++;
                 }
-                tok.itemsInBlock = count;
+                token.itemsInBlock = count;
             }
-            else if (IsType(tok, "if")) {
+            else if (IsType(token, "if")) {
                 int count = 1;
                 int level = 1;
                 for (int j = i + 1; j < tokenCount; ++j) {
-                    Token& innerTok = tokens[j];
-                    if (IsType(innerTok, "if")) level++;
-                    if (IsType(innerTok, "endif")) {
+                    Token& innerToken = tokens[j];
+                    if (IsType(innerToken, "if")) level++;
+                    if (IsType(innerToken, "endif")) {
                         level--;
                         if (level == 0) break;
                     }
-                    if (level == 1 && (IsType(innerTok, "elseif") || IsType(innerTok, "else"))) {
+                    if (level == 1 && (IsType(innerToken, "elseif") || IsType(innerToken, "else"))) {
                         count++;
                     }
                 }
-                tok.itemsInBlock = count;
+                token.itemsInBlock = count;
             }
-            else if (IsType(tok, "then") || IsType(tok, "else")) {//} || IsType(tok, "elseif")) {
+            else if (IsType(token, "then") || IsType(token, "else")) {//} || IsType(tok, "elseif")) {
                 int count = 0;
                 int level = 1;
                 for (int j = i + 1; j < tokenCount; ++j) {
-                    Token& innerTok = tokens[j];
-                    if (IsType(innerTok, "if")) level++;
-                    if (IsType(innerTok, "endif")) {
+                    Token& innerToken = tokens[j];
+                    if (IsType(innerToken, "if")) level++;
+                    if (IsType(innerToken, "endif")) {
                         level--;
                         if (level == 0) break;
                     }
-                    if (level == 1 && (IsType(innerTok, "elseif") || IsType(innerTok, "else"))) {
+                    if (level == 1 && (IsType(innerToken, "elseif") || IsType(innerToken, "else"))) {
                         break;
                     }
                     if (level == 1) count++;
                 }
-                tok.itemsInBlock = count;
+                token.itemsInBlock = count;
             }
         }
     }
 
+    bool VerifyBlockItemCounts(Token* tokens, int tokenCount) {
+        bool anyError = false;
+        for (int i = 0; i < tokenCount; ++i) {
+            Token& token = tokens[i];
+            if ((IsType(token, "then") || IsType(token, "else")) == false) continue;
+            if (token.itemsInBlock == 0) {
+                ReportTokenError("VerifyBlockItemCounts - empty action(s) block detected", token);
+                anyError = true;
+            }
+        }
+        return anyError == false;
+    }
 
-    
+    bool ParseRuleSet(Token* tokens, char* fileContents, int tokenCount) {
+        if (Tokenize(fileContents, tokens, tokenCount) == false) {
+            std::cout << "Error: could not Tokenize" << std::endl;
+            return false;
+        }
+        
+        for (int i=0;i<tokenCount;i++) {
+            std::cout << "Token("<<i<<"): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ")\t" << tokens[i].text << std::endl;
+        }
 
-    int main() {
-        std::cout << "Running on Windows (MinGW)" << std::endl;
+        std::cout << std::endl << "VerifyBlocks (BetterError): ";
+        if (VerifyBlocks(tokens, tokenCount) == false) {
+            std::cout << "[FAIL]" << std::endl;
+            return false;
+        }
+        std::cout << "[OK]" << std::endl << std::endl;
+        // if here then we can safely parse all blocks
 
+        std::cout << std::endl << "MergeConditions: ";
+        MergeConditions(tokens, tokenCount);
+        std::cout << "[OK]" << std::endl;
+        
+        std::cout << std::endl << "MergeActions: ";
+        MergeActions(tokens, tokenCount);
+        std::cout << "[OK]" << std::endl;
+        
+        std::cout << std::endl << "CountBlockItems: ";
+        CountBlockItems(tokens, tokenCount);
+        std::cout << "[OK]" << std::endl;
+        
+        std::cout << std::endl << "VerifyBlockItemCounts: " << std::endl;
+        if (VerifyBlockItemCounts(tokens, tokenCount) == false) {
+            std::cout << "[FAIL]" << std::endl;
+            return false;
+        }
+        std::cout << "[OK]" << std::endl;
+            
+        for (int i=0;i<tokenCount;i++) {
+            std::cout << "Token(" << i << "): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ", itemCount:" << tokens[i].itemsInBlock << ")\t" << tokens[i].text << std::endl;
+        }
+        return true;
+    }
+
+    bool ReadAndParseRuleSetFile(const char* filePath) {
         size_t fileSize;
-        char* fileContents = ReadFileToMutableBuffer("ruleset.txt", fileSize);
+        char* fileContents = ReadFileToMutableBuffer(filePath, fileSize);
+        if (fileContents == nullptr) {
+            std::cout << "Error: file could not be read/or is empty" << std::endl;
+            return false;
+        }
         
         FixNewLines(fileContents);
         StripComments(fileContents); // count_tokens currently wont work without using this
@@ -476,40 +535,25 @@
         int tokenCount = CountTokens(fileContents);
         std::cout << "Token count: " << tokenCount << std::endl;
         Token* tokens = new Token[tokenCount];
-        if (Tokenize(fileContents, tokens, tokenCount) == true) {
-            for (int i=0;i<tokenCount;i++) {
-                std::cout << "Token("<<i<<"): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ")\t" << tokens[i].text << std::endl;
-            }
-
-            std::cout << std::endl << "VerifyBlocksBetterError: " << std::endl;
-            if (VerifyBlocks(tokens, tokenCount) == true) {
-                std::cout << "[OK]" << std::endl << std::endl;
-                // if here then we can safely parse all blocks
-                std::cout << std::endl << "Mergin Conditions:" << std::endl;
-                MergeConditions(tokens, tokenCount);
-                std::cout << "[OK]" << std::endl;
-                std::cout << std::endl << "Mergin Actions:" << std::endl;
-                MergeActions(tokens, tokenCount);
-                std::cout << "[OK]" << std::endl;
-                std::cout << std::endl << "CountBlockItems" << std::endl;
-
-                CountBlockItems(tokens, tokenCount);
-                // debug print
-                //int count = 0;
-                for (int i=0;i<tokenCount;i++) {
-                    //if (tokens[i].line == -1) continue;
-                    //count++;
-                    std::cout << "Token(" << i << "): " << "(line:" << std::to_string(tokens[i].line) << ", col:" << std::to_string(tokens[i].column) << ", itemCount:" << tokens[i].itemsInBlock << ")\t" << tokens[i].text << std::endl;
-                }
-                //std::cout << "Token count after action merge: " << count << std::endl;
-            }
-            else {
-                std::cout << "[FAIL]" << std::endl;
-            }
+        bool anyError = false;
+        if (ParseRuleSet(tokens, fileContents, tokenCount)) {
+            std::cout << "ParseRuleSet [OK]" << std::endl;
         } else {
-            std::cout << "something is terrible wrong" << std::endl;
+            std::cout << "ParseRuleSet [FAIL]" << std::endl;
+            anyError = true;
         }
         // dont forget to free/delete
         delete[] fileContents;
         delete[] tokens;
+        return anyError == false;
+    }
+
+    int main() {
+        std::cout << "Running on Windows (MinGW)" << std::endl;
+        if (ReadAndParseRuleSetFile("ruleset.txt")) {
+            // maybe do something here
+        } else {
+            // maybe do something here
+        }
+        
     }
