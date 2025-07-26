@@ -38,6 +38,11 @@ namespace HAL_JSON {
         
         void loop() override; // will need loop for automatic polling as this device is slow
 
+        static bool readTemperature(Device* context, HALValue &val);
+        static bool readHumidity(Device* context, HALValue &val);
+        ReadToHALValue_FuncType GetReadToHALValue_Function(const char* funcName) override;
+        
+
         bool read(HALValue &val) override;
         bool read(const HALReadValueByCmd &val) override;
         bool read(const HALReadStringRequestValue &val) override;

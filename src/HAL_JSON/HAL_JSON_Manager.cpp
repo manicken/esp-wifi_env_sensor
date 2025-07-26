@@ -11,8 +11,8 @@ namespace HAL_JSON {
         return deviceCount;
     }
 
-    int Manager::ReloadVersion() {
-        return reloadVersion;
+    int* Manager::ReloadVersionPtr() {
+        return &reloadVersion;
     }
 
     void Manager::setup() {
@@ -137,7 +137,7 @@ namespace HAL_JSON {
 
         if (!devices || deviceCount == 0) return nullptr;
 
-        uint64_t rootUID = path.resetAndGetFirst();
+        HAL_UID rootUID = path.resetAndGetFirst();
 
         for (int i=0;i<deviceCount;i++) {
             Device* device = devices[i];

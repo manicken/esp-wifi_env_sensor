@@ -99,13 +99,13 @@ namespace HAL_JSON {
     }
 
     Device* OneWireTempBus::findDevice(UIDPath& path) {
-        uint64_t currLevelUID = 0;
-        if (uid != 0) // current device uid
+        HAL_UID currLevelUID;
+        if (uid.IsSet()) // current device uid
             currLevelUID = path.peekNextUID();
         else  // current device uid == 0
             currLevelUID = path.getCurrentUID();
 
-        if (currLevelUID == UIDPath::UID_INVALID) { GlobalLogger.Error(F("OneWireTempBus::findDevice - currLevelUID == UIDPath::UID_INVALID")); return nullptr; } // early break
+        if (currLevelUID.Invalid()) { GlobalLogger.Error(F("OneWireTempBus::findDevice - currLevelUID is Invalid")); return nullptr; } // early break
         
         //HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - uid: "), decodeUID(uid).c_str());
         //HAL_JSON_DEBUG(F("OneWireTempBus::findDevice - currLevelUID: "), decodeUID(currLevelUID).c_str());

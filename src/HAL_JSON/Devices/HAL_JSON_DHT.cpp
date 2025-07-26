@@ -84,6 +84,29 @@ namespace HAL_JSON {
         return true;
     }
 
+    Device::ReadToHALValue_FuncType DHT::GetReadToHALValue_Function(const char* funcName) {
+        if (strcmp(funcName, "temp") == 0) {
+            return DHT::readTemperature;
+        } else if (strcmp(funcName, "humidity") == 0) {
+            return DHT::readHumidity;
+        }
+        else {
+            GlobalLogger.Warn(F("DHT::read - cmd not found: "), funcName); // this can then be read by getting the last entry from logger
+            return nullptr;
+        }
+    }
+
+    bool DHT::readTemperature(Device* context, HALValue& val) {
+        DHT* dht = static_cast<DHT*>(context);
+        val = dht->data.temperature;
+        return true;
+    }
+    bool DHT::readHumidity(Device* context, HALValue& val) {
+        DHT* dht = static_cast<DHT*>(context);
+        val = dht->data.humidity;
+        return true;
+    }
+
     bool DHT::read(const HALReadValueByCmd &val) {
         if (val.cmd == "temp") {
             val.out_value = data.temperature;

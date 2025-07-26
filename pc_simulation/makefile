@@ -8,6 +8,7 @@ $(BUILD_DIR)/%.o: %.cpp
 	
 SRC = \
     main.cpp \
+	RPN_tools.cpp \
 	HAL_JSON_Manager_WIN.cpp \
 	../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.cpp \
 	../src/HAL_JSON/HAL_JSON_Operations.cpp \

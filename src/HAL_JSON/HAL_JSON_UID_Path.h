@@ -12,26 +12,16 @@
 #include "../Support/CharArrayHelpers.h"
 #include "../Support/ConvertHelper.h"
 #include "../Support/Logger.h"
+#include "HAL_JSON_UID.h"
 
 namespace HAL_JSON {
 
-    struct HAL_UID {
-        union
-        {
-            char str[8];
-            uint64_t val;
-        };
-        
-    };
-
-    // Encode UID from ASCII string (up to 8 chars)
-    uint64_t encodeUID(const char* str);
-    uint64_t encodeUID(const char* str, uint32_t count);
-    std::string decodeUID(uint64_t uid);
+    
 
     class UIDPath {
     private:
-        uint64_t* items = nullptr;
+        HAL_UID* items = nullptr;
+
         //HAL_UID* items = nullptr; // future implementation so that encodeUID and decodeUID won't be needed
         uint32_t itemCount = 0;
         uint32_t currentItemIndex = 0;
@@ -41,11 +31,11 @@ namespace HAL_JSON {
             String,
             Raw
         };
-        static constexpr uint64_t UID_INVALID = 1;
 
         UIDPath();
         ~UIDPath();
         UIDPath(const char* uidStr);
+        UIDPath(const CharArray::ZeroCopyString& uidzcStr);
         UIDPath(const std::string& uidStr);
         UIDPath(const UIDPath& other) = delete; // Copy constructor
         UIDPath& operator=(const UIDPath& other) = delete; // Copy assignment
@@ -58,10 +48,10 @@ namespace HAL_JSON {
         bool empty() const;
         
         uint32_t count();
-        uint64_t getCurrentUID();
-        uint64_t resetAndGetFirst();
-        uint64_t getNextUID();
-        uint64_t peekNextUID();
+        HAL_UID getCurrentUID();
+        HAL_UID resetAndGetFirst();
+        HAL_UID getNextUID();
+        HAL_UID peekNextUID();
         bool isLast();
 
         std::string ToString(ToStringType type = ToStringType::String);

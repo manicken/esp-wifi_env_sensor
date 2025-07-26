@@ -20,6 +20,9 @@ namespace HAL_JSON {
         Four = 4 // not used at the moment
     };
 
+    //typedef bool (*ReadToHALValue_FuncType)(HAL_JSON::Device*, HALValue&);
+    
+
     class Device {
     protected:
         Device() = delete;
@@ -27,10 +30,11 @@ namespace HAL_JSON {
         const char* type;
         bool loopTaskDone = false;
     public:
+        using ReadToHALValue_FuncType = bool (*)(Device*, HALValue&);
         Device(UIDPathMaxLength uidMaxLength, const char* type);
         virtual ~Device();
 
-        uint64_t uid;
+        HAL_UID uid;
         const uint8_t uidMaxLength;
         bool LoopTaskDone();
         virtual bool read(HALValue& val);
@@ -39,6 +43,7 @@ namespace HAL_JSON {
         virtual bool write(const HALWriteStringRequestValue& val);
         virtual bool read(const HALReadValueByCmd& val);
         virtual bool write(const HALWriteValueByCmd& val);
+        virtual ReadToHALValue_FuncType GetReadToHALValue_Function(const char* funcName);
         /** called regulary from the main loop */
         virtual void loop();
         /** called when all hal devices has been loaded */
@@ -50,6 +55,7 @@ namespace HAL_JSON {
 
         static bool DisabledInJson(const JsonVariant& jsonObj);
     };
+    
 #if defined(ESP32)
 #define HAL_JSON_DEVICE_CONST_STRINGS_USE_F_PREFIX
 #endif

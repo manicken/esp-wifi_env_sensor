@@ -32,7 +32,7 @@ namespace HAL_JSON {
     public:
         // getters
         static int DeviceCount();
-        static int ReloadVersion();
+        static int* ReloadVersionPtr();
         // init
         /** calls the begin function on all loaded hal devices */
         static void begin();

@@ -64,8 +64,8 @@ namespace HAL_JSON {
         if (units == nullptr) return nullptr;
         else if (unitCount == 0) return nullptr;
 
-        uint64_t uidToFind = path.peekNextUID();
-        if (uidToFind == UIDPath::UID_INVALID) { GlobalLogger.Error(F("TX433::findDevice - uidToFind == UID_INVALID")); return nullptr; } // early break
+        HAL_UID uidToFind = path.peekNextUID();
+        if (uidToFind.Invalid()) { GlobalLogger.Error(F("TX433::findDevice - uidToFind is Invalid")); return nullptr; } // early break
         
         
         for (int i=0;i<unitCount;i++) {

@@ -24,6 +24,7 @@ namespace HAL_JSON {
     bool Device::write(const HALWriteStringRequestValue &val) { return false; }
     bool Device::read(const HALReadValueByCmd &val) { return false; }
     bool Device::write(const HALWriteValueByCmd& val) { return false; }
+    Device::ReadToHALValue_FuncType Device::GetReadToHALValue_Function(const char* funcName) { return nullptr; }
 
     bool Device::DisabledInJson(const JsonVariant& jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_DISABLED) == false) return false;

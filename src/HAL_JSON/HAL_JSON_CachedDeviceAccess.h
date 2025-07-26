@@ -14,13 +14,17 @@
 
 namespace HAL_JSON {
 
-    class CachedDevicePath {
+    class CachedDeviceAccess {
     private:
+        const int* currentVersion;
         int cachedVersion;
         UIDPath path;
         Device* device;
+        /** allows direct access to functions by name, 
+         * or actually sub values defined by using # in uidPath#subItem */
+        Device::ReadToHALValue_FuncType readToHalValueFunc;
     public:
-        CachedDevicePath(const char* uidPath);
+        CachedDeviceAccess(const char* uidPath, const char* funcName = nullptr);
         Device* GetDevice();
     };
 
