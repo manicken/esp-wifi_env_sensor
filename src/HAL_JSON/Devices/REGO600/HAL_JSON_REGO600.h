@@ -19,7 +19,7 @@ namespace HAL_JSON {
         uint8_t rxPin = 0;
         uint8_t txPin = 0;
         /** this is only logical devices */
-        size_t registerItemCount = 0; // used by both registerItems and requestList
+        int registerItemCount = 0; // used by both registerItems and requestList
         REGO600register** registerItems = nullptr;
         Drivers::REGO600::Request** requestList = nullptr;
         Drivers::REGO600* rego600 = nullptr;

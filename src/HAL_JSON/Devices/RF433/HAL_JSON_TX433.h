@@ -19,7 +19,7 @@ namespace HAL_JSON {
     private:
         uint8_t pin = 0; // if pin would be used
         TX433unit** units;
-        size_t unitCount;
+        int unitCount;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj, const char* type);

@@ -38,6 +38,7 @@ namespace RF433 {
     arch_word_t Get1AsciiHex(arch_word_t value );
     arch_word_t Get1AsciiHexValue(arch_word_t hex);
     arch_word_t GetAsciiHexValue(const char *dataArrayIn, arch_word_t nibbleCount);
+    
 
     uint32_t decode5AlphaNumericTo4byteId(const std::string& id);
 
@@ -88,7 +89,7 @@ namespace RF433 {
     void DecodeFromJSON_LC(const JsonVariant &jsonObj);
 
     void DecodeFromJSON(const JsonVariant &jsonObj);
-    void DecodeFromJSON(const String& jsonStr);
+    //void DecodeFromJSON(const String& jsonStr);
     void DecodeFromJSON(std::string jsonStr);
 
     bool VerifyLC_JSON(const JsonVariant &jsonObj);

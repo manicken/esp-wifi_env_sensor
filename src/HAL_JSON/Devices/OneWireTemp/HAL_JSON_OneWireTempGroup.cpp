@@ -21,7 +21,7 @@ namespace HAL_JSON {
             GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("OneWireTempGroup"));
             return false;
         }
-        size_t itemCount = items.size();
+        int itemCount = items.size();
         size_t validItemCount = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
@@ -48,7 +48,7 @@ namespace HAL_JSON {
 
         busCount = 0;
         const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
-        uint32_t itemCount = items.size();
+        int itemCount = items.size();
         bool* validBusses = new bool[itemCount]; // must store this as OneWireTempBus::VerifyJSON cannot be run twice as the first time it actually reserve pin use
         // first pass count valid busses
         for (int i=0;i<itemCount;i++) {

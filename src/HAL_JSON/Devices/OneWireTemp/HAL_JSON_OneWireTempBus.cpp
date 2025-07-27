@@ -19,7 +19,7 @@ namespace HAL_JSON {
         }
         const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
         if (items.size() == 0) { GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("OneWireTempBus")); return false;}
-        size_t itemCount = items.size();
+        int itemCount = (int)items.size();
         size_t validItemCount = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
@@ -50,7 +50,7 @@ namespace HAL_JSON {
 
         deviceCount = 0;
         const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
-        uint32_t itemCount = items.size();
+        int itemCount = items.size();
         bool* validDevices = new bool[itemCount];
         // first pass count valid devices
         for (int i=0;i<itemCount;i++) {
@@ -150,8 +150,8 @@ namespace HAL_JSON {
     }
 
     std::string OneWireTempBus::getAllDevices(bool printTemp, bool onlyNewDevices) {
-        byte i = 0;
-        byte done = 0;
+        //byte i = 0;
+        uint8_t done = 0;
         OneWireAddress addr;
         std::string returnStr;
         char hexString[3];
@@ -186,7 +186,7 @@ namespace HAL_JSON {
                     returnStr.append("{\"romId\":");
                 }
                 returnStr.append("\"");
-                for( i = 0; i < 7; i++) 
+                for(int i = 0; i < 7; i++) 
                 {
                     sprintf(hexString, "%02X", addr.bytes[i]);
                     returnStr.append(hexString);

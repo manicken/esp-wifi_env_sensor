@@ -10,7 +10,7 @@ namespace HAL_JSON {
         GPIO_manager::ReservePin(txPin);
 
         JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS];
-        size_t itemCount = items.size();
+        int itemCount = items.size();
         bool* validItems = new bool[itemCount];
         registerItemCount = 0;
         // first pass count valid items
@@ -48,13 +48,13 @@ namespace HAL_JSON {
         if (rego600 != nullptr)
             delete rego600;
         if (requestList != nullptr) { // if for example the allocation did fail
-            for (auto i=0;i<registerItemCount; i++) {
+            for (int i=0;i<registerItemCount; i++) {
                 delete requestList[i];
             }
             delete[] requestList;
         }
         if (registerItems != nullptr) { // if for example the allocation did fail
-            for (auto i=0;i<registerItemCount; i++) {
+            for (int i=0;i<registerItemCount; i++) {
                 delete registerItems[i];
             }
             delete[] registerItems;
@@ -84,7 +84,7 @@ namespace HAL_JSON {
         }
         const JsonArray& items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
         if (items.size() == 0) { GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("REGO600")); return false;}
-        size_t itemCount = items.size();
+        int itemCount = items.size();
         size_t validItemCount = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];

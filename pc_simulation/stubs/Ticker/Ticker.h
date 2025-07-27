@@ -1,6 +1,7 @@
 #ifndef TICKER_H
 #define TICKER_H
 
+#include <Arduino.h>
 #include <functional>
 #include <thread>
 #include <chrono>

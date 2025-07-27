@@ -93,12 +93,15 @@ namespace HAL_JSON {
         ret += DeviceConstStrings::pin;
         ret += pin;
         ret += "\"units\":[";
+        bool first = true;
         for (int i=0;i<unitCount;i++) {
+            if (first == false)
+                ret += ",";
+            else
+                first = false;
             ret += "{";
             ret += units[i]->ToString();
-            ret += "}";
-            if (i<unitCount-1)
-                ret += ",";
+            ret += "}";            
         }
         ret += "]";
         return ret;

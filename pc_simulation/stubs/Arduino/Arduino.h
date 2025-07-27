@@ -38,6 +38,10 @@ inline unsigned long millis() {
 inline void delay(unsigned long ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
+inline void delayMicroseconds(unsigned long us) {
+    std::this_thread::sleep_for(std::chrono::microseconds(us));
+}
+
 
 // Stub pinMode / digitalWrite / digitalRead
 inline void pinMode(int pin, int mode) {
@@ -62,6 +66,11 @@ inline void analogWrite(int pin, float val) {
 class SerialStub : public Stream {
 public:
     void begin(int) {} // No-op for simulation
+    void flush() {}
+    bool available() { return false; }
+    void end() {}
+    void write(const uint8_t *buffer, size_t size) {}
+    uint8_t read() { return 0; }
 
     template <typename T>
     void print(const T& val) { std::cout << val; }

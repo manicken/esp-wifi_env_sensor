@@ -2,6 +2,7 @@
 
 
 #include <Arduino.h> // Needed for String class
+#include <functional>
 
 #include "../../../Support/Logger.h"
 #include "../../../Support/ConvertHelper.h"

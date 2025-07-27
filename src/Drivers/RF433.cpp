@@ -44,7 +44,7 @@ namespace RF433
             return 0x00;
     }
 
-    uint32_t GetAsciiHexValue(const char *dataArrayIn, arch_word_t nibbleCount)
+    arch_word_t GetAsciiHexValue(const char *dataArrayIn, arch_word_t nibbleCount)
     {
         uint32_t value = 0;
         uint32_t nibblePower = 1;
@@ -378,14 +378,14 @@ namespace RF433
             DecodeFromJSON_LC(jsonObj);
     }
 
-    void DecodeFromJSON(const String& jsonStr)
+    /*void DecodeFromJSON(const String& jsonStr)
     {
         if (pin == -1) return;
         size_t jsonDocBufferSize = (size_t)((float)jsonStr.length() * 1.5f);
         DynamicJsonDocument jsonObj(jsonDocBufferSize);
         deserializeJson(jsonObj, jsonStr.c_str());
         DecodeFromJSON(jsonObj);
-    }
+    }*/
     void DecodeFromJSON(std::string jsonStr)
     {
         if (pin == -1) return;

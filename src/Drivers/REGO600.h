@@ -16,6 +16,8 @@
 #define REGO600_UART_TO_USE Serial2
 #elif defined(ESP8266)
 #define REGO600_UART_TO_USE Serial
+#elif defined(_WIN32)
+#define REGO600_UART_TO_USE Serial
 #endif
 
 // 240-270mS is the measured range so 300mS would be safe

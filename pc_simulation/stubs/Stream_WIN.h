@@ -18,7 +18,8 @@ class Stream {
 
 public:
     Stream(std::ostream& stream = std::cout) : out(stream) {}
-
+    bool available() { return false; }
+    uint8_t read() { return 0; }
     void print(const std::string& s) { out << s; }
     void print(const char* s)        { out << s; }
     void print(char c)               { out << c; }

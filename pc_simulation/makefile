@@ -23,6 +23,8 @@ SRC = \
 	./stubs/DHTesp/DHTesp.cpp \
 	./stubs/OneWire/OneWire.cpp \
 	./stubs/DallasTemperature/DallasTemperature.cpp \
+	../src/Drivers/REGO600.cpp \
+	../src/Drivers/RF433.cpp \
 	$(wildcard ../src/HAL_JSON/*.cpp) \
 	$(wildcard ../src/HAL_JSON/Devices/*.cpp) \
 	$(wildcard ../src/HAL_JSON/Devices/OneWireTemp/*.cpp) \
@@ -32,6 +34,7 @@ SRC = \
 	../src/Support/CharArrayHelpers.cpp \
 	../src/Support/ZeroCopyString.cpp \
 	../src/Support/Logger.cpp \
+	../stubs/LittleFS/LittleFS_ext.cpp \
 	../src/Support/ConvertHelper.cpp
 
 # Files to exclude (webserver-related)
