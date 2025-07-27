@@ -1,6 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
+
+#include <Arduino.h> // Needed for String class
+
 #include <ArduinoJson.h>
 #include <stdlib.h>
 
@@ -53,10 +55,12 @@ namespace HAL_JSON {
         } gpio_pin;
 
         extern const gpio_pin available_gpio_list[];
-        extern const uint8_t available_gpio_list_lenght;
+        extern int available_gpio_list_lenght;
+        void set_available_gpio_list_length();
 
         extern const PinModeDef PinModeStrings[];
-        extern const uint8_t PinModeStrings_length;
+        extern int PinModeStrings_length;
+        void set_PinModeStrings_length();
 
         std::string describePinMode(uint8_t mask);
         

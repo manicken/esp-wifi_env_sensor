@@ -2,8 +2,8 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <stdlib.h>
-#include "Support/CharArrayHelpers.h"
-#include "HAL_JSON/HAL_JSON_ArduinoJSON_ext.h"
+#include "../Support/CharArrayHelpers.h"
+#include "../HAL_JSON/HAL_JSON_ArduinoJSON_ext.h"
 
 #define HAL_JSON_KEYNAME_TX433_HEXID "hexid"
 #define HAL_JSON_KEYNAME_TX433_ALPHA_NUMERIC_ID "anid"

@@ -1,17 +1,15 @@
 #pragma once
 
-#ifndef _WIN32
+
 #include <Arduino.h>
-#endif
+
 #include <cctype>
 #include <string>
 #include <cstring>
 #include <cstdint>
 
-namespace CharArray {
-
     
-
+namespace CharArray {
 
     uint32_t countChar(const char* str, char ch);
     const uint32_t* getIndicies(const char* str, char ch, uint32_t& outCount);
@@ -38,3 +36,5 @@ namespace CharArray {
     };*/
 
 }
+
+inline bool StrEqualsIC(const char* strA, const char* strB) { return CharArray::equalsIgnoreCase(strA, strB); }

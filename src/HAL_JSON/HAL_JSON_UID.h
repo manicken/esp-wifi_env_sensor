@@ -3,11 +3,9 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-#ifndef _WIN32
+
 #include <Arduino.h> // Needed for String class
-#else
-#define F(x) x
-#endif
+
 #include "../Support/CharArrayHelpers.h"
 #include "../Support/ZeroCopyString.h"
 #include "../Support/ConvertHelper.h"

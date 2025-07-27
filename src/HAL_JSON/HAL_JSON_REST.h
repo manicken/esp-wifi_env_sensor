@@ -17,9 +17,7 @@
 #include "HAL_JSON_Manager.h"
 
 #define HAL_JSON_REST_API_PORT 82
-#define HAL_JSON_ROOT_URL                    "/hal"
-#define HAL_JSON_FILES_PATH                  F(HAL_JSON_ROOT_URL)
-#define HAL_JSON_CONFIG_JSON_FILE            F(HAL_JSON_ROOT_URL "/cfg.json")
+
 #define HAL_JSON_URL_RELOAD_JSON             (HAL_JSON_ROOT_URL "/reloadJson")
 //#define HAL_JSON_URL_LIST_ALL_1WIRE_DEVICES  (HAL_JSON_ROOT_URL "/listAll1wireDevices")
 //#define HAL_JSON_URL_GET_VALUE               (HAL_JSON_ROOT_URL "/getValue")

@@ -1,11 +1,6 @@
 
 #pragma once
 
-#ifndef _WIN32
-#include <Arduino.h>
-#else
-
-#endif
 #include <iostream>
 #include <cctype>
 #include <string>

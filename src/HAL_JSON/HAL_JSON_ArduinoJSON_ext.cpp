@@ -75,10 +75,11 @@ namespace HAL_JSON {
             if (val >= 1.0) rawSec = val;
         }
         else {
-            GlobalLogger.Warn(F("refreshrate is not set default is:"),String(defaultRefreshTimeMs).c_str());
+            std::string msg = std::to_string(defaultRefreshTimeMs);
+            GlobalLogger.Warn(F("refreshrate is not set default is:"),msg.c_str());
             return defaultRefreshTimeMs;
         }
-        return static_cast<uint32_t>(round(rawSec * 1000));;
+        return static_cast<uint32_t>(round(rawSec * 1000));
     }
     bool ValidateUINT8(const JsonVariant& jsonObj, const char* keyName) {
         if (!jsonObj.containsKey(keyName)) {

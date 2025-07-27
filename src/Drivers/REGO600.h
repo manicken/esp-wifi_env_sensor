@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <ESPAsyncWebServer.h>
+#include <memory>
+//#include <ESPAsyncWebServer.h>
 #include "../Support/ConvertHelper.h"
 
 #define REGO600_UART_TX_CHKSUM_START_INDEX 2

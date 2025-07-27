@@ -1,10 +1,10 @@
 
 #pragma once
 
-#ifndef _WIN32
+
 #include <Arduino.h>
+
 #include <ArduinoJson.h>
-#endif
 #include <stdlib.h>
 
 #include "../Support/Logger.h"

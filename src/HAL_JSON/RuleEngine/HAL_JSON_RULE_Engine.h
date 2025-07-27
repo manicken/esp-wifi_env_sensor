@@ -1,21 +1,20 @@
 
 #pragma once
 
-#ifndef _WIN32
+
 #include <Arduino.h>
-#include <ArduinoJson.h>
-#endif
+
 #include <stdlib.h>
+
+#include <ArduinoJson.h>
 
 #include "../../Support/Logger.h"
 #include "../../Support/ConvertHelper.h"
 
 #include "../HAL_JSON_Device_GlobalDefines.h"
-#ifndef _WIN32
+
 #include "../HAL_JSON_Manager.h"
-#else
-#include "../../../pc_simulation/HAL_JSON_Manager_WIN.h"
-#endif
+
 #include "../HAL_JSON_UID_Path.h"
 #include "../HAL_JSON_Value.h"
 #include "../HAL_JSON_Operations.h"

@@ -1,7 +1,7 @@
 #pragma once
-#ifndef _WIN32
+
 #include <Arduino.h> // for String
-#endif
+
 #include <cstdint>
 #include <string>
 

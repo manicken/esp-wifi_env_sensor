@@ -66,7 +66,7 @@ namespace HAL_JSON {
                 currZcStr.end = uidzcStr.end;
             }
             items[i] = encodeUID(currZcStr);
-            currZcStr.start = currZcStr.end;
+            currZcStr.start = currZcStr.end + 1; // +1 skip the ':' character
             
         }
         delete[] pointers;

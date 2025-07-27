@@ -32,6 +32,7 @@ namespace HAL_JSON {
         #endif
                 if (listMode != PrintListMode::String) {
                     srv_return_msg.concat("\"PinModes\":{");
+                    if (PinModeStrings_length == -1) set_PinModeStrings_length();
                     for (int i=0;i<PinModeStrings_length;i++)
                     {
                         srv_return_msg.concat("\"");
@@ -55,8 +56,15 @@ namespace HAL_JSON {
                     srv_return_msg.concat("},");
                 }
                 srv_return_msg.concat("\"list\":{");
+                bool first = true;
+                if (available_gpio_list_lenght == -1) set_available_gpio_list_length();
                 for (int i=0;i<available_gpio_list_lenght;i++)
                 {
+                    if (first == false)
+                        srv_return_msg.concat(",");
+                    else
+                        first = false;
+
                     srv_return_msg.concat("\"");
                     srv_return_msg.concat(available_gpio_list[i].pin);
                     srv_return_msg.concat("\":\"");
@@ -73,9 +81,7 @@ namespace HAL_JSON {
                         while (hexStr.length() < 2) hexStr = "0" + hexStr;  // pad to 2 hex digits
                         srv_return_msg.concat(hexStr);
                     }
-                    srv_return_msg.concat("\"");
-                    if (i<(available_gpio_list_lenght-1))
-                        srv_return_msg.concat(",");
+                    srv_return_msg.concat("\"");                        
                 }
                 srv_return_msg.concat("}");
                 srv_return_msg.concat("}");

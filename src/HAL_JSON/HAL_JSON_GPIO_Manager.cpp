@@ -65,10 +65,16 @@ namespace HAL_JSON {
             {34, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)}, // ADC1_6 (input only)
             {35, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)}, // ADC1_7 (input only)
             {36, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)}, // ADC1_0/SensVP (input only)
-            {39, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)}  // ADC1_3/SensVN (input only)
+            {39, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)},  // ADC1_3/SensVN (input only)
+            {0xFF, 0x00} // terminator item
             };
     #endif
-        const uint8_t available_gpio_list_lenght = sizeof(available_gpio_list)/sizeof(available_gpio_list[0]);
+        int available_gpio_list_lenght = -1; // not set yet
+        void set_available_gpio_list_length() {
+            int len = 0;
+            while (available_gpio_list[len].pin != 0xFF) ++len;
+            available_gpio_list_lenght = len;
+        }
 
         const PinModeDef PinModeStrings[] = {
             {"Reserved", static_cast<uint8_t>(PinMode::Reserved)},
@@ -78,38 +84,54 @@ namespace HAL_JSON {
             {"OUT", static_cast<uint8_t>(PinMode::OUT)},
             {"IN", static_cast<uint8_t>(PinMode::IN)},
             {"AIN", static_cast<uint8_t>(PinMode::AIN)},
-            {"AOUT", static_cast<uint8_t>(PinMode::AOUT)}
+            {"AOUT", static_cast<uint8_t>(PinMode::AOUT)},
+            {nullptr, 0} // terminator item
         };
-        const uint8_t PinModeStrings_length = sizeof(PinModeStrings)/sizeof(PinModeStrings[0]);
 
-        uint8_t reservedPins[available_gpio_list_lenght];
+        int PinModeStrings_length = -1;
+        void set_PinModeStrings_length() {
+            int len = 0;
+            while (PinModeStrings[len].Name != nullptr) ++len;
+            PinModeStrings_length = len;
+        }
+        
+        uint8_t* reservedPins = nullptr;
 
         std::string describePinMode(uint8_t mask) {
             std::string result;
-            for (size_t i = 0; i < PinModeStrings_length; ++i) {
-                if (mask & PinModeStrings[i].mode) {
+            int i = 0;
+            while (true) {
+                const PinModeDef& pinModeDef = PinModeStrings[i];
+                if (pinModeDef.Name == nullptr) break;
+                if (mask & pinModeDef.mode) {
                     if (!result.empty()) result += "|";
-                    result += PinModeStrings[i].Name;
+                    result += pinModeDef.Name;
                 }
+                i++;
             }
             return result.empty() ? "None" : result;
         }
 
         bool CheckIfPinAvailable(uint8_t pin, uint8_t pinMode) {
-            for (int i=0;i<available_gpio_list_lenght;i++) {
-                if (available_gpio_list[i].pin == pin) {
+            int i=0;
+            while (true) {
+                const gpio_pin& pinDef = available_gpio_list[i];
+                if (pinDef.pin == 0xFF) break;
+                if (pinDef.pin == pin) {
                     if (reservedPins[i] == 1) {
-                        GlobalLogger.Error(F("CheckIfPinAvailable error - pin allready reserved: "),String(pin).c_str());
+                        std::string msg = std::to_string(pin);
+                        GlobalLogger.Error(F("CheckIfPinAvailable error - pin allready reserved: "),msg.c_str());
                         return false;
                     }
-                    if ((pinMode & available_gpio_list[i].mode) == pinMode)
+                    if ((pinMode & pinDef.mode) == pinMode)
                         return true;
-                    std::string errStr = Convert::toBin(pinMode) + " & " + Convert::toBin(available_gpio_list[i].mode);
+                    std::string errStr = Convert::toBin(pinMode) + " & " + Convert::toBin(pinDef.mode);
                     GlobalLogger.Error(F("CheckIfPinAvailable error - pinmode mismatch: "),errStr.c_str());
                     return false;
                 }
             }
-            GlobalLogger.Error(F("Pin to reserve - not found: "),String(pin).c_str());
+            std::string msg = std::to_string(pin);
+            GlobalLogger.Error(F("Pin to reserve - not found: "),msg.c_str());
             return false;
             //return HAL_JSON_VERIFY_JSON_RETURN_OK;
         }
@@ -130,6 +152,9 @@ namespace HAL_JSON {
         }
 
         void ClearAllReservations() {
+            if (available_gpio_list_lenght == -1) set_available_gpio_list_length();
+            if (reservedPins == nullptr)
+                reservedPins = new uint8_t[available_gpio_list_lenght];
             for (int i=0;i<available_gpio_list_lenght;i++)
                 reservedPins[i] = 0;
         }

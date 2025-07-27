@@ -84,7 +84,7 @@ namespace LittleFS_ext
         }
         return str;
     }
-    void listDir(Print &printStream, const char *dirname, uint8_t level) {
+    void listDir(Stream &printStream, const char *dirname, uint8_t level) {
         printStream.printf(GetNrSpaces(level, false).c_str());
         printStream.printf("Listing directory: %s\r\n", dirname);
         level+=2;

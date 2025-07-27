@@ -1,6 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
+
+#include <Arduino.h> // Needed for String class
+
 #include <ArduinoJson.h>
 #include <stdlib.h>
 #include <LittleFS.h>

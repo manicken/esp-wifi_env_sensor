@@ -2,31 +2,61 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -O2 -D _WIN32
 BUILD_DIR = build
 
-$(BUILD_DIR)/%.o: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-	
+# Header include path for ArduinoJson
+INCLUDE_DIRS = \
+	../.pio/libdeps/esp32dev/ArduinoJson/src \
+	./stubs/Arduino \
+	./stubs/Ticker \
+	./stubs/LittleFS \
+	./stubs/DHTesp \
+	./stubs/OneWire \
+	./stubs/DallasTemperature
+
+INCLUDES = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
+
+# Source files
 SRC = \
-    main.cpp \
+	main.cpp \
 	RPN_tools.cpp \
-	HAL_JSON_Manager_WIN.cpp \
-	../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.cpp \
-	../src/HAL_JSON/HAL_JSON_Operations.cpp \
-	../src/HAL_JSON/HAL_JSON_UID.cpp \
-	../src/HAL_JSON/HAL_JSON_UID_Path.cpp \
-	../src/HAL_JSON/HAL_JSON_Value.cpp \
+	./stubs/Ticker/Ticker.cpp \
+	./stubs/LittleFS/LittleFS.cpp \
+	./stubs/DHTesp/DHTesp.cpp \
+	./stubs/OneWire/OneWire.cpp \
+	./stubs/DallasTemperature/DallasTemperature.cpp \
+	$(wildcard ../src/HAL_JSON/*.cpp) \
+	$(wildcard ../src/HAL_JSON/Devices/*.cpp) \
+	$(wildcard ../src/HAL_JSON/Devices/OneWireTemp/*.cpp) \
+	$(wildcard ../src/HAL_JSON/Devices/REGO600/*.cpp) \
+	$(wildcard ../src/HAL_JSON/Devices/RF433/*.cpp) \
+	$(wildcard ../src/HAL_JSON/RuleEngine/*.cpp) \
 	../src/Support/CharArrayHelpers.cpp \
 	../src/Support/ZeroCopyString.cpp \
 	../src/Support/Logger.cpp \
 	../src/Support/ConvertHelper.cpp
+
+# Files to exclude (webserver-related)
+EXCLUDE_SRC = \
+	../src/HAL_JSON/HAL_JSON_GPIO_Manager_REST.cpp \
+	../src/HAL_JSON/HAL_JSON.cpp \
+	../src/HAL_JSON/HAL_JSON_REST.cpp
 	
+# Remove excluded files from SRC
+SRC := $(filter-out $(EXCLUDE_SRC), $(SRC))
+
+
+# Convert each .cpp into a .o file in the build directory
 OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)
 
+# Main executable
 test.exe: $(OBJ)
-	$(CXX) $(OBJ) -o $@
+	$(CXX) $(OBJ) $(INCLUDES) -o $@
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# Rule to compile each .cpp to .o in the build directory
+$(BUILD_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
+# Clean target
+.PHONY: clean
 clean:
 	rm -f $(OBJ) test.exe

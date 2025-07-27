@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Arduino.h>
+#include <Arduino.h> // Needed for String class
+
 #include <ArduinoJson.h>
 #include "../../../Support/Logger.h"
 #include "../../../Support/ConvertHelper.h"

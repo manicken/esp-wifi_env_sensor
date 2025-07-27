@@ -1,9 +1,13 @@
 #pragma once
 
-#include <Arduino.h>
-#include <ArduinoJson.h>
+#include <Arduino.h> // Needed for String class
+
+
 #include <OneWire.h>
 #include <DallasTemperature.h>
+
+#include <ArduinoJson.h>
+
 #include "../../../Support/Logger.h"
 #include "../../../Support/ConvertHelper.h"
 #include "../../HAL_JSON_Device.h"

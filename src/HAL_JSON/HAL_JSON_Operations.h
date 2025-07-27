@@ -1,11 +1,7 @@
 
 #pragma once
 
-#ifdef _WIN32
-
-#include <cstdint>
-//using String = std::string;
-#endif
+#include <Arduino.h>
 
 #include <string>
 

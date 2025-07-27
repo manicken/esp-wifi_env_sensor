@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-#include <Arduino.h>
+
+#include <Arduino.h> // Needed for String class
+
 #include <ArduinoJson.h>
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_UID_Path.h"
@@ -35,7 +37,7 @@ namespace HAL_JSON {
         virtual ~Device();
 
         HAL_UID uid;
-        const uint8_t uidMaxLength;
+        const uint8_t uidMaxLength = 0;
         bool LoopTaskDone();
         virtual bool read(HALValue& val);
         virtual bool write(const HALValue& val);

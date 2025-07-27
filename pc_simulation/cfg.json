@@ -1,0 +1,32 @@
+[
+  {"uid":"1WT2","type":"1WTG","refreshtimesec":1,"note":"temperatures",
+    "items":[
+	    {"uid":"B1","pin":27,"note":"inne","items":[
+	      {"uid":"D1","romid":"28:61:64:35:1B:71:C1:40","note":"uppe"},
+	      {"uid":"D2","romid":"28:61:64:35:1B:75:6B:AA","note":"nere"},
+	      "the following is just here to test new devices command, currently disabled to make it work",
+	      {"disabled":true,"uid":"D3","romid":"228:61:64:34:83:74:BE:84","note":"nere"}
+	    ]},
+	    {"uid":"B2","pin":26,"note":"mitten","items":[
+	      {"uid":"D1","romid":"28:61:64:35:18:18:C3:F0","note":"ute fram"},
+	      {"uid":"D2","romid":"28:61:64:35:18:1F:79:D2","note":"ute bak"},
+	      {"uid":"D3","romid":"28:61:64:35:18:21:D5:2F","note":"inne"}
+	    ]},
+	    "the following will cause a pin conflict",
+	    {"uid":"B4","pin":25,"note":"duplicate pin use test","items":[
+	      "comment here should be fine",
+	      {"uid":"D1","romid":"28:87:17:43:d4:bd:0a:46","note":"ute"},
+	      {"uid":"D2","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne"}
+	    ]}
+	  ]
+  },
+  {"uid":"B1","type":"1WTB","pin":32,"refreshtimesec":2,"note":"inne","items":[
+    {"uid":"D1","romid":"28:61:64:35:18:20:9E:8D","note":"uppe"},
+    {"uid":"D2","romid":"28:61:64:35:18:27:D4:DB","note":"nere"}
+  ]},
+  {"type":"1WTD","uid":"1WTD0","pin":33,"refreshtimesec":1,"romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
+  {"disabled":true,"type":"1WTD","uid":"1WTD0","pin":34,"refreshtimesec":1,"romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
+  {"type":"DPOUT", "uid":"BIREL_SET", "pin":18,"plength":500},
+  {"type":"DPOUT", "uid":"BIREL_RST", "pin":19,"plength":1000},
+  {"type":"DHT","model":"dht11", "uid":"hum", "pin":21}
+]

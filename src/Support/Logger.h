@@ -1,19 +1,8 @@
 #pragma once
 
-#ifndef _WIN32
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#else
-#include <cstring>
-#define strdup _strdup
-#define __FlashStringHelper char 
-#include <string>    // std::string for Windows
-#include <cstdint>
-using String = std::string;
-#define F(x) x
-#include "Stream_WIN.h"
-static Stream Serial(std::cout);  // Simulate Arduino Serial
-#endif
+
 #include <time.h>
 
 enum class Loglevel : uint8_t {

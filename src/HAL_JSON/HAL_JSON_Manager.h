@@ -4,6 +4,8 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <LittleFS.h>
+#include "../Support/LittleFS_ext.h"
 #include <string>
 #include "HAL_JSON_Value.h"
 #include "HAL_JSON_UID_Path.h"
@@ -16,7 +18,9 @@
 #include "../Support/Logger.h"
 #include "HAL_JSON_ArduinoJSON_ext.h"
 
-
+#define HAL_JSON_ROOT_URL                    "/hal"
+#define HAL_JSON_FILES_PATH                  F(HAL_JSON_ROOT_URL)
+#define HAL_JSON_CONFIG_JSON_FILE            F(HAL_JSON_ROOT_URL "/cfg.json")
 
 namespace HAL_JSON {
     class Manager {

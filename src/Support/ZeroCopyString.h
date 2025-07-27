@@ -1,8 +1,7 @@
 #pragma once
 
-#ifndef _WIN32
 #include <Arduino.h>
-#endif
+
 #include <cctype>
 #include <string>
 #include <cstring>
