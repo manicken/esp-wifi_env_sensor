@@ -10,6 +10,7 @@
 #define F(x) x
 #endif
 #include "../Support/CharArrayHelpers.h"
+#include "../Support/ZeroCopyString.h"
 #include "../Support/ConvertHelper.h"
 #include "../Support/Logger.h"
 #include "HAL_JSON_UID.h"
@@ -35,7 +36,7 @@ namespace HAL_JSON {
         UIDPath();
         ~UIDPath();
         UIDPath(const char* uidStr);
-        UIDPath(const CharArray::ZeroCopyString& uidzcStr);
+        UIDPath(const ZeroCopyString& uidzcStr);
         UIDPath(const std::string& uidStr);
         UIDPath(const UIDPath& other) = delete; // Copy constructor
         UIDPath& operator=(const UIDPath& other) = delete; // Copy assignment

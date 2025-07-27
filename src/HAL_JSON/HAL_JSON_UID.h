@@ -9,6 +9,7 @@
 #define F(x) x
 #endif
 #include "../Support/CharArrayHelpers.h"
+#include "../Support/ZeroCopyString.h"
 #include "../Support/ConvertHelper.h"
 #include "../Support/Logger.h"
 
@@ -31,14 +32,14 @@ namespace HAL_JSON {
         HAL_UID& operator=(const HAL_UID& v);
 
     };
-    bool operator==(const HAL_UID& lhs, const uint64_t& rhs);
-    bool operator==(const uint64_t& lhs, const HAL_UID& rhs);
+    //bool operator==(const HAL_UID& lhs, const uint64_t& rhs);
+    //bool operator==(const uint64_t& lhs, const HAL_UID& rhs);
     bool operator==(const HAL_UID& lhs, const HAL_UID& rhs);
     bool operator!=(const HAL_UID& lhs, const HAL_UID& rhs);
 
     // Encode UID from ASCII string (up to 8 chars)
     HAL_UID encodeUID(const char* str);
-    HAL_UID encodeUID(const CharArray::ZeroCopyString& zcStr);
+    HAL_UID encodeUID(const ZeroCopyString& zcStr);
     HAL_UID encodeUID(const char* str, uint32_t count);
     std::string decodeUID(HAL_UID uid);
 }

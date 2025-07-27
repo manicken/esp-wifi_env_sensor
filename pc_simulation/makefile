@@ -12,9 +12,11 @@ SRC = \
 	HAL_JSON_Manager_WIN.cpp \
 	../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.cpp \
 	../src/HAL_JSON/HAL_JSON_Operations.cpp \
+	../src/HAL_JSON/HAL_JSON_UID.cpp \
 	../src/HAL_JSON/HAL_JSON_UID_Path.cpp \
 	../src/HAL_JSON/HAL_JSON_Value.cpp \
 	../src/Support/CharArrayHelpers.cpp \
+	../src/Support/ZeroCopyString.cpp \
 	../src/Support/Logger.cpp \
 	../src/Support/ConvertHelper.cpp
 	

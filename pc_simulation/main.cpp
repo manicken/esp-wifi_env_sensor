@@ -9,7 +9,13 @@
     #include <stack>
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.h"
     #include "../src/Support/ConvertHelper.h"
+    #include "../src/Support/CharArrayHelpers.h"
+    #include "../src/Support/ZeroCopyString.h"
     #include "RPN_tools.h"
+namespace  HAL_JSON
+{
+    
+
 
     inline bool StrEqualsIC(const char* strA, const char* strB) { return CharArray::equalsIgnoreCase(strA, strB); }
     
@@ -580,16 +586,6 @@
         return anyError == false;
     }
 
-    const char* operatorList = "+-*/|&^";
-
-    bool IsOperator(char c) {
-        const char* op = operatorList;
-        while (*op != '\0') {
-            if (*op == c) return true;
-            ++op;
-        }
-        return false;
-    }
 
     bool CountOperatorsAndOperands(const char* expr, int& operatorCount, int& operandCount, int& leftParenthesisCount ) {
         operatorCount = 0;
@@ -646,7 +642,7 @@
     }
     
 
-    void GetOperands(const char* str, CharArray::ZeroCopyString* operands, int operandCount) {
+    void GetOperands(const char* str, ZeroCopyString* operands, int operandCount) {
 
         bool inOperand = false;
         int operandIndex = 0;
@@ -677,7 +673,7 @@
         }
     }
 
-    bool OperandIsVariable(const CharArray::ZeroCopyString& operand) {
+    bool OperandIsVariable(const ZeroCopyString& operand) {
         const char* p = operand.start;
         const char* const end = operand.end;
         while (p < end) {
@@ -696,21 +692,45 @@
         // allways print debug info
         std::cout << "\noperatorCount:" << operatorCount << ", operandCount:" << operandCount << ", leftParenthesisCount :" << leftParenthesisCount  << std::endl;
         if (anyError) return false;
-        CharArray::ZeroCopyString* operands = new CharArray::ZeroCopyString[operandCount];
+        ZeroCopyString* operands = new ZeroCopyString[operandCount];
 
         GetOperands(str, operands, operandCount);
         // just debug info
         for (int i=0;i<operandCount;i++) {
-            const CharArray::ZeroCopyString& operand = operands[i];
+            const ZeroCopyString& operand = operands[i];
             std::cout << "isVar:" << OperandIsVariable(operand) << ", operand: " + operand.ToString()  << "\n";
         }
-
+        std::cout << "\n";
         for (int i=0;i<operandCount;i++) {
-            const CharArray::ZeroCopyString& operand = operands[i];
+            const ZeroCopyString& operand = operands[i];
+
             if (OperandIsVariable(operand)) {
+                ZeroCopyString varOperand = operand;
                 // here we need to check if the variablename is a (logical/physical/virtual) device
-                HAL_JSON::UIDPath path(operand);
-                std::cout << "uidPath decoded:" << path.ToString() << "\n";
+                const char* funcNameSeparator = varOperand.FindChar('#');
+                ZeroCopyString funcName;
+                if (funcNameSeparator) {
+                    funcName.start = funcNameSeparator+1;
+                    funcName.end = varOperand.end;
+                    varOperand.end = funcNameSeparator;
+                }
+                std::cout << "varOperand before: " << varOperand.ToString() << ", ";
+                UIDPath path(varOperand);
+                std::cout << "uidPath decoded: " << path.ToString();
+                if (funcNameSeparator) {
+                    std::cout << ", funcName: " << funcName.ToString();
+                }
+                std::cout << "\n";
+                // now we can actually 
+                // 1. check if the device exists
+                // 2. also if a device exists in a expression that 
+                //    also mean that that device MUST support read function
+                //    so we also need to check if the device read function
+                //    returns true
+                // 3. if funcName is provided we can also verify that
+                //
+                // if either above fail then the rule that this expresssion normally 
+                // belongs to should be rejected as invalid 
             }
         }
 
@@ -718,6 +738,9 @@
         delete[] operands;
         return true;
     }
+
+    
+}
 
     int main(int argc, char* argv[]) {
         std::cout << "WALHALLA rule development simulator - Running on Windows (MinGW)" << std::endl;
@@ -741,12 +764,12 @@
                         filename = secondArg;
                         std::cout << "Using provided expr file: " << filename << "\n";
                         size_t fileSize = 0;
-                        const char* contents = ReadFileToMutableBuffer(filename.c_str(), fileSize);
+                        const char* contents = HAL_JSON::ReadFileToMutableBuffer(filename.c_str(), fileSize);
                         if (contents == nullptr) {
                             std::cout << "Error: file empty or could not be found: " << filename << "\n";
                             return 0;
                         } 
-                        ValidateExpression(contents);
+                        HAL_JSON::ValidateExpression(contents);
                         delete[] contents;
                         return 0;
                     } else {
@@ -767,7 +790,7 @@
         }
         std::cout << "Using provided rule file: " << filename << "\n";
         
-        if (ReadAndParseRuleSetFile(filename.c_str())) {
+        if (HAL_JSON::ReadAndParseRuleSetFile(filename.c_str())) {
             // maybe do something here
         } else {
             // maybe do something here

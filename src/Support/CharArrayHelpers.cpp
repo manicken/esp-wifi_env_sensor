@@ -1,17 +1,7 @@
 #include "CharArrayHelpers.h"
 
 namespace CharArray {
-    ZeroCopyString::ZeroCopyString() {
-        start = nullptr;
-        end = nullptr;
-    }
-    size_t ZeroCopyString::Length() const {
-        if (start == nullptr || end == nullptr || end < start ) return 0;
-        return end-start;
-    }
-    std::string ZeroCopyString::ToString() const {
-        return std::string(start, end);
-    }
+    
 
     uint32_t countChar(const char* str, char ch) {
         uint32_t count = 0;
@@ -21,35 +11,7 @@ namespace CharArray {
         }
         return count;
     }
-    uint32_t countChar(const ZeroCopyString& zcStr, char ch) {
-        if (zcStr.Length() == 0) return 0;
-        uint32_t count = 0;
-        const char* p = zcStr.start;
-        const char* const end = zcStr.end;
-        while (p < end) {
-            if (*p == ch) count++;
-            p++;
-        }
-        return count;
-    }
-    const uint32_t* getIndicies(const ZeroCopyString& zcStr, char ch, uint32_t& outCount) {
-        if (zcStr.Length() == 0) return nullptr;
-        outCount = countChar(zcStr, ch);
-        if (outCount == 0) return nullptr;
-        uint32_t* indicies = new uint32_t[outCount];
-        uint32_t index = 0;
-        uint32_t strIndex = 0;
-        const char* p = zcStr.start;
-        const char* const end = zcStr.end;
-        while (p < end) {
-            if (*p == ch) { 
-                indicies[index++] = strIndex;
-            }
-            p++;
-            strIndex++;
-        }
-        return indicies;
-    }
+
     const uint32_t* getIndicies(const char* str, char ch, uint32_t& outCount) {
         outCount = countChar(str, ch);
         if (outCount == 0) return nullptr;
@@ -69,19 +31,17 @@ namespace CharArray {
     const char** getPointers(const char* str, char ch, uint32_t& outCount) {
         outCount = countChar(str, ch);
         if (outCount == 0) return nullptr;
-        const char** indicies = new const char*[outCount];
+        const char** pointers = new const char*[outCount];
         uint32_t index = 0;
         while (*str) {
             if (*str == ch) { 
-                indicies[index++] = str;
+                pointers[index++] = str;
             }
             str++;
             //strIndex++;
         }
-        return indicies;
+        return pointers;
     }
-
-    
 
     bool equalsIgnoreCase(const char* a, const char* b) {
         while (*a && *b) {
