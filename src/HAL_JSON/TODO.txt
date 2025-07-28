@@ -5,13 +5,16 @@
    ██     ██████  ██████   ██████  
 
 
-implement so that GlobalLogger includes a websocket server, so that if any client is connected then the log gets automatically printed 
+***** implement json reload and print devices commands in CommandExecutor
 
+
+implement so that GlobalLogger includes a websocket server, so that if any client is connected then the log gets automatically printed 
 
 test TX433
 test REGO600
 
 make it so that if a device is not found while read/write it sends back that as a proper error
+think this is done?
 
 Refactor CommandExecutor so that all errors is added to GlobalLogger instead of the message which 
 should only be used when values are read
