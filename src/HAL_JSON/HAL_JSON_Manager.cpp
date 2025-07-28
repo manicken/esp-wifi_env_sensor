@@ -219,8 +219,7 @@ namespace HAL_JSON {
         }
         char* jsonBuffer = nullptr;
         size_t fileSize;
-        //int size = LittleFS_ext::getFileSize(path);
-        //char* jsonBuffer = new char[size + 1]; // +1 for null char
+
         if (LittleFS_ext::load_from_file(path, &jsonBuffer, &fileSize) == false)
         {
             GlobalLogger.Error(F("ReadJSON - error could not load json file"),path);
@@ -247,7 +246,10 @@ namespace HAL_JSON {
         
         bool parseOk = ParseJSON(jsonItems);
         delete[] jsonBuffer;
-        if (parseOk == false) Serial.println("ParseJSON(jsonItems) fail");
+        if (parseOk == false) {
+            GlobalLogger.Error(F("ParseJSON(jsonItems) fail"));
+            //Serial.println("");
+        }
         if (parseOk == true) reloadVersion++;
         return parseOk;
     }

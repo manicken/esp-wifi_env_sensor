@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Arduino.h>
+#include <fstream>
+
 class LittleFS_class {
 public:
     LittleFS_class();

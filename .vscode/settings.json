@@ -82,6 +82,7 @@
         "bitset": "cpp",
         "regex": "cpp",
         "*.willseeifigonnausethis": "cpp",
-        "*.old": "cpp"
+        "*.old": "cpp",
+        "csignal": "cpp"
     }
 }

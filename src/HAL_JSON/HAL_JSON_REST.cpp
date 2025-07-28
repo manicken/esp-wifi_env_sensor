@@ -48,13 +48,23 @@ namespace HAL_JSON {
     void REST::handleWriteOrRead(AsyncWebServerRequest *request) { // BIG TODO: refactor this function to handle error cases better
         // Example URL: /write/pwm/tempSensor1/255
 
-        String url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
+        const String& url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
+        const char* urlStr = request->url().c_str();
 
-        // Remove the leading '/'
-        if (url.startsWith("/")) url = url.substring(1);  // -> "write/pwm/tempSensor1/255"
+        if (urlStr == nullptr || *urlStr == '\0') {
+            request->send(200, "application/json", "{\"error\":\"urlEmpty\"}");
+            return;
+        }
+        if (*(urlStr + 1) == '\0') {
+            request->send(200, "application/json", "{\"error\":\"emptyPath\"}");
+            return;
+        }
+        
+        ZeroCopyString zcUrl(urlStr+1); // +1 removes the leading /
+        int slashCount = zcUrl.CountChar('/');
 
         // Split into parts
-        int p1 = url.indexOf('/');
+        int p1 = url.indexOf('/', 1);
         int p2 = url.indexOf('/', p1 + 1);
         int p3 = url.indexOf('/', p2 + 1);
 

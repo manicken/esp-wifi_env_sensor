@@ -4,10 +4,14 @@
 #include <ArduinoJson.h>
 #include <stdlib.h>
 #include <LittleFS.h>
-#include "Support/LittleFS_ext.h"
 
-#include <WiFiClient.h>
-#include <ESPAsyncWebServer.h>
+#ifndef _WIN32
+  #include "../Support/LittleFS_ext.h"
+  #include <WiFiClient.h>
+#else
+  #include <LittleFS_ext.h>
+#endif
+#include <ESPAsyncWebServer.h> // have a stub wrapper for this
 
 #include "../Support/Logger.h"
 #include "../Support/ConvertHelper.h"
