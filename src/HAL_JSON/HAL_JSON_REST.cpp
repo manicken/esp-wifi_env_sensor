@@ -59,10 +59,13 @@ namespace HAL_JSON {
             request->send(200, "application/json", "{\"error\":\"emptyPath\"}");
             return;
         }
-        
-        ZeroCopyString zcUrl(urlStr+1); // +1 removes the leading /
-        int slashCount = zcUrl.CountChar('/');
 
+        ZeroCopyString zcUrl(urlStr+1); // +1 removes the leading /
+        ZeroCopyString zcCommand(zcUrl.start, zcUrl.FindChar('/'));
+        ZeroCopyString zcType(zcCommand.end, zcCommand.end!=nullptr?zcUrl.FindChar('/', zcCommand.end+1):nullptr);
+        ZeroCopyString zcUid(zcType.end, zcType.end!=nullptr?zcUrl.FindChar('/', zcType.end+1):nullptr);
+        ZeroCopyString zcValue(zcUid.end, zcUid.end!=nullptr?zcUrl.FindChar('/', zcUid.end+1):nullptr);
+/*
         // Split into parts
         int p1 = url.indexOf('/', 1);
         int p2 = url.indexOf('/', p1 + 1);
@@ -76,7 +79,7 @@ namespace HAL_JSON {
         }
         std::string value = "";
         if (p3 != -1) value = url.substring(p3 + 1).c_str();
-
+*/
         String message = "";
 //#define REST_API_DEBUG_REQ
 #ifdef REST_API_DEBUG_REQ
@@ -92,21 +95,23 @@ namespace HAL_JSON {
         //  ██ ███ ██ ██   ██ ██    ██    ██      
         //   ███ ███  ██   ██ ██    ██    ███████ 
         //                                        
-        if (command == HAL_JSON_REST_API_WRITE_CMD)
+        if (zcCommand.Equals(HAL_JSON_REST_API_WRITE_CMD))
         {
-            if (value.length() > 0 || p3 != -1) {
-                if (type == HAL_JSON_REST_API_BOOL_TYPE) {
+            if (zcValue.Length() == 0) {
+                message += "\"error\":\"No value provided for writing.\"";
+            } else {
+                if (zcType.Equals(HAL_JSON_REST_API_BOOL_TYPE)) {
                     uint32_t uintValue = 0;
-                    if (value == "true" || value == "1") {
+                    if (zcValue.Equals("true") || zcValue.Equals("1")) {
                         uintValue = 1;
-                    } else if (value == "false" || value == "0") {
+                    } else if (zcValue.Equals("false") || zcValue.Equals("0")) {
                         uintValue = 0;
                     } else {
                         message += "{\"error\":\"Invalid boolean value.\"}";
                         request->send(200, "application/json", message);
                         return;
                     }
-                    UIDPath uidPath(uid.c_str());
+                    UIDPath uidPath(zcUid);
                     HALValue halValue = uintValue;
                     HALWriteRequest req(uidPath, halValue);
                     //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
@@ -122,13 +127,13 @@ namespace HAL_JSON {
                         message += "\"";
                     }
                 }
-                else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
+                else if (zcType.Equals(HAL_JSON_REST_API_UINT32_TYPE)) {
                     // Convert value to integer
                     uint32_t uintValue = (uint32_t) strtoul(value.c_str(), nullptr, 10);
                     Serial.print("devmgr write uint32 value:");
                     Serial.println(uintValue);
                     //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-                    UIDPath uidPath(uid.c_str());
+                    UIDPath uidPath(zcUid);
                     HALValue halValue = uintValue;
                     HALWriteRequest req(uidPath, halValue);
                     if (Manager::write(req)) {
@@ -143,8 +148,8 @@ namespace HAL_JSON {
                         message += "\"";
                     }
 
-                } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
-                    UIDPath uidPath(uid.c_str());
+                } else if (zcType.Equals(HAL_JSON_REST_API_STRING_TYPE)) {
+                    UIDPath uidPath(zcUid);
                     std::string result;
                     HALWriteStringRequestValue strHalValue(value, result);
                     
@@ -161,8 +166,8 @@ namespace HAL_JSON {
                         message += "\"";
                     }
 
-                } else if (type == HAL_JSON_REST_API_JSON_STR_TYPE) {
-                    UIDPath uidPath(uid.c_str());
+                } else if (zcType.Equals(HAL_JSON_REST_API_JSON_STR_TYPE)) {
+                    UIDPath uidPath(zcUid);
                     std::string result;
                     HALWriteStringRequestValue strHalValue(value, result);
                     
@@ -182,8 +187,6 @@ namespace HAL_JSON {
                 else {
                     message += "\"error\":\"Unknown type for writing.\"";
                 }
-            } else {
-                message += "\"error\":\"No value provided for writing.\"";
             }
         }
         //  ██████  ███████  █████  ██████  
@@ -191,10 +194,10 @@ namespace HAL_JSON {
         //  ██████  █████   ███████ ██   ██ 
         //  ██   ██ ██      ██   ██ ██   ██ 
         //  ██   ██ ███████ ██   ██ ██████  
-        else if (command == HAL_JSON_REST_API_READ_CMD)
+        else if (zcCommand.Equals(HAL_JSON_REST_API_READ_CMD))
         {
-            if (type == HAL_JSON_REST_API_BOOL_TYPE) {
-                UIDPath uidPath(uid.c_str());
+            if (zcType.Equals(HAL_JSON_REST_API_BOOL_TYPE)) {
+                UIDPath uidPath(zcUid);
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
 
@@ -208,8 +211,8 @@ namespace HAL_JSON {
                     message += lastEntry.MessageToString();
                     message += "\"";
                 }
-            } else if (type == HAL_JSON_REST_API_UINT32_TYPE) {
-                UIDPath uidPath(uid.c_str());
+            } else if (zcType.Equals(HAL_JSON_REST_API_UINT32_TYPE)) {
+                UIDPath uidPath(zcUid);
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
                 if (Manager::read(req)) {
@@ -222,8 +225,8 @@ namespace HAL_JSON {
                     message += lastEntry.MessageToString();
                     message += "\"";
                 }
-            } else if (type == HAL_JSON_REST_API_FLOAT_TYPE) {
-                UIDPath uidPath(uid.c_str());
+            } else if (zcType.Equals(HAL_JSON_REST_API_FLOAT_TYPE)) {
+                UIDPath uidPath(zcUid);
                 if (value.length() == 0) {
                     HALValue halValue;
                     HALReadRequest req(uidPath, halValue);
@@ -255,8 +258,8 @@ namespace HAL_JSON {
                         message += "\"";
                     }
                 }
-            } else if (type == HAL_JSON_REST_API_STRING_TYPE) {
-                UIDPath uidPath(uid.c_str());
+            } else if (zcType.Equals(HAL_JSON_REST_API_STRING_TYPE)) {
+                UIDPath uidPath(zcUid);
                 std::string result;
                 HALReadStringRequestValue strHalValue(value, result);
                 

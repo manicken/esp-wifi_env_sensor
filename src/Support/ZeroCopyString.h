@@ -51,6 +51,9 @@ namespace HAL_JSON {
 
         bool Equals(const ZeroCopyString& other) const;
         bool Equals(const char* cstr) const;
+
+        bool ValidNumber() const;
+        bool ConvertTo_uint32(uint32_t& outValue) const;
     };
     
 }

@@ -3,8 +3,14 @@
 
 namespace HAL_JSON {
     ZeroCopyString::ZeroCopyString() : start(nullptr), end(nullptr) { } // empty 'string'
-    ZeroCopyString::ZeroCopyString(const char* start, const char* end) : start(start), end(end) { }
-    ZeroCopyString::ZeroCopyString(const char* cstr) : start(cstr), end(cstr ? cstr + strlen(cstr) : cstr) {}
+    ZeroCopyString::ZeroCopyString(const char* start, const char* end) : start(start), end(end) { 
+        if (this->end == nullptr) this->start = nullptr; 
+        else if (this->start == nullptr) this->end = nullptr;
+    }
+    ZeroCopyString::ZeroCopyString(const char* cstr) : start(cstr), end(cstr ? cstr + strlen(cstr) : cstr) {
+        if (this->end == nullptr) this->start = nullptr; 
+        else if (this->start == nullptr) this->end = nullptr;
+    }
 
     size_t ZeroCopyString::Length() const {
         if (start == nullptr || end == nullptr || end < start ) return 0;
@@ -102,6 +108,88 @@ namespace HAL_JSON {
 
         size_t len = Length();
         return std::strlen(cstr) == len && std::memcmp(start, cstr, len) == 0;
+    }
+
+    bool ZeroCopyString::ValidNumber() const {
+        if (Length() == 0) return false;
+
+        // Quick count checks
+        if (CountChar('.') > 1) return false;
+        if (CountChar(',') > 1) return false;
+        if (CountChar('-') > 1) return false;
+        if (CountChar('+') > 1) return false;
+
+        const char* p = start;
+        const char* const _end = end;
+
+        // Skip leading spaces
+        while (p < _end && *p == ' ') p++;
+
+        // Optional sign at the start
+        if (p < _end && (*p == '-' || *p == '+')) p++;
+
+        if (p == _end) return false; // Only sign and spaces?
+
+        bool decimalSeen = false;
+        bool commaSeen = false;
+
+        for (; p < _end; ++p) {
+            char c = *p;
+            if (isdigit(c)) {
+                continue;
+            } else if (c == '.') {
+                if (decimalSeen || commaSeen) return false;
+                decimalSeen = true;
+            } else if (c == ',') {
+                if (decimalSeen || commaSeen) return false;
+                commaSeen = true;
+            } else if (c == ' ') {
+                // spaces inside number: either disallow or allow only trailing spaces
+                // Here, disallow spaces inside number:
+                return false;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool ZeroCopyString::ConvertTo_uint32(uint32_t& outValue) const {
+        if (Length() == 0) return false;
+
+        const char* p = start;
+        const char* const _end = end;
+
+        // Skip leading spaces
+        while (p < _end && *p == ' ') p++;
+
+        // Skip optional '+' or '-' (but remember, we're returning unsigned!)
+        if (p < _end && (*p == '+' || *p == '-')) p++;
+
+        uint32_t value = 0;
+
+        while (p < _end) {
+            char ch = *p;
+            if (ch >= '0' && ch <= '9') {
+                value = value * 10 + (ch - '0');
+            } else if (ch == ',') {
+                // allow comma as thousands separator comment the following
+                break;
+            } else if (ch == '.') {
+                // Allways Stop at decimal separator
+                break;
+            } else if (ch == ' ') {
+                // Allow spaces inside? optional.
+                // Skip or break depending on policy, comment the following if should be allowed
+                break;
+            } else {
+                return false; // Invalid character
+            }
+            p++;
+        }
+
+        outValue = value;
+        return true;
     }
 
 
