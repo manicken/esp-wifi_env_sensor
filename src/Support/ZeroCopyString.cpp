@@ -92,6 +92,20 @@ namespace HAL_JSON {
         return pointers;
     }
 
+    
+    ZeroCopyString ZeroCopyString::SplitOffHead(char delimiter) {
+        if (!start || start >= end) return ZeroCopyString(nullptr, nullptr);
+        
+        const char* splitPos = FindChar(delimiter);
+        const char* newStartPos = start;
+        if (splitPos == nullptr) {
+            start = end;
+            return ZeroCopyString(newStartPos, end);
+        }
+        start = splitPos + 1;
+        return ZeroCopyString(newStartPos, splitPos);
+    }
+
     bool ZeroCopyString::Equals(const ZeroCopyString& other) const {
         size_t len1 = Length();
         size_t len2 = other.Length();

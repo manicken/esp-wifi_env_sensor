@@ -21,6 +21,7 @@ INCLUDES = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
 SRC = \
 	main.cpp \
 	RPN_tools.cpp \
+	commandLoop.cpp \
 	./stubs/Arduino/Arduino.cpp \
 	./stubs/ESPAsyncWebServer/ESPAsyncWebServer.cpp \
 	./stubs/Ticker/Ticker.cpp \

@@ -7,13 +7,15 @@
 
 implement so that GlobalLogger includes a websocket server, so that if any client is connected then the log gets automatically printed 
 
-refactor webserver related stuff from HAL_JSON manager to a outside file/class
-by creating a HAL_JSON_Manager file/class that take care of what HAL_JSON do now except the webserver stuff
 
 test TX433
 test REGO600
 
 make it so that if a device is not found while read/write it sends back that as a proper error
+
+Refactor CommandExecutor so that all errors is added to GlobalLogger instead of the message which 
+should only be used when values are read
+all commands that execute without any problems just returns true
 
 ██       ██████  ██     ██     ██████  ██████  ██  ██████  ██████  ██ ████████ ██    ██     ████████  ██████  ██████   ██████  
 ██      ██    ██ ██     ██     ██   ██ ██   ██ ██ ██    ██ ██   ██ ██    ██     ██  ██         ██    ██    ██ ██   ██ ██    ██ 
@@ -25,6 +27,7 @@ Convert all JSON validation errors to use an error code system for improved memo
 Note: This is partially implemented—currently, F("") strings are used, which keeps the string data in flash memory, so the tradeoff is extra used flash memory.
 
 change GPIO_manager into a "static" class namespace so that we can hide functions/variables 
+
 
 
 TCP2UART bridge
@@ -60,3 +63,7 @@ refactor the use of webserver in gpio_manager, either into a separate file or in
 so that no conflicts will happen between asyncwebserver and syncwebserver
 
 
+refactor webserver related stuff from HAL_JSON manager to a outside file/class
+by creating a HAL_JSON_Manager file/class that take care of what HAL_JSON do now except the webserver stuff
+this is even more splitted as now there is CommandExecutor class that takes care of parsing commands whereever they come from
+the HAL_JSON_REST only serve a webserver that sends cmds to CommandExecutor which then returns the value

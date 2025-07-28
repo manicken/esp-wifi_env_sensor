@@ -1,26 +1,13 @@
+#pragma once
+
 #include <iostream>
 #include <string>
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include "../src/Support/ZeroCopyString.h"
+#include "../src/HAL_JSON/HAL_JSON_CommandExecutor.h"
 
-std::atomic<bool> running = true;
+extern std::atomic<bool> running;
 
-void commandLoop() {
-    std::string cmd;
-    while (running) {
-        std::cout << "> ";
-        if (!std::getline(std::cin, cmd)) break;
-
-        if (cmd == "exit") {
-            std::cout << "Shutting down...\n";
-            running = false;
-        } else if (cmd == "status") {
-            std::cout << "Status: running\n";
-        } else if (cmd == "help") {
-            std::cout << "Available commands: exit, status, help\n";
-        } else {
-            std::cout << "Unknown command: " << cmd << "\n";
-        }
-    }
-}
+void commandLoop();

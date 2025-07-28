@@ -7,15 +7,37 @@ namespace HAL_JSON {
 
     void REST::setup() {
         asyncWebserver = new AsyncWebServer(HAL_JSON_REST_API_PORT);
+        asyncWebserver->onNotFound([](AsyncWebServerRequest *request){
+
+            const char* urlStr = request->url().c_str();
+
+            if (urlStr == nullptr || *urlStr == '\0') {
+                request->send(200, "application/json", "{\"error\":\"urlEmpty\"}");
+                return;
+            }
+            if (*(urlStr + 1) == '\0') {
+                request->send(200, "application/json", "{\"error\":\"emptyPath\"}");
+                return;
+            }
+
+            ZeroCopyString zcUrl(urlStr+1); // +1 removes the leading /
+            std::string message;
+            bool success = CommandExecutor::execute(zcUrl, message);
+            // do something when success == false
+            // maybe add last entry in GlobalLogger
+            request->send(200, "application/json", message.c_str());
+        });
+        asyncWebserver->begin();
+    }
+}
+
+
+/*
         asyncWebserver->on(HAL_JSON_REST_API_WRITE_URL "*", HTTP_ANY, handleWriteOrRead);
         asyncWebserver->on(HAL_JSON_REST_API_READ_URL "*", HTTP_ANY, handleWriteOrRead);
 
         asyncWebserver->on(HAL_JSON_URL_RELOAD_JSON, HTTP_ANY, [](AsyncWebServerRequest *request){
             if (Manager::ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()) == false) {
-                //AsyncResponseStream *response = request->beginResponseStream("application/json");
-                //PrintStreamAdapter adapter(*response);
-                //webserver->sendHeader("Content-Type", "application/json");
-                //webserver->send(200, "application/json", "");
                 GlobalLogger.printAllLogs(Serial, false); // TODO make this print back to request client
 
                 const LogEntry& lastEntry = GlobalLogger.getLastEntry();
@@ -38,264 +60,4 @@ namespace HAL_JSON {
             message += "<a href=\"/<cmd>/<type>/<uid>/<optional_value>\">Device command</a><br>";
             request->send(200, "text/html", message);
         });
-        asyncWebserver->onNotFound([](AsyncWebServerRequest *request){
-            String message = "HAL JSON Manager - REST API<br>";
-            message += "invalid url:" + request->url() + "<br>";
-            request->send(404, "text/html", message);
-        });
-        asyncWebserver->begin();
-    }
-
-    void REST::handleWriteOrRead(AsyncWebServerRequest *request) { // BIG TODO: refactor this function to handle error cases better
-        // Example URL: /write/pwm/tempSensor1/255
-
-        //const String& url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
-        const char* urlStr = request->url().c_str();
-
-        if (urlStr == nullptr || *urlStr == '\0') {
-            request->send(200, "application/json", "{\"error\":\"urlEmpty\"}");
-            return;
-        }
-        if (*(urlStr + 1) == '\0') {
-            request->send(200, "application/json", "{\"error\":\"emptyPath\"}");
-            return;
-        }
-
-        ZeroCopyString zcUrl(urlStr+1); // +1 removes the leading /
-        ZeroCopyString zcCommand(zcUrl.start, zcUrl.FindChar('/'));
-        ZeroCopyString zcType(zcCommand.end, zcCommand.end!=nullptr?zcUrl.FindChar('/', zcCommand.end+1):nullptr);
-        ZeroCopyString zcUid(zcType.end, zcType.end!=nullptr?zcUrl.FindChar('/', zcType.end+1):nullptr);
-        ZeroCopyString zcValue(zcUid.end, zcUid.end!=nullptr?zcUrl.FindChar('/', zcUid.end+1):nullptr);
-/*
-        // Split into parts
-        int p1 = url.indexOf('/', 1);
-        int p2 = url.indexOf('/', p1 + 1);
-        int p3 = url.indexOf('/', p2 + 1);
-
-        String command = url.substring(0, p1);
-        String type = url.substring(p1 + 1, p2);
-        String uid  = url.substring(p2 + 1, p3);
-        if (p2 != -1 && p3 != -1) {
-            uid = url.substring(p2 + 1, p3);
-        }
-        std::string value = "";
-        if (p3 != -1) value = url.substring(p3 + 1).c_str();
-*/
-        String message = "";
-//#define REST_API_DEBUG_REQ
-#ifdef REST_API_DEBUG_REQ
-        message += "\"debug\":{";
-        message += "\"Command\":\"" + command + "\",";
-        message += "\"Type\":\"" + type + "\",";
-        message += "\"UID\":\"" + uid + "\",";
-        message += "\"Value\":\"" + value + "\"},";
-#endif
-        //  ██     ██ ██████  ██ ████████ ███████ 
-        //  ██     ██ ██   ██ ██    ██    ██      
-        //  ██  █  ██ ██████  ██    ██    █████   
-        //  ██ ███ ██ ██   ██ ██    ██    ██      
-        //   ███ ███  ██   ██ ██    ██    ███████ 
-        //                                        
-        if (zcCommand == HAL_JSON_REST_API_WRITE_CMD)
-        {
-            if (zcValue.Length() == 0) {
-                message += "\"error\":\"No value provided for writing.\"";
-            } else {
-                if (zcType == HAL_JSON_REST_API_BOOL_TYPE) {
-                    uint32_t uintValue = 0;
-                    if ((zcValue == "true") || (zcValue == "1")) {
-                        uintValue = 1;
-                    } else if ((zcValue == "false") || (zcValue == "0")) {
-                        uintValue = 0;
-                    } else {
-                        message += "{\"error\":\"Invalid boolean value.\"}";
-                        request->send(200, "application/json", message);
-                        return;
-                    }
-                    UIDPath uidPath(zcUid);
-                    HALValue halValue = uintValue;
-                    HALWriteRequest req(uidPath, halValue);
-                    //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-                    if (Manager::write(req)) {
-                        message += "\"info\":{\"Value written\":\"";
-                        message += uintValue;
-                        message += "\"}";
-                    }
-                    else {
-                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\"";
-                        message += lastEntry.MessageToString();
-                        message += "\"";
-                    }
-                }
-                else if (zcType == HAL_JSON_REST_API_UINT32_TYPE) {
-                    // Convert value to integer
-                    uint32_t uintValue = 0;
-                    if (zcValue.ConvertTo_uint32(uintValue) == false) {
-                        message += "{\"error\":\"Invalid uint32 value.\"}";
-                    } else {
-                        
-                        Serial.print("devmgr write uint32 value:");
-                        Serial.println(uintValue);
-                        //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
-                        UIDPath uidPath(zcUid);
-                        HALValue halValue = uintValue;
-                        HALWriteRequest req(uidPath, halValue);
-                        if (Manager::write(req)) {
-                            message += "\"info\":{\"Value written\":\"";
-                            message += uintValue;
-                            message += "\"}";
-                        }
-                        else {
-                            const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                            message += "\"error\":\"";
-                            message += lastEntry.MessageToString();
-                            message += "\"";
-                        }
-                    }
-
-                } else if (zcType == HAL_JSON_REST_API_STRING_TYPE) {
-                    UIDPath uidPath(zcUid);
-                    std::string result;
-                    // use 'normal' strings for now, until HALWriteStringRequestValue do use ZeroCopyStrings
-                    //std::string stdString = zcValue.ToString();
-                    HALWriteStringRequestValue strHalValue(zcValue, result);
-                    
-                    HALWriteStringRequest req(uidPath, strHalValue);
-                    if (Manager::write(req)) {
-                        message += "\"info\":{\"String written\":\"OK\"}";
-                        //message += stdString.c_str();
-                        //message += "\"}";
-                    }
-                    else {
-                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\"";
-                        message += lastEntry.MessageToString();
-                        message += "\"";
-                    }
-
-                } else if (zcType == HAL_JSON_REST_API_JSON_STR_TYPE) {
-                    UIDPath uidPath(zcUid);
-                    std::string result;
-                    // use 'normal' strings for now, until HALWriteStringRequestValue do use ZeroCopyStrings
-                    //std::string stdString = zcValue.ToString();
-                    HALWriteStringRequestValue strHalValue(zcValue, result);
-                    
-                    HALWriteStringRequest req(uidPath, strHalValue);
-                    if (Manager::write(req)) {
-                        message += "\"info\":{\"Json written\":\"OK\"}";
-                        //message += stdString.c_str();
-                        //message += "}";
-                    }
-                    else {
-                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\"";
-                        message += lastEntry.MessageToString();
-                        message += "\"";
-                    }
-                }
-                else {
-                    message += "\"error\":\"Unknown type for writing.\"";
-                }
-            }
-        }
-        //  ██████  ███████  █████  ██████  
-        //  ██   ██ ██      ██   ██ ██   ██ 
-        //  ██████  █████   ███████ ██   ██ 
-        //  ██   ██ ██      ██   ██ ██   ██ 
-        //  ██   ██ ███████ ██   ██ ██████  
-        else if (zcCommand == HAL_JSON_REST_API_READ_CMD)
-        {
-            if (zcType == HAL_JSON_REST_API_BOOL_TYPE) {
-                UIDPath uidPath(zcUid);
-                HALValue halValue;
-                HALReadRequest req(uidPath, halValue);
-
-                if (Manager::read(req)) {
-                    message += DeviceConstStrings::value;//"\"value\":\"";
-                    message += halValue.asUInt();
-                    //message += + "\"";
-                } else {
-                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                    message += "\"error\":\"";
-                    message += lastEntry.MessageToString();
-                    message += "\"";
-                }
-            } else if (zcType == HAL_JSON_REST_API_UINT32_TYPE) {
-                UIDPath uidPath(zcUid);
-                HALValue halValue;
-                HALReadRequest req(uidPath, halValue);
-                if (Manager::read(req)) {
-                    message += DeviceConstStrings::value;//"\"value\":\"";
-                    message += halValue.asUInt();
-                    //message += "\"";
-                } else {
-                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                    message += "\"error\":\"";
-                    message += lastEntry.MessageToString();
-                    message += "\"";
-                }
-            } else if (zcType == HAL_JSON_REST_API_FLOAT_TYPE) {
-                UIDPath uidPath(zcUid);
-                if (zcValue.Length() == 0) {
-                    HALValue halValue;
-                    HALReadRequest req(uidPath, halValue);
-                
-                    if (Manager::read(req)) {
-                        message += DeviceConstStrings::value;//"\"value\":\"";
-                        message += halValue.asFloat();
-                        //message += "\"";
-                    } else {
-                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\"";
-                        message += lastEntry.MessageToString();
-                        message += "\"";
-                    }
-                }
-                else {
-                    HALValue halValue;
-                    //std::string stdString = zcValue.ToString();
-                    HALReadValueByCmd valByCmd(halValue, zcValue); // value here is cmd
-                    HALReadValueByCmdReq req(uidPath, valByCmd);
-                
-                    if (Manager::read(req)) {
-                        message += DeviceConstStrings::value;//"\"value\":\"";
-                        message += halValue.asFloat();
-                        //message += "\"";
-                    } else {
-                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\"";
-                        message += lastEntry.MessageToString();
-                        message += "\"";
-                    }
-                }
-            } else if (zcType == HAL_JSON_REST_API_STRING_TYPE) {
-                UIDPath uidPath(zcUid);
-                std::string result;
-                //std::string stdString = zcValue.ToString();
-                HALReadStringRequestValue strHalValue(zcValue, result);
-                
-                HALReadStringRequest req(uidPath, strHalValue);
-                if (Manager::read(req)) {
-                    message += DeviceConstStrings::value;//"\"value\":";
-                    message += "\"";
-                    message += result.c_str();
-                    message += "\"";
-                }
-                else {
-                    const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                    message += "\"error\":\"";
-                    message += lastEntry.MessageToString();
-                    message += "\"";
-                }
-            } else {
-                message += "\"error\":\"Unknown type for reading.\"";
-            }
-        } else {
-            message += "\"error\":\"Unknown command.\"";
-        }
-        message = "{" + message;
-        message += "}";
-        request->send(200, "application/json", message);
-    }
-}
+        */

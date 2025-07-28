@@ -49,6 +49,22 @@ namespace HAL_JSON {
         /** Returns dynamically allocated array of pointers (caller must delete[]) */
         const char** GetPointers(char ch, uint32_t& outCount) const;
 
+        /** 
+         * Splits off the leading segment of the string up to the given delimiter. 
+         * 
+         * Modifies the current ZeroCopyString in-place so that it now starts 
+         * just after the delimiter. The extracted head segment is returned 
+         * as a new ZeroCopyString.
+         * 
+         * So the original string need to be copied if one need that later
+         * 
+         * Example: 
+         *   ZeroCopyString z("foo/bar/baz");
+         *   ZeroCopyString head = z.SplitOffHead('/');
+         *   // head = "foo", z now represents "bar/baz"
+         */
+        ZeroCopyString SplitOffHead(char delimiter);
+
         bool Equals(const ZeroCopyString& other) const;
         bool Equals(const char* cstr) const;
 
