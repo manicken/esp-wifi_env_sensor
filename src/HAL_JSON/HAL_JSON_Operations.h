@@ -11,8 +11,9 @@
 namespace HAL_JSON {
     struct HALWriteValueByCmd {
         const HALValue& value;
-        const std::string& cmd;
-        HALWriteValueByCmd(const HALValue& value, const std::string& cmd): value(value), cmd(cmd) {}
+        //const std::string& cmd;
+        const ZeroCopyString& cmd;
+        HALWriteValueByCmd(const HALValue& value, const ZeroCopyString& cmd): value(value), cmd(cmd) {}
     };
     struct HALWriteValueByCmdReq {
         UIDPath& path;
@@ -22,8 +23,9 @@ namespace HAL_JSON {
 
     struct HALReadValueByCmd {
         HALValue& out_value;
-        const std::string& cmd;
-        HALReadValueByCmd(HALValue& out, const std::string& cmd): out_value(out), cmd(cmd) {}
+        //const std::string& cmd;
+        const ZeroCopyString& cmd;
+        HALReadValueByCmd(HALValue& out, const ZeroCopyString& cmd): out_value(out), cmd(cmd) {}
     };
 
     struct HALReadValueByCmdReq {
@@ -46,14 +48,16 @@ namespace HAL_JSON {
 
     struct HALReadStringRequestValue {
         std::string& out_value;
-        const std::string& cmd;
-        HALReadStringRequestValue(const std::string& cmd, std::string& out_value): out_value(out_value), cmd(cmd) {}
+        //const std::string& cmd;
+        const ZeroCopyString& cmd;
+        HALReadStringRequestValue(const ZeroCopyString& cmd, std::string& out_value): out_value(out_value), cmd(cmd) {}
     };
 
     struct HALWriteStringRequestValue {
-        const std::string& value;
+        //const std::string& value;
+        const ZeroCopyString& value;
         std::string& result;
-        HALWriteStringRequestValue(const std::string& value, std::string& result): value(value), result(result) {}
+        HALWriteStringRequestValue(const ZeroCopyString& value, std::string& result): value(value), result(result) {}
     };
 
     struct HALReadStringRequest {

@@ -78,7 +78,8 @@ namespace HAL_JSON {
 
     bool TX433::write(const HALWriteStringRequestValue &val) {
         RF433::init(pin); // this only sets the pin and set the pin to output
-        RF433::DecodeFromJSON(val.value);
+        std::string stdStrCmd = val.value.ToString();
+        RF433::DecodeFromJSON(stdStrCmd); // TODO make this function take ZeroCopyString as argument, even thu it's copied internally
         return false;
     }
 

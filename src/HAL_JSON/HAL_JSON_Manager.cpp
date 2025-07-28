@@ -279,7 +279,7 @@ namespace HAL_JSON {
 
     void Manager::TEST() {
         std::string result;
-        std::string cmd = "getDevices";
+        ZeroCopyString cmd("getDevices");
 
         HALReadStringRequestValue strVal = {cmd, result};
         UIDPath path("1WTG");

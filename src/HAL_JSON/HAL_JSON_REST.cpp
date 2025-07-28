@@ -19,7 +19,8 @@ namespace HAL_JSON {
                 GlobalLogger.printAllLogs(Serial, false); // TODO make this print back to request client
 
                 const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                request->send(200, "application/json", "{\"error\":\""+lastEntry.MessageToString()+"\"}");
+                String message = "{\"error\":\""+lastEntry.MessageToString()+"\"}";
+                request->send(200, "application/json", message);
                 
             }
             else
@@ -48,7 +49,7 @@ namespace HAL_JSON {
     void REST::handleWriteOrRead(AsyncWebServerRequest *request) { // BIG TODO: refactor this function to handle error cases better
         // Example URL: /write/pwm/tempSensor1/255
 
-        const String& url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
+        //const String& url = request->url(); // e.g., "/write/pwm/tempSensor1/255"
         const char* urlStr = request->url().c_str();
 
         if (urlStr == nullptr || *urlStr == '\0') {
@@ -95,16 +96,16 @@ namespace HAL_JSON {
         //  ██ ███ ██ ██   ██ ██    ██    ██      
         //   ███ ███  ██   ██ ██    ██    ███████ 
         //                                        
-        if (zcCommand.Equals(HAL_JSON_REST_API_WRITE_CMD))
+        if (zcCommand == HAL_JSON_REST_API_WRITE_CMD)
         {
             if (zcValue.Length() == 0) {
                 message += "\"error\":\"No value provided for writing.\"";
             } else {
-                if (zcType.Equals(HAL_JSON_REST_API_BOOL_TYPE)) {
+                if (zcType == HAL_JSON_REST_API_BOOL_TYPE) {
                     uint32_t uintValue = 0;
-                    if (zcValue.Equals("true") || zcValue.Equals("1")) {
+                    if ((zcValue == "true") || (zcValue == "1")) {
                         uintValue = 1;
-                    } else if (zcValue.Equals("false") || zcValue.Equals("0")) {
+                    } else if ((zcValue == "false") || (zcValue == "0")) {
                         uintValue = 0;
                     } else {
                         message += "{\"error\":\"Invalid boolean value.\"}";
@@ -127,19 +128,44 @@ namespace HAL_JSON {
                         message += "\"";
                     }
                 }
-                else if (zcType.Equals(HAL_JSON_REST_API_UINT32_TYPE)) {
+                else if (zcType == HAL_JSON_REST_API_UINT32_TYPE) {
                     // Convert value to integer
-                    uint32_t uintValue = (uint32_t) strtoul(value.c_str(), nullptr, 10);
-                    Serial.print("devmgr write uint32 value:");
-                    Serial.println(uintValue);
-                    //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                    uint32_t uintValue = 0;
+                    if (zcValue.ConvertTo_uint32(uintValue) == false) {
+                        message += "{\"error\":\"Invalid uint32 value.\"}";
+                    } else {
+                        
+                        Serial.print("devmgr write uint32 value:");
+                        Serial.println(uintValue);
+                        //uint32_t uidInt = (uint32_t) strtoul(uid.c_str(), nullptr, 16);
+                        UIDPath uidPath(zcUid);
+                        HALValue halValue = uintValue;
+                        HALWriteRequest req(uidPath, halValue);
+                        if (Manager::write(req)) {
+                            message += "\"info\":{\"Value written\":\"";
+                            message += uintValue;
+                            message += "\"}";
+                        }
+                        else {
+                            const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                            message += "\"error\":\"";
+                            message += lastEntry.MessageToString();
+                            message += "\"";
+                        }
+                    }
+
+                } else if (zcType == HAL_JSON_REST_API_STRING_TYPE) {
                     UIDPath uidPath(zcUid);
-                    HALValue halValue = uintValue;
-                    HALWriteRequest req(uidPath, halValue);
+                    std::string result;
+                    // use 'normal' strings for now, until HALWriteStringRequestValue do use ZeroCopyStrings
+                    //std::string stdString = zcValue.ToString();
+                    HALWriteStringRequestValue strHalValue(zcValue, result);
+                    
+                    HALWriteStringRequest req(uidPath, strHalValue);
                     if (Manager::write(req)) {
-                        message += "\"info\":{\"Value written\":\"";
-                        message += uintValue;
-                        message += "\"}";
+                        message += "\"info\":{\"String written\":\"OK\"}";
+                        //message += stdString.c_str();
+                        //message += "\"}";
                     }
                     else {
                         const LogEntry& lastEntry = GlobalLogger.getLastEntry();
@@ -148,34 +174,18 @@ namespace HAL_JSON {
                         message += "\"";
                     }
 
-                } else if (zcType.Equals(HAL_JSON_REST_API_STRING_TYPE)) {
+                } else if (zcType == HAL_JSON_REST_API_JSON_STR_TYPE) {
                     UIDPath uidPath(zcUid);
                     std::string result;
-                    HALWriteStringRequestValue strHalValue(value, result);
+                    // use 'normal' strings for now, until HALWriteStringRequestValue do use ZeroCopyStrings
+                    //std::string stdString = zcValue.ToString();
+                    HALWriteStringRequestValue strHalValue(zcValue, result);
                     
                     HALWriteStringRequest req(uidPath, strHalValue);
                     if (Manager::write(req)) {
-                        message += "\"info\":{\"String written\":\"";
-                        message += value.c_str();
-                        message += "\"}";
-                    }
-                    else {
-                        const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-                        message += "\"error\":\"";
-                        message += lastEntry.MessageToString();
-                        message += "\"";
-                    }
-
-                } else if (zcType.Equals(HAL_JSON_REST_API_JSON_STR_TYPE)) {
-                    UIDPath uidPath(zcUid);
-                    std::string result;
-                    HALWriteStringRequestValue strHalValue(value, result);
-                    
-                    HALWriteStringRequest req(uidPath, strHalValue);
-                    if (Manager::write(req)) {
-                        message += "\"info\":{\"Json written\":";
-                        message += value.c_str();
-                        message += "}";
+                        message += "\"info\":{\"Json written\":\"OK\"}";
+                        //message += stdString.c_str();
+                        //message += "}";
                     }
                     else {
                         const LogEntry& lastEntry = GlobalLogger.getLastEntry();
@@ -194,9 +204,9 @@ namespace HAL_JSON {
         //  ██████  █████   ███████ ██   ██ 
         //  ██   ██ ██      ██   ██ ██   ██ 
         //  ██   ██ ███████ ██   ██ ██████  
-        else if (zcCommand.Equals(HAL_JSON_REST_API_READ_CMD))
+        else if (zcCommand == HAL_JSON_REST_API_READ_CMD)
         {
-            if (zcType.Equals(HAL_JSON_REST_API_BOOL_TYPE)) {
+            if (zcType == HAL_JSON_REST_API_BOOL_TYPE) {
                 UIDPath uidPath(zcUid);
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
@@ -211,7 +221,7 @@ namespace HAL_JSON {
                     message += lastEntry.MessageToString();
                     message += "\"";
                 }
-            } else if (zcType.Equals(HAL_JSON_REST_API_UINT32_TYPE)) {
+            } else if (zcType == HAL_JSON_REST_API_UINT32_TYPE) {
                 UIDPath uidPath(zcUid);
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
@@ -225,9 +235,9 @@ namespace HAL_JSON {
                     message += lastEntry.MessageToString();
                     message += "\"";
                 }
-            } else if (zcType.Equals(HAL_JSON_REST_API_FLOAT_TYPE)) {
+            } else if (zcType == HAL_JSON_REST_API_FLOAT_TYPE) {
                 UIDPath uidPath(zcUid);
-                if (value.length() == 0) {
+                if (zcValue.Length() == 0) {
                     HALValue halValue;
                     HALReadRequest req(uidPath, halValue);
                 
@@ -244,7 +254,8 @@ namespace HAL_JSON {
                 }
                 else {
                     HALValue halValue;
-                    HALReadValueByCmd valByCmd(halValue, value); // value here is cmd
+                    //std::string stdString = zcValue.ToString();
+                    HALReadValueByCmd valByCmd(halValue, zcValue); // value here is cmd
                     HALReadValueByCmdReq req(uidPath, valByCmd);
                 
                     if (Manager::read(req)) {
@@ -258,10 +269,11 @@ namespace HAL_JSON {
                         message += "\"";
                     }
                 }
-            } else if (zcType.Equals(HAL_JSON_REST_API_STRING_TYPE)) {
+            } else if (zcType == HAL_JSON_REST_API_STRING_TYPE) {
                 UIDPath uidPath(zcUid);
                 std::string result;
-                HALReadStringRequestValue strHalValue(value, result);
+                //std::string stdString = zcValue.ToString();
+                HALReadStringRequestValue strHalValue(zcValue, result);
                 
                 HALReadStringRequest req(uidPath, strHalValue);
                 if (Manager::read(req)) {

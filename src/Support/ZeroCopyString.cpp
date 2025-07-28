@@ -191,6 +191,75 @@ namespace HAL_JSON {
         outValue = value;
         return true;
     }
+    bool ZeroCopyString::ConvertTo_int32(int32_t& outValue) const {
+        uint32_t tempVal = 0;
+        if (ConvertTo_uint32(tempVal) == false) return false;
+        const char* p = start;
+        // Skip leading spaces, and as ConvertTo_uint32 allready verified that the string is correct so far no failsafe checks are needed
+        while (*p == ' ') p++;
+        bool negative = (*p == '-');
+        // Clamp range to avoid overflow
+        if (!negative && tempVal > INT32_MAX) return false;
+        if (negative && tempVal > static_cast<uint32_t>(INT32_MAX) + 1) return false;
 
+        outValue = negative ? -static_cast<int32_t>(tempVal) : static_cast<int32_t>(tempVal);
+        return true;
+    }
 
+    bool ZeroCopyString::ConvertTo_double(double& outValue) const {
+        if (Length() == 0) return false;
+
+        const char* p = start;
+        const char* const _end = end;
+
+        // Skip leading spaces
+        while (p < _end && *p == ' ') p++;
+
+        // Handle optional sign
+        bool negative = false;
+        if (p < _end && (*p == '+' || *p == '-')) {
+            negative = (*p == '-');
+            p++;
+        }
+
+        double value = 0.0;
+        bool decimalSeen = false;
+        double decimalFactor = 0.1;
+        bool digitSeen = false;
+
+        while (p < _end) {
+            char ch = *p;
+
+            if (ch >= '0' && ch <= '9') {
+                digitSeen = true;
+                if (!decimalSeen) {
+                    value = value * 10.0 + (ch - '0');
+                } else {
+                    value += (ch - '0') * decimalFactor;
+                    decimalFactor *= 0.1;
+                }
+            } else if ((ch == '.' || ch == ',') && !decimalSeen) {
+                // First decimal point (treat both '.' and ',' as decimal separator here)
+                decimalSeen = true;
+            } else if (ch == ',' || ch == ' ') {
+                // Skip commas as thousands separators or space padding
+            } else {
+                break;  // Invalid character or end of number
+            }
+
+            p++;
+        }
+
+        if (!digitSeen) return false;
+
+        outValue = negative ? -value : value;
+        return true;
+    }
+
+    bool operator==(const ZeroCopyString& lhs, const ZeroCopyString& rhs) { return lhs.Equals(rhs); }
+    bool operator!=(const ZeroCopyString& lhs, const ZeroCopyString& rhs) { return !lhs.Equals(rhs); }
+    bool operator==(const char* lhs, const ZeroCopyString& rhs) { return rhs.Equals(lhs); }
+    bool operator!=(const char* lhs, const ZeroCopyString& rhs) { return !rhs.Equals(lhs); }
+    bool operator==(const ZeroCopyString& lhs, const char* rhs) { return lhs.Equals(rhs); }
+    bool operator!=(const ZeroCopyString& lhs, const char* rhs) { return !lhs.Equals(rhs); }
 }

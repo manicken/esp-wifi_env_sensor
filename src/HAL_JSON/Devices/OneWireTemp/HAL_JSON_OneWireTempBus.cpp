@@ -136,7 +136,8 @@ namespace HAL_JSON {
             val.out_value += getAllDevices(true, false);
             return true;
         }
-        GlobalLogger.Warn(F("OneWireTempBus::read - cmd not found: "), val.cmd.c_str()); // this can then be read by getting the last entry from logger
+        std::string stdStrCmd = val.cmd.ToString();
+        GlobalLogger.Warn(F("OneWireTempBus::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
         return false;
     }
 

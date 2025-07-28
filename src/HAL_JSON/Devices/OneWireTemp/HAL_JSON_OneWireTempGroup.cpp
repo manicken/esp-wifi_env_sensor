@@ -158,7 +158,8 @@ namespace HAL_JSON {
             val.out_value += "]";
             return true;
         }
-        GlobalLogger.Warn(F("OneWireTempGroup::read - cmd not found: "), val.cmd.c_str()); // this can then be read by getting the last entry from logger
+        std::string stdStrCmd = val.cmd.ToString();
+        GlobalLogger.Warn(F("OneWireTempGroup::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
         //val.out_value = F("{\"error\":\"cmd not found\"}");
         return false;  // cmd not found
     }

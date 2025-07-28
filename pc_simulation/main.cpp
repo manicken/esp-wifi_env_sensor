@@ -10,12 +10,15 @@
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser.h"
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.h"
     #include "../src/HAL_JSON/HAL_JSON_Manager.h"
+    #include "../src/HAL_JSON/HAL_JSON_REST.h"
     #include "../src/Support/ConvertHelper.h"
     #include "../src/Support/CharArrayHelpers.h"
     #include "../src/Support/ZeroCopyString.h"
     #include "RPN_tools.h"
 
     #include <ArduinoJson.h>
+
+    #include "commandLoop.h"
     
 namespace  HAL_JSON
 {
@@ -294,6 +297,9 @@ namespace  HAL_JSON
 
     int main(int argc, char* argv[]) {
         std::cout << "WALHALLA rule development simulator - Running on Windows (MinGW)" << std::endl;
+
+        
+
         std::string filename;
         std::string firstArg;
         std::string secondArg;
@@ -377,4 +383,16 @@ namespace  HAL_JSON
         } else {
             printf("Error parsing expression.\n");
         }
+
+        std::thread cmdThread(commandLoop); // start command input thread from commandLoop that is in commandLoop.h
+
+        HAL_JSON::REST::setup(); // this will start the server
+        HAL_JSON::Manager::begin();
+        while (running) { // running is in commandLoop.h
+            HAL_JSON::Manager::loop();
+            //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        cmdThread.join(); // wait for command thread to finish
+        std::cout << "Exited cleanly.\n";
+        return 0;
     }

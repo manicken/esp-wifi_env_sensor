@@ -116,7 +116,8 @@ namespace HAL_JSON {
             return true;
         }
         else {
-            GlobalLogger.Warn(F("DHT::read - cmd not found: "), val.cmd.c_str()); // this can then be read by getting the last entry from logger
+            std::string stdStrCmd = val.cmd.ToString();
+            GlobalLogger.Warn(F("DHT::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
             return false;
         }
     }
@@ -130,7 +131,8 @@ namespace HAL_JSON {
             return true;
         }
         else {
-            GlobalLogger.Warn(F("DHT::read - cmd not found: "), val.cmd.c_str()); // this can then be read by getting the last entry from logger
+            std::string stdStrCmd = val.cmd.ToString();
+            GlobalLogger.Warn(F("DHT::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
             return false;
         }
     }
