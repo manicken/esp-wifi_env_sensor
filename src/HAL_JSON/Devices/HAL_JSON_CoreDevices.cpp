@@ -27,7 +27,7 @@ namespace HAL_JSON {
         //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
         //uid = encodeUID(uidStr);
 
-        pinMode(pin, INPUT);
+        pinMode(pin, INPUT); // input
     }
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
     Device* DigitalInput::findDevice(UIDPath& path) {
@@ -49,10 +49,10 @@ namespace HAL_JSON {
         ret += DeviceConstStrings::type;
         ret += type;
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += ",";
         ret += DeviceConstStrings::value;//StartWithComma;
-        ret += digitalRead(pin);
+        ret += std::to_string(digitalRead(pin)).c_str();
         return ret;
     }
 
@@ -79,10 +79,10 @@ namespace HAL_JSON {
         //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
         //uid = encodeUID(uidStr);
 
-        pinMode(pin, OUTPUT);
+        pinMode(pin, OUTPUT); // output
     }
 
-    DigitalOutput::~DigitalOutput() { pinMode(pin, INPUT); } // release the pin
+    DigitalOutput::~DigitalOutput() { pinMode(pin, 1); /*input*/ } // release the pin
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
     Device* DigitalOutput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
@@ -110,10 +110,10 @@ namespace HAL_JSON {
         ret += type;
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += ",";
         ret += DeviceConstStrings::value;//StartWithComma;
-        ret += value;
+        ret += std::to_string(value).c_str();
         return ret;
     }
 
@@ -149,12 +149,12 @@ namespace HAL_JSON {
         //} else {
         //    pulseLength = 0; // will hopefully be set at write
         //}
-        pinMode(pin, OUTPUT);
+        pinMode(pin, OUTPUT); // output
         digitalWrite(pin, inactiveState);
     }
 
     SinglePulseOutput::~SinglePulseOutput() { 
-        pinMode(pin, INPUT);
+        pinMode(pin, INPUT); // input
         pulseTicker.detach();
     }
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
@@ -198,9 +198,9 @@ namespace HAL_JSON {
         ret += type;
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += ",\"pulseLength\":";
-        ret += pulseLength;
+        ret += std::to_string(pulseLength).c_str();
         return ret;
     }
 
@@ -228,7 +228,7 @@ namespace HAL_JSON {
         pinMode(pin, ANALOG);
     }
 
-    AnalogInput::~AnalogInput() { pinMode(pin, INPUT); }
+    AnalogInput::~AnalogInput() { pinMode(pin, 1); } // input
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
     Device* AnalogInput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
@@ -250,10 +250,10 @@ namespace HAL_JSON {
         ret += type;
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += ",";
         ret += DeviceConstStrings::value;//StartWithComma;
-        ret += analogRead(pin);
+        ret += std::to_string(analogRead(pin)).c_str();
         return ret;
     }
 #endif
@@ -309,9 +309,9 @@ namespace HAL_JSON {
         ret += DeviceConstStrings::type;
         ret += type;
         ret += "\",\"freq\":";
-        ret += PWMAnalogWriteConfig::frequency;
+        ret += std::to_string(PWMAnalogWriteConfig::frequency).c_str();
         ret += ",\"resolution\":";
-        ret += PWMAnalogWriteConfig::resolution;
+        ret += std::to_string(PWMAnalogWriteConfig::resolution).c_str();
         return ret;
     }
 
@@ -337,10 +337,10 @@ namespace HAL_JSON {
         //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
         //uid = encodeUID(uidStr);
 
-        pinMode(pin, OUTPUT);
+        pinMode(pin, OUTPUT); // output
     }
 
-    PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, INPUT); }
+    PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, 1); } // input
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
     Device* PWMAnalogWrite::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
@@ -371,12 +371,12 @@ namespace HAL_JSON {
         ret += type;
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += ",";
         ret += DeviceConstStrings::value;//StartWithComma;
-        ret += value;
+        ret += std::to_string(value).c_str();
         ret += ",\"inv_out\":";
-        ret += inv_out;
+        ret += std::to_string(inv_out).c_str();
         return ret;
     }
 

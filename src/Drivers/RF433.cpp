@@ -21,7 +21,7 @@ namespace RF433
     void init(arch_word_t _pin)
     {
         pin = _pin;
-        pinMode(pin, OUTPUT);
+        pinMode(pin, OUTPUT); // output
     }
     arch_word_t Get1AsciiHex(arch_word_t value ) // converts only the lower nibble
     {

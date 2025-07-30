@@ -8,23 +8,26 @@
 
 #include "HAL_JSON_Device_GlobalDefines.h"
 
+#include "HAL_JSON_GPIO_Manager.h"
 #include "HAL_JSON_Manager.h"
 
-#define HAL_JSON_URL_RELOAD_JSON             (HAL_JSON_ROOT_URL "/reloadJson")
-#define HAL_JSON_URL_PRINT_DEVICES           (HAL_JSON_ROOT_URL "/printDevices")
+#define HAL_JSON_CMD_EXEC_WRITE_CMD               "write"
+#define HAL_JSON_CMD_EXEC_READ_CMD                "read"
+#define HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON         "reloadcfg"
+#define HAL_JSON_CMD_EXEC_PRINT_DEVICES           "printDevices"
+#define HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST "getAvailableGPIOs"
+#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_STRING   "string"
+#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_HEX      "hex"
+#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_BINARY   "binary"
+#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_DEFAULT  GPIO_manager::PrintListMode::Hex;
 
-#define HAL_JSON_REST_API_WRITE_CMD          "write"
-#define HAL_JSON_REST_API_READ_CMD           "read"
-#define HAL_JSON_REST_API_WRITE_URL          "/" HAL_JSON_REST_API_WRITE_CMD "/"
-#define HAL_JSON_REST_API_READ_URL           "/" HAL_JSON_REST_API_READ_CMD "/"
+#define HAL_JSON_CMD_EXEC_UINT32_TYPE        "uint32"
+#define HAL_JSON_CMD_EXEC_BOOL_TYPE          "bool"
+#define HAL_JSON_CMD_EXEC_FLOAT_TYPE         "float"
+#define HAL_JSON_CMD_EXEC_JSON_STR_TYPE      "json"
+#define HAL_JSON_CMD_EXEC_STRING_TYPE        "string"
 
-#define HAL_JSON_REST_API_UINT32_TYPE        "uint32"
-#define HAL_JSON_REST_API_BOOL_TYPE          "bool"
-#define HAL_JSON_REST_API_FLOAT_TYPE         "float"
-#define HAL_JSON_REST_API_JSON_STR_TYPE      "json"
-#define HAL_JSON_REST_API_STRING_TYPE        "string"
-
-#define HAL_JSON_CommandExecutor_DEBUG_CMD
+//#define HAL_JSON_CommandExecutor_DEBUG_CMD
 
 namespace HAL_JSON {
     class CommandExecutor {

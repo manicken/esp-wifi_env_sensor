@@ -46,6 +46,8 @@ namespace HAL_JSON {
         val = value;
         return true;
     }
+
+    
     
     String OneWireTempDevice::ToString() {
         String ret;
@@ -60,7 +62,7 @@ namespace HAL_JSON {
         else ret += "\"other\"";
         ret += ",";
         ret += DeviceConstStrings::value;//StartWithComma;
-        ret += value;
+        ret += std::to_string(value).c_str();
         //ret += "\"";
         return ret;
     }
@@ -109,6 +111,14 @@ namespace HAL_JSON {
             value = dTemp->getTempC(romid.bytes);
         else if (format == OneWireTempDeviceTempFormat::Fahrenheit)
             value = dTemp->getTempF(romid.bytes);
+    }
+
+    bool OneWireTempDeviceAtRoot::write(const HALValue& val) {
+#ifdef _WIN32
+        dTemp->setTempC(val); // only in simulator
+        return true;
+#endif
+        return false;
     }
 
     void OneWireTempDeviceAtRoot::loop() {

@@ -36,11 +36,11 @@ namespace HAL_JSON {
         ret += "\",";
         ret += DeviceConstStrings::value;//StartWithComma;
         if (value.getType() == HALValue::Type::FLOAT)
-            ret += value.asFloat();
+            ret += std::to_string(value.asFloat()).c_str();
         else if (value.getType() == HALValue::Type::UINT)
-            ret += value.asUInt();
+            ret += std::to_string(value.asUInt()).c_str();
         else if (value.getType() == HALValue::Type::INT)
-            ret += value.asInt();
+            ret += std::to_string(value.asInt()).c_str();
         else
             ret += "\"not set\"";
         return ret;

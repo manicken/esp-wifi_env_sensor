@@ -25,7 +25,7 @@ namespace HAL_JSON {
         ret += type;
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         return ret;
     }
 

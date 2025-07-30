@@ -50,7 +50,7 @@ namespace HAL_JSON {
     String OneWireTempAutoRefresh::ToString() {
         String ret;
         ret += DeviceConstStrings::refreshTimeMs;
-        ret += (refreshTimeMs + HAL_JSON_ONE_WIRE_TEMP_CONVERSION_TIME_MS);
+        ret += std::to_string(refreshTimeMs + HAL_JSON_ONE_WIRE_TEMP_CONVERSION_TIME_MS).c_str();
         return ret;
     }
 }

@@ -92,7 +92,7 @@ namespace HAL_JSON {
         ret += type;
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += "\"units\":[";
         bool first = true;
         for (int i=0;i<unitCount;i++) {

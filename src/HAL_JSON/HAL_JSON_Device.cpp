@@ -19,10 +19,10 @@ namespace HAL_JSON {
     String Device::ToString() { return ""; }
 
     bool Device::read(HALValue& val) { return false; }
-    bool Device::write(const HALValue& req) { return false; };
-    bool Device::read(const HALReadStringRequestValue &val) { return false; }
-    bool Device::write(const HALWriteStringRequestValue &val) { return false; }
-    bool Device::read(const HALReadValueByCmd &val) { return false; }
+    bool Device::write(const HALValue& val) { return false; };
+    bool Device::read(const HALReadStringRequestValue& val) { return false; }
+    bool Device::write(const HALWriteStringRequestValue& val) { return false; }
+    bool Device::read(const HALReadValueByCmd& val) { return false; }
     bool Device::write(const HALWriteValueByCmd& val) { return false; }
     Device::ReadToHALValue_FuncType Device::GetReadToHALValue_Function(const char* funcName) { return nullptr; }
 

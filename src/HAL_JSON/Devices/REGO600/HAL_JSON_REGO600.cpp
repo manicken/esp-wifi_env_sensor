@@ -59,8 +59,8 @@ namespace HAL_JSON {
             }
             delete[] registerItems;
         }
-        pinMode(rxPin, INPUT);
-        pinMode(txPin, INPUT);
+        pinMode(rxPin, INPUT); // input
+        pinMode(txPin, INPUT); // input
     }
     void REGO600::begin() {
         rego600->begin(); // this will initialize a first request

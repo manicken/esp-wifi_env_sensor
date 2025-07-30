@@ -59,7 +59,7 @@ namespace Drivers {
 
             const uint32_t opcode;
             const uint16_t address;
-            const Type type = Type::Value;
+            const Type type;
 
             union Response { // type name this so that it can be passed
                 uint32_t* value;

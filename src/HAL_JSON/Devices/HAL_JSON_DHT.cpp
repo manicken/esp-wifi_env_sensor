@@ -61,11 +61,11 @@ namespace HAL_JSON {
         ret += type;
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += ",\"humidity\":";
-        ret += data.humidity;
+        ret += std::to_string(data.humidity).c_str();
         ret += ",\"temperature\":";
-        ret += data.temperature;
+        ret += std::to_string(data.temperature).c_str();
         return ret;
     }
 

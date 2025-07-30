@@ -71,7 +71,7 @@ namespace HAL_JSON {
         bool ValidNumber() const;
         bool ConvertTo_uint32(uint32_t& outValue) const;
         bool ConvertTo_int32(int32_t& outValue) const;
-        bool ConvertTo_double(double& outValue) const;
+        bool ConvertTo_float(float& outValue) const;
     };
     bool operator==(const ZeroCopyString& lhs, const ZeroCopyString& rhs);
     bool operator!=(const ZeroCopyString& lhs, const ZeroCopyString& rhs);

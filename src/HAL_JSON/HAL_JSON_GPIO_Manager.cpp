@@ -169,5 +169,64 @@ namespace HAL_JSON {
                 }
             }
         }
+
+        std::string GetList(PrintListMode listMode)
+        {
+            std::string strList;// = "{";
+            
+    #if defined(ESP8266)
+            strList.append("\"MCU\":\"ESP8266\",");
+    #elif defined(ESP32)
+            strList.append("\"MCU\":\"ESP32\",");
+    #endif
+            if (listMode != PrintListMode::String) {
+                strList.append("\"PinModes\":{");
+                if (PinModeStrings_length == -1) set_PinModeStrings_length();
+                for (int i=0;i<PinModeStrings_length;i++)
+                {
+                    strList.append("\"");
+                    uint8_t modeMask = PinModeStrings[i].mode;
+                    if (listMode == PrintListMode::Binary) {
+                        strList.append(Convert::toBin(modeMask));
+                    }
+                    else {
+                        strList.append(Convert::toHex(modeMask));
+                    }
+                    strList.append("\":\"");
+                    strList.append(PinModeStrings[i].Name);
+                    strList.append("\"");
+                    if (i<(PinModeStrings_length-1))
+                        strList.append(",");
+                }
+                strList.append("},");
+            }
+            strList.append("\"list\":{");
+            bool first = true;
+            if (available_gpio_list_lenght == -1) set_available_gpio_list_length();
+            for (int i=0;i<available_gpio_list_lenght;i++)
+            {
+                if (first == false)
+                    strList.append(",");
+                else
+                    first = false;
+
+                strList.append("\"");
+                strList.append(std::to_string(available_gpio_list[i].pin));
+                strList.append("\":\"");
+                uint8_t modeMask = available_gpio_list[i].mode;
+                if (listMode == PrintListMode::String)
+                    strList.append(describePinMode(modeMask).c_str());
+                else if (listMode == PrintListMode::Binary) {
+                    strList.append(Convert::toBin(modeMask));
+                }
+                else { // (listMode == PrintListMode::Hex) 
+                    strList.append(Convert::toHex(modeMask));
+                }
+                strList.append("\"");                        
+            }
+            strList.append("}");
+            //strList.append("}");
+            return strList;
+        }
     }
 }

@@ -217,7 +217,7 @@ namespace HAL_JSON {
         ret += decodeUID(uid).c_str();
         ret += "\"";
         ret += DeviceConstStrings::pin;
-        ret += pin;
+        ret += std::to_string(pin).c_str();
         ret += ",\"devices\":[";
         for (int i=0;i<deviceCount;i++) {
             ret += "{";
@@ -250,9 +250,9 @@ namespace HAL_JSON {
 
     String OneWireTempBusAtRoot::ToString() {
         String ret;
-        ret += DeviceConstStrings::uid;
-        ret += decodeUID(uid).c_str();
-        ret += "\",";
+        //ret += DeviceConstStrings::uid;
+        //ret += decodeUID(uid).c_str();
+        //ret += "\",";
         ret += DeviceConstStrings::type;
         ret += type;
         ret += "\",";

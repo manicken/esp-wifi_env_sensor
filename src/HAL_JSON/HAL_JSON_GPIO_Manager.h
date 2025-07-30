@@ -73,5 +73,7 @@ namespace HAL_JSON {
          * this function is very basic and do only set the actual pin to reserved state, 
          * so calling it many times on the same pin do not matter */
         void ReservePin(uint8_t pin);
+
+        std::string GetList(PrintListMode listMode);
     }
 }

@@ -40,19 +40,58 @@ namespace Convert
         else return value + '0';
     }
 
-    std::string ByteToHexString(uint8_t value)
+    std::string toHex(uint8_t value)
     {
-        std::string hexString(2,'0');
-        hexString[0] = ConvertOneNibble((value >> 4) & 0x0F);
-        hexString[1] = ConvertOneNibble(value & 0x0F);
-        return hexString;
+        char hexStr[3];
+        hexStr[0] = ConvertOneNibble((value >> 4) & 0x0F);
+        hexStr[1] = ConvertOneNibble(value & 0x0F);
+        hexStr[2] = 0x00;
+        return std::string(hexStr);
+    }
+
+    std::string toHex(uint32_t value) {
+        char hexStr[9];
+        uint32_t divider = 0x10000000;
+        for (int i=0;i<8;i++) {
+            uint32_t nibble = (value/divider)&0xF;
+            hexStr[i] = (nibble >= 10) ? (nibble + ('A'-10)) : (nibble + '0');
+            value %=divider;
+            divider>>=4;
+        }
+        hexStr[8] = 0x00;
+        return std::string(hexStr);
+    }
+
+    std::string toHex(uint64_t value) {
+        char hexStr[17];
+        uint64_t divider = 0x1000000000000000;
+        for (int i=0;i<16;i++) {
+            uint32_t nibble = (value/divider)&0xF;
+            hexStr[i] = (nibble >= 10) ? (nibble + ('A'-10)) : (nibble + '0');
+            value %=divider;
+            divider>>=4;
+        }
+        hexStr[16] = 0x00;
+        return std::string(hexStr);
+    }
+
+    std::string toBin(uint8_t value) {
+        char bitStr[9];
+        uint32_t divider = 0x80;
+        for (int i=0;i<8;i++) {
+            bitStr[i] = ((value / divider) & 0x01) + '0';
+            value %= divider;
+            divider >>=1;
+        }
+        bitStr[8] = 0;
+        return std::string(bitStr);
     }
 
     std::string ByteArrayToString(uint8_t* byteArray, size_t arraySize)
     {
         std::string str = "";
         for (size_t i=0;i<arraySize;i++) {
-            str.append(ByteToHexString(byteArray[i]));
+            str.append(toHex(byteArray[i]));
             if (i<(arraySize-1)) str.append(":");
         }
         return str;
@@ -155,41 +194,6 @@ namespace Convert
         return true;
     }
 
-    std::string toHex(uint32_t value) {
-        char hexStr[9];
-        uint32_t divider = 0x10000000;
-        for (int i=0;i<8;i++) {
-            uint32_t nibble = (value/divider)&0xF;
-            hexStr[i] = (nibble >= 10) ? (nibble + ('A'-10)) : (nibble + '0');
-            value %=divider;
-            divider>>=4;
-        }
-        hexStr[8] = 0x00;
-        return std::string(hexStr);
-    }
-    std::string toHex(uint64_t value) {
-        char hexStr[17];
-        uint64_t divider = 0x1000000000000000;
-        for (int i=0;i<16;i++) {
-            uint32_t nibble = (value/divider)&0xF;
-            hexStr[i] = (nibble >= 10) ? (nibble + ('A'-10)) : (nibble + '0');
-            value %=divider;
-            divider>>=4;
-        }
-        hexStr[16] = 0x00;
-        return std::string(hexStr);
-    }
-
-    std::string toBin(uint8_t value) {
-        char bitStr[9];
-        uint32_t divider = 0x80;
-        for (int i=0;i<8;i++) {
-            bitStr[i] = ((value / divider) & 0x01) + '0';
-            value %= divider;
-            divider >>=1;
-        }
-        bitStr[8] = 0;
-        return std::string(bitStr);
-    }
+    
 
 }

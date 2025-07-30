@@ -115,10 +115,10 @@ Scheduler::NameToFunction nameToFunctionList[] = {
 #define INIT_SDMMC_PRINT_DIR
 bool InitSD_MMC()
 {
-    pinMode(23, OUTPUT);
+    pinMode(23, OUTPUT); // output
     digitalWrite(23, HIGH); // enable pullup on IO2(SD_D0), IO12(SD_D2)
-    pinMode(2, INPUT);
-    if (digitalRead(2) == LOW) return false; // no pullup connected to GPIO2 from GPIO23
+    pinMode(2, INPUT); // input
+    if (digitalRead(2) == 0) return false; // no pullup connected to GPIO2 from GPIO23
     delay(10);
     log_e("SD-card initialialize...");
 
@@ -337,7 +337,7 @@ void setup() {
     rego600.setup();
 #endif
 #ifdef HAL_JSON_H_
-    HAL_JSON::begin(webserver);
+    HAL_JSON::begin();
 #endif
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());

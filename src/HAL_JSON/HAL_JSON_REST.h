@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
+//#include <ArduinoJson.h>
 #include <stdlib.h>
 #include <LittleFS.h>
 
@@ -14,10 +14,11 @@
 #include <ESPAsyncWebServer.h> // have a stub wrapper for this
 
 #include "../Support/Logger.h"
-#include "../Support/ConvertHelper.h"
+//#include "../Support/ConvertHelper.h"
 
-#include "HAL_JSON_Device_GlobalDefines.h"
+//#include "HAL_JSON_Device_GlobalDefines.h"
 
+#include "../Support/ZeroCopyString.h"
 #include "HAL_JSON_Manager.h"
 #include "HAL_JSON_CommandExecutor.h"
 
@@ -27,8 +28,6 @@ namespace HAL_JSON {
     class REST {
     private:
         static AsyncWebServer* asyncWebserver;
-
-        static void handleWriteOrRead(AsyncWebServerRequest *request);
     public:
         static void setup();
     };

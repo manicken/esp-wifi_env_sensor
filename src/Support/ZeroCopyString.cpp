@@ -220,7 +220,7 @@ namespace HAL_JSON {
         return true;
     }
 
-    bool ZeroCopyString::ConvertTo_double(double& outValue) const {
+    bool ZeroCopyString::ConvertTo_float(float& outValue) const {
         if (Length() == 0) return false;
 
         const char* p = start;
@@ -236,9 +236,9 @@ namespace HAL_JSON {
             p++;
         }
 
-        double value = 0.0;
+        float value = 0.0;
         bool decimalSeen = false;
-        double decimalFactor = 0.1;
+        float decimalFactor = 0.1;
         bool digitSeen = false;
 
         while (p < _end) {

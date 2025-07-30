@@ -36,7 +36,7 @@ namespace HAL_JSON {
     public:
         OneWireAddress romid;
         OneWireTempDeviceTempFormat format = OneWireTempDeviceTempFormat::Celsius;
-        float value;
+        float value = 0.0f;
 
         static bool VerifyJSON(const JsonVariant &jsonObj);
         
@@ -44,7 +44,7 @@ namespace HAL_JSON {
         ~OneWireTempDevice();
         
         bool read(HALValue& val) override;
-        
+
         String ToString() override;
     };
 
@@ -63,7 +63,9 @@ namespace HAL_JSON {
         
         OneWireTempDeviceAtRoot(const JsonVariant &jsonObj, const char* type);
         ~OneWireTempDeviceAtRoot();
-
+//#ifdef _WIN32
+        bool write(const HALValue& val) override;
+//#endif
         void loop() override;
 
         String ToString() override;

@@ -19,11 +19,11 @@ INCLUDES = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
 
 # Source files
 SRC = \
+	./stubs/HAL_JSON_REST/HAL_JSON_REST.cpp \
 	main.cpp \
 	RPN_tools.cpp \
 	commandLoop.cpp \
 	./stubs/Arduino/Arduino.cpp \
-	./stubs/ESPAsyncWebServer/ESPAsyncWebServer.cpp \
 	./stubs/Ticker/Ticker.cpp \
 	./stubs/LittleFS/LittleFS.cpp \
 	./stubs/LittleFS/LittleFS_ext.cpp \
@@ -45,7 +45,7 @@ SRC = \
 
 # Files to exclude (webserver-related)
 EXCLUDE_SRC = \
-	../src/HAL_JSON/HAL_JSON_GPIO_Manager_REST.cpp \
+	../src/HAL_JSON/HAL_JSON_REST.cpp \
 	../src/HAL_JSON/HAL_JSON.cpp
 	
 # Remove excluded files from SRC

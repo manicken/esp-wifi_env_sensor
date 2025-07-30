@@ -10,11 +10,12 @@
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser.h"
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.h"
     #include "../src/HAL_JSON/HAL_JSON_Manager.h"
-    #include "../src/HAL_JSON/HAL_JSON_REST.h"
+    #include "stubs/HAL_JSON_REST/HAL_JSON_REST.h"
     #include "../src/Support/ConvertHelper.h"
     #include "../src/Support/CharArrayHelpers.h"
     #include "../src/Support/ZeroCopyString.h"
     #include "RPN_tools.h"
+
 
     #include <ArduinoJson.h>
 
@@ -295,6 +296,15 @@ namespace  HAL_JSON
     }
 }
 
+/********************************************************************************************************** */
+
+std::string myCallback(const std::string& path) {
+    HAL_JSON::ZeroCopyString zcCmd(path.c_str()+1); // +1 = remove leading /
+    std::string message;
+    HAL_JSON::CommandExecutor::execute(zcCmd, message);
+    return message;
+}
+
     int main(int argc, char* argv[]) {
         std::cout << "WALHALLA rule development simulator - Running on Windows (MinGW)" << std::endl;
 
@@ -385,9 +395,10 @@ namespace  HAL_JSON
         }
 
         std::thread cmdThread(commandLoop); // start command input thread from commandLoop that is in commandLoop.h
-
-        HAL_JSON::REST::setup(); // this will start the server
-        HAL_JSON::Manager::begin();
+        std::cout << "****** Starting REST api server:\n";
+        HAL_JSON::REST::setup(myCallback); // this will start the server
+        std::cout << "****** Init HAL_JSON Manager\n";
+        HAL_JSON::Manager::setup();
         while (running) { // running is in commandLoop.h
             HAL_JSON::Manager::loop();
             //std::this_thread::sleep_for(std::chrono::milliseconds(10));

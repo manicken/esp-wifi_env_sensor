@@ -27,6 +27,7 @@ namespace Convert
     String convertISO88591toUTF8(const String &input);
     bool IsValidHexString(const char* str);
 
+    std::string toHex(uint8_t value);
     std::string toHex(uint32_t value);
     std::string toHex(uint64_t value);
     std::string toBin(uint8_t value);

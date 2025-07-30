@@ -25,10 +25,10 @@ namespace HAL_JSON {
     // TODO: refactor this function to send errors to GlobalLogger
     bool CommandExecutor::execute(ZeroCopyString& zcStr, std::string& message) {
         // Example URL: /write/uint32/tempSensor1/255 where tempSensor1 is a uid defined by cfg json
-        std::cout << "zcStr:" << zcStr.ToString() << "\n";
+        //std::cout << "zcStr:" << zcStr.ToString() << "\n";
         ZeroCopyString zcCommand = zcStr.SplitOffHead('/');
 
-        std::cout << "zcCommand:" << zcCommand.ToString() << "\n";
+        //std::cout << "zcCommand:" << zcCommand.ToString() << "\n";
 
 #ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
         message += "\"debug\":{";
@@ -36,18 +36,55 @@ namespace HAL_JSON {
 #endif
         //bool addLastLogEntryToMessage = false;
         bool anyErrors = false;
-        if (zcCommand == HAL_JSON_REST_API_WRITE_CMD)
+        if (zcCommand == HAL_JSON_CMD_EXEC_WRITE_CMD)
         {
             anyErrors = writeCmd(zcStr, message) == false;
         }
-        else if (zcCommand == HAL_JSON_REST_API_READ_CMD)
+        else if (zcCommand == HAL_JSON_CMD_EXEC_READ_CMD)
         {
             anyErrors = readCmd(zcStr, message) == false;
+        }
+        else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON) {
+            ZeroCopyString zcOptionalFileName = zcStr.SplitOffHead('/');
+#ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
+            message += "\"filename\":\"" + (zcOptionalFileName.Length() != 0?zcOptionalFileName.ToString():"default") + "\"}";
+#endif
+            std::string filePath;
+            if (zcOptionalFileName.Length() == 0) {
+                filePath = "hal/cfg.json";
+            } else {
+                filePath = "hal/" + zcOptionalFileName.ToString();
+            }
+            if (Manager::ReadJSON(filePath.c_str())) {
+                message += "\"info\":\"OK\"";
+            } else {
+                message += "\"info\":\"FAIL\"";
+                anyErrors = true;
+            }
+        }
+        else if (zcCommand == HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST) {
+            GPIO_manager::PrintListMode listMode = HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_DEFAULT;
+            ZeroCopyString zcPrintMode = zcStr.SplitOffHead('/');
+            if (zcPrintMode.Length() != 0) {
+                if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_STRING)
+                    listMode = GPIO_manager::PrintListMode::String;
+                else if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_BINARY)
+                    listMode = GPIO_manager::PrintListMode::Binary;
+                else if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_HEX)
+                    listMode = GPIO_manager::PrintListMode::Hex;
+                //else // default set above
+                //    listMode = HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_DEFAULT; // default
+            }
+            message += GPIO_manager::GetList(listMode);
+        }
+        else if (zcCommand == HAL_JSON_CMD_EXEC_PRINT_DEVICES) {
+            message += Manager::ToString();
         }
         else
         {
             anyErrors = true;
             message += "\"error\":\"Unknown command.\"";
+            message += ",\"command\":\""+zcCommand.ToString()+"\"";
         }
         if (anyErrors) {
             const LogEntry& lastEntry = GlobalLogger.getLastEntry();
@@ -77,7 +114,7 @@ namespace HAL_JSON {
         if (params.zcValue.Length() == 0) {
             message += "\"error\":\"No value provided for writing.\"";
         } else {
-            if (params.zcType == HAL_JSON_REST_API_BOOL_TYPE) {
+            if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
                 uint32_t uintValue = 0;
 
                 if ((params.zcValue == "true") || (params.zcValue == "1")) {
@@ -95,14 +132,14 @@ namespace HAL_JSON {
                 HALWriteRequest req(uidPath, halValue);
                 if (Manager::write(req)) {
                     message += "\"info\":{\"Value written\":\"";
-                    message += uintValue;
+                    message += std::to_string(uintValue);
                     message += "\"}";
                 }
                 else {
                     return false;
                 }
             }
-            else if (params.zcType == HAL_JSON_REST_API_UINT32_TYPE) {
+            else if (params.zcType == HAL_JSON_CMD_EXEC_UINT32_TYPE) {
                 // Convert value to integer
                 uint32_t uintValue = 0;
                 if (params.zcValue.ConvertTo_uint32(uintValue) == false) {
@@ -113,7 +150,7 @@ namespace HAL_JSON {
                     HALWriteRequest req(uidPath, halValue);
                     if (Manager::write(req)) {
                         message += "\"info\":{\"Value written\":\"";
-                        message += uintValue;
+                        message += std::to_string(uintValue);
                         message += "\"}";
                     }
                     else {
@@ -121,7 +158,29 @@ namespace HAL_JSON {
                     }
                 }
 
-            } else if (params.zcType == HAL_JSON_REST_API_STRING_TYPE) {
+            } else if (params.zcType == HAL_JSON_CMD_EXEC_FLOAT_TYPE) {
+                // Convert value to integer
+                float floatValue = 0.0f;
+                if (params.zcValue.ConvertTo_float(floatValue) == false) {
+                    message += "{\"error\":\"Invalid uint32 value.\"}";
+                } else {
+#ifdef _WIN32
+                    std::cout << "float value written: " << floatValue << "\n";
+#endif
+                    UIDPath uidPath(params.zcUid);
+                    HALValue halValue = floatValue;
+                    HALWriteRequest req(uidPath, halValue);
+                    if (Manager::write(req)) {
+                        message += "\"info\":{\"Value written\":\"";
+                        message += std::to_string(floatValue);
+                        message += "\"}";
+                    }
+                    else {
+                        return false;
+                    }
+                }
+
+            } else if (params.zcType == HAL_JSON_CMD_EXEC_STRING_TYPE) {
                 UIDPath uidPath(params.zcUid);
                 std::string result;
                 HALWriteStringRequestValue strHalValue(params.zcValue, result);
@@ -136,7 +195,7 @@ namespace HAL_JSON {
                     return false;
                 }
 
-            } else if (params.zcType == HAL_JSON_REST_API_JSON_STR_TYPE) {
+            } else if (params.zcType == HAL_JSON_CMD_EXEC_JSON_STR_TYPE) {
                 UIDPath uidPath(params.zcUid);
                 std::string result;
                 HALWriteStringRequestValue strHalValue(params.zcValue, result);
@@ -166,45 +225,40 @@ namespace HAL_JSON {
     // TODO: refactor this function to send errors to GlobalLogger
     bool CommandExecutor::readCmd(ZeroCopyString& zcStr, std::string& message) {
         ReadWriteCmdParameters params(zcStr);
+        std::string valueStr;
 #ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
         message += params.ToString() + "},";
 #endif
-
-        if (params.zcType == HAL_JSON_REST_API_BOOL_TYPE) {
+        bool anyReadError = false;
+        if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
             UIDPath uidPath(params.zcUid);
             HALValue halValue;
             HALReadRequest req(uidPath, halValue);
 
             if (Manager::read(req)) {
-                message += DeviceConstStrings::value;
-                message += halValue.asUInt();
-                //message += + "\"";
+                valueStr = std::to_string(halValue.asUInt());
             } else {
-                return false;
+                anyReadError = true;
             }
-        } else if (params.zcType == HAL_JSON_REST_API_UINT32_TYPE) {
+        } else if (params.zcType == HAL_JSON_CMD_EXEC_UINT32_TYPE) {
             UIDPath uidPath(params.zcUid);
             HALValue halValue;
             HALReadRequest req(uidPath, halValue);
             if (Manager::read(req)) {
-                message += DeviceConstStrings::value;
-                message += halValue.asUInt();
-                //message += "\"";
+                valueStr = std::to_string(halValue.asUInt());
             } else {
-                return false;
+                anyReadError = true;
             }
-        } else if (params.zcType == HAL_JSON_REST_API_FLOAT_TYPE) {
+        } else if (params.zcType == HAL_JSON_CMD_EXEC_FLOAT_TYPE) {
             UIDPath uidPath(params.zcUid);
             if (params.zcValue.Length() == 0) {
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
             
                 if (Manager::read(req)) {
-                    message += DeviceConstStrings::value;
-                    message += halValue.asFloat();
-                    //message += "\"";
+                    valueStr = std::to_string(halValue.asFloat());
                 } else {
-                    return false;
+                    anyReadError = true;
                 }
             }
             else {
@@ -213,32 +267,35 @@ namespace HAL_JSON {
                 HALReadValueByCmdReq req(uidPath, valByCmd);
             
                 if (Manager::read(req)) {
-                    message += DeviceConstStrings::value;
-                    message += halValue.asFloat();
-                    //message += "\"";
+                    valueStr = std::to_string(halValue.asFloat());
                 } else {
-                    return false;
+                    anyReadError = true;
                 }
             }
-        } else if (params.zcType == HAL_JSON_REST_API_STRING_TYPE) {
+        } else if (params.zcType == HAL_JSON_CMD_EXEC_STRING_TYPE) {
             UIDPath uidPath(params.zcUid);
             std::string result;
             HALReadStringRequestValue strHalValue(params.zcValue, result);
             
             HALReadStringRequest req(uidPath, strHalValue);
             if (Manager::read(req)) {
-                message += DeviceConstStrings::value;
-                message += "\"";
-                message += result.c_str();
-                message += "\"";
+                valueStr = "\"";
+                valueStr += result;
+                valueStr += "\"";
             }
             else {
-                return false;
+                anyReadError = true;
             }
         } else {
             message += "\"error\":\"Unknown type for reading.\"";
             return false;
         }
+        if (anyReadError) {
+            message += "\"error\":\"read error.\"";
+            return false;
+        }
+        message += DeviceConstStrings::value;
+        message += valueStr;
         return true;
     }
 }

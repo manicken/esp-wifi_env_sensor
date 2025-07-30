@@ -16,7 +16,11 @@ namespace HAL_JSON {
     }
 
     void Manager::setup() {
+#ifdef _WIN32
+        if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()+1) == false) { // remove the leading /
+#else
         if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()) == false) {
+#endif
             Serial.println("error happend while reading and parsing config JSON");
             GlobalLogger.printAllLogs(Serial, false);
         }
@@ -26,7 +30,7 @@ namespace HAL_JSON {
     }
 
     std::string Manager::ToString() {
-        std::string ret = "{";
+        std::string ret;
         ret += "\"deviceCount\":" + std::to_string(deviceCount); 
         ret += ",\"devices\":[";
         for (int i=0;i<deviceCount;i++) {
@@ -35,7 +39,7 @@ namespace HAL_JSON {
             ret += "}";
             if (i<deviceCount-1) ret += ",";
         }
-        ret += "]}";
+        ret += "]";
         return ret;
     }
 
@@ -225,7 +229,11 @@ namespace HAL_JSON {
             GlobalLogger.Error(F("ReadJSON - error could not load json file"),path);
             return false;
         }
+#ifdef _WIN32
+        size_t jsonDocBufferSize = fileSize * 10; // very safe mem
+#else
         size_t jsonDocBufferSize = (size_t)((float)fileSize * 1.5f);
+#endif
         DynamicJsonDocument jsonDoc(jsonDocBufferSize);
         DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
         if (error)
