@@ -43,7 +43,7 @@
         std::thread cmdThread(commandLoop); // start command input thread from commandLoop that is in commandLoop.h
         while (running) { // running is in commandLoop.h
             HAL_JSON::Manager::loop();
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         cmdThread.join(); // wait for command thread to finish
         std::cout << "Exited cleanly.\n";

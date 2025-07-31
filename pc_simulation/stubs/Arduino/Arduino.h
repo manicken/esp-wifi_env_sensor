@@ -63,9 +63,6 @@ inline float analogRead(int pin) {
     return val;
 }
 
-// dont care that this say its error here
-
-
 #include <iostream>
 
 // Minimal stub for Serial-like behavior

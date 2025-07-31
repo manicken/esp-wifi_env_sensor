@@ -139,7 +139,7 @@ namespace HAL_JSON {
             devices[index++] = CreateDeviceFromJSON(jsonItem);
         }
         std::string devCountStr = std::to_string(deviceCount);
-        GlobalLogger.Info(F("Created %u devices\n"), devCountStr.c_str());
+        GlobalLogger.Info(F("Created devices: "), devCountStr.c_str());
         delete[] validDevices; // free memory
         return true;
     }

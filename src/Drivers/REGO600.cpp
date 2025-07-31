@@ -364,6 +364,6 @@ namespace Drivers {
         while (uart.available() && count++ < maxDrains) {
             uart.read();
         }
-        GlobalLogger.Error(F("REGO600 - ClearUARTRxBuffer overflow"));
+        //GlobalLogger.Error(F("REGO600 - ClearUARTRxBuffer overflow"));
     }
 }

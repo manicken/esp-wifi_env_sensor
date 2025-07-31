@@ -156,11 +156,22 @@ void Logger::printAllLogs(Stream &out, bool onlyPrintNew) {
         if (onlyPrintNew && entry.isNew == false) continue;
         entry.isNew = false;
 
+        char strTime[32]; // Enough for asctime output
+        struct tm* timeinfo = localtime(&entry.timestamp);
+        
         out.print('[');
-        struct tm* timeinfo;
-        timeinfo = localtime(&entry.timestamp);
-        out.print(asctime(timeinfo));
-        //out.print(entry.timestamp);
+        out.print(timeinfo->tm_mday);
+        out.print('/');
+        out.print(timeinfo->tm_mon);
+        out.print(' ');
+        if (timeinfo->tm_hour < 10) out.print('0');
+        out.print(timeinfo->tm_hour);
+        out.print(':');
+        if (timeinfo->tm_min < 10) out.print('0');
+        out.print(timeinfo->tm_min);
+        out.print(':');
+        if (timeinfo->tm_sec < 10) out.print('0');
+        out.print(timeinfo->tm_sec);
         out.print(']');
 
         switch (entry.level) {
