@@ -19,6 +19,7 @@ struct LogEntry {
           const __FlashStringHelper* message;
       };
       char* text;
+      const char* source;
       bool isCode;
       bool isNew = false;
       LogEntry();
@@ -45,28 +46,22 @@ class Logger {
     void Error(const __FlashStringHelper* msg);
     void Error(uint32_t code, const char* text);
     void Error(const __FlashStringHelper* msg, const char* text);
-#ifndef _WIN32
     void Error(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
-#endif
     void Info(uint32_t code);
     void Info(const __FlashStringHelper* msg);
     void Info(uint32_t code, const char* text);
     void Info(const __FlashStringHelper* msg, const char* text);
-#ifndef _WIN32
     void Info(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
-#endif
     void Warn(uint32_t code);
     void Warn(const __FlashStringHelper* msg);
     void Warn(uint32_t code, const char* text);
     void Warn(const __FlashStringHelper* msg, const char* text);
-#ifndef _WIN32
     void Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj);
     void printAllLogs(Stream &out = Serial, bool onlyPrintNew = false);
-#else
-    void printAllLogs(Stream &out = Serial, bool onlyPrintNew = false);
-#endif
+
     
     const LogEntry& getLastEntry() const;
+    void setLastEntrySource(const char* src);
 
   private:
     static constexpr size_t LOG_BUFFER_SIZE = 128;

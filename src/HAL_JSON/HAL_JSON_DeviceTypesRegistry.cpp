@@ -20,7 +20,7 @@ namespace HAL_JSON {
         {UseRootUID::Mandatory, "DIN", DigitalInput::Create, DigitalInput::VerifyJSON},
         {UseRootUID::Mandatory, "DOUT", DigitalOutput::Create, DigitalOutput::VerifyJSON},
         {UseRootUID::Mandatory, "DPOUT", SinglePulseOutput::Create, SinglePulseOutput::VerifyJSON},
-#if defined(ESP32)
+#if defined(ESP32) || defined(_WIN32)
         {UseRootUID::Mandatory, "ADC", AnalogInput::Create, AnalogInput::VerifyJSON},
 #endif
         {UseRootUID::Optional, "PWM_AW", PWMAnalogWrite::Create, PWMAnalogWrite::VerifyJSON},
@@ -33,7 +33,7 @@ namespace HAL_JSON {
         {UseRootUID::Mandatory, "DHT", DHT::Create, DHT::VerifyJSON},
         {UseRootUID::Mandatory, "TX433", TX433::Create, TX433::VerifyJSON},
         {UseRootUID::Mandatory, "REGO600", REGO600::Create, REGO600::VerifyJSON},
-#if defined(ESP32)
+#if defined(ESP32) || defined(_WIN32)
         {UseRootUID::Mandatory, "PWM_LEDC", nullptr, nullptr},
 #endif
 

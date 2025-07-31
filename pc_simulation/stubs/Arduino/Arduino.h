@@ -20,12 +20,11 @@ using String = std::string;
 #define __FlashStringHelper char 
 
 
-
-
 #define HIGH 1
 #define LOW  0
 #define INPUT 0
 #define OUTPUT 1
+
 
 
 // Simulate millis() using std::chrono
@@ -48,14 +47,20 @@ inline void delayMicroseconds(unsigned long us) {
 inline void pinMode(int pin, int mode) {
     printf("pinMode(%d, %d)\n", pin, mode);
 }
-inline void digitalWrite(int pin, int val) {
-    printf("digitalWrite(%d, %d)\n", pin, val);
-}
+void digitalWrite(int pin, int val);
 inline int digitalRead(int pin) {
+    int val = 42;
+    printf("digitalRead(%d, %f)\n", pin, val);
     return 0; // always low
 }
 inline void analogWrite(int pin, float val) {
     printf("analogWrite(%d, %f)\n", pin, val);
+}
+
+inline float analogRead(int pin) {
+    float val = 42.42f;
+    printf("analogRead(%d, %f)\n", pin, val);
+    return val;
 }
 
 // dont care that this say its error here

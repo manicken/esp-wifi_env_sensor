@@ -1,6 +1,10 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -O2 -D _WIN32 -D _WIN32_WINNT=0x0A00
+CXXFLAGS = -std=c++17 -Wall -g -O0 -D _WIN32 -D _WIN32_WINNT=0x0A00
+
+#CXXFLAGS += -g -O0 -Wall -Wextra -fno-omit-frame-pointer
+
 #LDFLAGS = -s
+
 BUILD_DIR = build
 
 # Header include path for ArduinoJson

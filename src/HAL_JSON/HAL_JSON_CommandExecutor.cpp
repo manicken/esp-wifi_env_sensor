@@ -55,30 +55,26 @@ namespace HAL_JSON {
             } else {
                 filePath = "hal/" + zcOptionalFileName.ToString();
             }
-            if (Manager::ReadJSON(filePath.c_str())) {
-                message += "\"info\":\"OK\"";
-            } else {
-                message += "\"info\":\"FAIL\"";
-                anyErrors = true;
-            }
+#ifdef _WIN32
+            std::cout << "Reload cfg json: " << filePath << std::endl;  
+#endif
+            
+                if (Manager::ReadJSON(filePath.c_str())) {
+                    message += "\"info\":\"OK\"";
+                } else {
+                    message += "\"info\":\"FAIL\",";
+                    anyErrors = true;
+                }
+            
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST) {
-            GPIO_manager::PrintListMode listMode = HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_DEFAULT;
-            ZeroCopyString zcPrintMode = zcStr.SplitOffHead('/');
-            if (zcPrintMode.Length() != 0) {
-                if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_STRING)
-                    listMode = GPIO_manager::PrintListMode::String;
-                else if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_BINARY)
-                    listMode = GPIO_manager::PrintListMode::Binary;
-                else if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_HEX)
-                    listMode = GPIO_manager::PrintListMode::Hex;
-                //else // default set above
-                //    listMode = HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_DEFAULT; // default
-            }
-            message += GPIO_manager::GetList(listMode);
+            message += GPIO_manager::GetList(zcStr);
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_PRINT_DEVICES) {
             message += Manager::ToString();
+        }
+        else if (zcCommand == HAL_JSON_CMD_EXEC_PRINT_LOG_CONTENTS) {
+            GlobalLogger.printAllLogs(Serial);
         }
         else
         {
@@ -87,10 +83,20 @@ namespace HAL_JSON {
             message += ",\"command\":\""+zcCommand.ToString()+"\"";
         }
         if (anyErrors) {
-            const LogEntry& lastEntry = GlobalLogger.getLastEntry();
-            message += "\"error\":\"";
-            message += lastEntry.MessageToString().c_str();
-            message += "\"";
+
+            try {
+                const LogEntry& lastEntry = GlobalLogger.getLastEntry();
+                String lastEntryStr = lastEntry.MessageToString();
+                message += "\"error\":\"";
+                message += lastEntryStr.c_str();
+                message += "\"";
+                
+            } catch (const std::exception& e) {
+                message += "\"info\":\"EXCEPTION: ";
+                message += e.what();
+                message += "\",";
+                anyErrors = true;
+            }
         }
         message = "{" + message;
         message += "}";

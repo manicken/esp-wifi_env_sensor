@@ -4,7 +4,7 @@
 namespace HAL_JSON {
 
     bool TX433::VerifyJSON(const JsonVariant &jsonObj) {
-        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID) == false) { return false; }
+        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID) == false) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_TX433_VERIFY_JSON); return false; }
 
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_TX433_UNITS) && jsonObj[HAL_JSON_KEYNAME_TX433_UNITS].is<JsonArray>()) {
             JsonArray units = jsonObj[HAL_JSON_KEYNAME_TX433_UNITS].as<JsonArray>();

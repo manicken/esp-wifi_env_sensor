@@ -37,7 +37,7 @@ namespace HAL_JSON {
      }
 
     bool DHT::VerifyJSON(const JsonVariant &jsonObj) {
-        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_DHT_MODEL) == false) return false;
+        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_DHT_MODEL) == false){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_DHT_VERIFY_JSON); return false; }
         //const char* modelStr = jsonObj[HAL_JSON_KEYNAME_DHT_MODEL].as<const char*>();
         const char* modelStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_DHT_MODEL); // this take 8bytes less than above
 

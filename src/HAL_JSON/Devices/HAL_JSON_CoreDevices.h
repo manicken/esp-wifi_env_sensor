@@ -93,7 +93,7 @@ namespace HAL_JSON {
 // ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██ ██ ██  ██ ██████  ██    ██    ██    
 // ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ██  ██ ██ ██      ██    ██    ██    
 // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
-#if defined(ESP32)
+#if defined(ESP32) || defined(_WIN32)
     class AnalogInput : public Device {
     private:
         uint8_t pin = 0;

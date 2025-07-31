@@ -13,4 +13,4 @@
 extern std::atomic<bool> running;
 
 void commandLoop();
-void parseCommand(std::string cmd);
+void parseCommand(const char* cmd);

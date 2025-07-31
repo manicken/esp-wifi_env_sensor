@@ -2,6 +2,7 @@
 #include "commandLoop.h"
 
 std::atomic<bool> running{true};
+
 void ParseHelpCommand(HAL_JSON::ZeroCopyString& zcCmd) {
     HAL_JSON::ZeroCopyString zcCmdHelp = zcCmd.SplitOffHead('/');
     if (zcCmdHelp == "hal") {
@@ -40,8 +41,8 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
     HAL_JSON::Rules::Expressions::ValidateExpression(contents);
     delete[] contents;
 }
-void parseCommand(std::string cmd) {
-    HAL_JSON::ZeroCopyString zcCmd(cmd.c_str());
+void parseCommand(const char* cmd) {
+    HAL_JSON::ZeroCopyString zcCmd(cmd);
 
     HAL_JSON::ZeroCopyString zcCmdRoot = zcCmd.SplitOffHead('/');
 
@@ -75,6 +76,6 @@ void commandLoop() {
     while (running) {
         std::cout << "> ";
         if (!std::getline(std::cin, cmd)) break;
-        parseCommand(cmd);
+        parseCommand(cmd.c_str());
     }
 }

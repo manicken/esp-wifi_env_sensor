@@ -12,6 +12,16 @@
 
 #define HAL_JSON_USE_EFFICIENT_FIND
 
+#define HAL_JSON_ERROR_SOURCE_ ""
+#define HAL_JSON_ERROR_SOURCE_MGR_VERIFY_DEVICE "MGR_VDJ"
+#define HAL_JSON_ERROR_SOURCE_DHT_VERIFY_JSON "DHT_VJ"
+#define HAL_JSON_ERROR_SOURCE_1WTD_VERIFY_JSON "1WTD_VJ"
+#define HAL_JSON_ERROR_SOURCE_REGO600_REG_VERIFY_JSON "REGO600reg_VJ"
+#define HAL_JSON_ERROR_SOURCE_TX433_VERIFY_JSON "TX433_VJ"
+#define HAL_JSON_ERROR_SOURCE_TX433_UNIT_VERIFY_JSON "TX433unit_VJ"
+#define HAL_JSON_ERROR_SOURCE_TX433_UNIT_VERIFY_FC_JSON "TX433unit_VFCJ"
+
+
 // Global use
 #define HAL_JSON_KEYNAME_DISABLED                           "disabled"
 #define HAL_JSON_KEYNAME_TYPE                               "type"
@@ -35,14 +45,15 @@
 
 
 // the following must be at end
+#define SET_ERR_LOC(loc) GlobalLogger.setLastEntrySource(loc)
 #define HAL_JSON_ERR_MISSING_STRING_VALUE_KEY (F("Missing string value key: "))
 #define HAL_JSON_ERR_VALUE_TYPE_NOT_STRING (F("Value type not string: "))
 #define HAL_JSON_ERR_STRING_EMPTY (F("String is empty:"))
 
-#define HAL_JSON_ERR_MISSING_KEY(k) (F("Missing key: " k)),jsonObj
-#define HAL_JSON_ERR_VALUE_TYPE(t) (F("Value type: " t)),jsonObj
-#define HAL_JSON_ERR_ITEMS_EMPTY(t) (F(t " items list is empty")),jsonObj
-#define HAL_JSON_ERR_ITEMS_NOT_VALID(t) (F(t " do not contain any valid items")),jsonObj
+#define HAL_JSON_ERR_MISSING_KEY(k) (F("Missing key: " k))
+#define HAL_JSON_ERR_VALUE_TYPE(t) (F("Value type: " t))
+#define HAL_JSON_ERR_ITEMS_EMPTY(t) (F(t " items list is empty"))
+#define HAL_JSON_ERR_ITEMS_NOT_VALID(t) (F(t " do not contain any valid items"))
 
 #define HAL_JSON_DEBUG(constStr, dynStr) Serial.print(constStr); Serial.println(dynStr);
 //#define HAL_JSON_DEBUG(constStr, dynStr) GlobalLogger.Info(constStr, dynStr);

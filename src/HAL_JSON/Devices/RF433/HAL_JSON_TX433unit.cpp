@@ -4,8 +4,8 @@
 namespace HAL_JSON {
 
     bool TX433unit::VerifyFC_JSON(const JsonVariant &jsonObj) {
-        if (!ValidateJsonStringField(jsonObj,"ch")) return false;
-        if (!ValidateJsonStringField(jsonObj,"btn")) return false;
+        if (!ValidateJsonStringField(jsonObj,"ch")) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_TX433_UNIT_VERIFY_FC_JSON); return false; }
+        if (!ValidateJsonStringField(jsonObj,"btn")) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_TX433_UNIT_VERIFY_FC_JSON); return false; }
         //if (!ValidateJsonStringField(jsonObj,"state")) return false;
         return true;
     }
@@ -27,8 +27,8 @@ namespace HAL_JSON {
     }
 
     bool TX433unit::VerifyJSON(const JsonVariant &jsonObj) {
-        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID) == false) { return false; }
-        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL) == false) { return false; }
+        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID) == false) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_TX433_UNIT_VERIFY_JSON); return false; }
+        if (ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL) == false) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_TX433_UNIT_VERIFY_JSON); return false; }
 
         const char* modelStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_TX433_MODEL);
 

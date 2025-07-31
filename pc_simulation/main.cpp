@@ -31,24 +31,19 @@
         std::cout << "* WALHALLA rule development simulator - Running on Windows (MinGW) *" << std::endl;
         std::cout << "********************************************************************" << std::endl;
 
-        std::string filename;
-        std::string firstArg;
-        std::string secondArg;
-
-        // Check if a filename was given as a command-line argument
         if (argc > 1) {
-            firstArg = argv[1];
-            parseCommand(firstArg);
+            parseCommand(argv[1]);
         }
         
         std::cout << "\n****** Starting REST api server:\n";
         HAL_JSON::REST::setup(halJsonRestCallback); // this will start the server
         std::cout << "\n****** Init HAL_JSON Manager\n";
         HAL_JSON::Manager::setup();
+        std::cout << "\n****** Starting commandLoop thread\n";
         std::thread cmdThread(commandLoop); // start command input thread from commandLoop that is in commandLoop.h
         while (running) { // running is in commandLoop.h
             HAL_JSON::Manager::loop();
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         cmdThread.join(); // wait for command thread to finish
         std::cout << "Exited cleanly.\n";

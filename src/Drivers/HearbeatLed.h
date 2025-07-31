@@ -77,7 +77,7 @@ namespace HeartbeatLed
             }
             webserver->send(200, "text/html", ret);
         });
-        pinMode(HEARTBEATLED_PIN, 0); // output
+        pinMode(HEARTBEATLED_PIN, OUTPUT); // output
         digitalWrite(HEARTBEATLED_PIN, HEARTBEATLED_INACTIVESTATE);
     }
     void task(void)

@@ -14,8 +14,8 @@ namespace HAL_JSON {
 
     bool OneWireTempDevice::VerifyJSON(const JsonVariant &jsonObj) {
         
-        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) return false;
-        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_ROMID)) return false;
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_1WTD_VERIFY_JSON); return false; }
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_ONE_WIRE_ROMID)){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_1WTD_VERIFY_JSON); return false; }
         
         const char* romIdStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_ONE_WIRE_ROMID);//].as<const char*>();
         if (strlen(romIdStr) == 0) { GlobalLogger.Error(F("OneWireTempDevice romId is zero lenght")); return false; }

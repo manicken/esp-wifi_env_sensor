@@ -1,5 +1,9 @@
 #include "Logger.h"
 
+#ifdef _WIN32
+#include <iostream>
+#endif
+
 Logger GlobalLogger;
 
 #define LOGGER_GET_TIME time(nullptr)
@@ -59,7 +63,14 @@ LogEntry::~LogEntry() {
     }
 }
 String LogEntry::MessageToString() const {
-    return String(message) + String(text);
+    String result;
+#ifdef _WIN32
+    std::cout << "source:" << source << "\n";
+#endif
+    result += (source != nullptr) ? ("[" + String(source) + "]") : "";
+    result += ((message != nullptr) ? String(message) : "<entry error>");
+    result += (text != nullptr) ? String(text) : "";
+    return result;
 }
 
 Logger::Logger() {
@@ -82,14 +93,12 @@ void Logger::Error(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg, text);
     advance();
 }
-#ifndef _WIN32
 void Logger::Error(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
     String jsonStr;
     serializeJson(jsonObj, jsonStr);
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Error, msg, jsonStr.c_str());
     advance();
 }
-#endif
 void Logger::Info(uint32_t code) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, code);
     advance();
@@ -106,14 +115,12 @@ void Logger::Info(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg, text);
     advance();
 }
-#ifndef _WIN32
 void Logger::Info(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
     String jsonStr;
     serializeJson(jsonObj, jsonStr);
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Info, msg, jsonStr.c_str());
     advance();
 }
-#endif
 void Logger::Warn(uint32_t code) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, code);
     advance();
@@ -130,14 +137,12 @@ void Logger::Warn(const __FlashStringHelper* msg, const char* text) {
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg, text);
     advance();
 }
-#ifndef _WIN32
 void Logger::Warn(const __FlashStringHelper* msg, const JsonVariant& jsonObj) {
     String jsonStr;
     serializeJson(jsonObj, jsonStr);
     buffer[head].Set(LOGGER_GET_TIME, Loglevel::Warn, msg, jsonStr.c_str());
     advance();
 }
-#endif
 
 
 void Logger::printAllLogs(Stream &out, bool onlyPrintNew) {
@@ -151,17 +156,23 @@ void Logger::printAllLogs(Stream &out, bool onlyPrintNew) {
         if (onlyPrintNew && entry.isNew == false) continue;
         entry.isNew = false;
 
-        out.print(F("["));
+        out.print('[');
         struct tm* timeinfo;
         timeinfo = localtime(&entry.timestamp);
         out.print(asctime(timeinfo));
         //out.print(entry.timestamp);
-        out.print(F("] "));
+        out.print(']');
 
         switch (entry.level) {
             case Loglevel::Info: out.print(F("[INFO] ")); break;
             case Loglevel::Warn: out.print(F("[WARN] ")); break;
             case Loglevel::Error: out.print(F("[ERR] ")); break;
+        }
+        if (entry.source != nullptr) {
+            out.print('[');
+            out.print(entry.source);
+            out.print(']');
+            out.print(' ');
         }
 
         if (entry.isCode) {
@@ -179,6 +190,15 @@ void Logger::printAllLogs(Stream &out, bool onlyPrintNew) {
 void Logger::advance() {
     head = (head + 1) % LOG_BUFFER_SIZE;
     if (head == 0) wrapped = true;
+}
+
+void Logger::setLastEntrySource(const char* src) {
+    if (!wrapped && head == 0) {
+        // No entries yet, handle appropriately (return a dummy or assert)
+        return;
+    }
+    size_t lastIndex = (head + LOG_BUFFER_SIZE - 1) % LOG_BUFFER_SIZE;
+    buffer[lastIndex].source = src;
 }
 
 const LogEntry& Logger::getLastEntry() const {

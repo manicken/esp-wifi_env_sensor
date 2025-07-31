@@ -16,10 +16,9 @@
 #define HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON         "reloadcfg"
 #define HAL_JSON_CMD_EXEC_PRINT_DEVICES           "printDevices"
 #define HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST "getAvailableGPIOs"
-#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_STRING   "string"
-#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_HEX      "hex"
-#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_BINARY   "binary"
-#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_DEFAULT  GPIO_manager::PrintListMode::Hex;
+#define HAL_JSON_CMD_EXEC_PRINT_LOG_CONTENTS      "printlog"
+
+
 
 #define HAL_JSON_CMD_EXEC_UINT32_TYPE        "uint32"
 #define HAL_JSON_CMD_EXEC_BOOL_TYPE          "bool"

@@ -8,6 +8,7 @@
 
 #include "../Support/Logger.h"
 #include "../Support/ConvertHelper.h"
+#include "../Support/ZeroCopyString.h"
 
 #include "HAL_JSON_Device_GlobalDefines.h"
 
@@ -22,6 +23,11 @@
     I2C,UART,SPI,SD-card, etc.
     do not collide 
 */
+
+#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_STRING   "string"
+#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_HEX      "hex"
+#define HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_BINARY   "binary"
+
 namespace HAL_JSON {
     namespace GPIO_manager
     {
@@ -74,6 +80,6 @@ namespace HAL_JSON {
          * so calling it many times on the same pin do not matter */
         void ReservePin(uint8_t pin);
 
-        std::string GetList(PrintListMode listMode);
+        std::string GetList(ZeroCopyString& zcMode);
     }
 }

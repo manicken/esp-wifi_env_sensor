@@ -60,14 +60,14 @@ namespace HAL_JSON {
     }
     bool Manager::VerifyDeviceJson(const JsonVariant &jsonObj) {
         
-        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TYPE)) return false;
-        
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TYPE)) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_MGR_VERIFY_DEVICE); return false; }
 
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
         for (int i=0;DeviceRegistry[i].typeName != nullptr;i++) {
+
             if (strcmp(type, DeviceRegistry[i].typeName) == 0) {
                 if (DeviceRegistry[i].useRootUID == UseRootUID::Mandatory)
-                    if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) return false;
+                    if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_MGR_VERIFY_DEVICE); return false; }
 
                 if (DeviceRegistry[i].Verify_JSON_Function == nullptr){ GlobalLogger.Error(F("Verify_JSON_Function missing for:"),type); return false; }
                 if (DeviceRegistry[i].Create_Function == nullptr){ GlobalLogger.Error(F("Create_Function missing for:"), type); return false; } // skip devices that dont have this defined
@@ -75,6 +75,7 @@ namespace HAL_JSON {
                 return DeviceRegistry[i].Verify_JSON_Function(jsonObj);
             }
         }
+     
         GlobalLogger.Error(F("VerifyDeviceJson - could not find type:"),type);
         return false;
     }
@@ -82,20 +83,26 @@ namespace HAL_JSON {
     bool Manager::ParseJSON(const JsonArray &jsonArray) {
         //Serial.println("PArse json thianasoidnoasidnasoidnsaiodnsaodinasdoiandoisandiosndoiasnd");
         uint32_t deviceCount = 0;
-        size_t arraySize = jsonArray.size();
+        int arraySize = jsonArray.size();
         bool* validDevices = new bool[arraySize]; // dont' forget the delete[] call at end of function
         GPIO_manager::ClearAllReservations(); // when devices are verified they also reservate the pins to include checks for duplicate use
+
         // First pass: count valid entries
-        for (size_t i=0;i<arraySize;i++) {
+        for (int i=0;i<arraySize;i++) {
+
             JsonVariant jsonItem = jsonArray[i];
+
             if (IsConstChar(jsonItem) == true) { validDevices[i] = false;  continue; } // comment item
+
             if (Device::DisabledInJson(jsonItem) == true) { validDevices[i] = false;  continue; } // disabled
+
             bool valid = VerifyDeviceJson(jsonItem);
+
             validDevices[i] = valid;
             if (valid == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION; // could either be continue; or return false depending if strict mode is on/off
             deviceCount++;
         }
-        
+
         // cleanup of prev device list if existent
         if (devices != nullptr) {
             for (int i=0;i<HAL_JSON::Manager::deviceCount;i++) {
@@ -113,6 +120,7 @@ namespace HAL_JSON {
                                  "Hint: Check that all entries have 'type' and 'uid' fields, and match known types."));
             return false;
         }
+
         // Allocate space for all devices
         devices = new Device*[HAL_JSON::Manager::deviceCount]();
 
@@ -124,7 +132,7 @@ namespace HAL_JSON {
         GPIO_manager::ClearAllReservations(); 
         // Second pass: actually create and store devices
         uint32_t index = 0;
-        for (size_t i=0;i<arraySize;i++) {
+        for (int i=0;i<arraySize;i++) {
             JsonVariant jsonItem = jsonArray[i];
             //if (VerifyDeviceJson(jsonItem) == false) continue; // ************************************************************ now as we dont run this again the pins are not allocated anymore but we don't really need to take care of that as it's part of the validate device check anyway
             if (validDevices[i] == false) continue;
@@ -216,17 +224,21 @@ namespace HAL_JSON {
     }
 
     bool Manager::ReadJSON(const char* path) {
-        
-        if (LittleFS.exists(path) == false) {
-            GlobalLogger.Error(F("ReadJSON - cfg file did not exist"),path);
+        if (path == nullptr) {
+            GlobalLogger.Error(F("ReadJSON - path cannot be empty "));
             return false;
         }
+        if (LittleFS.exists(path) == false) {
+            GlobalLogger.Error(F("ReadJSON - cfg file did not exist: "),path);
+            return false;
+        }
+
         char* jsonBuffer = nullptr;
         size_t fileSize;
 
         if (LittleFS_ext::load_from_file(path, &jsonBuffer, &fileSize) == false)
         {
-            GlobalLogger.Error(F("ReadJSON - error could not load json file"),path);
+            GlobalLogger.Error(F("ReadJSON - error could not load json file: "),path);
             return false;
         }
 #ifdef _WIN32
@@ -242,6 +254,7 @@ namespace HAL_JSON {
             GlobalLogger.Error(F("ReadJSON - deserialization failed: "), error.c_str());
             return false;
         }
+
         std::string memUsage = std::to_string(jsonDoc.memoryUsage()) + " of " + std::to_string(jsonDoc.capacity());
         GlobalLogger.Info(F("jsonDoc.memoryUsage="), memUsage.c_str());
         if (!jsonDoc.is<JsonArray>())
@@ -251,14 +264,16 @@ namespace HAL_JSON {
             return false;
         }
         const JsonArray& jsonItems = jsonDoc.as<JsonArray>();
-        
+
         bool parseOk = ParseJSON(jsonItems);
+
         delete[] jsonBuffer;
         if (parseOk == false) {
-            GlobalLogger.Error(F("ParseJSON(jsonItems) fail"));
+            //GlobalLogger.Error(F("ParseJSON(jsonItems) fail"));
             //Serial.println("");
         }
         if (parseOk == true) reloadVersion++;
+
         return parseOk;
     }
     void Manager::begin() {

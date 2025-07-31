@@ -82,7 +82,7 @@ namespace HAL_JSON {
         pinMode(pin, OUTPUT); // output
     }
 
-    DigitalOutput::~DigitalOutput() { pinMode(pin, 1); /*input*/ } // release the pin
+    DigitalOutput::~DigitalOutput() { pinMode(pin, INPUT); /*input*/ } // release the pin
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
     Device* DigitalOutput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
@@ -209,7 +209,7 @@ namespace HAL_JSON {
     // ███████ ██ ██  ██ ███████ ██      ██    ██ ██   ███     ██ ██ ██  ██ ██████  ██    ██    ██    
     // ██   ██ ██  ██ ██ ██   ██ ██      ██    ██ ██    ██     ██ ██  ██ ██ ██      ██    ██    ██    
     // ██   ██ ██   ████ ██   ██ ███████  ██████   ██████      ██ ██   ████ ██       ██████     ██    
-#if defined(ESP32)
+#if defined(ESP32) || defined(_WIN32)
     Device* AnalogInput::Create(const JsonVariant &jsonObj, const char* type) {
         return new AnalogInput(jsonObj, type);
     }
@@ -225,10 +225,10 @@ namespace HAL_JSON {
         GPIO_manager::ReservePin(pin);
         //const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID];//.as<const char*>();
         //uid = encodeUID(uidStr);
-        pinMode(pin, ANALOG);
+        pinMode(pin, INPUT);
     }
 
-    AnalogInput::~AnalogInput() { pinMode(pin, 1); } // input
+    AnalogInput::~AnalogInput() { pinMode(pin, INPUT); } // input
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
     Device* AnalogInput::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;
@@ -340,7 +340,7 @@ namespace HAL_JSON {
         pinMode(pin, OUTPUT); // output
     }
 
-    PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, 1); } // input
+    PWMAnalogWrite::~PWMAnalogWrite() { pinMode(pin, INPUT); } // input
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
     Device* PWMAnalogWrite::findDevice(UIDPath& path) {
         if (path.first() == uid) return this;

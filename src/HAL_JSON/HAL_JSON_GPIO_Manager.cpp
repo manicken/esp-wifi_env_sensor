@@ -66,7 +66,7 @@ namespace HAL_JSON {
             {35, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)}, // ADC1_7 (input only)
             {36, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)}, // ADC1_0/SensVP (input only)
             {39, MAKE_PIN_MASK_2(PinMode::IN, PinMode::AIN)},  // ADC1_3/SensVN (input only)
-            {0xFF, 0x00} // terminator item
+            {255, 0x00} // terminator item
             };
     #endif
         int available_gpio_list_lenght = -1; // not set yet
@@ -113,27 +113,24 @@ namespace HAL_JSON {
         }
 
         bool CheckIfPinAvailable(uint8_t pin, uint8_t pinMode) {
-            int i=0;
-            while (true) {
+            for (int i = 0; available_gpio_list[i].pin != 255; i++) {
                 const gpio_pin& pinDef = available_gpio_list[i];
-                if (pinDef.pin == 0xFF) break;
-                if (pinDef.pin == pin) {
-                    if (reservedPins[i] == 1) {
-                        std::string msg = std::to_string(pin);
-                        GlobalLogger.Error(F("CheckIfPinAvailable error - pin allready reserved: "),msg.c_str());
-                        return false;
-                    }
-                    if ((pinMode & pinDef.mode) == pinMode)
-                        return true;
-                    std::string errStr = Convert::toBin(pinMode) + " & " + Convert::toBin(pinDef.mode);
-                    GlobalLogger.Error(F("CheckIfPinAvailable error - pinmode mismatch: "),errStr.c_str());
+                if (pinDef.pin != pin) continue;
+                
+                if (reservedPins[i] == 1) {
+                    std::string msg = std::to_string(pin);
+                    GlobalLogger.Error(F("CheckIfPinAvailable error - pin allready reserved: "),msg.c_str());
                     return false;
                 }
+                if ((pinMode & pinDef.mode) == pinMode)
+                    return true;
+                std::string errStr = Convert::toBin(pinMode) + " & " + Convert::toBin(pinDef.mode);
+                GlobalLogger.Error(F("CheckIfPinAvailable error - pinmode mismatch: "),errStr.c_str());
+                return false;
             }
             std::string msg = std::to_string(pin);
             GlobalLogger.Error(F("Pin to reserve - not found: "),msg.c_str());
             return false;
-            //return HAL_JSON_VERIFY_JSON_RETURN_OK;
         }
 
         bool CheckIfPinAvailableAndReserve(uint8_t pin, uint8_t pinMode) {
@@ -170,8 +167,21 @@ namespace HAL_JSON {
             }
         }
 
-        std::string GetList(PrintListMode listMode)
+        std::string GetList(ZeroCopyString& zcMode)
         {
+            GPIO_manager::PrintListMode listMode = GPIO_manager::PrintListMode::Hex; // set the default here
+
+            ZeroCopyString zcPrintMode = zcMode.SplitOffHead('/');
+            if (zcPrintMode.Length() != 0) {
+                if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_STRING)
+                    listMode = GPIO_manager::PrintListMode::String;
+                else if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_BINARY)
+                    listMode = GPIO_manager::PrintListMode::Binary;
+                else if (zcPrintMode == HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_HEX)
+                    listMode = GPIO_manager::PrintListMode::Hex;
+                //else // default set above
+                //    listMode = HAL_JSON_CMD_EXEC_GPIO_LIST_MODE_DEFAULT; // default
+            }
             std::string strList;// = "{";
             
     #if defined(ESP8266)
