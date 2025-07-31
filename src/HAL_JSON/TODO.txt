@@ -5,7 +5,8 @@
    ██     ██████  ██████   ██████  
 
 
-***** implement json reload and print devices commands in CommandExecutor
+maybe make rule tokenizer and pre fixin such as comment removing + newline fixin is in separeate file
+
 
 
 implement so that GlobalLogger includes a websocket server, so that if any client is connected then the log gets automatically printed 
@@ -70,3 +71,5 @@ refactor webserver related stuff from HAL_JSON manager to a outside file/class
 by creating a HAL_JSON_Manager file/class that take care of what HAL_JSON do now except the webserver stuff
 this is even more splitted as now there is CommandExecutor class that takes care of parsing commands whereever they come from
 the HAL_JSON_REST only serve a webserver that sends cmds to CommandExecutor which then returns the value
+
+***** implement json reload and print devices commands in CommandExecutor

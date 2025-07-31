@@ -15,46 +15,57 @@
 #include "../../Support/ZeroCopyString.h"
 
 namespace HAL_JSON {
+    namespace Rules {
+        struct Token {
+                const char* text;
+                int line;
+                int column;
+                int itemsInBlock;
+        };
+        class Parser {
+        private:
+            static void ReportError(const char* msg);
+            static void ReportInfo(std::string msg);
+            static inline bool IsType(const Token& t, const char* str) { return StrEqualsIC(t.text, str); }
 
-    struct Token {
-        const char* text;
-        int line;
-        int column;
-        int itemsInBlock;
-    };
+            static void ReportTokenInfo(const char* msg, const Token& t);
+            static void ReportTokenError(const char* msg, const Token& t);
+            static void ReportTokenWarning(const char* msg, const Token& t);
+            /** special note,
+              *  this function do not remove additional \r characters in \r\n \n\r 
+              *  it just replaces them with spaces for easier parsing 
+              */
+            static void FixNewLines(char* buffer);
+            static void StripComments(char* buffer);
 
-    inline bool IsType(const Token& t, const char* str) { return StrEqualsIC(t.text, str); }
+            static int CountTokens(char* buffer);
+            static bool Tokenize(char* buffer, Token* tokens, int tokenCount);
+            
+            /** used by VerifyBlocks */
+            static int Count_IfTokens(Token* tokens, int tokenCount);
+            /** verify if/on blocks so that they follow the structure
+             * on/if <trigger>/<condition> do/then <action(s)> endon/endif
+             * it also verify that on blocks do only contain if blocks
+             */
+            static bool VerifyBlocks(Token* tokens, int tokenCount);
+            /** 
+             * merge Conditions into one token for easier parse,
+             * if a AND/OR token is found they are 
+             * replaced by && and || respective 
+             */
+            static void MergeConditions(Token* tokens, int& tokenCount);
+            /** merge actions so that each action 'line' is in one token for easier parse */
+            static void MergeActions(Token* tokens, int& tokenCount);
+            /** this is used together with EnsureActionBlocksContainItems */
+            static void CountBlockItems(Token* tokens, int tokenCount);
+            static bool EnsureActionBlocksContainItems(Token* tokens, int tokenCount);
 
-    void ReportTokenInfo(const char* msg, const Token& t);
-    void ReportTokenError(const char* msg, const Token& t);
-    void ReportTokenWarning(const char* msg, const Token& t);
-    /** special note,
-      *  this function do not remove additional \r characters in \r\n \n\r 
-      *  it just replaces them with spaces for easier parsing 
-      */
-    void FixNewLines(char* buffer);
-    void StripComments(char* buffer);
+            static bool VerifyConditionBlocks(Token* tokens, int tokenCount);
+            static bool ParseRuleSet(Token* tokens, char* fileContents, int tokenCount);
+            
+        public:
+            static bool ReadAndParseRuleSetFile(const char* filePath);
 
-    int CountTokens(char* buffer);
-    bool Tokenize(char* buffer, Token* tokens, int tokenCount);
-    
-    /** used by VerifyBlocks */
-    int Count_IfTokens(Token* tokens, int tokenCount);
-    /** verify if/on blocks so that they follow the structure
-     * on/if <trigger>/<condition> do/then <action(s)> endon/endif
-     * it also verify that on blocks do only contain if blocks
-     */
-    bool VerifyBlocks(Token* tokens, int tokenCount);
-    /** 
-     * merge Conditions into one token for easier parse,
-     * if a AND/OR token is found they are 
-     * replaced by && and || respective 
-     */
-    void MergeConditions(Token* tokens, int& tokenCount);
-    /** merge actions so that each action 'line' is in one token for easier parse */
-    void MergeActions(Token* tokens, int& tokenCount);
-    /** this is used together with EnsureActionBlocksContainItems */
-    void CountBlockItems(Token* tokens, int tokenCount);
-    bool EnsureActionBlocksContainItems(Token* tokens, int tokenCount);
-
+        };
+    }
 }

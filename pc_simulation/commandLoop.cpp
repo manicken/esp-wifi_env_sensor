@@ -28,28 +28,53 @@ void ParseHelpCommand(HAL_JSON::ZeroCopyString& zcCmd) {
         std::cout << "Available commands: exit, status, help, hal\n";
     }
 }
+void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
+    HAL_JSON::ZeroCopyString zcFilePath = zcStr.SplitOffHead('/');
+    std::string strFilePath = zcFilePath.ToString();
+    size_t fileSize = 0;
+    char* contents;// = HAL_JSON::ReadFileToMutableBuffer(filename.c_str(), fileSize);
+    
+    if (LittleFS_ext::load_from_file(strFilePath.c_str(), &contents, &fileSize) == false) {
+        std::cout << "Error: file empty or could not be found: " << strFilePath << "\n";
+    } 
+    HAL_JSON::Rules::Expressions::ValidateExpression(contents);
+    delete[] contents;
+}
+void parseCommand(std::string cmd) {
+    HAL_JSON::ZeroCopyString zcCmd(cmd.c_str());
+
+    HAL_JSON::ZeroCopyString zcCmdRoot = zcCmd.SplitOffHead('/');
+
+    if (zcCmdRoot == "exit" || zcCmdRoot == "e") {
+        std::cout << "Shutting down...\n";
+        running = false;
+    } else if (zcCmdRoot == "status") {
+        std::cout << "Status: running\n";
+    } else if (zcCmdRoot == "help") {
+        ParseHelpCommand(zcCmd);            
+    } else if (zcCmdRoot == "hal") {
+        std::string message;
+        HAL_JSON::CommandExecutor::execute(zcCmd, message);
+        std::cout << message << "\n";
+    } else if (zcCmdRoot == "texpr") {
+        exprTestLoad(zcCmd);
+    } else if (zcCmdRoot == "loadruleset") {
+        HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
+        std::string filePath;
+        if (zcFilePath.Length() == 0)
+            filePath = zcFilePath.ToString();
+        else
+            filePath = "ruleset.txt";
+        HAL_JSON::Rules::Parser::ReadAndParseRuleSetFile(filePath.c_str());
+    } else {
+        std::cout << "Unknown command: " << cmd << "\n";
+    }
+}
 void commandLoop() {
     std::string cmd;
     while (running) {
         std::cout << "> ";
         if (!std::getline(std::cin, cmd)) break;
-        HAL_JSON::ZeroCopyString zcCmd(cmd.c_str());
-
-        HAL_JSON::ZeroCopyString zcCmdRoot = zcCmd.SplitOffHead('/');
-
-        if (zcCmdRoot == "exit" || zcCmdRoot == "e") {
-            std::cout << "Shutting down...\n";
-            running = false;
-        } else if (zcCmdRoot == "status") {
-            std::cout << "Status: running\n";
-        } else if (zcCmdRoot == "help") {
-            ParseHelpCommand(zcCmd);            
-        } else if (zcCmdRoot == "hal") {
-            std::string message;
-            HAL_JSON::CommandExecutor::execute(zcCmd, message);
-            std::cout << message << "\n";
-        } else {
-            std::cout << "Unknown command: " << cmd << "\n";
-        }
+        parseCommand(cmd);
     }
 }

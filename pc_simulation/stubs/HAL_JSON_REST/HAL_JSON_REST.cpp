@@ -20,6 +20,7 @@ namespace HAL_JSON {
     httplib::Server REST::server;
 
     void REST::setup(HAL_JSON_REST_CB cb) {
+        
         REST::callback = cb;
         // Example route
         server.set_error_handler([](const httplib::Request& req, httplib::Response& res) {
@@ -27,28 +28,28 @@ namespace HAL_JSON {
             std::cout << "req.path:" << req.path << "\n";
             res.set_content(REST::callback(req.path), "application/json");
         });
+        WSADATA wsaData;
+        int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+        if (result != 0) {
+            std::cerr << "WSAStartup failed: " << result << std::endl;
+            return; // exit thread early if failed
+        }
+        std::cout << "Winsock initialized.\n";
 
-        std::thread serverThread([]() {
-            WSADATA wsaData;
-            int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-            if (result != 0) {
-                std::cerr << "WSAStartup failed: " << result << std::endl;
-                return; // exit thread early if failed
-            }
-            std::cout << "Winsock initialized.\n";
-
-            int port = server.bind_to_port("0.0.0.0", HAL_JSON_REST_API_PORT);
-            if (port > 0) {
-                std::cout << "*** REST API server started on port " << HAL_JSON_REST_API_PORT << "\n";
-                std::cout << "*** can be accessed by http://localhost:82 \n";
+        int port = server.bind_to_port("0.0.0.0", HAL_JSON_REST_API_PORT);
+        if (port > 0) {
+            std::cout << "*** REST API server started on port " << HAL_JSON_REST_API_PORT << "\n";
+            std::cout << "*** can be accessed by http://localhost:82 \n";
+            std::thread serverThread([]() {
                 server.listen_after_bind();
-            } else {
-                std::cerr << "Failed to bind REST API server.\n";
-            }
-
+                WSACleanup();
+                std::cout << "Winsock cleaned up.\n";
+            });
+            serverThread.detach();
+        } else {
             WSACleanup();
-            std::cout << "Winsock cleaned up.\n";
-        });
-        serverThread.detach();
+            std::cerr << "Failed to bind REST API server.\n";
+        }
+        
     }
 }
