@@ -3,11 +3,19 @@
 
 namespace HAL_JSON {
     namespace Rules {
-        void Expressions::ReportError(const char* msg) {
+        void Expressions::ReportError(const char* msg, const char* param) {
 #ifdef _WIN32
-            std::cout << "Error: " << msg << std::endl;
+            std::cout << "Error: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
 #else
             GlobalLogger.Error(F("Expr Rule Parse:"), msg);
+#endif
+        }
+
+        void Expressions::ReportWarning(const char* msg, const char* param) {
+#ifdef _WIN32
+            std::cout << "Warning: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
+#else
+            GlobalLogger.Warn(F("Expr Rule Parse:"), msg);
 #endif
         }
 
@@ -19,15 +27,39 @@ namespace HAL_JSON {
 #endif
         }
 
-        const char* Expressions::operatorList = "+-*/|&^";
+        const char* Expressions::SingleOperatorList = HAL_JSON_RULES_EXPRESSIONS_SINGLE_OPERATOR_LIST;
+        const char* Expressions::DoubleOperatorList = HAL_JSON_RULES_EXPRESSIONS_DOUBLE_OPERATOR_LIST;
 
-        bool Expressions::IsOperator(char c) {
-            const char* op = operatorList;
+        bool Expressions::IsSingleOperator(char c) {
+            const char* op = SingleOperatorList;
             while (*op != '\0') {
                 if (*op == c) return true;
                 ++op;
             }
             return false;
+        }
+
+        bool Expressions::IsDoubleOperator(const char* c) {
+            if (c == nullptr || *(c + 1) == '\0') return false; // safety
+
+            const char* op = DoubleOperatorList;
+            while (*op != '\0') {
+                if ((*op == *c) && (*(op+1) == *(c+1))) return true;
+                op+=2;
+            }
+            return false;
+        }
+
+        bool Expressions::IsValidOperandChar(char c) {
+            return 
+                (c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                (c >= '0' && c <= '9') ||
+                c == '_' || 
+                c == ':' || 
+                c == '.' || 
+                c == ',' || 
+                c == '#';
         }
 
         bool Expressions::CountOperatorsAndOperands(const char* expr, int& operatorCount, int& operandCount, int& leftParenthesisCount ) {
@@ -43,7 +75,11 @@ namespace HAL_JSON {
                 ReportError("expr. is empty");
                 return false;
             }
-            if(IsOperator(*expr)) {
+            if(IsDoubleOperator(expr)) { // this only checks the two first characters in the Expression
+                ReportError("expr. cannot start with a operator");
+                return false;
+            }
+            if(IsSingleOperator(*expr)) {
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
@@ -52,8 +88,13 @@ namespace HAL_JSON {
 
             bool inOperand = false;
             
-            for (const char* p = expr; *p != '\0'; ++p) {
-                if (IsOperator(*p)) {
+            for (const char* p = expr; *p != '\0'; p++) {
+                if (IsDoubleOperator(p)) {
+                    p++;
+                    operatorCount++;
+                    inOperand = false;
+                }
+                else if (IsSingleOperator(*p)) {
                     operatorCount++;
                     inOperand = false;
                 } else if (*p == '(') {
@@ -62,8 +103,7 @@ namespace HAL_JSON {
                 } else if (*p == ')') {
                     rightParenthesisCount++;
                     inOperand = false;
-                }
-                else if (!inOperand) {
+                } else if (!inOperand) {
                     operandCount++;
                     inOperand = true;
                 }
@@ -90,7 +130,19 @@ namespace HAL_JSON {
             int operandIndex = 0;
             const char* p = str;
             for ( ; *p != '\0' ; ++p) {
-                if (IsOperator(*p) || *p == '(' || *p == ')') {
+                if (IsDoubleOperator(p)) {
+                    
+                    if (inOperand) {
+                        if (operandIndex == operandCount) { // out of bounds should never happend
+                            ReportError("something is very wrong");
+                        } else
+                            operands[operandIndex++].end = p;
+                        
+                    }
+                    p++;
+                    inOperand = false;
+                }
+                else if (IsSingleOperator(*p) || *p == '(' || *p == ')') {
                     if (inOperand) {
                         if (operandIndex == operandCount) { // out of bounds should never happend
                             ReportError("something is very wrong");
@@ -124,6 +176,18 @@ namespace HAL_JSON {
             }
             return false;
         }
+
+        const char* Expressions::ValidOperandVariableName(const ZeroCopyString& operand) {
+            const char* p = operand.start;
+            const char* const end = operand.end;
+            while (p < end) {
+                if (IsValidOperandChar(*p) == false) {
+                    return p;
+                }
+                p++;
+            }
+            return nullptr;
+        }
         
         bool Expressions::ValidateExpression(const char* str) {
             int operatorCount, operandCount, leftParenthesisCount ;
@@ -142,6 +206,28 @@ namespace HAL_JSON {
                 ReportInfo(std::string("isVar:") + (OperandIsVariable(operand)?"true":"false") + ", operand: " + operand.ToString());
             }
             ReportInfo("\n");
+            // first check if variable names are valid as it could be a good idea
+            // to not allow every character for better looking code
+            bool foundAnyInvalidChar = false;
+            for (int i=0;i<operandCount;i++) {
+                const ZeroCopyString& operand = operands[i];
+
+                if (OperandIsVariable(operand)) {
+                    const char* currChar = ValidOperandVariableName(operand);
+                    if (currChar != nullptr) {
+                        char invalidChar[2];
+                        invalidChar[0] = *currChar;
+                        invalidChar[1] = 0x00;
+                        // don't know yet if it should be warning or error
+                        //ReportError("found invalid character in operand",invalidChar);
+                        ReportWarning("found invalid character in operand",invalidChar);
+                        foundAnyInvalidChar = true;
+                    } 
+                }
+            }
+            if (foundAnyInvalidChar) {
+                // here we can return early or check the rest for additional errors
+            }
             for (int i=0;i<operandCount;i++) {
                 const ZeroCopyString& operand = operands[i];
 
@@ -155,23 +241,41 @@ namespace HAL_JSON {
                         funcName.end = varOperand.end;
                         varOperand.end = funcNameSeparator;
                     }
-                    ReportInfo("varOperand before: " + varOperand.ToString() + ", ");
+
+                    //ReportInfo("varOperand before: " + varOperand.ToString() + ", ");
                     UIDPath path(varOperand);
-                    ReportInfo("uidPath decoded: " + path.ToString());
+                    //ReportInfo("uidPath decoded: " + path.ToString());
                     if (funcNameSeparator) {
                         ReportInfo(", funcName: " + funcName.ToString());
                     }
                     ReportInfo("\n");
-                    // now we can actually 
+
                     // 1. check if the device exists
-                    // 2. also if a device exists in a expression that 
-                    //    also mean that that device MUST support read function
-                    //    so we also need to check if the device read function
-                    //    returns true
-                    // 3. if funcName is provided we can also verify that
-                    //
-                    // if either above fail then the rule that this expresssion normally 
-                    // belongs to should be rejected as invalid 
+                    Device* device = Manager::findDevice(path);
+                    if (device == nullptr) {
+                        std::string deviceName = varOperand.ToString();
+                        ReportError("could not find the device:", deviceName.c_str());
+                        continue;
+                    }
+                    // 2a. if funcname we verify both that the device supports read and that the funcname is valid
+                    if (funcNameSeparator) {
+                        HALValue halValue;
+                        HALReadValueByCmd readValueByCmd(halValue, funcName);
+                        if (device->read(readValueByCmd) == false) {
+                            std::string funcNameStr = funcName.ToString();
+                            ReportError("could not read the device by cmd:", funcNameStr.c_str());
+                            continue;
+                        }
+                    }
+                    // 2b. here we only check if the device can be read
+                    else {
+                        HALValue halValue;
+                        if (device->read(halValue) == false) {
+                            ReportError("this device do not support read");
+                            continue;
+                        }
+                    }
+                    
                 }
             }
 

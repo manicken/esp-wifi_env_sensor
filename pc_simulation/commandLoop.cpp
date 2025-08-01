@@ -38,7 +38,10 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
     if (LittleFS_ext::load_from_file(strFilePath.c_str(), &contents, &fileSize) == false) {
         std::cout << "Error: file empty or could not be found: " << strFilePath << "\n";
     } 
-    HAL_JSON::Rules::Expressions::ValidateExpression(contents);
+    bool valid = HAL_JSON::Rules::Expressions::ValidateExpression(contents);
+    if (valid) {
+        std::cout << "Parse [OK]\n";
+    }
     delete[] contents;
 }
 void parseCommand(const char* cmd) {
@@ -57,7 +60,7 @@ void parseCommand(const char* cmd) {
         std::string message;
         HAL_JSON::CommandExecutor::execute(zcCmd, message);
         std::cout << message << "\n";
-    } else if (zcCmdRoot == "texpr") {
+    } else if (zcCmdRoot == "expr") {
         exprTestLoad(zcCmd);
     } else if (zcCmdRoot == "loadruleset") {
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
