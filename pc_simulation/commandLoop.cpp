@@ -62,13 +62,15 @@ void parseCommand(const char* cmd) {
         std::cout << message << "\n";
     } else if (zcCmdRoot == "expr") {
         exprTestLoad(zcCmd);
-    } else if (zcCmdRoot == "loadruleset") {
+    } else if (zcCmdRoot == "loadrules") {
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
+        std::cout << "using rule set file:" << zcFilePath.ToString() << "\n";
         std::string filePath;
-        if (zcFilePath.Length() == 0)
+        if (zcFilePath.Length() != 0)
             filePath = zcFilePath.ToString();
         else
             filePath = "ruleset.txt";
+        
         HAL_JSON::Rules::Parser::ReadAndParseRuleSetFile(filePath.c_str());
     } else {
         std::cout << "Unknown command: " << cmd << "\n";

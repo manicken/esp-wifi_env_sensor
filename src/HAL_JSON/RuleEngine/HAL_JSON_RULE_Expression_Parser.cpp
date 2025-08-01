@@ -195,17 +195,35 @@ namespace HAL_JSON {
 
             anyError = (false == CountOperatorsAndOperands(str, operatorCount, operandCount, leftParenthesisCount));
             // allways print debug info
-            ReportInfo("\noperatorCount:" + std::to_string(operatorCount) + ", operandCount:" + std::to_string(operandCount) + ", leftParenthesisCount :" + std::to_string(leftParenthesisCount));
-            if (anyError) return false;
+            ReportInfo("operatorCount:" + std::to_string(operatorCount) + ", operandCount:" + std::to_string(operandCount) + ", leftParenthesisCount :" + std::to_string(leftParenthesisCount));
+            // early return as if this happens then there is no point of continuing
+            if (anyError) return false; 
+
             ZeroCopyString* operands = new ZeroCopyString[operandCount];
 
             GetOperands(str, operands, operandCount);
-            // just debug info
+#ifdef HAL_JSON_RULES_EXPRESSIONS_PARSER_SHOW_DEBUG
+            // just print debug info
             for (int i=0;i<operandCount;i++) {
-                const ZeroCopyString& operand = operands[i];
-                ReportInfo(std::string("isVar:") + (OperandIsVariable(operand)?"true":"false") + ", operand: " + operand.ToString());
+                ZeroCopyString operand = operands[i]; // create 'copy'
+                std::string msg;
+                if (OperandIsVariable(operand)) {
+                    msg = "Variable - Name: ";
+                    ZeroCopyString funcName = operand;
+                    operand = funcName.SplitOffHead('#');
+                    msg += operand.ToString();
+                    if (funcName.Length() != 0) {
+                        msg += ", funcName: ";
+                        msg += funcName.ToString();
+                    }
+                } else {
+                    msg = "Const Value: ";
+                    msg += operand.ToString();
+                }
+                ReportInfo(msg);
             }
-            ReportInfo("\n");
+#endif
+
             // first check if variable names are valid as it could be a good idea
             // to not allow every character for better looking code
             bool foundAnyInvalidChar = false;
@@ -234,36 +252,31 @@ namespace HAL_JSON {
                 if (OperandIsVariable(operand)) {
                     ZeroCopyString varOperand = operand;
                     // here we need to check if the variablename is a (logical/physical/virtual) device
-                    const char* funcNameSeparator = varOperand.FindChar('#');
-                    ZeroCopyString funcName;
-                    if (funcNameSeparator) {
-                        funcName.start = funcNameSeparator+1;
-                        funcName.end = varOperand.end;
-                        varOperand.end = funcNameSeparator;
+                    ZeroCopyString funcName = varOperand;
+                    varOperand = funcName.SplitOffHead('#');
+                    if (varOperand.Length() > HAL_UID::Size) {
+                        std::string msg = varOperand.ToString() + " length > " + std::to_string(HAL_UID::Size);
+                        ReportError("Operand name too long",msg.c_str());
+                        anyError = true;
                     }
-
-                    //ReportInfo("varOperand before: " + varOperand.ToString() + ", ");
                     UIDPath path(varOperand);
-                    //ReportInfo("uidPath decoded: " + path.ToString());
-                    if (funcNameSeparator) {
-                        ReportInfo(", funcName: " + funcName.ToString());
-                    }
-                    ReportInfo("\n");
 
                     // 1. check if the device exists
                     Device* device = Manager::findDevice(path);
                     if (device == nullptr) {
                         std::string deviceName = varOperand.ToString();
                         ReportError("could not find the device:", deviceName.c_str());
+                        anyError = true;
                         continue;
                     }
                     // 2a. if funcname we verify both that the device supports read and that the funcname is valid
-                    if (funcNameSeparator) {
+                    if (funcName.Length() != 0) {
                         HALValue halValue;
                         HALReadValueByCmd readValueByCmd(halValue, funcName);
                         if (device->read(readValueByCmd) == false) {
                             std::string funcNameStr = funcName.ToString();
                             ReportError("could not read the device by cmd:", funcNameStr.c_str());
+                            anyError = true;
                             continue;
                         }
                     }
@@ -272,16 +285,15 @@ namespace HAL_JSON {
                         HALValue halValue;
                         if (device->read(halValue) == false) {
                             ReportError("this device do not support read");
+                            anyError = true;
                             continue;
                         }
                     }
                     
                 }
             }
-
-
             delete[] operands;
-            return true;
+            return anyError == false;
         }
     }
 }

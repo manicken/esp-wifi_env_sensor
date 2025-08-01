@@ -463,17 +463,10 @@ namespace HAL_JSON {
                 Token& token = tokens[i];
                 if ((IsType(token, "if") || IsType(token, "elseif")) == false) continue;
                 const char* conditions = tokens[i+1].text;
+                ReportInfo(""); // newline
                 ReportInfo(conditions);
-                //std::cout << conditions << std::endl;
-                // parantesis could be allowed in a later version
-                // do checks here
-                // first 'split' by ||
-                // and then by &&
-                // or as this is only a check, then I could 'split' by either && or ||
-                // loop here and verify each condition
-                // verify that they only contain one relational operator each
-                // verify the left and right operands
-                // that they are valid device names and valid const values
+                
+                if (Expressions::ValidateExpression(conditions) == false) anyError = true;
 
             }
             return anyError == false;
@@ -486,9 +479,9 @@ namespace HAL_JSON {
                 return false;
             }
             
-            for (int i=0;i<tokenCount;i++) {
-                ReportInfo("Token("+std::to_string(i)+"): " + "(line:" + std::to_string(tokens[i].line) + ", col:" + std::to_string(tokens[i].column) + ")\t" + tokens[i].text);
-            }
+            //for (int i=0;i<tokenCount;i++) {
+            //    ReportInfo("Token("+std::to_string(i)+"): " + "(line:" + std::to_string(tokens[i].line) + ", col:" + std::to_string(tokens[i].column) + ")\t" + tokens[i].text);
+            //}
 
             ReportInfo("\nVerifyBlocks (BetterError): ");
             if (VerifyBlocks(tokens, tokenCount) == false) {
@@ -538,9 +531,11 @@ namespace HAL_JSON {
             }
             
             FixNewLines(fileContents);
-            StripComments(fileContents); // count_tokens currently wont work without using this
-            ReportInfo("\nFileContents (after comments removed and newlines fixed): ");
-            ReportInfo(fileContents);
+            // replaces all comments with whitespace
+            // make it much simpler to parse the contents 
+            StripComments(fileContents);
+            //ReportInfo("\nFileContents (after comments removed and newlines fixed): ");
+            //ReportInfo(fileContents);
 
             int tokenCount = CountTokens(fileContents);
             ReportInfo("Token count: " + std::to_string(tokenCount));

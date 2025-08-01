@@ -10,6 +10,8 @@
 #include <iostream>
 #endif
 
+#define HAL_JSON_RULES_EXPRESSIONS_PARSER_SHOW_DEBUG
+
 #define HAL_JSON_RULES_EXPRESSIONS_SINGLE_OPERATOR_LIST "+-*/|&^><"
 #define HAL_JSON_RULES_EXPRESSIONS_DOUBLE_OPERATOR_LIST "&&" "||" "==" "!=" ">=" "<="
 
