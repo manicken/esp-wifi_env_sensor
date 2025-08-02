@@ -5,6 +5,7 @@
 #include "../../../src/Support/Logger.h"
 #include "../HAL_JSON_UID_Path.h"
 #include "../HAL_JSON_Manager.h"
+#include "HAL_JSON_RULE_Parser_Token.h"
 
 #ifdef _WIN32
 #include <iostream>

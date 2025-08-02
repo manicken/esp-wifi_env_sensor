@@ -39,36 +39,36 @@ namespace HAL_JSON {
             static void StripComments(char* buffer);
 
             static int CountTokens(char* buffer);
-            static bool Tokenize(char* buffer, Token* tokens, int tokenCount);
+            static bool Tokenize(char* buffer, Tokens& tokens);
 
-            static std::string PrintTokens(Token* tokens, int tokenCount, bool sub = false);
+            static std::string PrintTokens(Tokens& tokens, bool sub = false);
 
             /** used by VerifyBlocks */
-            static int Count_IfTokens(Token* tokens, int tokenCount);
+            static int Count_IfTokens(Tokens& tokens);
 
             /** verify if/on blocks so that they follow the structure
              * on/if <trigger>/<condition> do/then <action(s)> endon/endif
              * it also verify that on blocks do only contain if blocks
              */
-            static bool VerifyBlocks(Token* tokens, int tokenCount);
-            static int CountConditionTokens(Token* tokens, int start, int tokenCount);
+            static bool VerifyBlocks(Tokens& tokens);
+            static int CountConditionTokens(Tokens& tokens, int start);
 
             /** 
              * merge Conditions into one token for easier parse,
              * if a AND/OR token is found they are 
              * replaced by && and || respective 
              */
-            static bool MergeConditions(Token* tokens, int& tokenCount);
+            static bool MergeConditions(Tokens& tokens);
 
             /** merge actions so that each action 'line' is in one token for easier parse */
-            static bool MergeActions(Token* tokens, int& tokenCount);
+            static bool MergeActions(Tokens& tokens);
 
             /** this is used together with EnsureActionBlocksContainItems */
-            static void CountBlockItems(Token* tokens, int tokenCount);
-            static bool EnsureActionBlocksContainItems(Token* tokens, int tokenCount);
+            static void CountBlockItems(Tokens& tokens);
+            static bool EnsureActionBlocksContainItems(Tokens& tokens);
 
-            static bool VerifyConditionBlocks(Token* tokens, int tokenCount);
-            static bool ParseRuleSet(Token* tokens, char* fileContents, int tokenCount);
+            static bool VerifyConditionBlocks(Tokens& tokens);
+            static bool ParseRuleSet(char* fileContents,Tokens& tokens);
             
         public:
             static bool ReadAndParseRuleSetFile(const char* filePath);

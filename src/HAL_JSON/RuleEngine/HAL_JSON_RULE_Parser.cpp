@@ -128,7 +128,9 @@ namespace HAL_JSON {
             return count;
         }
 
-        bool Parser::Tokenize(char* buffer, Token* tokens, int tokenCount) {
+        bool Parser::Tokenize(char* buffer, Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             int line = 1;
             int column = 1;
             char* p = buffer;
@@ -172,11 +174,15 @@ namespace HAL_JSON {
             return true;
         }
 
-        std::string Parser::PrintTokens(Token* tokens, int tokenCount, bool sub) {
+        std::string Parser::PrintTokens(Tokens& _tokens, bool sub) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             std::string msg;
             for (int i=0;i<tokenCount;i++) {
                 Token& tok = tokens[i];
                 if (tok.Merged() && !sub) continue;
+                if (IsType(tok, "and")) continue;
+                if (IsType(tok, ";")) continue;
                 std::string msgLine;
                 if (sub) msgLine += "    ";
                 //char buffer[64];
@@ -189,11 +195,11 @@ namespace HAL_JSON {
                     ", col:" + std::to_string(tok.column) + 
                     ", itemCount:" + std::to_string(tok.itemsInBlock) + 
                     ", merged:" + std::to_string(tok.merged) + 
-                    ", subTokenCount:" + std::to_string(tok.subTokenCount) + 
+                    ", subTokenCount:" + std::to_string(tok.subTokens.count) + 
                     ")";
-                if (!sub && tok.subTokenCount > 0) {
+                if (!sub && tok.subTokens.count > 0) {
                     msgLine += "\n  subTokens:\n";
-                    msgLine += PrintTokens(tok.subTokens, tok.subTokenCount, true);
+                    msgLine += PrintTokens(tok.subTokens, true);
                 } else {
                     msgLine += "\t" + std::string(tok.text);
                 }
@@ -202,7 +208,9 @@ namespace HAL_JSON {
             return msg;
         }
 
-        int Parser::Count_IfTokens(Token* tokens, int tokenCount) {
+        int Parser::Count_IfTokens(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             int currLevel = 0;
             int maxLevel = 0;
             for (int i = 0; i < tokenCount; i++) {
@@ -217,10 +225,12 @@ namespace HAL_JSON {
             return maxLevel;
         }
 
-        bool Parser::VerifyBlocks(Token* tokens, int tokenCount) {
+        bool Parser::VerifyBlocks(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             int onLevel = 0;
             int ifLevel = 0;
-            int ifTokenCount = Count_IfTokens(tokens, tokenCount);
+            int ifTokenCount = Count_IfTokens(_tokens);
             if (ifTokenCount <= 0) ifTokenCount = 1;
             Token** ifStack = new Token*[ifTokenCount]();
             int ifStackIndex = 0;
@@ -312,7 +322,9 @@ namespace HAL_JSON {
             delete[] ifStack;
             return (ifLevel == 0) && (onLevel == 0) && (otherErrors == false);
         }
-        int Parser::CountConditionTokens(Token* tokens, int start, int tokenCount) {
+        int Parser::CountConditionTokens(Tokens& _tokens, int start) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             int count = 0;
             for (int i = start; i < tokenCount; i++) {
                 if (IsType(tokens[i], "do") || IsType(tokens[i], "then")) {
@@ -324,10 +336,12 @@ namespace HAL_JSON {
             return -1; // mean we did not find the do or then token
         }
         
-        bool Parser::MergeConditions(Token* tokens, int& tokenCount) {
+        bool Parser::MergeConditions(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             for (int i = 0; i < tokenCount; i++) {
                 if ((IsType(tokens[i], "if") || IsType(tokens[i], "elseif")) == false) continue;
-                int conditionTokenCount = CountConditionTokens(tokens, i+1, tokenCount);
+                int conditionTokenCount = CountConditionTokens(_tokens, i+1);
 #ifdef _WIN32   
                 std::cout << "If case token count: " << conditionTokenCount << "\n";
 #endif
@@ -342,7 +356,9 @@ namespace HAL_JSON {
             return true;
         }
 
-        bool Parser::MergeActions(Token* tokens, int& tokenCount) {
+        bool Parser::MergeActions(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             for (int i = 0; i < tokenCount; ++i) {
                 const char* text = tokens[i].text;
 
@@ -390,7 +406,9 @@ namespace HAL_JSON {
             return true;
         }
 
-        void Parser::CountBlockItems(Token* tokens, int tokenCount) {
+        void Parser::CountBlockItems(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
 
@@ -398,6 +416,9 @@ namespace HAL_JSON {
                     int count = 0;
                     for (int j = i + 1; j < tokenCount; ++j) {
                         Token& innerToken = tokens[j];
+                        if (innerToken.Merged()) continue;
+                        if (IsType(innerToken, "and")) continue;
+                        if (IsType(innerToken, ";")) continue;
                         if (IsType(innerToken, "endon")) {
                             break;
                         }
@@ -410,6 +431,9 @@ namespace HAL_JSON {
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
                         Token& innerToken = tokens[j];
+                        if (innerToken.Merged()) continue;
+                        if (IsType(innerToken, "and")) continue;
+                        if (IsType(innerToken, ";")) continue;
                         if (IsType(innerToken, "if")) level++;
                         if (IsType(innerToken, "endif")) {
                             level--;
@@ -426,6 +450,9 @@ namespace HAL_JSON {
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
                         Token& innerToken = tokens[j];
+                        if (innerToken.Merged()) continue;
+                        if (IsType(innerToken, "and")) continue;
+                        if (IsType(innerToken, ";")) continue;
                         if (IsType(innerToken, "if")) level++;
                         if (IsType(innerToken, "endif")) {
                             level--;
@@ -441,7 +468,9 @@ namespace HAL_JSON {
             }
         }
 
-        bool Parser::EnsureActionBlocksContainItems(Token* tokens, int tokenCount) {
+        bool Parser::EnsureActionBlocksContainItems(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
@@ -454,24 +483,36 @@ namespace HAL_JSON {
             return anyError == false;
         }
 
-        bool Parser::VerifyConditionBlocks(Token* tokens, int tokenCount) {
+        bool Parser::VerifyConditionBlocks(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
                 if ((IsType(token, "if") || IsType(token, "elseif")) == false) continue;
-                const char* conditions = tokens[i+1].text;
+                //const char* conditions = tokens[i+1].text;
+                Tokens conditions;
+                if (tokens[i+1].subTokens.count != 0) {
+                    conditions.items = tokens[i+1].subTokens.items;
+                    conditions.count = tokens[i+1].subTokens.count;
+                } else {
+                    conditions.items = &tokens[i+1];
+                    conditions.count = 1;
+                }
                 ReportInfo("\n"); // newline
-                ReportInfo(conditions);
+                ReportInfo(conditions.ToString());
                 ReportInfo("\n"); // newline
                 
-                if (Expressions::ValidateExpression(conditions) == false) anyError = true;
+                // TODO fix the following to take Token& tokens ref
+                //if (Expressions::ValidateExpression(conditions) == false) anyError = true;
 
             }
             return anyError == false;
         }
 
-        bool Parser::ParseRuleSet(Token* tokens, char* fileContents, int tokenCount) {
-            if (Tokenize(fileContents, tokens, tokenCount) == false) {
+        bool Parser::ParseRuleSet(char* fileContents, Tokens& _tokens) {
+            
+            if (Tokenize(fileContents, _tokens) == false) {
                 ReportInfo("Error: could not Tokenize\n");
                 //std::cout << "Error: could not Tokenize" << std::endl;
                 return false;
@@ -481,10 +522,10 @@ namespace HAL_JSON {
             std::cout << "*                            RAW TOKEN LIST                                      *\n";
             std::cout << "**********************************************************************************\n";
 #endif
-            ReportInfo(PrintTokens(tokens, tokenCount) + "\n");
+            ReportInfo(PrintTokens(_tokens) + "\n");
 
             ReportInfo("\nVerifyBlocks (BetterError): ");
-            if (VerifyBlocks(tokens, tokenCount) == false) {
+            if (VerifyBlocks(_tokens) == false) {
                 ReportInfo("[FAIL]\n");
                 return false;
             }
@@ -492,19 +533,19 @@ namespace HAL_JSON {
             // if here then we can safely parse all blocks
 
             ReportInfo("\nMergeConditions: ");
-            MergeConditions(tokens, tokenCount);
+            MergeConditions(_tokens);
             ReportInfo("[OK]\n");
             
             ReportInfo("\nMergeActions: ");
-            MergeActions(tokens, tokenCount);
+            MergeActions(_tokens);
             ReportInfo("[OK]\n");
             
             ReportInfo("\nCountBlockItems: ");
-            CountBlockItems(tokens, tokenCount);
+            CountBlockItems(_tokens);
             ReportInfo("[OK]\n");
             
             ReportInfo("\nEnsureActionBlocksContainItems: ");
-            if (EnsureActionBlocksContainItems(tokens, tokenCount) == false) {
+            if (EnsureActionBlocksContainItems(_tokens) == false) {
                 ReportInfo("[FAIL]\n");
                 return false;
             }
@@ -515,10 +556,10 @@ namespace HAL_JSON {
             std::cout << "*                            PARSED TOKEN LIST                                   *\n";
             std::cout << "**********************************************************************************\n";
 #endif
-            ReportInfo(PrintTokens(tokens, tokenCount) + "\n");
+            ReportInfo(PrintTokens(_tokens) + "\n");
 
             ReportInfo("\nVerifyConditionBlocks: ");
-            if (VerifyConditionBlocks(tokens, tokenCount) == false) {
+            if (VerifyConditionBlocks(_tokens) == false) {
                 ReportInfo("[FAIL]\n");
                 return false;
             }
@@ -542,9 +583,10 @@ namespace HAL_JSON {
 
             int tokenCount = CountTokens(fileContents);
             ReportInfo("Token count: " + std::to_string(tokenCount) + "\n");
-            Token* tokens = new Token[tokenCount];
+            Tokens tokens(tokenCount);
+            
             bool anyError = false;
-            if (ParseRuleSet(tokens, fileContents, tokenCount)) {
+            if (ParseRuleSet(fileContents, tokens)) {
                 ReportInfo("ParseRuleSet [OK]\n");
             } else {
                 ReportInfo("ParseRuleSet [FAIL]\n");
@@ -552,7 +594,6 @@ namespace HAL_JSON {
             }
             // dont forget to free/delete
             delete[] fileContents;
-            delete[] tokens;
             return anyError == false;
         }
     }
