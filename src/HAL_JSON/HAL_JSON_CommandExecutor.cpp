@@ -58,13 +58,13 @@ namespace HAL_JSON {
 #ifdef _WIN32
             std::cout << "Reload cfg json: " << filePath << std::endl;  
 #endif
-            
-                if (Manager::ReadJSON(filePath.c_str())) {
-                    message += "\"info\":\"OK\"";
-                } else {
-                    message += "\"info\":\"FAIL\",";
-                    anyErrors = true;
-                }
+        
+            if (Manager::ReadJSON(filePath.c_str())) {
+                message += "\"info\":\"OK\"";
+            } else {
+                message += "\"info\":\"FAIL\",";
+                anyErrors = true;
+            }
             
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST) {

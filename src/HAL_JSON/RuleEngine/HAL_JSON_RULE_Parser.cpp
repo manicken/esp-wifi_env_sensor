@@ -3,6 +3,18 @@
 
 namespace HAL_JSON {
     namespace Rules {
+        static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
+        static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
+
+        bool StrEqualsICAny(const char* text, const char* const* candidates) {
+            for (int i = 0; candidates[i] != nullptr; ++i) {
+                if (StrEqualsIC(text, candidates[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         void Parser::ReportError(const char* msg) {
     #ifdef _WIN32
             std::cout << "Error: " << msg << std::endl;
@@ -13,7 +25,7 @@ namespace HAL_JSON {
 
         void Parser::ReportInfo(std::string msg) {
     #ifdef _WIN32
-            std::cout << msg << std::endl;
+            std::cout << msg;
     #else
             //GlobalLogger.Info(F("Expr Rule Parse:"), msg);
     #endif
@@ -154,9 +166,40 @@ namespace HAL_JSON {
                 if (tokenIndex == tokenCount) {
                     return false; // something went terrible wrong
                 }
-                tokens[tokenIndex++] = { token_start, line, token_column };
+                tokens[tokenIndex++].Set(token_start, line, token_column);
             }
+            
             return true;
+        }
+
+        std::string Parser::PrintTokens(Token* tokens, int tokenCount, bool sub) {
+            std::string msg;
+            for (int i=0;i<tokenCount;i++) {
+                Token& tok = tokens[i];
+                if (tok.Merged() && !sub) continue;
+                std::string msgLine;
+                if (sub) msgLine += "    ";
+                //char buffer[64];
+                //snprintf(buffer, sizeof(buffer), "addr: %p", (void*)&tokens[i]);
+                //std::string memaddr = buffer;
+                msgLine +=
+                    //memaddr + "  " + 
+                    "Token(" + std::to_string(i) + "): " +
+                    "(line:" + std::to_string(tok.line) + 
+                    ", col:" + std::to_string(tok.column) + 
+                    ", itemCount:" + std::to_string(tok.itemsInBlock) + 
+                    ", merged:" + std::to_string(tok.merged) + 
+                    ", subTokenCount:" + std::to_string(tok.subTokenCount) + 
+                    ")";
+                if (!sub && tok.subTokenCount > 0) {
+                    msgLine += "\n  subTokens:\n";
+                    msgLine += PrintTokens(tok.subTokens, tok.subTokenCount, true);
+                } else {
+                    msgLine += "\t" + std::string(tok.text);
+                }
+                msg += msgLine + "\n";
+            }
+            return msg;
         }
 
         int Parser::Count_IfTokens(Token* tokens, int tokenCount) {
@@ -179,9 +222,9 @@ namespace HAL_JSON {
             int ifLevel = 0;
             int ifTokenCount = Count_IfTokens(tokens, tokenCount);
             if (ifTokenCount <= 0) ifTokenCount = 1;
-            Token* ifStack = new Token[ifTokenCount];
+            Token** ifStack = new Token*[ifTokenCount]();
             int ifStackIndex = 0;
-            Token lastOn = {nullptr, 0, 0};
+            Token* lastOn = nullptr;
             bool otherErrors = false;
 
             bool expecting_do_then = false;
@@ -191,7 +234,7 @@ namespace HAL_JSON {
                 Token& token = tokens[i];
                 if (IsType(token, "if")) {
                     ifLevel++;
-                    ifStack[ifStackIndex++] = token;
+                    ifStack[ifStackIndex++] = &token;
                     expecting_do_then = true;
                     lastControlIndex = i;
                 }
@@ -204,7 +247,7 @@ namespace HAL_JSON {
                         ReportTokenError("'on' block cannot be nested", token);
                         otherErrors = true;
                     } else {
-                        lastOn = token;
+                        lastOn = &token;
                         onLevel++;
                         expecting_do_then = true;
                         lastControlIndex = i;
@@ -256,140 +299,95 @@ namespace HAL_JSON {
 
             if (ifLevel != 0) {
                 for (int i=0;i<ifStackIndex;i++) { // only print last 'errors'
-                    ReportTokenError("Unmatched 'if' block", ifStack[i]);
+                    ReportTokenError("Unmatched 'if' block", *ifStack[i]);
                 }
                 
             }
             if (onLevel != 0) {
-                ReportTokenError("Unmatched 'on' block", lastOn);
+                if (lastOn)
+                    ReportTokenError("Unmatched 'on' block: ", *lastOn);
+                else
+                    ReportError("Unmatched 'on' block: <null>");
             }
             delete[] ifStack;
             return (ifLevel == 0) && (onLevel == 0) && (otherErrors == false);
         }
+        int Parser::CountConditionTokens(Token* tokens, int start, int tokenCount) {
+            int count = 0;
+            for (int i = start; i < tokenCount; i++) {
+                if (IsType(tokens[i], "do") || IsType(tokens[i], "then")) {
+                    return count;
+                }
+                else
+                    count++;
+            }
+            return -1; // mean we did not find the do or then token
+        }
         
-        void Parser::MergeConditions(Token* tokens, int& tokenCount) {
+        bool Parser::MergeConditions(Token* tokens, int& tokenCount) {
             for (int i = 0; i < tokenCount; i++) {
                 if ((IsType(tokens[i], "if") || IsType(tokens[i], "elseif")) == false) continue;
+                int conditionTokenCount = CountConditionTokens(tokens, i+1, tokenCount);
+#ifdef _WIN32   
+                std::cout << "If case token count: " << conditionTokenCount << "\n";
+#endif
+                if (conditionTokenCount == -1) return false; // failsafe
+
+                if (conditionTokenCount > 1) { // mergin need to be done
+                    i++;
+                    tokens[i].InitSubTokens(conditionTokenCount);
+                    i += conditionTokenCount; // skip all
+                }
+            }
+            return true;
+        }
+
+        bool Parser::MergeActions(Token* tokens, int& tokenCount) {
+            for (int i = 0; i < tokenCount; ++i) {
+                const char* text = tokens[i].text;
+
+                // Identify start of an action block
+                if (!StrEqualsICAny(text, actionStartKeywords)) {
+                    continue;
+                }
 
                 int start = i + 1;
                 int end = -1;
-                
-                // Find "do" or "then"
+
                 for (int j = start; j < tokenCount; ++j) {
-                    if (IsType(tokens[j], "do") || IsType(tokens[j], "then")) {
+                    const char* t = tokens[j].text;
+
+                    if (StrEqualsICAny(t, actionEndKeywords)) {
                         end = j;
                         break;
                     }
                 }
-                // as this is actually taken care of in VerifyBlocks this check don't really need to be here
-                if (start == end) { 
-                    ReportTokenError("MergeConditions - empty if condition", tokens[i]);
-                    continue;
+
+                if (end == -1 || start == end) {
+                    continue; // malformed or empty block, skip safely
                 }
 
-                // malformed if-block, skip (should never happen, as that is taken care of in VerifyBlocks)
-                if (end == -1) {
-                    ReportTokenError("MergeConditions - malformed if", tokens[i]);
-                    continue;
-                }
+                int j = start;
+                while (j < end) {
+                    int currentLine = tokens[j].line;
+                    int lineTokenCount = 0;
 
-                // Merge tokens from [start, end)
-                char* writePtr = (char*)tokens[start].text;
-
-
-                for (int j = start+1; j < end; ++j) {
-                    const Token& token = tokens[j];
-                    const char* tText = token.text;
-                    if (IsType(token, "AND")) tText = "&&";
-                    else if (IsType(token, "OR")) tText = "||";
-
-                    strcat(writePtr, tText);
-                }
-
-                // Remove tokens between start+1 and end-1
-                int shiftCount = end - start - 1;
-                if (shiftCount > 0) {
-                    for (int j = start + 1; j + shiftCount < tokenCount; ++j) {
-                        tokens[j] = tokens[j + shiftCount];
+                    // Count how many tokens are on this line
+                    while (j + lineTokenCount < end &&
+                        tokens[j + lineTokenCount].line == currentLine) {
+                        lineTokenCount++;
                     }
-                    tokenCount -= shiftCount;
-                }
-            }
-        }
 
-        void Parser::MergeActions(Token* tokens, int& tokenCount) {
-            for (int i = 0; i < tokenCount; i++) {
-                const char* text = tokens[i].text;
-                if (!(StrEqualsIC(text, "then") ||
-                    StrEqualsIC(text, "do") ||
-                    StrEqualsIC(text, "and") ||
-                    StrEqualsIC(text, "else") ||
-                    StrEqualsIC(text, "endif"))) {
-                        continue;
-                } 
-                int start = i + 1;
-                int end = -1;
-                //ReportTokenInfo("MergeActions found start:", tokens[i]);
-                
-                for (int j = start; j < tokenCount; ++j) {
-                    const char* text = tokens[j].text;
-
-                    if (!(StrEqualsIC(text, "and") ||
-                        StrEqualsIC(text, "if") ||
-                        StrEqualsIC(text, "else") ||
-                        StrEqualsIC(text, "elseif") ||
-                        StrEqualsIC(text, "endon") ||
-                        StrEqualsIC(text, "endif"))) continue;
-
-                    end = j;
-                    break;
-                }
-                if (start == end) {
-                    // as currently this also checks between 
-                    // different endif endif and similar situations where actions is not necessary
-                    // this should not currently be a warning
-                    // can be taken care of in later checks or at construct time where other checks
-                    // need to be taken care of beforehand
-                    //ReportTokenWarning("MergeActions - empty action", tokens[i]);
-                    continue;
-                }
-
-                if (end == -1) {
-                    ReportTokenError("MergeActions - malformed action block", tokens[i]);
-                    continue;
-                }
-
-                //ReportTokenInfo("MergeActions found end:", tokens[end]);
-
-                // Merge tokens from [start, end)
-                char* writePtr = (char*)tokens[start].text;
-                int lineIndex = tokens[start].line;
-
-                for (int j = start+1; j < end; ++j) {
-                    if (lineIndex != tokens[j].line) { // consider as a separate action token
-                        writePtr = (char*)tokens[j].text;
-                        lineIndex = tokens[j].line;
-                        continue;
+                    if (lineTokenCount > 1) {
+                        tokens[j].InitSubTokens(lineTokenCount);
+                        j += lineTokenCount;
+                    } else {
+                        j++; // single token, skip merging
                     }
-                    const char* t = tokens[j].text;
-                    strcat(writePtr, t);
-                    tokens[j].line = -1; // mark consumed
                 }
+                i = end - 1; // continue after this block
             }
-            // cleanup
-            int writeIdx = 0;
-            for (int readIdx = 0; readIdx < tokenCount; ++readIdx) {
-                if (tokens[readIdx].line == -1) continue;
-                const char* tokenText = tokens[readIdx].text;
-                // one line action tokens
-                if (StrEqualsIC(tokenText, "and")) continue;
-                // then and do are no longer nessesary
-                //if (StrEqualsIC(tokenText, "then")) continue;
-                //if (StrEqualsIC(tokenText, "do")) continue;
-                /*if (writeIdx != readIdx)*/ tokens[writeIdx] = tokens[readIdx];
-                ++writeIdx;
-            }
-            tokenCount = writeIdx;
+            return true;
         }
 
         void Parser::CountBlockItems(Token* tokens, int tokenCount) {
@@ -456,15 +454,15 @@ namespace HAL_JSON {
             return anyError == false;
         }
 
-
         bool Parser::VerifyConditionBlocks(Token* tokens, int tokenCount) {
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
                 if ((IsType(token, "if") || IsType(token, "elseif")) == false) continue;
                 const char* conditions = tokens[i+1].text;
-                ReportInfo(""); // newline
+                ReportInfo("\n"); // newline
                 ReportInfo(conditions);
+                ReportInfo("\n"); // newline
                 
                 if (Expressions::ValidateExpression(conditions) == false) anyError = true;
 
@@ -474,49 +472,54 @@ namespace HAL_JSON {
 
         bool Parser::ParseRuleSet(Token* tokens, char* fileContents, int tokenCount) {
             if (Tokenize(fileContents, tokens, tokenCount) == false) {
-                ReportInfo("Error: could not Tokenize");
+                ReportInfo("Error: could not Tokenize\n");
                 //std::cout << "Error: could not Tokenize" << std::endl;
                 return false;
             }
-            
-            //for (int i=0;i<tokenCount;i++) {
-            //    ReportInfo("Token("+std::to_string(i)+"): " + "(line:" + std::to_string(tokens[i].line) + ", col:" + std::to_string(tokens[i].column) + ")\t" + tokens[i].text);
-            //}
+#ifdef _WIN32
+            std::cout << "**********************************************************************************\n";
+            std::cout << "*                            RAW TOKEN LIST                                      *\n";
+            std::cout << "**********************************************************************************\n";
+#endif
+            ReportInfo(PrintTokens(tokens, tokenCount) + "\n");
 
             ReportInfo("\nVerifyBlocks (BetterError): ");
             if (VerifyBlocks(tokens, tokenCount) == false) {
-                ReportInfo("[FAIL]");
+                ReportInfo("[FAIL]\n");
                 return false;
             }
             ReportInfo("[OK]\n");
             // if here then we can safely parse all blocks
 
-            ReportInfo("MergeConditions: ");
+            ReportInfo("\nMergeConditions: ");
             MergeConditions(tokens, tokenCount);
-            ReportInfo("[OK]");
+            ReportInfo("[OK]\n");
             
             ReportInfo("\nMergeActions: ");
             MergeActions(tokens, tokenCount);
-            ReportInfo("[OK]");
+            ReportInfo("[OK]\n");
             
             ReportInfo("\nCountBlockItems: ");
             CountBlockItems(tokens, tokenCount);
-            ReportInfo("[OK]");
+            ReportInfo("[OK]\n");
             
             ReportInfo("\nEnsureActionBlocksContainItems: ");
             if (EnsureActionBlocksContainItems(tokens, tokenCount) == false) {
-                ReportInfo("[FAIL]");
+                ReportInfo("[FAIL]\n");
                 return false;
             }
-            ReportInfo("[OK]");
-                
-            for (int i=0;i<tokenCount;i++) {
-                ReportInfo("Token(" + std::to_string(i) + "): " + "(line:" + std::to_string(tokens[i].line) + ", col:" + std::to_string(tokens[i].column) + ", itemCount:" + std::to_string(tokens[i].itemsInBlock) + ")\t" + tokens[i].text);
-            }
+            ReportInfo("[OK]\n");
+
+#ifdef _WIN32
+            std::cout << "**********************************************************************************\n";
+            std::cout << "*                            PARSED TOKEN LIST                                   *\n";
+            std::cout << "**********************************************************************************\n";
+#endif
+            ReportInfo(PrintTokens(tokens, tokenCount) + "\n");
 
             ReportInfo("\nVerifyConditionBlocks: ");
             if (VerifyConditionBlocks(tokens, tokenCount) == false) {
-                ReportInfo("[FAIL]");
+                ReportInfo("[FAIL]\n");
                 return false;
             }
             return true;
@@ -526,7 +529,7 @@ namespace HAL_JSON {
             size_t fileSize;
             char* fileContents;// = ReadFileToMutableBuffer(filePath, fileSize);
             if (LittleFS_ext::load_from_file(filePath, &fileContents, &fileSize) == false) {
-                ReportInfo("Error: file could not be read/or is empty");
+                ReportInfo("Error: file could not be read/or is empty\n");
                 return false;
             }
             
@@ -538,13 +541,13 @@ namespace HAL_JSON {
             //ReportInfo(fileContents);
 
             int tokenCount = CountTokens(fileContents);
-            ReportInfo("Token count: " + std::to_string(tokenCount));
+            ReportInfo("Token count: " + std::to_string(tokenCount) + "\n");
             Token* tokens = new Token[tokenCount];
             bool anyError = false;
             if (ParseRuleSet(tokens, fileContents, tokenCount)) {
-                ReportInfo("ParseRuleSet [OK]");
+                ReportInfo("ParseRuleSet [OK]\n");
             } else {
-                ReportInfo("ParseRuleSet [FAIL]");
+                ReportInfo("ParseRuleSet [FAIL]\n");
                 anyError = true;
             }
             // dont forget to free/delete

@@ -7,11 +7,14 @@
     #include <fstream>
     #include <vector>
     #include <stack>
+    #include <string_view>
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser.h"
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Expression_Parser.h"
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.h"
     #include "../src/HAL_JSON/HAL_JSON_Manager.h"
+#ifdef _WIN32 // use this to avoid getting vscode error here
     #include "stubs/HAL_JSON_REST/HAL_JSON_REST.h"
+#endif
     #include "../src/Support/ConvertHelper.h"
     #include "../src/Support/CharArrayHelpers.h"
     #include "../src/Support/ZeroCopyString.h"
@@ -27,6 +30,7 @@
     }
 
     int main(int argc, char* argv[]) {
+        
         std::cout << "********************************************************************" << std::endl;
         std::cout << "* WALHALLA rule development simulator - Running on Windows (MinGW) *" << std::endl;
         std::cout << "********************************************************************" << std::endl;
@@ -36,7 +40,9 @@
         }
         
         std::cout << "\n****** Starting REST api server:\n";
+#ifdef _WIN32 // use this to avoid getting vscode error here
         HAL_JSON::REST::setup(halJsonRestCallback); // this will start the server
+#endif
         std::cout << "\n****** Init HAL_JSON Manager\n";
         HAL_JSON::Manager::setup();
         std::cout << "\n****** Starting commandLoop thread\n";
@@ -46,6 +52,6 @@
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         cmdThread.join(); // wait for command thread to finish
-        std::cout << "Exited cleanly.\n";
+        std::cout << "Exited cleanly.\n" << std::flush;;
         return 0;
     }

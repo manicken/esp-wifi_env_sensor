@@ -4,6 +4,11 @@
    ██    ██    ██ ██   ██ ██    ██ 
    ██     ██████  ██████   ██████  
 
+make the rules/scripts file loader aware of comments such as // and /* */
+to save ram usage while loading rules/scripts
+
+maybe the json cfg file could also use this principe then it would be possible to have real comments in the json cfg files
+
 
 maybe make rule tokenizer and pre fixin such as comment removing + newline fixin is in separeate file
 

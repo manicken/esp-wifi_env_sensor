@@ -65,7 +65,8 @@ LogEntry::~LogEntry() {
 String LogEntry::MessageToString() const {
     String result;
 #ifdef _WIN32
-    std::cout << "source:" << source << "\n";
+    if (source != nullptr)
+        std::cout << "source:" << source << "\n";
 #endif
     result += (source != nullptr) ? ("[" + String(source) + "]") : "";
     result += ((message != nullptr) ? String(message) : "<entry error>");

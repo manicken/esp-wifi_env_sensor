@@ -78,9 +78,23 @@ void parseCommand(const char* cmd) {
 }
 void commandLoop() {
     std::string cmd;
+    std::cin.clear();  // clear error/EOF flags
     while (running) {
         std::cout << "> ";
-        if (!std::getline(std::cin, cmd)) break;
-        parseCommand(cmd.c_str());
+        if (!std::getline(std::cin, cmd)) {
+            if (std::cin.eof()) {
+                std::cout << "EOF reached, exiting command loop.\n"; //
+            } else if (std::cin.fail()) {
+                std::cout << "Input stream failure detected, exiting.\n";
+            } else if (std::cin.bad()) {
+                std::cout << "Input stream bad state, exiting.\n";
+            } else {
+                std::cout << "other error\n" << std::flush;
+            }
+            std::cout << "Shutting down...\n" << std::flush; // this never get printed
+            running = false; // will also signal to the main loop to exit
+        } 
+        else
+            parseCommand(cmd.c_str());
     }
 }

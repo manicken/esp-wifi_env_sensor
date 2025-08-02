@@ -50,7 +50,7 @@ inline void pinMode(int pin, int mode) {
 void digitalWrite(int pin, int val);
 inline int digitalRead(int pin) {
     int val = 42;
-    printf("digitalRead(%d, %f)\n", pin, val);
+    printf("digitalRead(%d, %d)\n", pin, val);
     return 0; // always low
 }
 inline void analogWrite(int pin, float val) {
