@@ -21,6 +21,9 @@ namespace HAL_JSON {
          * also returns length of zero when either start or end is nullptr
          */
         size_t Length() const;
+        inline bool IsEmpty() const {
+            return !start || !end || start == end;
+        }
         /** 
          * Returns a std::string copy of the string, 
          * note this is mostly intended for debug or when the string is needed somewhere else 
@@ -67,6 +70,9 @@ namespace HAL_JSON {
 
         bool Equals(const ZeroCopyString& other) const;
         bool Equals(const char* cstr) const;
+        bool EqualsIC(const ZeroCopyString& other) const;
+        bool EqualsIC(const char* cstr) const;
+        bool EqualsICAny(const char* const* candidates);
 
         bool ValidNumber() const;
         bool ConvertTo_uint32(uint32_t& outValue) const;

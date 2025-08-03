@@ -123,7 +123,52 @@ namespace HAL_JSON {
         size_t len = Length();
         return std::strlen(cstr) == len && std::memcmp(start, cstr, len) == 0;
     }
+    bool ZeroCopyString::EqualsIC(const ZeroCopyString& other) const {
+        int thisLen = Length();
+        if (thisLen == 0) return false;
+        int otherLen = other.Length();
+        if (otherLen == 0) return false;
+        if (thisLen != otherLen) return false;
+        const char* a = start;
+        const char* endA = end;
+        const char* b = other.start;
+        const char* endB = other.end;
+        while (a < endA && b < endB) {
+            if (std::tolower(*a) != std::tolower(*b)) {
+                return false;
+            }
+            a++;
+            b++;
+        }
+        return *a == *b; // Ensure both strings ended
+    }
+    bool ZeroCopyString::EqualsIC(const char* cstr) const {
+        if (!cstr) return false;
+        int thisLen = Length();
+        if (thisLen == 0) return false;
+        int cstrLen = strlen(cstr);
+        if (cstrLen == 0) return false;
+        if (thisLen != cstrLen) return false;
+        const char* a = start;
+        const char* endA = end;
 
+        while (a < endA && *cstr != '\0') {
+            if (std::tolower(*a) != std::tolower(*cstr)) {
+                return false;
+            }
+            a++;
+            cstr++;
+        }
+        return *a == *cstr; // Ensure both strings ended
+    }
+    bool ZeroCopyString::EqualsICAny(const char* const* candidates) {
+        for (int i = 0; candidates[i] != nullptr; ++i) {
+            if (EqualsIC(candidates[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
     bool ZeroCopyString::ValidNumber() const {
         if (Length() == 0) return false;
 

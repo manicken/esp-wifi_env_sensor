@@ -19,14 +19,15 @@ namespace HAL_JSON {
     namespace Rules {
 
 
-        struct Token {
-            
+        struct Token : public ZeroCopyString {
+            using ZeroCopyString::ZeroCopyString;
+
             /**
              * note this is only a pointer to a existing string in memory, 
              * so no freeing should be done 
              * TODO change it to ZeroCopyString to avoid confusion
              */
-            const char* text;
+            //const char* text;
             /** this only stores the pointer to where the subTokens block start */
             //Tokens subTokens; // if used like this is the default constructor called
             //Token* subTokens;
@@ -40,6 +41,7 @@ namespace HAL_JSON {
              */
             bool merged;
             Token();
+            
 
             /* no copy/move constructors/assigments needed*/
             Token(Token&) = delete;          // no copy constructor
@@ -75,5 +77,9 @@ namespace HAL_JSON {
             Tokens& operator=(Tokens&& other) = delete; // no move assignment
             std::string ToString();
         };
+
+        void ReportTokenInfo(const char* msg, const Token& t);
+        void ReportTokenError(const char* msg, const Token& t);
+        void ReportTokenWarning(const char* msg, const Token& t);
     }
 }

@@ -39,8 +39,8 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
         std::cout << "Error: file empty or could not be found: " << strFilePath << "\n";
     } 
     HAL_JSON::Rules::Tokens tokens;
-    HAL_JSON::Rules::Token token;
-    token.text = contents;
+    HAL_JSON::Rules::Token token(contents);
+
     tokens.count = 1;
     tokens.items = &token;
     bool valid = HAL_JSON::Rules::Expressions::ValidateExpression(tokens);
@@ -75,8 +75,13 @@ void parseCommand(const char* cmd) {
             filePath = zcFilePath.ToString();
         else
             filePath = "ruleset.txt";
-        
+
+        auto start = std::chrono::high_resolution_clock::now();
         HAL_JSON::Rules::Parser::ReadAndParseRuleSetFile(filePath.c_str());
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+
+        std::cout << "Parse time: " << duration.count() << " ms\n";
     } else {
         std::cout << "Unknown command: " << cmd << "\n";
     }

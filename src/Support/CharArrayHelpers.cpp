@@ -110,6 +110,15 @@ namespace CharArray {
         return strcmp(str + (str_len - suffix_len), suffix) == 0;
     }
 
+    bool StrEqualsICAny(const char* text, const char* const* candidates) {
+            for (int i = 0; candidates[i] != nullptr; ++i) {
+                if (StrEqualsIC(text, candidates[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
 /*
     StringView::StringView() : ptr(nullptr), len(0) {}
     StringView::StringView(const char* p, size_t l) : ptr(p), len(l) {}

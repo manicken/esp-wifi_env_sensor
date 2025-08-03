@@ -75,11 +75,11 @@ namespace HAL_JSON {
                 ReportError("expr. is empty");
                 return false;
             }*/
-            if(IsDoubleOperator(tokens.items[0].text)) { // this only checks the two first characters in the Expression
+            if(IsDoubleOperator(tokens.items[0].start)) { // this only checks the two first characters in the Expression
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
-            if(IsSingleOperator(tokens.items[0].text[0])) {
+            if(IsSingleOperator(*tokens.items[0].start)) {
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
@@ -89,7 +89,7 @@ namespace HAL_JSON {
             bool inOperand = false;
 
             for (int cti=0;cti<tokens.count;cti++) { // cti = currTokenIndex
-                for (const char* p = tokens.items[cti].text; *p != '\0'; p++) {
+                for (const char* p = tokens.items[cti].start; *p != '\0'; p++) {
                     if (IsDoubleOperator(p)) {
                         p++;
                         operatorCount++;
@@ -133,7 +133,7 @@ namespace HAL_JSON {
             int cti=0;
             const char* p;
             for (  ;cti<tokens.count;cti++) { // cti = currTokenIndex
-                for (p = tokens.items[cti].text; *p != '\0' ; ++p) {
+                for (p = tokens.items[cti].start; *p != '\0' ; ++p) {
                     if (IsDoubleOperator(p)) {
                         
                         if (inOperand) {

@@ -6,14 +6,7 @@ namespace HAL_JSON {
         static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
         static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
 
-        bool StrEqualsICAny(const char* text, const char* const* candidates) {
-            for (int i = 0; candidates[i] != nullptr; ++i) {
-                if (StrEqualsIC(text, candidates[i])) {
-                    return true;
-                }
-            }
-            return false;
-        }
+        
         
         void Parser::ReportError(const char* msg) {
     #ifdef _WIN32
@@ -32,30 +25,7 @@ namespace HAL_JSON {
         }
         
         
-        void Parser::ReportTokenInfo(const char* msg, const Token& t) {
-            std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
-    #ifdef _WIN32
-            std::cout << "Info " << message << std::endl;
-    #else
-            //GlobalLogger.Info(F("Token:"), message.c_str());
-    #endif
-        }
-        void Parser::ReportTokenError(const char* msg, const Token& t) {
-            std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
-    #ifdef _WIN32
-            std::cerr << "Error " << message << std::endl;
-    #else
-            GlobalLogger.Error(F("Token:"), message.c_str());
-    #endif
-        }
-        void Parser::ReportTokenWarning(const char* msg, const Token& t) {
-            std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
-    #ifdef _WIN32
-            std::cout << "Warning " << message << std::endl;
-    #else
-            GlobalLogger.Warn(F("Token:"), message.c_str());
-    #endif
-        }
+
 
         void Parser::FixNewLines(char* buffer) {
             char* p = buffer;
@@ -204,7 +174,7 @@ namespace HAL_JSON {
                     tokens.count = tok.subTokenCount;
                     msgLine += PrintTokens(tokens, true);
                 } else {
-                    msgLine += "\t" + std::string(tok.text);
+                    msgLine += "\t" + tok.ToString();// std::string(tok.text);
                 }
                 msg += msgLine + "\n";
             }
@@ -363,10 +333,10 @@ namespace HAL_JSON {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             for (int i = 0; i < tokenCount; ++i) {
-                const char* text = tokens[i].text;
+                //const char* text = tokens[i].text;
 
                 // Identify start of an action block
-                if (!StrEqualsICAny(text, actionStartKeywords)) {
+                if (!tokens[i].EqualsICAny(actionStartKeywords)) {
                     continue;
                 }
 
@@ -374,9 +344,9 @@ namespace HAL_JSON {
                 int end = -1;
 
                 for (int j = start; j < tokenCount; ++j) {
-                    const char* t = tokens[j].text;
+                    //const char* t = tokens[j].text;
 
-                    if (StrEqualsICAny(t, actionEndKeywords)) {
+                    if (tokens[j].EqualsICAny(actionEndKeywords)) {
                         end = j;
                         break;
                     }

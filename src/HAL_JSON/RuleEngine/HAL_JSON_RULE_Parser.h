@@ -26,11 +26,8 @@ namespace HAL_JSON {
             
             static void ReportError(const char* msg);
             static void ReportInfo(std::string msg);
-            static inline bool IsType(const Token& t, const char* str) { return StrEqualsIC(t.text, str); }
+            static inline bool IsType(const Token& t, const char* str) { return t.EqualsIC(str); }
 
-            static void ReportTokenInfo(const char* msg, const Token& t);
-            static void ReportTokenError(const char* msg, const Token& t);
-            static void ReportTokenWarning(const char* msg, const Token& t);
             /** special note,
               *  this function do not remove additional \r characters in \r\n \n\r 
               *  it just replaces them with spaces for easier parsing 

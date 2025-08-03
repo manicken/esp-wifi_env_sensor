@@ -34,7 +34,7 @@ namespace CharArray {
 
         std::string toString() const;
     };*/
-
+    bool StrEqualsICAny(const char* text, const char* const* candidates);
 }
 
 inline bool StrEqualsIC(const char* strA, const char* strB) { return CharArray::equalsIgnoreCase(strA, strB); }
