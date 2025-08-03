@@ -10,8 +10,6 @@
 #include <vector>
 #include <stack>
 
-#include "HAL_JSON_RULE_Expression_Parser.h"
-#include "HAL_JSON_RULE_Engine.h"
 #include "../../Support/Logger.h"
 #include "../../Support/ConvertHelper.h"
 #include "../../Support/CharArrayHelpers.h"
@@ -19,26 +17,7 @@
 
 namespace HAL_JSON {
     namespace Rules {
-        struct Token;
 
-        struct Tokens {
-        private:
-            bool zeroCopy;
-        public:
-            Token* items;
-            int count;
-            /** this will initialize this instance as a zeroCopyPointer storage */
-            Tokens();
-            /** this will initialize this instance owned Token storage */
-            Tokens(int count);
-            ~Tokens();
-
-            Tokens(Tokens&) = delete;          // no copy constructor
-            Tokens& operator=(const Tokens&) = delete; // no copy assignment
-            Tokens(Tokens&& other) = delete;           // no move constructor
-            Tokens& operator=(Tokens&& other) = delete; // no move assignment
-            std::string ToString();
-        };
 
         struct Token {
             
@@ -49,9 +28,9 @@ namespace HAL_JSON {
              */
             const char* text;
             /** this only stores the pointer to where the subTokens block start */
-            Tokens subTokens; // if used like this is the default constructor called
+            //Tokens subTokens; // if used like this is the default constructor called
             //Token* subTokens;
-            //int subTokenCount;
+            int subTokenCount;
             int line;
             int column;
             int itemsInBlock;
@@ -78,6 +57,23 @@ namespace HAL_JSON {
             ~Token();
         };
 
-        
+        struct Tokens {
+        private:
+            bool zeroCopy;
+        public:
+            Token* items;
+            int count;
+            /** this will initialize this instance as a zeroCopyPointer storage */
+            Tokens();
+            /** this will initialize this instance owned Token storage */
+            Tokens(int count);
+            ~Tokens();
+
+            Tokens(Tokens&) = delete;          // no copy constructor
+            Tokens& operator=(const Tokens&) = delete; // no copy assignment
+            Tokens(Tokens&& other) = delete;           // no move constructor
+            Tokens& operator=(Tokens&& other) = delete; // no move assignment
+            std::string ToString();
+        };
     }
 }

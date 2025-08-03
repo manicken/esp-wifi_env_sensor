@@ -62,24 +62,24 @@ namespace HAL_JSON {
                 c == '#';
         }
 
-        bool Expressions::CountOperatorsAndOperands(const char* expr, int& operatorCount, int& operandCount, int& leftParenthesisCount ) {
+        bool Expressions::CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount ) {
             operatorCount = 0;
             operandCount = 0;
             leftParenthesisCount  = 0;
             // early checks
-            if (expr == nullptr) {
-                ReportError("expr. is nullptr");
-                return false;
-            }
-            if (strlen(expr) == 0) {
+            if (tokens.count == 0) {
                 ReportError("expr. is empty");
                 return false;
             }
-            if(IsDoubleOperator(expr)) { // this only checks the two first characters in the Expression
+            /*if (strlen(expr) == 0) {
+                ReportError("expr. is empty");
+                return false;
+            }*/
+            if(IsDoubleOperator(tokens.items[0].text)) { // this only checks the two first characters in the Expression
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
-            if(IsSingleOperator(*expr)) {
+            if(IsSingleOperator(tokens.items[0].text[0])) {
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
@@ -87,25 +87,27 @@ namespace HAL_JSON {
             int rightParenthesisCount = 0;
 
             bool inOperand = false;
-            
-            for (const char* p = expr; *p != '\0'; p++) {
-                if (IsDoubleOperator(p)) {
-                    p++;
-                    operatorCount++;
-                    inOperand = false;
-                }
-                else if (IsSingleOperator(*p)) {
-                    operatorCount++;
-                    inOperand = false;
-                } else if (*p == '(') {
-                    leftParenthesisCount++;
-                    inOperand = false;
-                } else if (*p == ')') {
-                    rightParenthesisCount++;
-                    inOperand = false;
-                } else if (!inOperand) {
-                    operandCount++;
-                    inOperand = true;
+
+            for (int cti=0;cti<tokens.count;cti++) { // cti = currTokenIndex
+                for (const char* p = tokens.items[cti].text; *p != '\0'; p++) {
+                    if (IsDoubleOperator(p)) {
+                        p++;
+                        operatorCount++;
+                        inOperand = false;
+                    }
+                    else if (IsSingleOperator(*p)) {
+                        operatorCount++;
+                        inOperand = false;
+                    } else if (*p == '(') {
+                        leftParenthesisCount++;
+                        inOperand = false;
+                    } else if (*p == ')') {
+                        rightParenthesisCount++;
+                        inOperand = false;
+                    } else if (!inOperand) {
+                        operandCount++;
+                        inOperand = true;
+                    }
                 }
             }
             bool anyError = false;
@@ -124,37 +126,40 @@ namespace HAL_JSON {
             return anyError == false;
         }
         
-        void Expressions::GetOperands(const char* str, ZeroCopyString* operands, int operandCount) {
+        void Expressions::GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount) {
 
             bool inOperand = false;
             int operandIndex = 0;
-            const char* p = str;
-            for ( ; *p != '\0' ; ++p) {
-                if (IsDoubleOperator(p)) {
-                    
-                    if (inOperand) {
-                        if (operandIndex == operandCount) { // out of bounds should never happend
-                            ReportError("something is very wrong");
-                        } else
-                            operands[operandIndex++].end = p;
+            int cti=0;
+            const char* p;
+            for (  ;cti<tokens.count;cti++) { // cti = currTokenIndex
+                for (p = tokens.items[cti].text; *p != '\0' ; ++p) {
+                    if (IsDoubleOperator(p)) {
                         
+                        if (inOperand) {
+                            if (operandIndex == operandCount) { // out of bounds should never happend
+                                ReportError("something is very wrong");
+                            } else
+                                operands[operandIndex++].end = p;
+                            
+                        }
+                        p++;
+                        inOperand = false;
                     }
-                    p++;
-                    inOperand = false;
-                }
-                else if (IsSingleOperator(*p) || *p == '(' || *p == ')') {
-                    if (inOperand) {
-                        if (operandIndex == operandCount) { // out of bounds should never happend
-                            ReportError("something is very wrong");
-                        } else
-                            operands[operandIndex++].end = p;
-                        
+                    else if (IsSingleOperator(*p) || *p == '(' || *p == ')') {
+                        if (inOperand) {
+                            if (operandIndex == operandCount) { // out of bounds should never happend
+                                ReportError("something is very wrong");
+                            } else
+                                operands[operandIndex++].end = p;
+                            
+                        }
+                        inOperand = false;
                     }
-                    inOperand = false;
-                }
-                else if (!inOperand) {
-                    operands[operandIndex].start = p;
-                    inOperand = true;
+                    else if (!inOperand) {
+                        operands[operandIndex].start = p;
+                        inOperand = true;
+                    }
                 }
             }
             // catch the last operand if any
@@ -189,11 +194,11 @@ namespace HAL_JSON {
             return nullptr;
         }
         
-        bool Expressions::ValidateExpression(const char* str) {
+        bool Expressions::ValidateExpression(Tokens& tokens) {
             int operatorCount, operandCount, leftParenthesisCount ;
             bool anyError = false;
 
-            anyError = (false == CountOperatorsAndOperands(str, operatorCount, operandCount, leftParenthesisCount));
+            anyError = (false == CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount));
             // allways print debug info
             ReportInfo("operatorCount:" + std::to_string(operatorCount) + ", operandCount:" + std::to_string(operandCount) + ", leftParenthesisCount :" + std::to_string(leftParenthesisCount));
             // early return as if this happens then there is no point of continuing
@@ -201,7 +206,7 @@ namespace HAL_JSON {
 
             ZeroCopyString* operands = new ZeroCopyString[operandCount];
 
-            GetOperands(str, operands, operandCount);
+            GetOperands(tokens, operands, operandCount);
 #ifdef HAL_JSON_RULES_EXPRESSIONS_PARSER_SHOW_DEBUG
             // just print debug info
             for (int i=0;i<operandCount;i++) {
@@ -232,13 +237,15 @@ namespace HAL_JSON {
 
                 if (OperandIsVariable(operand)) {
                     const char* currChar = ValidOperandVariableName(operand);
-                    if (currChar != nullptr) {
-                        char invalidChar[2];
-                        invalidChar[0] = *currChar;
-                        invalidChar[1] = 0x00;
+                    if (currChar != nullptr && *currChar != '\0') {
+                        //char invalidChar[2];
+                        //invalidChar[0] = *currChar;
+                        //invalidChar[1] = 0x00;
                         // don't know yet if it should be warning or error
                         //ReportError("found invalid character in operand",invalidChar);
-                        ReportWarning("found invalid character in operand",invalidChar);
+                        std::string msg = "found invalid character <"+std::to_string(*currChar)+"> in operand: ";
+                        msg += operand.ToString();
+                        ReportWarning(msg.c_str());
                         foundAnyInvalidChar = true;
                     } 
                 }

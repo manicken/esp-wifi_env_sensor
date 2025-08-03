@@ -7,8 +7,7 @@ namespace HAL_JSON {
         }
         void Token::Set(const char* _text, int _line, int _column) {
             merged = false;
-            subTokens.items = nullptr;
-            subTokens.count = 0;
+            subTokenCount = 0;
             text = _text;
             line = _line;
             column = _column;
@@ -19,21 +18,19 @@ namespace HAL_JSON {
         }
 
         void Token::InitSubTokens(int size) {
-            // just refer to this ptr as the first item
-            // subTokenCount refers to the tokens that 'belong' to the subtokens instance
-            subTokens.items = this;
-
-            subTokens.count = size;
+            subTokenCount = size;
             
-            // mark the tokens merged
+            // mark the following and inclusive this tokens merged
             for (int i = 0; i < size; i++) {
-                subTokens.items[i].merged = true;
+                this[i].merged = true;
             }
         }
 
         bool Token::Merged() {
-            return (merged && subTokens.count == 0);
+            return (merged && subTokenCount == 0);
         }
+
+        
         Tokens::Tokens() : zeroCopy(true), items(nullptr), count(0) {}
 
         Tokens::Tokens(int count) : count(count) {

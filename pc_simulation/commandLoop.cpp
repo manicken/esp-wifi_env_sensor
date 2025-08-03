@@ -38,7 +38,12 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
     if (LittleFS_ext::load_from_file(strFilePath.c_str(), &contents, &fileSize) == false) {
         std::cout << "Error: file empty or could not be found: " << strFilePath << "\n";
     } 
-    bool valid = HAL_JSON::Rules::Expressions::ValidateExpression(contents);
+    HAL_JSON::Rules::Tokens tokens;
+    HAL_JSON::Rules::Token token;
+    token.text = contents;
+    tokens.count = 1;
+    tokens.items = &token;
+    bool valid = HAL_JSON::Rules::Expressions::ValidateExpression(tokens);
     if (valid) {
         std::cout << "Parse [OK]\n";
     }

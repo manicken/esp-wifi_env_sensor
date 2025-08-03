@@ -195,11 +195,14 @@ namespace HAL_JSON {
                     ", col:" + std::to_string(tok.column) + 
                     ", itemCount:" + std::to_string(tok.itemsInBlock) + 
                     ", merged:" + std::to_string(tok.merged) + 
-                    ", subTokenCount:" + std::to_string(tok.subTokens.count) + 
+                    ", subTokenCount:" + std::to_string(tok.subTokenCount) + 
                     ")";
-                if (!sub && tok.subTokens.count > 0) {
+                if (!sub && tok.subTokenCount > 0) {
                     msgLine += "\n  subTokens:\n";
-                    msgLine += PrintTokens(tok.subTokens, true);
+                    Tokens tokens;
+                    tokens.items = &tok;
+                    tokens.count = tok.subTokenCount;
+                    msgLine += PrintTokens(tokens, true);
                 } else {
                     msgLine += "\t" + std::string(tok.text);
                 }
@@ -492,19 +495,17 @@ namespace HAL_JSON {
                 if ((IsType(token, "if") || IsType(token, "elseif")) == false) continue;
                 //const char* conditions = tokens[i+1].text;
                 Tokens conditions;
-                if (tokens[i+1].subTokens.count != 0) {
-                    conditions.items = tokens[i+1].subTokens.items;
-                    conditions.count = tokens[i+1].subTokens.count;
+                conditions.items = &tokens[i+1];
+                if (tokens[i+1].subTokenCount != 0) {
+                    conditions.count = tokens[i+1].subTokenCount;
                 } else {
-                    conditions.items = &tokens[i+1];
                     conditions.count = 1;
                 }
                 ReportInfo("\n"); // newline
                 ReportInfo(conditions.ToString());
                 ReportInfo("\n"); // newline
                 
-                // TODO fix the following to take Token& tokens ref
-                //if (Expressions::ValidateExpression(conditions) == false) anyError = true;
+                if (Expressions::ValidateExpression(conditions) == false) anyError = true;
 
             }
             return anyError == false;
