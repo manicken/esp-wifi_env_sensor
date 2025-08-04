@@ -163,7 +163,7 @@ void Logger::printAllLogs(Stream &out, bool onlyPrintNew) {
         out.print('[');
         out.print(timeinfo->tm_mday);
         out.print('/');
-        out.print(timeinfo->tm_mon);
+        out.print(timeinfo->tm_mon+1);
         out.print(' ');
         if (timeinfo->tm_hour < 10) out.print('0');
         out.print(timeinfo->tm_hour);

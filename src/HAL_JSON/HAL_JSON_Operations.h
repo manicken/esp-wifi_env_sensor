@@ -20,7 +20,23 @@ namespace HAL_JSON {
         const HALWriteValueByCmd& valByCmd;
         HALWriteValueByCmdReq(UIDPath& p, const HALWriteValueByCmd& valByCmd) : path(p), valByCmd(valByCmd) {}
     };
-
+    enum class HALDeviceOperationResult {
+        Success = 0,
+        DeviceNotFound = 1,
+        UnsupportedOperation = 2,  // was OperationNotSupported
+        UnsupportedCommand = 3,   // was InvalidCommand
+        ExecutionFailed = 4       // was OperationFail
+    };
+    inline const char* ToString(HALDeviceOperationResult result) {
+        switch (result) {
+            case HALDeviceOperationResult::Success: return "Success";
+            case HALDeviceOperationResult::DeviceNotFound: return "DeviceNotFound";
+            case HALDeviceOperationResult::UnsupportedOperation: return "UnsupportedOperation";
+            case HALDeviceOperationResult::UnsupportedCommand: return "UnsupportedCommand";
+            case HALDeviceOperationResult::ExecutionFailed: return "ExecutionFailed";
+            default: return "Unknown";
+        }
+    }
     struct HALReadValueByCmd {
         HALValue& out_value;
         //const std::string& cmd;

@@ -4,6 +4,9 @@
 namespace HAL_JSON {
     
     REGO600::REGO600(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One,type) {
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
+
         rxPin = GetAsUINT8(jsonObj, HAL_JSON_KEYNAME_RXPIN);
         txPin = GetAsUINT8(jsonObj, HAL_JSON_KEYNAME_TXPIN);
         GPIO_manager::ReservePin(rxPin);
@@ -108,7 +111,18 @@ namespace HAL_JSON {
         ret += "\",";
         ret += DeviceConstStrings::type;
         ret += type;
-        ret += "\"";
+        ret += "\",";
+        ret += "\"items\":[";
+        bool first = true;
+        for (int i=0;i<registerItemCount;i++) {
+            if (first == false) { ret += ","; }
+            else
+                first = false;
+            ret += "{";
+            ret += registerItems[i]->ToString();
+            ret += "}";
+        }
+        ret += "]";
         return ret;
     }
 

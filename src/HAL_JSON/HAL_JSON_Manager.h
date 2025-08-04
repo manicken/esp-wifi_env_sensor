@@ -51,12 +51,12 @@ namespace HAL_JSON {
 
         // Device operations
         static Device* findDevice(UIDPath& path);
-        static bool read(const HALReadRequest &req);
-        static bool write(const HALWriteRequest &req);
-        static bool read(const HALReadStringRequest &req);
-        static bool write(const HALWriteStringRequest &req);
-        static bool read(const HALReadValueByCmdReq &req);
-        static bool write(const HALWriteValueByCmdReq &req);
+        static HALDeviceOperationResult read(const HALReadRequest &req);
+        static HALDeviceOperationResult write(const HALWriteRequest &req);
+        static HALDeviceOperationResult read(const HALReadStringRequest &req);
+        static HALDeviceOperationResult write(const HALWriteStringRequest &req);
+        static HALDeviceOperationResult read(const HALReadValueByCmdReq &req);
+        static HALDeviceOperationResult write(const HALWriteValueByCmdReq &req);
 
         // Maintenance
         static void loop();

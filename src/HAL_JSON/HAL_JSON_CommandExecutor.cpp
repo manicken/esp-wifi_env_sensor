@@ -119,7 +119,10 @@ namespace HAL_JSON {
 
         if (params.zcValue.Length() == 0) {
             message += "\"error\":\"No value provided for writing.\"";
+            return false;
         } else {
+            HALDeviceOperationResult writeResult = HALDeviceOperationResult::UnsupportedOperation;
+
             if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
                 uint32_t uintValue = 0;
 
@@ -136,13 +139,12 @@ namespace HAL_JSON {
                 UIDPath uidPath(params.zcUid);
                 HALValue halValue = uintValue;
                 HALWriteRequest req(uidPath, halValue);
-                if (Manager::write(req)) {
+
+                writeResult = Manager::write(req);
+                if (writeResult == HALDeviceOperationResult::Success) {
                     message += "\"info\":{\"Value written\":\"";
                     message += std::to_string(uintValue);
                     message += "\"}";
-                }
-                else {
-                    return false;
                 }
             }
             else if (params.zcType == HAL_JSON_CMD_EXEC_UINT32_TYPE) {
@@ -154,13 +156,12 @@ namespace HAL_JSON {
                     UIDPath uidPath(params.zcUid);
                     HALValue halValue = uintValue;
                     HALWriteRequest req(uidPath, halValue);
-                    if (Manager::write(req)) {
+
+                    writeResult = Manager::write(req);
+                    if (writeResult == HALDeviceOperationResult::Success) {
                         message += "\"info\":{\"Value written\":\"";
                         message += std::to_string(uintValue);
                         message += "\"}";
-                    }
-                    else {
-                        return false;
                     }
                 }
 
@@ -168,7 +169,7 @@ namespace HAL_JSON {
                 // Convert value to integer
                 float floatValue = 0.0f;
                 if (params.zcValue.ConvertTo_float(floatValue) == false) {
-                    message += "{\"error\":\"Invalid uint32 value.\"}";
+                    message += "{\"error\":\"Invalid float value.\"}";
                 } else {
 #ifdef _WIN32
                     std::cout << "float value written: " << floatValue << "\n";
@@ -176,13 +177,12 @@ namespace HAL_JSON {
                     UIDPath uidPath(params.zcUid);
                     HALValue halValue = floatValue;
                     HALWriteRequest req(uidPath, halValue);
-                    if (Manager::write(req)) {
+
+                    writeResult = Manager::write(req);
+                    if (writeResult == HALDeviceOperationResult::Success) {
                         message += "\"info\":{\"Value written\":\"";
                         message += std::to_string(floatValue);
                         message += "\"}";
-                    }
-                    else {
-                        return false;
                     }
                 }
 
@@ -192,13 +192,12 @@ namespace HAL_JSON {
                 HALWriteStringRequestValue strHalValue(params.zcValue, result);
                 
                 HALWriteStringRequest req(uidPath, strHalValue);
-                if (Manager::write(req)) {
+
+                writeResult = Manager::write(req);
+                if (writeResult == HALDeviceOperationResult::Success) {
                     message += "\"info\":{\"String written\":\"OK\"}";
                     //message += stdString.c_str();
                     //message += "\"}";
-                }
-                else {
-                    return false;
                 }
 
             } else if (params.zcType == HAL_JSON_CMD_EXEC_JSON_STR_TYPE) {
@@ -206,17 +205,22 @@ namespace HAL_JSON {
                 std::string result;
                 HALWriteStringRequestValue strHalValue(params.zcValue, result);
                 HALWriteStringRequest req(uidPath, strHalValue);
-                if (Manager::write(req)) {
+
+                writeResult = Manager::write(req);
+                if (writeResult == HALDeviceOperationResult::Success) {
                     message += "\"info\":{\"Json written\":\"OK\"}";
                     //message += stdString.c_str();
                     //message += "}";
                 }
-                else {
-                    return false;
-                }
             }
             else {
                 message += "\"error\":\"Unknown type for writing.\"";
+                return false;
+            }
+            if (writeResult != HALDeviceOperationResult::Success) {
+                message += "\"error\":\"";
+                message += ToString(writeResult);
+                message += "\"";
                 return false;
             }
         }
@@ -235,69 +239,67 @@ namespace HAL_JSON {
 #ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
         message += params.ToString() + "},";
 #endif
-        bool anyReadError = false;
+        HALDeviceOperationResult readResult = HALDeviceOperationResult::UnsupportedOperation;
+
         if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
             UIDPath uidPath(params.zcUid);
             HALValue halValue;
             HALReadRequest req(uidPath, halValue);
 
-            if (Manager::read(req)) {
+            readResult = Manager::read(req);
+            if (readResult == HALDeviceOperationResult::Success) {
                 valueStr = std::to_string(halValue.asUInt());
-            } else {
-                anyReadError = true;
             }
         } else if (params.zcType == HAL_JSON_CMD_EXEC_UINT32_TYPE) {
             UIDPath uidPath(params.zcUid);
             HALValue halValue;
             HALReadRequest req(uidPath, halValue);
-            if (Manager::read(req)) {
+
+            readResult = Manager::read(req);
+            if (readResult == HALDeviceOperationResult::Success) {
                 valueStr = std::to_string(halValue.asUInt());
-            } else {
-                anyReadError = true;
             }
         } else if (params.zcType == HAL_JSON_CMD_EXEC_FLOAT_TYPE) {
             UIDPath uidPath(params.zcUid);
             if (params.zcValue.Length() == 0) {
                 HALValue halValue;
                 HALReadRequest req(uidPath, halValue);
-            
-                if (Manager::read(req)) {
+
+                readResult = Manager::read(req);
+                if (readResult == HALDeviceOperationResult::Success) {
                     valueStr = std::to_string(halValue.asFloat());
-                } else {
-                    anyReadError = true;
                 }
             }
             else {
                 HALValue halValue;
                 HALReadValueByCmd valByCmd(halValue, params.zcValue);
                 HALReadValueByCmdReq req(uidPath, valByCmd);
-            
-                if (Manager::read(req)) {
+
+                readResult = Manager::read(req);
+                if (readResult == HALDeviceOperationResult::Success) {
                     valueStr = std::to_string(halValue.asFloat());
-                } else {
-                    anyReadError = true;
                 }
             }
         } else if (params.zcType == HAL_JSON_CMD_EXEC_STRING_TYPE) {
             UIDPath uidPath(params.zcUid);
             std::string result;
             HALReadStringRequestValue strHalValue(params.zcValue, result);
-            
             HALReadStringRequest req(uidPath, strHalValue);
-            if (Manager::read(req)) {
+
+            readResult = Manager::read(req);
+            if (readResult == HALDeviceOperationResult::Success) {
                 valueStr = "\"";
                 valueStr += result;
                 valueStr += "\"";
-            }
-            else {
-                anyReadError = true;
             }
         } else {
             message += "\"error\":\"Unknown type for reading.\"";
             return false;
         }
-        if (anyReadError) {
-            message += "\"error\":\"read error.\"";
+        if (readResult != HALDeviceOperationResult::Success) {
+            message += "\"error\":\"";
+            message += ToString(readResult);
+            message += "\"";
             return false;
         }
         message += DeviceConstStrings::value;

@@ -17,13 +17,13 @@ namespace HAL_JSON {
         return new RuleVariable(jsonObj, type);
     }
 
-    bool RuleVariable::read(HALValue& val) {
+    HALDeviceOperationResult RuleVariable::read(HALValue& val) {
         val = value;
-        return true;
+        return HALDeviceOperationResult::Success;
     }
-    bool RuleVariable::write(const HALValue& val) {
+    HALDeviceOperationResult RuleVariable::write(const HALValue& val) {
         value = val;
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     String RuleVariable::ToString() {

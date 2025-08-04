@@ -38,8 +38,6 @@ namespace HAL_JSON {
             static int CountTokens(char* buffer);
             static bool Tokenize(char* buffer, Tokens& tokens);
 
-            static std::string PrintTokens(Tokens& tokens, bool sub = false);
-
             /** used by VerifyBlocks */
             static int Count_IfTokens(Tokens& tokens);
 

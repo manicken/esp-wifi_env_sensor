@@ -39,12 +39,12 @@ namespace HAL_JSON {
         HAL_UID uid;
         const uint8_t uidMaxLength = 0;
         bool LoopTaskDone();
-        virtual bool read(HALValue& val);
-        virtual bool write(const HALValue& val);
-        virtual bool read(const HALReadStringRequestValue& val);
-        virtual bool write(const HALWriteStringRequestValue& val);
-        virtual bool read(const HALReadValueByCmd& val);
-        virtual bool write(const HALWriteValueByCmd& val);
+        virtual HALDeviceOperationResult read(HALValue& val);
+        virtual HALDeviceOperationResult write(const HALValue& val);
+        virtual HALDeviceOperationResult read(const HALReadStringRequestValue& val);
+        virtual HALDeviceOperationResult write(const HALWriteStringRequestValue& val);
+        virtual HALDeviceOperationResult read(const HALReadValueByCmd& val);
+        virtual HALDeviceOperationResult write(const HALWriteValueByCmd& val);
         virtual ReadToHALValue_FuncType GetReadToHALValue_Function(const char* funcName);
         /** called regulary from the main loop */
         virtual void loop();

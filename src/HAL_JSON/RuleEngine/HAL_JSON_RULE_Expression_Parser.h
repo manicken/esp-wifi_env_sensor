@@ -31,10 +31,12 @@ namespace HAL_JSON {
             static bool IsValidOperandChar(char c);
 
             static bool CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount );
-            static void GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount);
-            static bool OperandIsVariable(const ZeroCopyString& operand);
+            //static void GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount);
+            static bool OperandIsVariable(const Token& operand);
             /** returns nullptr if no invalid char is found, otherwise it will return the character */
-            static const char* ValidOperandVariableName(const ZeroCopyString& operand);
+            static const char* ValidOperandVariableName(const Token& operand);
+
+            static void ValidateOperand(const Token& operand, bool& anyError);
         public:
             static bool ValidateExpression(Tokens& tokens);
         };

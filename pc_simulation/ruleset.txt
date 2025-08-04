@@ -99,33 +99,33 @@ endon
 
 on relay#toggle then // itemcount 6
   // 1
-  if relay#state>=2 then // itemcount 7
+  if var4>=2 then // itemcount 7
     led = 0
 	led=1
-	var1 = temp1
+	var1 = temp
 	var2 = 42
-	if <condition> then // itemcount 3 
-		<action1>
-		<action2>
-		<action3>
-	elseif (<condition2a> && <condition2b>) then // itemcount 1
-		<action4>
+	if var4>=2 then // itemcount 3 
+		[action1]
+		[action2]
+		[action3]
+	elseif (var4>=2 && var4>=2) then // itemcount 1
+		[action4]
 	//elseif then
-	//	<action5>
+	//	[action5]
 	else
-		<action5>
+		[action5]
 	endif
-	//if <cond> then // no actions here will throw error
+	//if [cond] then // no actions here will throw error
 	//endif
 	if var2>5 && 5>var3 then // could maybe in the future be written as var2>5>var3
-		<action>
+		[action]
 	endif
-	var1 = temp1
+	var1 = temp
 	var1 = var1 + 1
   endif
   // 2
-  if relay#state>=2 then // itemcount 8
-	var1 = temp1
+  if var3>=2 then // itemcount 8
+	var1 = temps2:a
     var1 += 1
 	var1 -= 1
 	var1 /= 1
@@ -134,7 +134,7 @@ on relay#toggle then // itemcount 6
 	var1 &= 1
 	var1 |= 1
   else  // itemcount 7
-	var1 = var1 + 1wtd1
+	var1 = var1 + temp
 	var1 = var1 - 1
 	var1 = var1 / 1
 	var1 = var1 * 1
@@ -142,20 +142,21 @@ on relay#toggle then // itemcount 6
 	var1 = var1 & 1
 	var1 = var1 | 1
   endif
+  
   // 3
-  if relay#state >= 2 then  // itemcount 1
+  if var3 >= 2 then  // itemcount 1
     led = 1
   endif
   // 4
-  if relay#state>= 2 then // itemcount 1
+  if var3>= 2 then // itemcount 1
     led = 2
   endif
   // 5
-  if relay#state >=2 && temp2>50 then // itemcount 1
+  if var3 >=2 && temps2:b>50 then // itemcount 1
     led = 3
   endif
   // 6
-  if temp1>=20 AND temp1<=30 OR temp1>=50 then // itemcount 1
+  if var3>=20 && var4<=30 OR var4>=50 then // itemcount 1
     led = 4
   endif
 endon

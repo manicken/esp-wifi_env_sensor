@@ -79,9 +79,9 @@ namespace HAL_JSON {
         }
     }
 
-    bool DHT::read(HALValue &val) {
+    HALDeviceOperationResult DHT::read(HALValue &val) {
         val = data.humidity;
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     Device::ReadToHALValue_FuncType DHT::GetReadToHALValue_Function(const char* funcName) {
@@ -107,33 +107,33 @@ namespace HAL_JSON {
         return true;
     }
 
-    bool DHT::read(const HALReadValueByCmd &val) {
+    HALDeviceOperationResult DHT::read(const HALReadValueByCmd &val) {
         if (val.cmd == "temp") {
             val.out_value = data.temperature;
-            return true;
+            return HALDeviceOperationResult::Success;
         } else if (val.cmd == "humidity") {
             val.out_value = data.humidity;
-            return true;
+            return HALDeviceOperationResult::Success;
         }
         else {
             std::string stdStrCmd = val.cmd.ToString();
             GlobalLogger.Warn(F("DHT::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
-            return false;
+            return HALDeviceOperationResult::UnsupportedCommand;
         }
     }
 
-    bool DHT::read(const HALReadStringRequestValue &val) {
+    HALDeviceOperationResult DHT::read(const HALReadStringRequestValue &val) {
         if (val.cmd == "temp") {
             val.out_value = "{\"temp\":" + std::to_string(data.temperature) + "}";
-            return true;
+            return HALDeviceOperationResult::Success;
         } else if (val.cmd == "humidity") {
             val.out_value = "{\"humidity\":" + std::to_string(data.humidity) + "}";
-            return true;
+            return HALDeviceOperationResult::Success;
         }
         else {
             std::string stdStrCmd = val.cmd.ToString();
             GlobalLogger.Warn(F("DHT::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
-            return false;
+            return HALDeviceOperationResult::UnsupportedCommand;
         }
     }
     

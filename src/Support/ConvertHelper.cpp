@@ -173,7 +173,7 @@ namespace Convert
             else if (c == 6) output += "\u2586";
             else if (c == 7) output += "\u2587";
             else if (c == 8) output += "\u2588";
-            else if (c < 32) output += "{"+String(c,16)+"}";
+            else if (c < 32) { output += "{"; output += Convert::toHex(c).c_str(); output+="}"; }
             else if (c < 128) {
             output += (char)c;
             } else {

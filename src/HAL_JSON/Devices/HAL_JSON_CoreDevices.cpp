@@ -35,10 +35,10 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    bool DigitalInput::read(HALValue &val) {
+    HALDeviceOperationResult DigitalInput::read(HALValue &val) {
         //val.set((uint32_t)digitalRead(pin));
         val = (uint32_t)digitalRead(pin);
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     String DigitalInput::ToString() {
@@ -89,16 +89,16 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    bool DigitalOutput::read(HALValue &val) {
+    HALDeviceOperationResult DigitalOutput::read(HALValue &val) {
         //val.set(value); // read back the latest write value
         val = value;
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
-    bool DigitalOutput::write(const HALValue &val) {
+    HALDeviceOperationResult DigitalOutput::write(const HALValue &val) {
         value = val;//val.asUInt();
         digitalWrite(pin, value);
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     String DigitalOutput::ToString() {
@@ -163,26 +163,26 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    bool SinglePulseOutput::read(HALValue &val) {
+    HALDeviceOperationResult SinglePulseOutput::read(HALValue &val) {
         //val.set(value); // read back the latest write value
         val = pulseLength;
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     void SinglePulseOutput::pulseTicker_Callback(SinglePulseOutput* context) {
         context->endPulse();
     }
 
-    bool SinglePulseOutput::write(const HALValue &val) {
+    HALDeviceOperationResult SinglePulseOutput::write(const HALValue &val) {
         uint32_t t = val;
         if (t != 0) // only change if not zero
             pulseLength = t;//val.asUInt();
-        if (pulseLength == 0) return true; // no pulse
+        if (pulseLength == 0) return HALDeviceOperationResult::ExecutionFailed; // no pulse
 
         digitalWrite(pin, !inactiveState);
         pulseTicker.detach();
         pulseTicker.once_ms(pulseLength, pulseTicker_Callback, this);
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     void SinglePulseOutput::endPulse() {
@@ -235,10 +235,10 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    bool AnalogInput::read(HALValue &val) {
+    HALDeviceOperationResult AnalogInput::read(HALValue &val) {
         //val.set((uint32_t)analogRead(pin));
         val = (uint32_t)analogRead(pin);
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     String AnalogInput::ToString() {
@@ -278,6 +278,8 @@ namespace HAL_JSON {
     }
 
     PWMAnalogWriteConfig::PWMAnalogWriteConfig(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One, type) {
+        const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
+        uid = encodeUID(uidStr);
         //PWMAnalogWriteConfig::frequency = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY];//.as<uint32_t>();
         //PWMAnalogWriteConfig::resolution = jsonObj[HAL_JSON_KEYNAME_PWM_CFG_RESOLUTION];//.as<uint32_t>();
         PWMAnalogWriteConfig::frequency = GetAsUINT32(jsonObj, HAL_JSON_KEYNAME_PWM_CFG_FREQUENCY, 0);
@@ -297,8 +299,10 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    bool PWMAnalogWriteConfig::write(const HALWriteStringRequestValue& value) {
-        return false;
+    HALDeviceOperationResult PWMAnalogWriteConfig::write(const HALWriteStringRequestValue& value) {
+        // could be supported in the future
+        // for direct set of cfg
+        return HALDeviceOperationResult::UnsupportedOperation;
     }
 
     String PWMAnalogWriteConfig::ToString() {
@@ -347,19 +351,19 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    bool PWMAnalogWrite::read(HALValue &val) {
+    HALDeviceOperationResult PWMAnalogWrite::read(HALValue &val) {
         //val.set(value); // just read back latest write
         val = value;
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
-    bool PWMAnalogWrite::write(const HALValue &val) {
+    HALDeviceOperationResult PWMAnalogWrite::write(const HALValue &val) {
         //value = val.asUInt();
         value = val;
         if (inv_out)
             value = getInvValue(value);
         analogWrite(pin, value);
-        return true;
+        return HALDeviceOperationResult::Success;
     }
 
     String PWMAnalogWrite::ToString() {

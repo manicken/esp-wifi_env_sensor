@@ -33,7 +33,7 @@ namespace HAL_JSON {
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
 #endif
-        bool read(HALValue &val) override;
+        HALDeviceOperationResult read(HALValue &val) override;
         String ToString() override;
     };
 
@@ -55,8 +55,8 @@ namespace HAL_JSON {
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
 #endif
-        bool read(HALValue &val) override;
-        bool write(const HALValue &val) override;
+        HALDeviceOperationResult read(HALValue &val) override;
+        HALDeviceOperationResult write(const HALValue &val) override;
         String ToString() override;
     };
 
@@ -82,8 +82,8 @@ namespace HAL_JSON {
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
 #endif
-        bool read(HALValue &val) override;
-        bool write(const HALValue &val) override;
+        HALDeviceOperationResult read(HALValue &val) override;
+        HALDeviceOperationResult write(const HALValue &val) override;
         String ToString() override;
     };
 
@@ -105,7 +105,7 @@ namespace HAL_JSON {
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
 #endif
-        bool read(HALValue &val) override;
+        HALDeviceOperationResult read(HALValue &val) override;
         String ToString() override;
     };
 #endif
@@ -128,7 +128,7 @@ namespace HAL_JSON {
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
 #endif
-        bool write(const HALWriteStringRequestValue& value) override;
+        HALDeviceOperationResult write(const HALWriteStringRequestValue& value) override;
         String ToString() override;
 
     };
@@ -153,8 +153,8 @@ namespace HAL_JSON {
 #ifndef HAL_JSON_USE_EFFICIENT_FIND
         Device* findDevice(UIDPath& path) override;
 #endif
-        bool read(HALValue &val) override;
-        bool write(const HALValue &val) override;
+        HALDeviceOperationResult read(HALValue &val) override;
+        HALDeviceOperationResult write(const HALValue &val) override;
         String ToString() override;
     };
 

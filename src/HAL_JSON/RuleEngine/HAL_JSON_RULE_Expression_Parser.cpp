@@ -89,7 +89,7 @@ namespace HAL_JSON {
             bool inOperand = false;
 
             for (int cti=0;cti<tokens.count;cti++) { // cti = currTokenIndex
-                for (const char* p = tokens.items[cti].start; *p != '\0'; p++) {
+                for (const char* p = tokens.items[cti].start; p < tokens.items[cti].end; p++) {
                     if (IsDoubleOperator(p)) {
                         p++;
                         operatorCount++;
@@ -126,55 +126,11 @@ namespace HAL_JSON {
             return anyError == false;
         }
         
-        void Expressions::GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount) {
+        
 
-            bool inOperand = false;
-            int operandIndex = 0;
-            int cti=0;
-            const char* p;
-            for (  ;cti<tokens.count;cti++) { // cti = currTokenIndex
-                for (p = tokens.items[cti].start; *p != '\0' ; ++p) {
-                    if (IsDoubleOperator(p)) {
-                        
-                        if (inOperand) {
-                            if (operandIndex == operandCount) { // out of bounds should never happend
-                                ReportError("something is very wrong");
-                            } else
-                                operands[operandIndex++].end = p;
-                            
-                        }
-                        p++;
-                        inOperand = false;
-                    }
-                    else if (IsSingleOperator(*p) || *p == '(' || *p == ')') {
-                        if (inOperand) {
-                            if (operandIndex == operandCount) { // out of bounds should never happend
-                                ReportError("something is very wrong");
-                            } else
-                                operands[operandIndex++].end = p;
-                            
-                        }
-                        inOperand = false;
-                    }
-                    else if (!inOperand) {
-                        operands[operandIndex].start = p;
-                        inOperand = true;
-                    }
-                }
-            }
-            // catch the last operand if any
-            if (inOperand) {
-                if (operandIndex == operandCount) { // out of bounds should never happend
-                    ReportError("something is very wrong");
-                } else {
-                    operands[operandIndex].end = p;
-                }
-            }
-        }
-
-        bool Expressions::OperandIsVariable(const ZeroCopyString& operand) {
-            const char* p = operand.start;
-            const char* const end = operand.end;
+        bool Expressions::OperandIsVariable(const Token& operandToken) {
+            const char* p = operandToken.start;
+            const char* const end = operandToken.end;
             while (p < end) {
                 if (isdigit(*p) == false) return true;
                 p++;
@@ -182,9 +138,9 @@ namespace HAL_JSON {
             return false;
         }
 
-        const char* Expressions::ValidOperandVariableName(const ZeroCopyString& operand) {
-            const char* p = operand.start;
-            const char* const end = operand.end;
+        const char* Expressions::ValidOperandVariableName(const Token& operandToken) {
+            const char* p = operandToken.start;
+            const char* const end = operandToken.end;
             while (p < end) {
                 if (IsValidOperandChar(*p) == false) {
                     return p;
@@ -193,114 +149,140 @@ namespace HAL_JSON {
             }
             return nullptr;
         }
-        
+
         bool Expressions::ValidateExpression(Tokens& tokens) {
-            int operatorCount, operandCount, leftParenthesisCount ;
+            int operatorCount, operandCount, leftParenthesisCount;
             bool anyError = false;
 
-            anyError = (false == CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount));
-            // allways print debug info
-            ReportInfo("operatorCount:" + std::to_string(operatorCount) + ", operandCount:" + std::to_string(operandCount) + ", leftParenthesisCount :" + std::to_string(leftParenthesisCount));
-            // early return as if this happens then there is no point of continuing
-            if (anyError) return false; 
+            anyError = !CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount);
 
-            ZeroCopyString* operands = new ZeroCopyString[operandCount];
+            ReportInfo("operatorCount:" + std::to_string(operatorCount) +
+                    ", operandCount:" + std::to_string(operandCount) +
+                    ", leftParenthesisCount:" + std::to_string(leftParenthesisCount));
 
-            GetOperands(tokens, operands, operandCount);
+            if (anyError) return false;
+
+            int operandIndex = 0;
+            bool inOperand = false;
+            const char* p = nullptr;
+            const char* operandStart = nullptr;
+            const char* operandEnd = nullptr;
+
+            for (int cti = 0; cti < tokens.count; ++cti) {
+                Token& token = tokens.items[cti];
+                for (p = token.start; p < token.end; ++p) {
+                    if (IsDoubleOperator(p)) {
+                        if (inOperand) {
+                            operandEnd = p;
+                            Token operand(operandStart, operandEnd);
+                            operand.line = token.line;
+                            operand.column = token.column + (operandStart-token.start);
+                            ValidateOperand(operand, anyError);
+                            ++operandIndex;
+                            inOperand = false;
+                        }
+                        ++p; // Skip second char of double op
+                    } else if (IsSingleOperator(*p) || *p == '(' || *p == ')') {
+                        if (inOperand) {
+                            operandEnd = p;
+                            Token operand(operandStart, operandEnd);
+                            operand.line = token.line;
+                            operand.column = token.column + (operandStart-token.start);
+                            ValidateOperand(operand, anyError);
+                            ++operandIndex;
+                            inOperand = false;
+                        }
+                    } else if (!inOperand) {
+                        operandStart = p;
+                        inOperand = true;
+                    }
+                }
+                if (inOperand) { // this was outside of the last loop
+                    operandEnd = p;
+                    Token operand(operandStart, operandEnd);
+                    operand.line = token.line;
+                    operand.column = token.column + (operandStart-token.start);
+                    ValidateOperand(operand, anyError);
+                    ++operandIndex;
+                    inOperand = false;
+                }
+            }
+            return !anyError;
+        }
+
+        void Expressions::ValidateOperand(const Token& operandToken, bool& anyError) {
+            //bool operandIsVariable = OperandIsVariable(operandToken);
 #ifdef HAL_JSON_RULES_EXPRESSIONS_PARSER_SHOW_DEBUG
-            // just print debug info
-            for (int i=0;i<operandCount;i++) {
-                ZeroCopyString operand = operands[i]; // create 'copy'
-                std::string msg;
-                if (OperandIsVariable(operand)) {
-                    msg = "Variable - Name: ";
-                    ZeroCopyString funcName = operand;
-                    operand = funcName.SplitOffHead('#');
-                    msg += operand.ToString();
-                    if (funcName.Length() != 0) {
-                        msg += ", funcName: ";
-                        msg += funcName.ToString();
-                    }
-                } else {
-                    msg = "Const Value: ";
-                    msg += operand.ToString();
+            std::string msg;
+            if (OperandIsVariable(operandToken)) {
+                msg = "Variable: Name= ";
+                ZeroCopyString funcName = operandToken;
+                ZeroCopyString base = funcName.SplitOffHead('#');
+                msg += base.ToString();
+                if (funcName.Length() != 0) {
+                    msg += ", funcName= ";
+                    msg += funcName.ToString();
                 }
-                ReportInfo(msg);
+            } else {
+                msg = "Const Value: ";
+                msg += operandToken.ToString();
             }
+            ReportTokenInfo(operandToken, msg.c_str());
 #endif
+            // return early if not a operand variable
+            if (OperandIsVariable(operandToken) == false)
+                return;
 
-            // first check if variable names are valid as it could be a good idea
-            // to not allow every character for better looking code
-            bool foundAnyInvalidChar = false;
-            for (int i=0;i<operandCount;i++) {
-                const ZeroCopyString& operand = operands[i];
-
-                if (OperandIsVariable(operand)) {
-                    const char* currChar = ValidOperandVariableName(operand);
-                    if (currChar != nullptr && *currChar != '\0') {
-                        //char invalidChar[2];
-                        //invalidChar[0] = *currChar;
-                        //invalidChar[1] = 0x00;
-                        // don't know yet if it should be warning or error
-                        //ReportError("found invalid character in operand",invalidChar);
-                        std::string msg = "found invalid character <"+std::to_string(*currChar)+"> in operand: ";
-                        msg += operand.ToString();
-                        ReportWarning(msg.c_str());
-                        foundAnyInvalidChar = true;
-                    } 
-                }
+            const char* currChar = ValidOperandVariableName(operandToken);
+            if (currChar /*&& *currChar != '\0'*/) {
+                std::string msg = "found invalid character <" + std::to_string(*currChar) +
+                                "> in operand: " + operandToken.ToString();
+                ReportTokenWarning(operandToken, msg.c_str());
+                // continue validation but note the error
             }
-            if (foundAnyInvalidChar) {
-                // here we can return early or check the rest for additional errors
+
+            ZeroCopyString varOperand = operandToken;
+            ZeroCopyString funcName = varOperand;
+            varOperand = funcName.SplitOffHead('#');
+
+            if (varOperand.Length() > HAL_UID::Size) {
+                std::string msg = varOperand.ToString() + " length > " + std::to_string(HAL_UID::Size);
+                
+                ReportTokenError(operandToken, "Operand name too long: ", msg.c_str());
+                anyError = true;
             }
-            for (int i=0;i<operandCount;i++) {
-                const ZeroCopyString& operand = operands[i];
 
-                if (OperandIsVariable(operand)) {
-                    ZeroCopyString varOperand = operand;
-                    // here we need to check if the variablename is a (logical/physical/virtual) device
-                    ZeroCopyString funcName = varOperand;
-                    varOperand = funcName.SplitOffHead('#');
-                    if (varOperand.Length() > HAL_UID::Size) {
-                        std::string msg = varOperand.ToString() + " length > " + std::to_string(HAL_UID::Size);
-                        ReportError("Operand name too long",msg.c_str());
-                        anyError = true;
-                    }
-                    UIDPath path(varOperand);
-
-                    // 1. check if the device exists
-                    Device* device = Manager::findDevice(path);
-                    if (device == nullptr) {
-                        std::string deviceName = varOperand.ToString();
-                        ReportError("could not find the device:", deviceName.c_str());
-                        anyError = true;
-                        continue;
-                    }
-                    // 2a. if funcname we verify both that the device supports read and that the funcname is valid
-                    if (funcName.Length() != 0) {
-                        HALValue halValue;
-                        HALReadValueByCmd readValueByCmd(halValue, funcName);
-                        if (device->read(readValueByCmd) == false) {
-                            std::string funcNameStr = funcName.ToString();
-                            ReportError("could not read the device by cmd:", funcNameStr.c_str());
-                            anyError = true;
-                            continue;
-                        }
-                    }
-                    // 2b. here we only check if the device can be read
-                    else {
-                        HALValue halValue;
-                        if (device->read(halValue) == false) {
-                            ReportError("this device do not support read");
-                            anyError = true;
-                            continue;
-                        }
+            UIDPath path(varOperand);
+            Device* device = Manager::findDevice(path);
+            if (!device) {
+                std::string deviceName = varOperand.ToString();
+                ReportTokenError(operandToken, "could not find the device: ", deviceName.c_str());
+                anyError = true;
+                return;
+            }
+            HALDeviceOperationResult readResult = HALDeviceOperationResult::UnsupportedOperation;
+            if (funcName.Length() != 0) {
+                HALValue halValue;
+                HALReadValueByCmd readValueByCmd(halValue, funcName);
+                readResult = device->read(readValueByCmd);
+                if (readResult != HALDeviceOperationResult::Success) {
+                    anyError = true;
+                    if (readResult == HALDeviceOperationResult::UnsupportedCommand) {
+                        std::string funcNameStr = ": " + funcName.ToString();
+                        ReportTokenError(operandToken, ToString(readResult), funcNameStr.c_str());
+                    } else {
+                        ReportTokenError(operandToken, ToString(readResult), ": read");
                     }
                     
                 }
+            } else {
+                HALValue halValue;
+                readResult = device->read(halValue);
+                if (readResult != HALDeviceOperationResult::Success) {
+                    ReportTokenError(operandToken, ToString(readResult), ": read");
+                    anyError = true;
+                }
             }
-            delete[] operands;
-            return anyError == false;
         }
     }
 }

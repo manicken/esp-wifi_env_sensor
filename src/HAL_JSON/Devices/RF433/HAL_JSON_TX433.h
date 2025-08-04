@@ -27,7 +27,7 @@ namespace HAL_JSON {
         TX433(TX433&) = delete;
         ~TX433();
         Device* findDevice(UIDPath& path);
-        bool write(const HALWriteStringRequestValue &val);
+        HALDeviceOperationResult write(const HALWriteStringRequestValue &val);
 
         String ToString() override;
     };

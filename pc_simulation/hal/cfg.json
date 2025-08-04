@@ -39,7 +39,7 @@
       {"uid":"D1","model":"lc","anid":"hello"}
     ]
   },
-  {"uid":"REGO600","type":"REGO600","rxpin":34,"txpin":23,"refreshtimesec":5,"items": [
+  {"uid":"hp","type":"REGO600","rxpin":34,"txpin":23,"refreshtimesec":5,"items": [
 	  {"uid":"GT1","opcode":"02","addr":"0209","valuetype":"float"},
 	  {"uid":"GT2","opcode":"02","addr":"020A","valuetype":"float"},
 	  {"uid":"GT3","opcode":"02","addr":"020B","valuetype":"float"},
@@ -49,5 +49,6 @@
 	  {"uid":"GT9","opcode":"02","addr":"0210","valuetype":"float"},
 	  {"uid":"GT10","opcode":"02","addr":"0211","valuetype":"float"},
 	  {"uid":"GT11","opcode":"02","addr":"0212","valuetype":"float"}
-  ]}
+  ]},
+  {"uid":"pawcfg","type":"PWM_AW_CFG","freq":5000,"res":8,"note":"only to test write only device"}
 ]

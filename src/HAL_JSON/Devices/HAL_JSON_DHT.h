@@ -45,9 +45,9 @@ namespace HAL_JSON {
         ReadToHALValue_FuncType GetReadToHALValue_Function(const char* funcName) override;
         
 
-        bool read(HALValue &val) override;
-        bool read(const HALReadValueByCmd &val) override;
-        bool read(const HALReadStringRequestValue &val) override;
+        HALDeviceOperationResult read(HALValue &val) override;
+        HALDeviceOperationResult read(const HALReadValueByCmd &val) override;
+        HALDeviceOperationResult read(const HALReadStringRequestValue &val) override;
     };
 
 }

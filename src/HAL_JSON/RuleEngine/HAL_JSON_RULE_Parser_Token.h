@@ -78,8 +78,10 @@ namespace HAL_JSON {
             std::string ToString();
         };
 
-        void ReportTokenInfo(const char* msg, const Token& t);
-        void ReportTokenError(const char* msg, const Token& t);
-        void ReportTokenWarning(const char* msg, const Token& t);
+        void ReportTokenInfo(const Token& t, const char* msg, const char* param = nullptr);
+        void ReportTokenError(const Token& t, const char* msg, const char* param = nullptr);
+        void ReportTokenWarning(const Token& t, const char* msg, const char* param = nullptr);
+        
+        std::string PrintTokens(Tokens& tokens, bool sub = false);
     }
 }

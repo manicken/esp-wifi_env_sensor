@@ -144,43 +144,6 @@ namespace HAL_JSON {
             return true;
         }
 
-        std::string Parser::PrintTokens(Tokens& _tokens, bool sub) {
-            Token* tokens = _tokens.items;
-            int tokenCount = _tokens.count;
-            std::string msg;
-            for (int i=0;i<tokenCount;i++) {
-                Token& tok = tokens[i];
-                if (tok.Merged() && !sub) continue;
-                if (IsType(tok, "and")) continue;
-                if (IsType(tok, ";")) continue;
-                std::string msgLine;
-                if (sub) msgLine += "    ";
-                //char buffer[64];
-                //snprintf(buffer, sizeof(buffer), "addr: %p", (void*)&tokens[i]);
-                //std::string memaddr = buffer;
-                msgLine +=
-                    //memaddr + "  " + 
-                    "Token(" + std::to_string(i) + "): " +
-                    "(line:" + std::to_string(tok.line) + 
-                    ", col:" + std::to_string(tok.column) + 
-                    ", itemCount:" + std::to_string(tok.itemsInBlock) + 
-                    ", merged:" + std::to_string(tok.merged) + 
-                    ", subTokenCount:" + std::to_string(tok.subTokenCount) + 
-                    ")";
-                if (!sub && tok.subTokenCount > 0) {
-                    msgLine += "\n  subTokens:\n";
-                    Tokens tokens;
-                    tokens.items = &tok;
-                    tokens.count = tok.subTokenCount;
-                    msgLine += PrintTokens(tokens, true);
-                } else {
-                    msgLine += "\t" + tok.ToString();// std::string(tok.text);
-                }
-                msg += msgLine + "\n";
-            }
-            return msg;
-        }
-
         int Parser::Count_IfTokens(Tokens& _tokens) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
@@ -227,7 +190,7 @@ namespace HAL_JSON {
                 }
                 else if (IsType(token, "on")) {
                     if (ifLevel != 0 || onLevel != 0) {
-                        ReportTokenError("'on' block cannot be nested", token);
+                        ReportTokenError(token, "'on' block cannot be nested");
                         otherErrors = true;
                     } else {
                         lastOn = &token;
@@ -238,18 +201,18 @@ namespace HAL_JSON {
                 }
                 else if (IsType(token, "do") || IsType(token, "then")) {
                     if (!expecting_do_then) {
-                        ReportTokenError("'do'/'then' without preceding 'if' or 'on'", token);
+                        ReportTokenError(token, "'do'/'then' without preceding 'if' or 'on'");
                         otherErrors = true;
                     }
                     else if (lastControlIndex + 1 == i) {
-                        ReportTokenError("Missing condition between 'if/on/elseif' and 'then/do'", token);
+                        ReportTokenError(token, "Missing condition between 'if/on/elseif' and 'then/do'");
                         otherErrors = true;
                     }
                     expecting_do_then = false;
                 }
                 else if (IsType(token, "endif")) {
                     if (ifLevel == 0) {
-                        ReportTokenError("'endif' without matching 'if'", token);
+                        ReportTokenError(token, "'endif' without matching 'if'");
                         otherErrors = true;
                     }
                     else {
@@ -259,36 +222,36 @@ namespace HAL_JSON {
                     }
 
                     if (expecting_do_then) {
-                        ReportTokenError("missing 'do' after last 'if'", token);
+                        ReportTokenError(token, "missing 'do' after last 'if'");
                         otherErrors = true;
                     }
                 }
                 else if (IsType(token, "endon")) {
                     if (onLevel == 0) {
-                        ReportTokenError("'endon' without matching 'on'", token);
+                        ReportTokenError(token, "'endon' without matching 'on'");
                         otherErrors = true;
                     } else
                         onLevel--;
 
                     if (expecting_do_then) {
-                        ReportTokenError("missing 'do' after last 'on'", token);
+                        ReportTokenError(token, "missing 'do' after last 'on'");
                         otherErrors = true;
                     }
                 } else if (onLevel == 0 && ifLevel == 0) {
-                    ReportTokenError("tokens cannot be outside root blocks", token);
+                    ReportTokenError(token, "tokens cannot be outside root blocks");
                     otherErrors = true;
                 }
             }
 
             if (ifLevel != 0) {
                 for (int i=0;i<ifStackIndex;i++) { // only print last 'errors'
-                    ReportTokenError("Unmatched 'if' block", *ifStack[i]);
+                    ReportTokenError(*ifStack[i], "Unmatched 'if' block");
                 }
                 
             }
             if (onLevel != 0) {
                 if (lastOn)
-                    ReportTokenError("Unmatched 'on' block: ", *lastOn);
+                    ReportTokenError(*lastOn, "Unmatched 'on' block: ");
                 else
                     ReportError("Unmatched 'on' block: <null>");
             }
@@ -322,6 +285,19 @@ namespace HAL_JSON {
 
                 if (conditionTokenCount > 1) { // mergin need to be done
                     i++;
+                    for (int j=i;j<i+conditionTokenCount;j++) {
+                        if (tokens[j].EqualsIC("and")) {
+                            char* str = (char*)tokens[j].start; // need to change this text
+                            str[0] = '&';
+                            str[1] = '&';
+                            str[2] = '\0';
+                            tokens[j].end--;
+                        } else if (tokens[j].EqualsIC("or")) {
+                            char* str = (char*)tokens[j].start; // need to change this text
+                            str[0] = '|';
+                            str[1] = '|';
+                        }
+                    }
                     tokens[i].InitSubTokens(conditionTokenCount);
                     i += conditionTokenCount; // skip all
                 }
@@ -449,7 +425,7 @@ namespace HAL_JSON {
                 Token& token = tokens[i];
                 if ((IsType(token, "then") || IsType(token, "else")) == false) continue;
                 if (token.itemsInBlock == 0) {
-                    ReportTokenError("EnsureActionBlocksContainItems - empty action(s) block detected", token);
+                    ReportTokenError(token, "EnsureActionBlocksContainItems - empty action(s) block detected");
                     anyError = true;
                 }
             }
@@ -512,11 +488,11 @@ namespace HAL_JSON {
             ReportInfo("[OK]\n");
             
             ReportInfo("\nCountBlockItems: ");
-            CountBlockItems(_tokens);
+            CountBlockItems(_tokens); // sets the metadata itemsInBlock
             ReportInfo("[OK]\n");
             
             ReportInfo("\nEnsureActionBlocksContainItems: ");
-            if (EnsureActionBlocksContainItems(_tokens) == false) {
+            if (EnsureActionBlocksContainItems(_tokens) == false) { // uses the metadata itemsInBlock to determine if there are invalid
                 ReportInfo("[FAIL]\n");
                 return false;
             }

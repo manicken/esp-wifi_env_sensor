@@ -37,7 +37,7 @@ namespace HAL_JSON {
         Device* findDevice(UIDPath& path) override;
         void requestTemperatures();
         void readAll();
-        bool read(const HALReadStringRequestValue& val) override;
+        HALDeviceOperationResult read(const HALReadStringRequestValue& val) override;
 
         std::string getAllDevices(bool printTemp = false, bool onlyNewDevices = false);
         String ToString() override;

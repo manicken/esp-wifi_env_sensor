@@ -54,29 +54,72 @@ namespace HAL_JSON {
             return str;
         }
 
-        void ReportTokenInfo(const char* msg, const Token& t) {
+        void ReportTokenInfo(const Token& t, const char* msg, const char* param) {
             std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
+            if (param != nullptr)
+                message += param;
     #ifdef _WIN32
             std::cout << "Info " << message << std::endl;
     #else
             //GlobalLogger.Info(F("Token:"), message.c_str());
     #endif
         }
-        void ReportTokenError(const char* msg, const Token& t) {
+        void ReportTokenError(const Token& t, const char* msg, const char* param) {
             std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
+            if (param != nullptr)
+                message += param;
     #ifdef _WIN32
             std::cerr << "Error " << message << std::endl;
     #else
             GlobalLogger.Error(F("Token:"), message.c_str());
     #endif
         }
-        void ReportTokenWarning(const char* msg, const Token& t) {
+        void ReportTokenWarning(const Token& t, const char* msg, const char* param) {
             std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
+            if (param != nullptr)
+                message += param;
     #ifdef _WIN32
             std::cout << "Warning " << message << std::endl;
     #else
             GlobalLogger.Warn(F("Token:"), message.c_str());
     #endif
+        }
+
+        std::string PrintTokens(Tokens& _tokens, bool sub) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
+            std::string msg;
+            for (int i=0;i<tokenCount;i++) {
+                Token& tok = tokens[i];
+                if (tok.Merged() && !sub) continue;
+                //if (tok.EqualsIC("and")) continue;
+                //if (tok.EqualsIC(";")) continue;
+                std::string msgLine;
+                if (sub) msgLine += "    ";
+                //char buffer[64];
+                //snprintf(buffer, sizeof(buffer), "addr: %p", (void*)&tokens[i]);
+                //std::string memaddr = buffer;
+                msgLine +=
+                    //memaddr + "  " + 
+                    "Token(" + std::to_string(i) + "): " +
+                    "(line:" + std::to_string(tok.line) + 
+                    ", col:" + std::to_string(tok.column) + 
+                    ", itemCount:" + std::to_string(tok.itemsInBlock) + 
+                    ", merged:" + std::to_string(tok.merged) + 
+                    ", subTokenCount:" + std::to_string(tok.subTokenCount) + 
+                    ")";
+                if (!sub && tok.subTokenCount > 0) {
+                    msgLine += "\n  subTokens:\n";
+                    Tokens tokens;
+                    tokens.items = &tok;
+                    tokens.count = tok.subTokenCount;
+                    msgLine += PrintTokens(tokens, true);
+                } else {
+                    msgLine += " >>> " + tok.ToString() + " <<< size: " + std::to_string(tok.Length());// std::string(tok.text);
+                }
+                msg += msgLine + "\n";
+            }
+            return msg;
         }
     }
 }

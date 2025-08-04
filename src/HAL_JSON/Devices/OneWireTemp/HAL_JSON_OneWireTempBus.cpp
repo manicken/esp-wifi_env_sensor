@@ -119,26 +119,26 @@ namespace HAL_JSON {
         return nullptr;
     }
 
-    bool OneWireTempBus::read(const HALReadStringRequestValue& val) {
+    HALDeviceOperationResult OneWireTempBus::read(const HALReadStringRequestValue& val) {
         if (val.cmd == "getAllNewDevices") { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
             val.out_value += getAllDevices(false, true);
-            return true;
+            return HALDeviceOperationResult::Success;
         }
         else if (val.cmd == "getAllNewDevicesWithTemp") { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
             val.out_value += getAllDevices(true, true);
-            return true;
+            return HALDeviceOperationResult::Success;
         }
         else if (val.cmd == "getAllDevices") { // (as json) return a complete list of all devices found for all busses
             val.out_value += getAllDevices(false, false);
-            return true;
+            return HALDeviceOperationResult::Success;
         }
         else if (val.cmd == "getAllTemperatures") { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
             val.out_value += getAllDevices(true, false);
-            return true;
+            return HALDeviceOperationResult::Success;
         }
         std::string stdStrCmd = val.cmd.ToString();
         GlobalLogger.Warn(F("OneWireTempBus::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
-        return false;
+        return HALDeviceOperationResult::UnsupportedCommand;
     }
 
     bool OneWireTempBus::haveDeviceWithRomID(OneWireAddress addr) {

@@ -45,23 +45,23 @@ namespace HAL_JSON {
         return true;
     }
 
-    bool TX433unit::write(const HALValue &val) {
+    HALDeviceOperationResult TX433unit::write(const HALValue &val) {
         RF433::init(pin); // ensure that the correct pin is used and that it's set to a output
         if (model == TX433_MODEL::FixedCode) {
             if (fixedState == false)
                 RF433::SendTo433_FC(staticData, val.asUInt());
             else
                 RF433::SendTo433_FC(staticData);
-            return true;
+            return HALDeviceOperationResult::Success;
         }
         else if (model == TX433_MODEL::LearningCode) {
             if (fixedState == false)
                 RF433::SendTo433_LC(staticData, val.asUInt());
             else
                 RF433::SendTo433_LC(staticData);
-            return true;
+            return HALDeviceOperationResult::Success;
         }
-        return false; // this will never happend
+        return HALDeviceOperationResult::ExecutionFailed; // this will never happend
     }
 
     String TX433unit::ToString() {
@@ -78,7 +78,7 @@ namespace HAL_JSON {
         
         ret += "\",";
         ret += "\"data\":\"";
-        ret += String(staticData, 16);
+        ret += Convert::toHex(staticData).c_str();
         ret += "\"";
         return ret;
     }

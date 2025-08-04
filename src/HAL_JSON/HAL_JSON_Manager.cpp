@@ -145,80 +145,82 @@ namespace HAL_JSON {
     }
 
     Device* Manager::findDevice(UIDPath& path) {
-        if (path.empty()) return nullptr;
-
-        if (!devices || deviceCount == 0) return nullptr;
+        if (path.empty()) {
+            GlobalLogger.Error(F("findDevice failed: empty path"));
+            return nullptr;
+        }
+        if (!devices || deviceCount == 0) {
+            GlobalLogger.Error(F("findDevice failed: no devices"));
+            return nullptr;
+        }
 
         HAL_UID rootUID = path.resetAndGetFirst();
+
+        Device* indirectMatch = nullptr;
 
         for (int i=0;i<deviceCount;i++) {
             Device* device = devices[i];
             if (device == nullptr) continue;
-#if defined(HAL_JSON_USE_EFFICIENT_FIND)
+
             if (device->uid == rootUID) {
                 //Serial.println(F("device->uid == rootUID"));
 				if ((device->uidMaxLength == 1) || (path.count() == 1))
-					return device;
+					return device; // direct match allways return valid device
 				else
 				{
-					/*Device* dev = device->findDevice(path);
-					if (dev != nullptr) return dev;
-                    rootUID = path.resetAndGetFirst();*/
-                    // if here then the device will not be found as then
-                    // here the root uid have a match then there is no more devices to match
-                    // so the following should then be used
-                    return device->findDevice(path);
+					// If a device matched the rootUID but couldn't directly resolve the full path,
+                    // attempt an indirect lookup via the matched device.
+                    indirectMatch = device->findDevice(path); // indirect match can return nullptr
+                    break; // No need to continue — rootUID match is unique
 				}
-					
 			}
             else if (device->uid == 0) { // this will only happen on devices where uidMaxLenght>1
                 //Serial.println(F("device->uid == 0"));
 				Device* dev = device->findDevice(path);
-				if (dev != nullptr) return dev;
+				if (dev != nullptr) return dev; // match allways return valid device
                 rootUID = path.resetAndGetFirst();
 			}
-            
-#else
-            Device* dev = devices[i]->findDevice(path);
-            if (dev != nullptr) return dev;
-#endif
         }
+        if (indirectMatch != nullptr) {
+            return indirectMatch;
+        }
+        GlobalLogger.Error(F("could not find device: "),path.ToString().c_str());
         return nullptr;
     }
 
-    bool Manager::read(const HALReadRequest &req) {
+    HALDeviceOperationResult Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.out_value);
     }
-    bool Manager::write(const HALWriteRequest &req) {
+    HALDeviceOperationResult Manager::write(const HALWriteRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.value);
     }
-    bool Manager::read(const HALReadStringRequest &req) {
+    HALDeviceOperationResult Manager::read(const HALReadStringRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.value);
     }
-    bool Manager::write(const HALWriteStringRequest &req) {
+    HALDeviceOperationResult Manager::write(const HALWriteStringRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.value);
     }
-    bool Manager::read(const HALReadValueByCmdReq &req) {
+    HALDeviceOperationResult Manager::read(const HALReadValueByCmdReq &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.valByCmd);
     }
-    bool Manager::write(const HALWriteValueByCmdReq &req) {
+    HALDeviceOperationResult Manager::write(const HALWriteValueByCmdReq &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { GlobalLogger.Error(F("could not find device: "),req.path.ToString().c_str()); return false; }
+        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.valByCmd);
     }
@@ -299,7 +301,11 @@ namespace HAL_JSON {
             }
         }
     }
-
+    /** 
+     * the following is not intended to be used  
+     * it's just to check that everything is correct
+     * in the future it could be a real TEST function
+    */
     void Manager::TEST() {
         std::string result;
         ZeroCopyString cmd("getDevices");
@@ -307,7 +313,7 @@ namespace HAL_JSON {
         HALReadStringRequestValue strVal = {cmd, result};
         UIDPath path("1WTG");
         HALReadStringRequest req{path, strVal};
-        if (read(req)) {
+        if (read(req) == HALDeviceOperationResult::Success) {
 
             Serial.println(result.c_str());
         }
@@ -315,7 +321,7 @@ namespace HAL_JSON {
         HALValue value;
         UIDPath path2("1WTG:D2");
         HALReadRequest req2(path2, value);
-        if (read(req2)) {
+        if (read(req2) == HALDeviceOperationResult::Success) {
             Serial.println(value.asFloat());
         }
     }
