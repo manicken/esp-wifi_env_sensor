@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "../../../src/Support/ZeroCopyString.h"
+#include "../HAL_JSON_ZeroCopyString.h"
 #include "../../../src/Support/Logger.h"
 #include "../HAL_JSON_UID_Path.h"
 #include "../HAL_JSON_Manager.h"

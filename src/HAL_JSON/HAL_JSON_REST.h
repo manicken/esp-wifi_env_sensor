@@ -18,7 +18,7 @@
 
 //#include "HAL_JSON_Device_GlobalDefines.h"
 
-#include "../Support/ZeroCopyString.h"
+#include "HAL_JSON_ZeroCopyString.h"
 #include "HAL_JSON_Manager.h"
 #include "HAL_JSON_CommandExecutor.h"
 

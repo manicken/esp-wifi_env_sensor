@@ -17,7 +17,7 @@
 #endif
     #include "../src/Support/ConvertHelper.h"
     #include "../src/Support/CharArrayHelpers.h"
-    #include "../src/Support/ZeroCopyString.h"
+    #include "../src/HAL_JSON/HAL_JSON_ZeroCopyString.h"
     #include "RPN_tools.h"
     #include <ArduinoJson.h>
     #include "commandLoop.h"

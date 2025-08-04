@@ -8,7 +8,7 @@
 
 #include "../Support/Logger.h"
 #include "../Support/ConvertHelper.h"
-#include "../Support/ZeroCopyString.h"
+#include "HAL_JSON_ZeroCopyString.h"
 
 #include "HAL_JSON_Device_GlobalDefines.h"
 

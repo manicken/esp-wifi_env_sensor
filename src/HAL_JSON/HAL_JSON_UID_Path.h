@@ -8,7 +8,7 @@
 #include <Arduino.h> // Needed for String class
 
 #include "../Support/CharArrayHelpers.h"
-#include "../Support/ZeroCopyString.h"
+#include "HAL_JSON_ZeroCopyString.h"
 #include "../Support/ConvertHelper.h"
 #include "../Support/Logger.h"
 #include "HAL_JSON_UID.h"

@@ -16,7 +16,7 @@
 #include "HAL_JSON_RULE_Engine.h"
 #include "../../Support/ConvertHelper.h"
 #include "../../Support/CharArrayHelpers.h"
-#include "../../Support/ZeroCopyString.h"
+#include "../HAL_JSON_ZeroCopyString.h"
 
 namespace HAL_JSON {
     namespace Rules {

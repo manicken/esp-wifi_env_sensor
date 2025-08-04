@@ -478,7 +478,7 @@ namespace HAL_JSON {
                 } else {
                     expressionTokens.count = 1;
                 }
-                // first check if there is any unsupported AssignKeywords
+                // first check if there is any currently unsupported AssignKeywords
                 const char* match = nullptr;
                 const char* matchKeyword = nullptr;
 
@@ -502,7 +502,36 @@ namespace HAL_JSON {
                     } while (match);
                 }
                 
+                // search for allowed assignment keywords and make sure that there is only one found
+                // the others will be reported
+                int count = 0;
+                for (int j = 0; j < expressionTokens.count; ++j) {
+                    const Token& token = expressionTokens.items[j];
+                    const char* searchStart = token.start;
+                    //std::cout << "searching:" << token.ToString() << "\n";
+                    do {
+                        match = token.FindFirstMatchingString(actionAssignKeywords, searchStart, &matchKeyword);
+                        if (match) {
+                            count++;
+                            if (count >= 2) {
+                                anyError = true;
+                                Token reportToken;
+                                reportToken.line = token.line;
+                                reportToken.column = token.column + (match - token.start);
+                                ReportTokenError(reportToken, "Found additional assignment keyword: ", matchKeyword);
+                            }
+                            // Advance search start
+                            searchStart = match + std::strlen(matchKeyword);
 
+                            if (searchStart >= token.end) break;
+                        }
+                    } while (match);
+                }
+                // TODO
+                // need to check if we can safely split out a leftside var
+                // and then we should first make sure that it allows write
+                // and then we can take out the right side and use ValidateExpression
+                // on that
 
                 // use the following to validate the right side of the expression
                 //if (Expressions::ValidateExpression(conditions, ExpressionContext::IfCondition) == false) anyError = true;
