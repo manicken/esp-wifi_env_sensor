@@ -30,7 +30,9 @@
     }
 
     int main(int argc, char* argv[]) {
-        
+        int test = 5;
+        int test2 = 0-1 * test;
+        test2 *= 1;
         std::cout << "********************************************************************" << std::endl;
         std::cout << "* WALHALLA rule development simulator - Running on Windows (MinGW) *" << std::endl;
         std::cout << "********************************************************************" << std::endl;

@@ -9,6 +9,7 @@ namespace HAL_JSON {
         }
 
         void Token::Set(const char* _text, int _line, int _column) {
+            isAction = false;
             merged = false;
             subTokenCount = 0;
             start = _text;
@@ -105,7 +106,8 @@ namespace HAL_JSON {
                     "(line:" + std::to_string(tok.line) + 
                     ", col:" + std::to_string(tok.column) + 
                     ", itemCount:" + std::to_string(tok.itemsInBlock) + 
-                    ", merged:" + std::to_string(tok.merged) + 
+                    ", merged:" + (tok.merged?"true":"false") + 
+                    ", isAction:" + (tok.isAction?"true":"false") + 
                     ", subTokenCount:" + std::to_string(tok.subTokenCount) + 
                     ")";
                 if (!sub && tok.subTokenCount > 0) {
@@ -115,7 +117,7 @@ namespace HAL_JSON {
                     tokens.count = tok.subTokenCount;
                     msgLine += PrintTokens(tokens, true);
                 } else {
-                    msgLine += " >>> " + tok.ToString() + " <<< size: " + std::to_string(tok.Length());// std::string(tok.text);
+                    msgLine += " >>> " + tok.ToString() + " <<<";// size: " + std::to_string(tok.Length());// std::string(tok.text);
                 }
                 msg += msgLine + "\n";
             }

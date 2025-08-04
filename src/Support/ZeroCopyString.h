@@ -43,6 +43,26 @@ namespace HAL_JSON {
         const char* FindChar(char ch) const;
         /** Returns pointer to first occurrence of ch, or nullptr from the start pointer given*/
         const char* FindChar(char ch, const char* start) const;
+        /** Returns pointer to first occurrence of str, or nullptr from the start pointer given*/
+        const char* FindString(const char* str, const char* start = nullptr) const;
+        /**
+         * @brief Searches for the first occurrence of any string from the given candidate list 
+         *        within this ZeroCopyString, optionally starting from the specified position.
+         *
+         * @param candidates         Null-terminated array of C-strings to search for.
+         * @param start              Optional starting position for the search. If nullptr, search begins at the start of the string.
+         * @param matchedCandidate   Optional output pointer to receive the candidate string that was matched.
+         *                           Set to nullptr if no match is found.
+         *
+         * @return Pointer to the first match found within the string, or nullptr if none of the candidates match.
+         *
+         * @note This function preserves the order of the candidate list and returns the first match found.
+         *       Useful for locating specific operators or keywords and identifying which one was matched.
+         */
+        const char* FindAnyString(const char* const* candidates, const char* start, const char** matchedCandidate) const;
+        const char* FindFirstMatchingString(const char* const* candidates, const char* _start, const char** matchedCandidate) const;
+        uint32_t CountString(const char* str) const;
+        uint32_t CountAnyString(const char* const* candidates) const;
         /** Returns a new ZeroCopyString from the given pointers */
         ZeroCopyString substring(const char* sub_start, const char* sub_end) const;
         /** Counts how many times ch appears in the range */
@@ -72,7 +92,7 @@ namespace HAL_JSON {
         bool Equals(const char* cstr) const;
         bool EqualsIC(const ZeroCopyString& other) const;
         bool EqualsIC(const char* cstr) const;
-        bool EqualsICAny(const char* const* candidates);
+        bool EqualsICAny(const char* const* candidates) const;
 
         bool ValidNumber() const;
         bool ConvertTo_uint32(uint32_t& outValue) const;

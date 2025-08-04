@@ -18,6 +18,10 @@
 
 namespace HAL_JSON {
     namespace Rules {
+        enum class ExpressionContext {
+            IfCondition,
+            Assignment
+        };
         class Expressions {
         private:
             static void ReportError(const char* msg, const char* param = nullptr);
@@ -30,7 +34,7 @@ namespace HAL_JSON {
             static bool IsDoubleOperator(const char* c);
             static bool IsValidOperandChar(char c);
 
-            static bool CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount );
+            static bool CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount, ExpressionContext exprContext);
             //static void GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount);
             static bool OperandIsVariable(const Token& operand);
             /** returns nullptr if no invalid char is found, otherwise it will return the character */
@@ -38,7 +42,7 @@ namespace HAL_JSON {
 
             static void ValidateOperand(const Token& operand, bool& anyError);
         public:
-            static bool ValidateExpression(Tokens& tokens);
+            static bool ValidateExpression(Tokens& tokens, ExpressionContext exprContext);
         };
     }
 }

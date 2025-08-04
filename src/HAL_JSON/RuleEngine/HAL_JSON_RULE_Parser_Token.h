@@ -35,9 +35,11 @@ namespace HAL_JSON {
             int line;
             int column;
             int itemsInBlock;
+            bool isAction;
             /** 
              * Set to true if this token is a subtoken of another token.
              * Used to skip it during post-processing checks.
+             * basically (merged && subTokenCount == 0)
              */
             bool merged;
             Token();
@@ -51,9 +53,10 @@ namespace HAL_JSON {
 
             void Set(const char* text, int line, int column);
             void InitSubTokens(int size);
-            /** this checks if the current token is 
-             * 'merged into'/'belongs to' annother token as a subToken, 
-             * and if it can be ignored by further parsing
+            /** 
+             * return true if this token is a subtoken of another token.
+             * Used to skip it during post-processing checks.
+             * basically (merged && subTokenCount == 0)
              */
             bool Merged();
             ~Token();

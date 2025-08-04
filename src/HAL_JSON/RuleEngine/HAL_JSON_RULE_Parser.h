@@ -63,6 +63,7 @@ namespace HAL_JSON {
             static bool EnsureActionBlocksContainItems(Tokens& tokens);
 
             static bool VerifyConditionBlocks(Tokens& tokens);
+            static bool VerifyActionBlocks(Tokens& tokens);
             static bool ParseRuleSet(char* fileContents,Tokens& tokens);
             
         public:

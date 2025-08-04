@@ -16,6 +16,7 @@ namespace HAL_JSON {
         if (start == nullptr || end == nullptr || end < start ) return 0;
         return end-start;
     }
+
     std::string ZeroCopyString::ToString() const {
         if (!start || !end || end < start) return {};
         return std::string(start, end);
@@ -32,6 +33,62 @@ namespace HAL_JSON {
 
         return static_cast<const char*>(memchr(_start, ch, remaining));
     }
+    const char* ZeroCopyString::FindString(const char* str, const char* _start) const {
+        if (!str || !start || !end || (end <= start)) return nullptr;
+        
+        // Validate _start
+        const char* searchStart = (_start && _start >= start && _start < end) ? _start : start;
+        size_t remaining = end - searchStart;
+
+        size_t needleLen = std::strlen(str);
+        if (needleLen == 0 || needleLen > remaining) return nullptr;
+
+        for (const char* p = searchStart; p <= end - needleLen; ++p) {
+            if (std::strncmp(p, str, needleLen) == 0) {
+                return p;
+            }
+        }
+        return nullptr;
+    }
+    const char* ZeroCopyString::FindAnyString(const char* const* candidates, const char* _start, const char** matchedCandidate) const {
+        if (matchedCandidate) *matchedCandidate = nullptr;
+        const char* earliestMatch = nullptr;
+        const char* earliestKeyword = nullptr;
+  
+        for (int i = 0; candidates[i] != nullptr; ++i) {
+            const char* found = FindString(candidates[i], _start);
+            if (found && (!earliestMatch || found < earliestMatch)) {
+                earliestMatch = found;
+                earliestKeyword = candidates[i];
+            }
+        }
+
+        if (matchedCandidate) *matchedCandidate = earliestKeyword;
+        return earliestMatch;
+    }
+
+    const char* ZeroCopyString::FindFirstMatchingString(const char* const* candidates, const char* _start, const char** matchedCandidate) const {
+        if (!start || !end || (end <= start)) return nullptr;
+        if (matchedCandidate) *matchedCandidate = nullptr;
+
+        const char* searchStart = (_start && _start >= start && _start < end) ? _start : start;
+        size_t maxSearchLen = end - searchStart;
+
+        for (size_t offset = 0; offset < maxSearchLen; ++offset) {
+            const char* pos = searchStart + offset;
+            for (int i = 0; candidates[i] != nullptr; ++i) {
+                size_t candidateLen = std::strlen(candidates[i]);
+                if ((pos + candidateLen) <= end && std::strncmp(pos, candidates[i], candidateLen) == 0) {
+                    if (matchedCandidate) *matchedCandidate = candidates[i];
+                    return pos;
+                }
+            }
+        }
+
+        return nullptr;
+    }
+
+
     ZeroCopyString ZeroCopyString::substring(const char* sub_start, const char* sub_end) const {
         if (!sub_start || !sub_end) {
             // Return empty string or handle error
@@ -45,7 +102,6 @@ namespace HAL_JSON {
         return ZeroCopyString{sub_start, sub_end};
     }
 
-
     uint32_t ZeroCopyString::CountChar(char ch) const {
         if (Length() == 0) return 0;
         uint32_t count = 0;
@@ -57,6 +113,34 @@ namespace HAL_JSON {
         }
         return count;
     }
+
+    uint32_t ZeroCopyString::CountString(const char* str) const {
+        if (!str || !start || !end || (end-start) <= 0) return 0;
+        size_t length = (end-start); // safe to do this here
+
+        size_t needleLen = std::strlen(str);
+        if (needleLen == 0 || needleLen > length) return 0;
+
+        uint32_t count = 0;
+        for (size_t i = 0; i <= length - needleLen;) {
+            if (std::strncmp(&start[i], str, needleLen) == 0) {
+                ++count;
+                i += needleLen; // move past current match
+            } else {
+                ++i;
+            }
+        }
+        return count;
+    }
+
+    uint32_t ZeroCopyString::CountAnyString(const char* const* candidates) const {
+        uint32_t count = 0;
+        for (int i = 0; candidates[i] != nullptr; ++i) {
+            count += CountString(candidates[i]);
+        }
+        return count;
+    }
+
     const uint32_t* ZeroCopyString::GetIndicies(char ch, uint32_t& outCount) const {
         if (Length() == 0) return nullptr;
         outCount = CountChar(ch);
@@ -92,7 +176,6 @@ namespace HAL_JSON {
         return pointers;
     }
 
-    
     ZeroCopyString ZeroCopyString::SplitOffHead(char delimiter) {
         if (!start || start >= end) return ZeroCopyString(nullptr, nullptr);
         
@@ -167,7 +250,7 @@ namespace HAL_JSON {
         }
         return *a == *cstr; // Ensure both strings ended
     }
-    bool ZeroCopyString::EqualsICAny(const char* const* candidates) {
+    bool ZeroCopyString::EqualsICAny(const char* const* candidates) const {
         for (int i = 0; candidates[i] != nullptr; ++i) {
             if (EqualsIC(candidates[i])) {
                 return true;

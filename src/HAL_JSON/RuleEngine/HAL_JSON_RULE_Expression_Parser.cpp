@@ -62,7 +62,7 @@ namespace HAL_JSON {
                 c == '#';
         }
 
-        bool Expressions::CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount ) {
+        bool Expressions::CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount, ExpressionContext exprContext) {
             operatorCount = 0;
             operandCount = 0;
             leftParenthesisCount  = 0;
@@ -75,7 +75,7 @@ namespace HAL_JSON {
                 ReportError("expr. is empty");
                 return false;
             }*/
-            if(IsDoubleOperator(tokens.items[0].start)) { // this only checks the two first characters in the Expression
+            if(IsDoubleOperator(tokens.items[0].start) && exprContext == ExpressionContext::IfCondition) { // this only checks the two first characters in the Expression
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
@@ -90,7 +90,7 @@ namespace HAL_JSON {
 
             for (int cti=0;cti<tokens.count;cti++) { // cti = currTokenIndex
                 for (const char* p = tokens.items[cti].start; p < tokens.items[cti].end; p++) {
-                    if (IsDoubleOperator(p)) {
+                    if (IsDoubleOperator(p) && exprContext == ExpressionContext::IfCondition) {
                         p++;
                         operatorCount++;
                         inOperand = false;
@@ -150,11 +150,11 @@ namespace HAL_JSON {
             return nullptr;
         }
 
-        bool Expressions::ValidateExpression(Tokens& tokens) {
+        bool Expressions::ValidateExpression(Tokens& tokens, ExpressionContext exprContext) {
             int operatorCount, operandCount, leftParenthesisCount;
             bool anyError = false;
 
-            anyError = !CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount);
+            anyError = !CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount, exprContext);
 
             ReportInfo("operatorCount:" + std::to_string(operatorCount) +
                     ", operandCount:" + std::to_string(operandCount) +
@@ -171,7 +171,7 @@ namespace HAL_JSON {
             for (int cti = 0; cti < tokens.count; ++cti) {
                 Token& token = tokens.items[cti];
                 for (p = token.start; p < token.end; ++p) {
-                    if (IsDoubleOperator(p)) {
+                    if (IsDoubleOperator(p)&& exprContext == ExpressionContext::IfCondition) {
                         if (inOperand) {
                             operandEnd = p;
                             Token operand(operandStart, operandEnd);

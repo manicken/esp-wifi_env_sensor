@@ -43,7 +43,7 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
 
     tokens.count = 1;
     tokens.items = &token;
-    bool valid = HAL_JSON::Rules::Expressions::ValidateExpression(tokens);
+    bool valid = HAL_JSON::Rules::Expressions::ValidateExpression(tokens, HAL_JSON::Rules::ExpressionContext::IfCondition);
     if (valid) {
         std::cout << "Parse [OK]\n";
     }

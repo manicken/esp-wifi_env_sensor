@@ -5,6 +5,8 @@ namespace HAL_JSON {
     namespace Rules {
         static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
         static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
+        static const char* actionUnsupportedAssignKeywords[] {"+=", "-=", "*=", "/=", "%=", "&=", "|=", nullptr};
+        static const char* actionAssignKeywords[] {"=", nullptr};
 
         
         
@@ -345,8 +347,10 @@ namespace HAL_JSON {
 
                     if (lineTokenCount > 1) {
                         tokens[j].InitSubTokens(lineTokenCount);
+                        tokens[j].isAction = true;
                         j += lineTokenCount;
                     } else {
+                        tokens[j].isAction = true;
                         j++; // single token, skip merging
                     }
                 }
@@ -451,7 +455,57 @@ namespace HAL_JSON {
                 ReportInfo(conditions.ToString());
                 ReportInfo("\n"); // newline
                 
-                if (Expressions::ValidateExpression(conditions) == false) anyError = true;
+                if (Expressions::ValidateExpression(conditions, ExpressionContext::IfCondition) == false) anyError = true;
+
+            }
+            return anyError == false;
+        }
+
+        bool Parser::VerifyActionBlocks(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
+            bool anyError = false;
+            for (int i = 0; i < tokenCount; ++i) {
+                Token& token = tokens[i];
+                // 'isAction' is set only on the root token of an action (whether single-token or merged multi-token).
+                // Subtokens inside merged tokens do not have 'isAction' set.
+                if (token.isAction == false) continue;
+
+                Tokens expressionTokens;
+                expressionTokens.items = &token;
+                if (token.subTokenCount != 0) {
+                    expressionTokens.count = token.subTokenCount;
+                } else {
+                    expressionTokens.count = 1;
+                }
+                // first check if there is any unsupported AssignKeywords
+                const char* match = nullptr;
+                const char* matchKeyword = nullptr;
+
+                for (int j = 0; j < expressionTokens.count; ++j) {
+                    const Token& token = expressionTokens.items[j];
+                    const char* searchStart = token.start;
+                    //std::cout << "searching:" << token.ToString() << "\n";
+                    do {
+                        match = token.FindFirstMatchingString(actionUnsupportedAssignKeywords, searchStart, &matchKeyword);
+                        if (match) {
+                            anyError = true;
+                            Token reportToken;
+                            reportToken.line = token.line;
+                            reportToken.column = token.column + (match - token.start);
+                            ReportTokenError(reportToken, "Found unsupported assignment keyword: ", matchKeyword);
+                            // Advance search start
+                            searchStart = match + std::strlen(matchKeyword);
+
+                            if (searchStart >= token.end) break;
+                        }
+                    } while (match);
+                }
+                
+
+
+                // use the following to validate the right side of the expression
+                //if (Expressions::ValidateExpression(conditions, ExpressionContext::IfCondition) == false) anyError = true;
 
             }
             return anyError == false;
@@ -505,9 +559,15 @@ namespace HAL_JSON {
 #endif
             ReportInfo(PrintTokens(_tokens) + "\n");
 
-            ReportInfo("\nVerifyConditionBlocks: ");
+            ReportInfo("\nVerifyConditionBlocks: \n");
             if (VerifyConditionBlocks(_tokens) == false) {
-                ReportInfo("[FAIL]\n");
+                ReportInfo("[FAIL @ VerifyConditionBlocks]\n");
+                return false;
+            }
+
+            ReportInfo("\nVerifyActionBlocks: \n");
+            if (VerifyActionBlocks(_tokens) == false) {
+                ReportInfo("[FAIL @ VerifyActionBlocks]\n");
                 return false;
             }
             return true;
