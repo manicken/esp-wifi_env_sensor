@@ -134,6 +134,9 @@ namespace HAL_JSON {
         const char* b = other.start;
         const char* endB = other.end;
         while (a < endA && b < endB) {
+            //const char aLC = (*a >= 'A' && *a < 'Z')?(*a+' '):*a;
+            //const char bLC = (*b >= 'A' && *b < 'Z')?(*b+' '):*b;
+            //if (aLC != bLC) return false;
             if (std::tolower(*a) != std::tolower(*b)) {
                 return false;
             }
@@ -153,6 +156,9 @@ namespace HAL_JSON {
         const char* endA = end;
 
         while (a < endA && *cstr != '\0') {
+            //const char aLC = (*a >= 'A' && *a < 'Z')?(*a+' '):*a;
+            //const char bLC = (*cstr >= 'A' && *cstr < 'Z')?(*cstr+' '):*cstr;
+            //if (aLC != bLC) return false;
             if (std::tolower(*a) != std::tolower(*cstr)) {
                 return false;
             }

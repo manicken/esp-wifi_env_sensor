@@ -106,7 +106,7 @@ namespace HAL_JSON {
         return jsonObj[keyName];
     }
     const char* GetAsConstChar(const JsonVariant& jsonObj, const char* keyName) {
-        return jsonObj[keyName];
+        return jsonObj[keyName].as<const char*>();
     }
     
 

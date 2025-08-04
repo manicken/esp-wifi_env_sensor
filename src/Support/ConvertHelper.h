@@ -28,6 +28,7 @@ namespace Convert
     bool IsValidHexString(const char* str);
 
     std::string toHex(uint8_t value);
+    std::string toHex(uint16_t value);
     std::string toHex(uint32_t value);
     std::string toHex(uint64_t value);
     std::string toBin(uint8_t value);

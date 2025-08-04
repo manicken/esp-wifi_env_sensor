@@ -17,15 +17,16 @@
 #define HAL_JSON_KEYNAME_REGO600_VALUE_TYPE "valuetype"
 
 namespace HAL_JSON {
-
+    
     class REGO600register : public Device {
+        
+    public:
         enum class ValueType {
             FLOAT,
             INT,
             UINT,
             BOOL // will be returned as integer 0 or 1
         };
-    public:
         //uint32_t opcode;  // need to be public for the moment
         //uint32_t address; // need to be public for the moment
         ValueType valueType;
@@ -37,4 +38,14 @@ namespace HAL_JSON {
         HALDeviceOperationResult read(HALValue& val) override;
         String ToString() override;
     };
+
+    inline const char* ToString(REGO600register::ValueType valueType) {
+        switch (valueType) {
+            case REGO600register::ValueType::BOOL: return "bool";
+            case REGO600register::ValueType::FLOAT: return "float";
+            case REGO600register::ValueType::INT: return "int";
+            case REGO600register::ValueType::UINT: return "uint";
+            default: return "Unknown";
+        }
+    }
 }

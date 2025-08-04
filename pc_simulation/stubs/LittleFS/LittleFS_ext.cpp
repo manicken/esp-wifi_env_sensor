@@ -1,10 +1,12 @@
 
 #include "LittleFS_ext.h"
 #include <iostream>
+#include <chrono>
 
 namespace LittleFS_ext {
 
     bool load_from_file(const char* file_name, char** outBuffer, size_t* outSize) {
+        auto start = std::chrono::high_resolution_clock::now();
         
         std::ifstream file(std::string(file_name), std::ios::binary | std::ios::ate);
         if (!file) {
@@ -24,6 +26,11 @@ namespace LittleFS_ext {
         file.read(buffer, *outSize);
         buffer[*outSize] = '\0'; // optional if you need null-terminated text
         *outBuffer = buffer;
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::micro> duration = end - start;
+
+        std::cout << " ***************** File read time: " << duration.count() << " us\n";
         return true;
     }
 }

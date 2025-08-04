@@ -35,11 +35,14 @@ namespace HAL_JSON {
             if (validItems[i] == false) continue;
             const JsonVariant& item = items[i];
             registerItems[index] = new REGO600register(item, nullptr);
-            const char* opcodeStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_REGO600_OPCODE);
-            const char* addressStr = GetAsConstChar(jsonObj, HAL_JSON_KEYNAME_REGO600_ADDRESS);
+            const char* opcodeStr = GetAsConstChar(item, HAL_JSON_KEYNAME_REGO600_OPCODE);
+            const char* addressStr = GetAsConstChar(item, HAL_JSON_KEYNAME_REGO600_ADDRESS);
+
             uint32_t opcode = std::strtoul(opcodeStr, nullptr, 16);
             uint16_t address = std::strtoul(addressStr, nullptr, 16);
-            // here value is passed by ref so that REGO600 driver can access and change the value so REGO600register read function can then get the correct value
+ 
+            // here value is passed by ref so that REGO600 driver can access and change the value,
+            // that makes REGO600register read function can then get the correct value
             requestList[index] = new Drivers::REGO600::Request(opcode, address, registerItems[i]->value); 
             index++;
         }
@@ -120,7 +123,13 @@ namespace HAL_JSON {
                 first = false;
             ret += "{";
             ret += registerItems[i]->ToString();
-            ret += "}";
+            ret += ",\"opcode\":\"";
+            ret += Convert::toHex((uint8_t)requestList[i]->opcode).c_str();
+            ret += "\",\"addr\":\"";
+            ret += Convert::toHex(requestList[i]->address).c_str();
+            ret += "\",\"valuetype\":\"";
+            ret += HAL_JSON::ToString(registerItems[i]->valueType);
+            ret += "\"}";
         }
         ret += "]";
         return ret;

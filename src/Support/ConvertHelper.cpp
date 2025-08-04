@@ -49,6 +49,19 @@ namespace Convert
         return std::string(hexStr);
     }
 
+    std::string toHex(uint16_t value) {
+        char hexStr[5];
+        uint32_t divider = 0x1000;
+        for (int i=0;i<4;i++) {
+            uint32_t nibble = (value/divider)&0xF;
+            hexStr[i] = (nibble >= 10) ? (nibble + ('A'-10)) : (nibble + '0');
+            value %=divider;
+            divider>>=4;
+        }
+        hexStr[4] = 0x00;
+        return std::string(hexStr);
+    }
+
     std::string toHex(uint32_t value) {
         char hexStr[9];
         uint32_t divider = 0x10000000;
