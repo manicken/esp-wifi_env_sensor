@@ -10,7 +10,7 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
     var3 = 0
     
     if (var2 < 5) then
-        |=var4+= -= 0 /=
+        |=var4+= = -= 0 /=
     endif
     
     BIREL_RST=0 // =0 mean that the pre programmed pulse lenght will be used

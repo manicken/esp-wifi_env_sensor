@@ -480,56 +480,49 @@ namespace HAL_JSON {
                 }
                 // first check if there is any currently unsupported AssignKeywords
                 const char* match = nullptr;
-                const char* matchKeyword = nullptr;
+                //const char* matchKeyword = nullptr;
+                const char* firstAssigmentOperator = nullptr;
+                bool foundAdditionalAssigmentOperators = false;
+                bool foundCompundAssignmentOperator = false;
 
                 for (int j = 0; j < expressionTokens.count; ++j) {
                     const Token& token = expressionTokens.items[j];
                     const char* searchStart = token.start;
                     //std::cout << "searching:" << token.ToString() << "\n";
                     do {
-                        match = token.FindFirstMatchingString(actionUnsupportedAssignKeywords, searchStart, &matchKeyword);
+                        match = token.FindChar('=', searchStart);
                         if (match) {
-                            anyError = true;
-                            Token reportToken;
-                            reportToken.line = token.line;
-                            reportToken.column = token.column + (match - token.start);
-                            ReportTokenError(reportToken, "Found unsupported assignment keyword: ", matchKeyword);
-                            // Advance search start
-                            searchStart = match + std::strlen(matchKeyword);
-
-                            if (searchStart >= token.end) break;
-                        }
-                    } while (match);
-                }
-                
-                // search for allowed assignment keywords and make sure that there is only one found
-                // the others will be reported
-                int count = 0;
-                for (int j = 0; j < expressionTokens.count; ++j) {
-                    const Token& token = expressionTokens.items[j];
-                    const char* searchStart = token.start;
-                    //std::cout << "searching:" << token.ToString() << "\n";
-                    do {
-                        match = token.FindFirstMatchingString(actionAssignKeywords, searchStart, &matchKeyword);
-                        if (match) {
-                            count++;
-                            if (count >= 2) {
+                            if (firstAssigmentOperator) {
+                                foundAdditionalAssigmentOperators = true;
                                 anyError = true;
                                 Token reportToken;
                                 reportToken.line = token.line;
                                 reportToken.column = token.column + (match - token.start);
-                                ReportTokenError(reportToken, "Found additional assignment keyword: ", matchKeyword);
+                                ReportTokenError(reportToken, "Found additional assignment keyword");
+                                
+                            } else {
+                                firstAssigmentOperator = match;
+                            }
+                        
+                            const char* prevChar = match-1;
+                            if (token.ContainsPtr(prevChar) && Expressions::IsSingleOperator(*prevChar)) {
+                                // this mean that we found a Compound Assignment Operator
+                                foundCompundAssignmentOperator = true;
                             }
                             // Advance search start
-                            searchStart = match + std::strlen(matchKeyword);
+                            searchStart = match + 1;
 
                             if (searchStart >= token.end) break;
                         }
+                    
                     } while (match);
                 }
+                
                 // TODO
                 // need to check if we can safely split out a leftside var
                 // and then we should first make sure that it allows write
+                // could also support cmd like targets like <path>#<cmd>
+                // but that's just a matter of splitting by # as such <path>#<cmd> should never contain any spaces
                 // and then we can take out the right side and use ValidateExpression
                 // on that
 

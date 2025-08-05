@@ -39,6 +39,7 @@ namespace HAL_JSON {
          * as this class does not copy or own the data.
          */
         ZeroCopyString(const char* cstr);
+        bool ContainsPtr(const char* ptr) const;
         /** Returns pointer to first occurrence of ch, or nullptr */
         const char* FindChar(char ch) const;
         /** Returns pointer to first occurrence of ch, or nullptr from the start pointer given*/

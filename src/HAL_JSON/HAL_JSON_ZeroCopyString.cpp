@@ -21,6 +21,10 @@ namespace HAL_JSON {
         if (!start || !end || end < start) return {};
         return std::string(start, end);
     }
+    bool ZeroCopyString::ContainsPtr(const char* ptr) const {
+        if (!ptr || !start || !end || (end <= start) || ptr<start || ptr>=end) return false;
+        return true;
+    }
     const char* ZeroCopyString::FindChar(char ch) const {
         return static_cast<const char*>(memchr(start, ch, Length()));
     }
