@@ -58,7 +58,7 @@ namespace HAL_JSON {
              * Used to skip it during post-processing checks.
              * basically (merged && subTokenCount == 0)
              */
-            bool Merged();
+            bool Merged() const;
             ~Token();
         };
 
@@ -66,6 +66,15 @@ namespace HAL_JSON {
         private:
             bool zeroCopy;
         public:
+            /** used when there is a situation where the first token need to be splitted
+             * i.e. for example when parsing 
+             * assigment action RHS expressions 
+             * by the Expression_Parser such as
+             * someVar =5 or someVar +=5
+             * and also
+             * someVar=5 or someVar+=5
+             */
+            const char* firstTokenStartOffset;
             Token* items;
             int count;
             /** this will initialize this instance as a zeroCopyPointer storage */

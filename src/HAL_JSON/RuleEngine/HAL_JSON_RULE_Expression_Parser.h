@@ -16,6 +16,8 @@
 #define HAL_JSON_RULES_EXPRESSIONS_SINGLE_OPERATOR_LIST "+-*/|&^><"
 #define HAL_JSON_RULES_EXPRESSIONS_DOUBLE_OPERATOR_LIST "&&" "||" "==" "!=" ">=" "<="
 
+#define HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD "\\"
+
 namespace HAL_JSON {
     namespace Rules {
         enum class ExpressionContext {

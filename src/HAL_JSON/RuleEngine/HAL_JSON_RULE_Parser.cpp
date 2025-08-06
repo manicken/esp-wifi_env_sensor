@@ -5,8 +5,8 @@ namespace HAL_JSON {
     namespace Rules {
         static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
         static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
-        static const char* actionUnsupportedAssignKeywords[] {"+=", "-=", "*=", "/=", "%=", "&=", "|=", nullptr};
-        static const char* actionAssignKeywords[] {"=", nullptr};
+        //static const char* actionUnsupportedAssignKeywords[] {"+=", "-=", "*=", "/=", "%=", "&=", "|=", nullptr};
+       // static const char* actionAssignKeywords[] {"=", nullptr};
 
         
         
@@ -359,6 +359,72 @@ namespace HAL_JSON {
             return true;
         }
 
+        bool Parser::MergeActions2(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
+            for (int i = 0; i < tokenCount; ++i) {
+                if (!tokens[i].EqualsICAny(actionStartKeywords)) {
+                    continue;
+                }
+
+                int start = i + 1;
+                int end = -1;
+
+                for (int j = start; j < tokenCount; ++j) {
+                    if (tokens[j].EqualsICAny(actionEndKeywords)) {
+                        end = j;
+                        break;
+                    }
+                }
+
+                if (end == -1 || start == end) {
+                    continue; // malformed or empty block, skip safely
+                }
+
+                int j = start;
+                while (j < end) {
+                    int currentLine = tokens[j].line;
+                    int lineTokenCount = 0;
+
+                    // Count tokens for current logical action line, respecting HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD continuation
+                    /*while (j + lineTokenCount < end &&
+                        (tokens[j + lineTokenCount].line == currentLine || 
+                            // If previous line ends with HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD, continue to next line's tokens
+                            (lineTokenCount > 0 &&
+                            tokens[j + lineTokenCount - 1].Equals(HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD)))) {
+                        lineTokenCount++;
+                    }*/
+
+                    while (j + lineTokenCount < end) {
+                        // If token line is current line, include it
+                        if (tokens[j + lineTokenCount].line == currentLine) {
+                            lineTokenCount++;
+                        }
+                        // If last token on current line is HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD, include next line tokens
+                        else if (lineTokenCount > 0 && tokens[j + lineTokenCount - 1].Equals(HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD)) {
+                            // extend currentLine to next line to continue merging
+                            currentLine = tokens[j + lineTokenCount].line;
+                            lineTokenCount++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (lineTokenCount > 1) {
+                        tokens[j].InitSubTokens(lineTokenCount);
+                        tokens[j].isAction = true;
+                        j += lineTokenCount;
+                    } else {
+                        tokens[j].isAction = true;
+                        j++;
+                    }
+                }
+                i = end - 1;
+            }
+            return true;
+        }
+
+
         void Parser::CountBlockItems(Tokens& _tokens) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
@@ -368,7 +434,7 @@ namespace HAL_JSON {
                 if (IsType(token, "on")) {
                     int count = 0;
                     for (int j = i + 1; j < tokenCount; ++j) {
-                        Token& innerToken = tokens[j];
+                        const Token& innerToken = tokens[j];
                         if (innerToken.Merged()) continue;
                         if (IsType(innerToken, "and")) continue;
                         if (IsType(innerToken, ";")) continue;
@@ -383,7 +449,7 @@ namespace HAL_JSON {
                     int count = 1;
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
-                        Token& innerToken = tokens[j];
+                        const Token& innerToken = tokens[j];
                         if (innerToken.Merged()) continue;
                         if (IsType(innerToken, "and")) continue;
                         if (IsType(innerToken, ";")) continue;
@@ -402,7 +468,7 @@ namespace HAL_JSON {
                     int count = 0;
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
-                        Token& innerToken = tokens[j];
+                        const Token& innerToken = tokens[j];
                         if (innerToken.Merged()) continue;
                         if (IsType(innerToken, "and")) continue;
                         if (IsType(innerToken, ";")) continue;
@@ -422,11 +488,11 @@ namespace HAL_JSON {
         }
 
         bool Parser::EnsureActionBlocksContainItems(Tokens& _tokens) {
-            Token* tokens = _tokens.items;
+            const Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
-                Token& token = tokens[i];
+                const Token& token = tokens[i];
                 if ((IsType(token, "then") || IsType(token, "else")) == false) continue;
                 if (token.itemsInBlock == 0) {
                     ReportTokenError(token, "EnsureActionBlocksContainItems - empty action(s) block detected");
@@ -441,7 +507,7 @@ namespace HAL_JSON {
             int tokenCount = _tokens.count;
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
-                Token& token = tokens[i];
+                const Token& token = tokens[i];
                 if ((IsType(token, "if") || IsType(token, "elseif")) == false) continue;
                 //const char* conditions = tokens[i+1].text;
                 Tokens conditions;
@@ -481,43 +547,130 @@ namespace HAL_JSON {
                 // first check if there is any currently unsupported AssignKeywords
                 const char* match = nullptr;
                 //const char* matchKeyword = nullptr;
-                const char* firstAssigmentOperator = nullptr;
-                bool foundAdditionalAssigmentOperators = false;
-                bool foundCompundAssignmentOperator = false;
-
+                //int firstAssignmentOperatorTokenIndex = -1;
+                Token* firstAssignmentOperatorToken = nullptr;
+                const char* firstAssignmentOperator = nullptr;
+                const char* firstCompoundAssignmentOperator = nullptr;
+                bool foundAdditionalAssignmentOperators = false;
+                
                 for (int j = 0; j < expressionTokens.count; ++j) {
-                    const Token& token = expressionTokens.items[j];
-                    const char* searchStart = token.start;
+                    Token& exprToken = expressionTokens.items[j];
+                    const char* searchStart = exprToken.start;
                     //std::cout << "searching:" << token.ToString() << "\n";
                     do {
-                        match = token.FindChar('=', searchStart);
+                        match = exprToken.FindChar('=', searchStart);
                         if (match) {
-                            if (firstAssigmentOperator) {
-                                foundAdditionalAssigmentOperators = true;
+                            if (firstAssignmentOperator) {
+                                foundAdditionalAssignmentOperators = true;
                                 anyError = true;
                                 Token reportToken;
-                                reportToken.line = token.line;
-                                reportToken.column = token.column + (match - token.start);
+                                reportToken.line = exprToken.line;
+                                reportToken.column = exprToken.column + (match - exprToken.start);
                                 ReportTokenError(reportToken, "Found additional assignment keyword");
                                 
                             } else {
-                                firstAssigmentOperator = match;
+                                firstAssignmentOperator = match;
+                                firstAssignmentOperatorToken = &exprToken;
+                                //firstAssignmentOperatorTokenIndex = j;
+                                const char* prevChar = match-1;
+                                if (exprToken.ContainsPtr(prevChar) && Expressions::IsSingleOperator(*prevChar)) {
+                                    // this mean that we found a Compound Assignment Operator
+                                    firstCompoundAssignmentOperator = prevChar;
+                                }
                             }
                         
-                            const char* prevChar = match-1;
-                            if (token.ContainsPtr(prevChar) && Expressions::IsSingleOperator(*prevChar)) {
-                                // this mean that we found a Compound Assignment Operator
-                                foundCompundAssignmentOperator = true;
-                            }
+                            
                             // Advance search start
                             searchStart = match + 1;
 
-                            if (searchStart >= token.end) break;
+                            if (searchStart >= exprToken.end) break;
                         }
                     
                     } while (match);
                 }
+                // have:
+                // const char* firstAssigmentOperator // is set when a assigment operator is found
+                // const char* firstCompundAssignmentOperator // is set when a compund assigment operator is found
+                // bool foundAdditionalAssigmentOperators
                 
+                if (foundAdditionalAssignmentOperators) {
+                    continue; // skip for now as it would be hard to extract anything from such string
+                }
+                if (firstAssignmentOperator == nullptr) {
+                    // invalid action line if no assigmend operator is found
+                    // maybe in future i can support direct function calls like: somefunc(var2)
+                    ReportTokenError(token, "Did not find any assignment keyword");
+                    anyError = true;
+                    continue; 
+                }
+                const char* firstAssigmentOperatorStart = nullptr;
+
+                if (firstCompoundAssignmentOperator) {
+                    char ch = *firstCompoundAssignmentOperator;
+                    
+                    if (ch == '<' || ch == '>') {
+                        const char* prevChar = firstCompoundAssignmentOperator - 1;
+                        // Handle shift compound assignment (<<= or >>=)
+                        bool prevIsValid = firstAssignmentOperatorToken->ContainsPtr(prevChar) &&
+                                           (*prevChar == '<' || *prevChar == '>');
+                        
+                        if (prevIsValid) {
+                            firstAssigmentOperatorStart = prevChar; // valid <<= or >>=
+                        } else {
+                            anyError = true;
+                            ReportTokenError(token, "missing additional < or > in compound shift assignment keyword");
+                            firstAssigmentOperatorStart = firstCompoundAssignmentOperator;
+                        }
+                    } else {
+                        // Not a shift op, treat as normal compound assignment like +=, -=
+                        firstAssigmentOperatorStart = firstCompoundAssignmentOperator;
+                    }
+                }
+                Token zcLHS_AssignmentOperand;
+                Tokens zcRHS_AssignmentOperands;
+                zcLHS_AssignmentOperand.start = token.start;
+                zcLHS_AssignmentOperand.line = token.line;
+                zcLHS_AssignmentOperand.column = token.column;
+
+
+                if (token.start == firstAssignmentOperatorToken->start) {
+                    // this mean that the assigmentOperator is in the first token
+                    // someVar= 5 or someVar=5(if this then token.subTokenCount == 0)
+                    if (token.subTokenCount == 0) {
+                        zcRHS_AssignmentOperands.items = expressionTokens.items;
+                        zcRHS_AssignmentOperands.count = 1;
+                        zcRHS_AssignmentOperands.firstTokenStartOffset = firstAssignmentOperator + 1;
+                    } else {
+                        zcRHS_AssignmentOperands.items = expressionTokens.items+1;
+                        zcRHS_AssignmentOperands.count = expressionTokens.count-1;
+                    }
+                    zcLHS_AssignmentOperand.end = firstAssigmentOperatorStart;
+                } else {
+                    // this mean that the assigmentOperator is
+                    // separated from the first operand
+
+                    // someVar =5 or someVar +=5
+                    if (firstAssignmentOperatorToken->ContainsPtr(firstAssignmentOperator+1)) {
+                        //std::cout << firstAssignmentOperatorToken->ToString() << " -> ContainsPtr("<<firstAssignmentOperator+1<<"): " << "\n";
+                        zcRHS_AssignmentOperands.items = firstAssignmentOperatorToken;
+                        zcRHS_AssignmentOperands.count = expressionTokens.count-1;
+                        zcRHS_AssignmentOperands.firstTokenStartOffset = firstAssignmentOperator + 1;
+                        ZeroCopyString zcTemp(firstAssignmentOperator + 1, firstAssignmentOperator + 2);
+                        std::cout << zcTemp.ToString() << "++++++++++++++++++++++++++++++++++++++++++++ zcRHS_AssignmentOperands: " << zcRHS_AssignmentOperands.ToString() << "\n";
+                    }
+                    // someVar = 6 or someVar += 5 
+                    else {
+                        zcRHS_AssignmentOperands.items = firstAssignmentOperatorToken+1;
+                        zcRHS_AssignmentOperands.count = expressionTokens.count-2;
+                    }
+                    zcLHS_AssignmentOperand.end = token.end;
+                }
+                //ReportTokenInfo(zcLHS_AssignmentOperand,  "found zcLHS_AssignmentOperand: ", zcLHS_AssignmentOperand.ToString().c_str());
+                
+                //ReportInfo("\nzcRHS_AssignmentOperands:");
+                //ReportInfo(PrintTokens(zcRHS_AssignmentOperands));
+                //ReportInfo("\n");
+                std::cout << "***************************************************** zcRHS_AssignmentOperands: " << zcRHS_AssignmentOperands.ToString() << "\n";
                 // TODO
                 // need to check if we can safely split out a leftside var
                 // and then we should first make sure that it allows write
@@ -527,7 +680,7 @@ namespace HAL_JSON {
                 // on that
 
                 // use the following to validate the right side of the expression
-                //if (Expressions::ValidateExpression(conditions, ExpressionContext::IfCondition) == false) anyError = true;
+                if (Expressions::ValidateExpression(zcRHS_AssignmentOperands, ExpressionContext::Assignment) == false) anyError = true;
 
             }
             return anyError == false;
@@ -560,7 +713,7 @@ namespace HAL_JSON {
             ReportInfo("[OK]\n");
             
             ReportInfo("\nMergeActions: ");
-            MergeActions(_tokens);
+            MergeActions2(_tokens);
             ReportInfo("[OK]\n");
             
             ReportInfo("\nCountBlockItems: ");

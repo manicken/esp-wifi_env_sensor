@@ -55,8 +55,15 @@ namespace HAL_JSON {
              */
             static bool MergeConditions(Tokens& tokens);
 
-            /** merge actions so that each action 'line' is in one token for easier parse */
+            /** merge actions so that each action 'line'
+             *  is in one token for easier parse */
             static bool MergeActions(Tokens& tokens);
+            /** merge actions so that each action 'line'
+             *  is in one token for easier parse 
+             *  this is a variant to MergeActions but
+             *  allows the use of \ to make multiline spanning actions
+             */
+            static bool MergeActions2(Tokens& tokens);
 
             /** this is used together with EnsureActionBlocksContainItems */
             static void CountBlockItems(Tokens& tokens);

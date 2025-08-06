@@ -3,6 +3,12 @@
   {"uid":"var2","type":"VAR"},
   {"uid":"var3","type":"VAR"},
   {"uid":"var4","type":"VAR"},
+  {"uid":"var5","type":"VAR"},
+  {"uid":"var6","type":"VAR"},
+  {"uid":"var7","type":"VAR"},
+  {"uid":"var8","type":"VAR"},
+  {"uid":"var9","type":"VAR"},
+  {"uid":"var0","type":"VAR"},
   {"uid":"temps","type":"1WTG","refreshtimesec":1,"note":"temperatures",
     "items":[
 	    {"uid":"a","pin":27,"note":"inne","items":[

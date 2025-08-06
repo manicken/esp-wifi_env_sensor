@@ -32,17 +32,14 @@ namespace HAL_JSON {
             }
         }
 
-        bool Token::Merged() {
+        bool Token::Merged() const {
             return (merged && subTokenCount == 0);
         }
 
 
-        Tokens::Tokens() : zeroCopy(true), items(nullptr), count(0) {}
+        Tokens::Tokens() : zeroCopy(true), firstTokenStartOffset(nullptr), items(nullptr), count(0) {}
 
-        Tokens::Tokens(int count) : count(count) {
-            items = new Token[count];
-            zeroCopy = false;
-        }
+        Tokens::Tokens(int count) : zeroCopy(false), firstTokenStartOffset(nullptr), items(new Token[count]), count(count) { }
 
         Tokens::~Tokens() {
             if (zeroCopy == false)
@@ -50,8 +47,12 @@ namespace HAL_JSON {
         }
         std::string Tokens::ToString() {
             std::string str;
-            for (int i=0;i<count;i++)
-                str += items[i].ToString();
+            //str += "firstTokenStartOffset:"; str += (firstTokenStartOffset?"true ":"false ");
+            for (int i=0;i<count;i++) {
+                ZeroCopyString zcStrCopy = items[i];
+                if (i==0 && firstTokenStartOffset != nullptr) zcStrCopy.start = firstTokenStartOffset;
+                str += zcStrCopy.ToString();
+            }
             return str;
         }
 
@@ -90,6 +91,9 @@ namespace HAL_JSON {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             std::string msg;
+            if (_tokens.firstTokenStartOffset != nullptr) {
+                msg += "firstTokenStartOffset set, ";
+            }
             for (int i=0;i<tokenCount;i++) {
                 Token& tok = tokens[i];
                 if (tok.Merged() && !sub) continue;

@@ -156,10 +156,10 @@ namespace HAL_JSON {
 
             anyError = !CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount, exprContext);
 
-            ReportInfo("operatorCount:" + std::to_string(operatorCount) +
+            /*ReportInfo("operatorCount:" + std::to_string(operatorCount) +
                     ", operandCount:" + std::to_string(operandCount) +
                     ", leftParenthesisCount:" + std::to_string(leftParenthesisCount));
-
+*/
             if (anyError) return false;
 
             int operandIndex = 0;
@@ -170,7 +170,14 @@ namespace HAL_JSON {
 
             for (int cti = 0; cti < tokens.count; ++cti) {
                 Token& token = tokens.items[cti];
-                for (p = token.start; p < token.end; ++p) {
+                const char* effectiveStart  = nullptr;
+                if (cti == 0 && tokens.firstTokenStartOffset != nullptr) {
+                    effectiveStart  = tokens.firstTokenStartOffset;
+                    std::cout << "firstTokenStartOffset was true\n"; 
+                } else {
+                    effectiveStart  = token.start;
+                }
+                for (p = effectiveStart ; p < token.end; ++p) {
                     if (IsDoubleOperator(p)&& exprContext == ExpressionContext::IfCondition) {
                         if (inOperand) {
                             operandEnd = p;
@@ -182,7 +189,7 @@ namespace HAL_JSON {
                             inOperand = false;
                         }
                         ++p; // Skip second char of double op
-                    } else if (IsSingleOperator(*p) || *p == '(' || *p == ')') {
+                    } else if (IsSingleOperator(*p) || *p == '(' || *p == ')' || *p == HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD[0]) {
                         if (inOperand) {
                             operandEnd = p;
                             Token operand(operandStart, operandEnd);
