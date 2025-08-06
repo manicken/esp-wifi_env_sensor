@@ -656,7 +656,6 @@ namespace HAL_JSON {
                         zcRHS_AssignmentOperands.count = expressionTokens.count-1;
                         zcRHS_AssignmentOperands.firstTokenStartOffset = firstAssignmentOperator + 1;
                         ZeroCopyString zcTemp(firstAssignmentOperator + 1, firstAssignmentOperator + 2);
-                        std::cout << zcTemp.ToString() << "++++++++++++++++++++++++++++++++++++++++++++ zcRHS_AssignmentOperands: " << zcRHS_AssignmentOperands.ToString() << "\n";
                     }
                     // someVar = 6 or someVar += 5 
                     else {

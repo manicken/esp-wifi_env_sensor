@@ -75,11 +75,18 @@ namespace HAL_JSON {
                 ReportError("expr. is empty");
                 return false;
             }*/
-            if(IsDoubleOperator(tokens.items[0].start) && exprContext == ExpressionContext::IfCondition) { // this only checks the two first characters in the Expression
+
+            const char* firstTokenStart = nullptr;
+            if (tokens.firstTokenStartOffset != nullptr)
+                firstTokenStart = tokens.firstTokenStartOffset;
+            else
+                firstTokenStart = tokens.items[0].start;
+
+            if(IsDoubleOperator(firstTokenStart) && exprContext == ExpressionContext::IfCondition) { // this only checks the two first characters in the Expression
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
-            if(IsSingleOperator(*tokens.items[0].start)) {
+            if(IsSingleOperator(*firstTokenStart)) {
                 ReportError("expr. cannot start with a operator");
                 return false;
             }
@@ -89,7 +96,15 @@ namespace HAL_JSON {
             bool inOperand = false;
 
             for (int cti=0;cti<tokens.count;cti++) { // cti = currTokenIndex
-                for (const char* p = tokens.items[cti].start; p < tokens.items[cti].end; p++) {
+                Token& token = tokens.items[cti];
+                const char* effectiveStart = nullptr;
+                if (cti == 0 && tokens.firstTokenStartOffset != nullptr) {
+                    effectiveStart  = tokens.firstTokenStartOffset;
+                    //std::cout << "firstTokenStartOffset was true\n"; 
+                } else {
+                    effectiveStart  = token.start;
+                }
+                for (const char* p = effectiveStart; p < token.end; p++) {
                     if (IsDoubleOperator(p) && exprContext == ExpressionContext::IfCondition) {
                         p++;
                         operatorCount++;
@@ -173,7 +188,7 @@ namespace HAL_JSON {
                 const char* effectiveStart  = nullptr;
                 if (cti == 0 && tokens.firstTokenStartOffset != nullptr) {
                     effectiveStart  = tokens.firstTokenStartOffset;
-                    std::cout << "firstTokenStartOffset was true\n"; 
+                    //std::cout << "firstTokenStartOffset was true\n"; 
                 } else {
                     effectiveStart  = token.start;
                 }
