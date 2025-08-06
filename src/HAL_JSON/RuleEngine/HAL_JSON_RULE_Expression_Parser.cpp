@@ -232,7 +232,7 @@ namespace HAL_JSON {
             return !anyError;
         }
 
-        void Expressions::ValidateOperand(const Token& operandToken, bool& anyError) {
+        void Expressions::ValidateOperand(const Token& operandToken, bool& anyError, ValidateOperandMode mode) {
             //bool operandIsVariable = OperandIsVariable(operandToken);
 #ifdef HAL_JSON_RULES_EXPRESSIONS_PARSER_SHOW_DEBUG
             std::string msg;
@@ -282,27 +282,54 @@ namespace HAL_JSON {
                 anyError = true;
                 return;
             }
-            HALDeviceOperationResult readResult = HALDeviceOperationResult::UnsupportedOperation;
-            if (funcName.Length() != 0) {
-                HALValue halValue;
-                HALReadValueByCmd readValueByCmd(halValue, funcName);
-                readResult = device->read(readValueByCmd);
-                if (readResult != HALDeviceOperationResult::Success) {
-                    anyError = true;
-                    if (readResult == HALDeviceOperationResult::UnsupportedCommand) {
-                        std::string funcNameStr = ": " + funcName.ToString();
-                        ReportTokenError(operandToken, ToString(readResult), funcNameStr.c_str());
-                    } else {
-                        ReportTokenError(operandToken, ToString(readResult), ": read");
+            if (mode == ValidateOperandMode::Read || mode == ValidateOperandMode::ReadWrite) {
+                HALDeviceOperationResult readResult = HALDeviceOperationResult::UnsupportedOperation;
+                if (funcName.Length() != 0) {
+                    HALValue halValue;
+                    HALReadValueByCmd readValueByCmd(halValue, funcName);
+                    readResult = device->read(readValueByCmd);
+                    if (readResult != HALDeviceOperationResult::Success) {
+                        anyError = true;
+                        if (readResult == HALDeviceOperationResult::UnsupportedCommand) {
+                            std::string funcNameStr = ": " + funcName.ToString();
+                            ReportTokenError(operandToken, ToString(readResult), funcNameStr.c_str());
+                        } else {
+                            ReportTokenError(operandToken, ToString(readResult), ": read");
+                        }
+                        
                     }
-                    
+                } else {
+                    HALValue halValue;
+                    readResult = device->read(halValue);
+                    if (readResult != HALDeviceOperationResult::Success) {
+                        ReportTokenError(operandToken, ToString(readResult), ": read");
+                        anyError = true;
+                    }
                 }
-            } else {
-                HALValue halValue;
-                readResult = device->read(halValue);
-                if (readResult != HALDeviceOperationResult::Success) {
-                    ReportTokenError(operandToken, ToString(readResult), ": read");
-                    anyError = true;
+            }
+            if (mode == ValidateOperandMode::Write || mode == ValidateOperandMode::ReadWrite) {
+                HALDeviceOperationResult writeResult = HALDeviceOperationResult::UnsupportedOperation;
+                if (funcName.Length() != 0) {
+                    HALValue halValue;
+                    HALWriteValueByCmd writeValueByCmd(halValue, funcName);
+                    writeResult = device->write(writeValueByCmd);
+                    if (writeResult != HALDeviceOperationResult::Success) {
+                        anyError = true;
+                        if (writeResult == HALDeviceOperationResult::UnsupportedCommand) {
+                            std::string funcNameStr = ": " + funcName.ToString();
+                            ReportTokenError(operandToken, ToString(writeResult), funcNameStr.c_str());
+                        } else {
+                            ReportTokenError(operandToken, ToString(writeResult), ": write");
+                        }
+                        
+                    }
+                } else {
+                    HALValue halValue;
+                    writeResult = device->write(halValue);
+                    if (writeResult != HALDeviceOperationResult::Success) {
+                        ReportTokenError(operandToken, ToString(writeResult), ": write");
+                        anyError = true;
+                    }
                 }
             }
         }

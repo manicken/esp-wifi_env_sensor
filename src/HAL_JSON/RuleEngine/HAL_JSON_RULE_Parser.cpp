@@ -677,7 +677,12 @@ namespace HAL_JSON {
                 // but that's just a matter of splitting by # as such <path>#<cmd> should never contain any spaces
                 // and then we can take out the right side and use ValidateExpression
                 // on that
-
+                if (firstCompoundAssignmentOperator) {
+                    Expressions::ValidateOperand(zcLHS_AssignmentOperand, anyError, ValidateOperandMode::ReadWrite);
+                }
+                else {
+                    Expressions::ValidateOperand(zcLHS_AssignmentOperand, anyError, ValidateOperandMode::Write);
+                }
                 // use the following to validate the right side of the expression
                 if (Expressions::ValidateExpression(zcRHS_AssignmentOperands, ExpressionContext::Assignment) == false) anyError = true;
 

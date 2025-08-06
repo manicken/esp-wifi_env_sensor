@@ -9,6 +9,8 @@
   {"uid":"var8","type":"VAR"},
   {"uid":"var9","type":"VAR"},
   {"uid":"var0","type":"VAR"},
+  {"uid":"cvar","type":"CONSTVAR"},
+  {"uid":"wvar","type":"WRITEVAR"},
   {"uid":"temps","type":"1WTG","refreshtimesec":1,"note":"temperatures",
     "items":[
 	    {"uid":"a","pin":27,"note":"inne","items":[

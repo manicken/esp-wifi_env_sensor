@@ -23,6 +23,10 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
 	var9 = 9+var8+ \
 	       var0*3 \
 		   var1/42
+	cvar = 1
+	cvar += 1
+	wvar += 1
+	var0 = wvar
 	
 //the following tests a write only device	
 //elseif pawcfg == 1 then
