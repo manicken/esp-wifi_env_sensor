@@ -119,7 +119,4 @@ namespace HAL_JSON {
         }
         return ret;
     }
-   /* uint64_t UIDPath::byIndex(uint32_t index) {
-        return items[index];
-    }*/
 }

@@ -198,7 +198,7 @@ namespace HAL_JSON {
                             operandEnd = p;
                             Token operand(operandStart, operandEnd);
                             operand.line = token.line;
-                            operand.column = token.column + (operandStart-token.start);
+                            operand.column = token.column + (operandStart-effectiveStart);
                             ValidateOperand(operand, anyError);
                             ++operandIndex;
                             inOperand = false;
@@ -209,7 +209,7 @@ namespace HAL_JSON {
                             operandEnd = p;
                             Token operand(operandStart, operandEnd);
                             operand.line = token.line;
-                            operand.column = token.column + (operandStart-token.start);
+                            operand.column = token.column + (operandStart-effectiveStart);
                             ValidateOperand(operand, anyError);
                             ++operandIndex;
                             inOperand = false;
@@ -223,7 +223,7 @@ namespace HAL_JSON {
                     operandEnd = p;
                     Token operand(operandStart, operandEnd);
                     operand.line = token.line;
-                    operand.column = token.column + (operandStart-token.start);
+                    operand.column = token.column + (operandStart-effectiveStart);
                     ValidateOperand(operand, anyError);
                     ++operandIndex;
                     inOperand = false;

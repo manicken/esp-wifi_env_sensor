@@ -55,7 +55,6 @@ namespace HAL_JSON {
 
         std::string ToString(ToStringType type = ToStringType::String);
 
-        //uint64_t byIndex(uint32_t index); // usage of this function don't make any sense
     };
 
 }

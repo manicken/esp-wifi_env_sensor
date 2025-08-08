@@ -1,35 +1,38 @@
 if ((hum#humidity>= 50) and (var1 ==0)) then // using a variable to create a state machine
-	BIREL_SET=0 // =0 mean that the pre programmed pulse lenght will be used
+
+    //BIRELSET=0 // =0 mean that the pre programmed pulse lenght will be used
     var0=0
     
     
 elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
-	BIREL_RST=0 // =0 mean that the pre programmed pulse lenght will be used
-	
+
+    //BIRELRST=0 // =0 mean that the pre programmed pulse lenght will be used
+    
     var1= 1 and var2 = 2
     var3 =3 ; var4 = 4
-	var5 =5
+    var5 =5  + var5
     var5 +=5
-	//var6 <= 0 // this is invalid
-	var7 <<= 7 // valid
+    //var6 <= 0 // this is invalid
+    var7 <<= 7 // valid
     
-    //if (var6 < 5) then
-    //    |=var7+= = -= 0 /= // this is very unlikely to happend but tests all variants
-    //endif
-    var8 = 8
+    if (var6 < 5) then
+        var8 = 8 + var8
+        var9 = 9 + var9
+    endif
     
-	// the following demostrates how multiline actions can be formed
-	// note while using \ it must be precedenced by a space
-	var9 = 9+var8+ \
-	       var0*3 \
-		   var1/42
-	cvar = 1
-	cvar += 1
-	wvar += 1
-	var0 = wvar
-	
-//the following tests a write only device	
-//elseif pawcfg == 1 then
-//    pawcfg = 1
+    // the following demostrates how multiline actions can be formed
+    // note while using \ it must be precedenced by a space
+    var9 = 9+var8+ \
+            var0*3 \
+            var1/42
+    
+    // tests write and read only devices
+	wr_var = rd_var
+    //rd_var = 1
+    //rd_var += 1
+    //wr_var += 1
+    //var0 = wr_var
+    
+    //|=var7+= = -= 0 /= // this is very unlikely to happend but tests all variants
 
 endif

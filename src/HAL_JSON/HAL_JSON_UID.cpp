@@ -9,20 +9,13 @@ namespace HAL_JSON {
         this->val = v.val;
         return *this;
     }
-    bool HAL_UID::NotSet() { return val == 0; }
-    bool HAL_UID::IsSet() { return val != 0; }
+    bool HAL_UID::NotSet() { return val == HAL_UID::UID_NOT_SET; }
+    bool HAL_UID::IsSet() { return (val != HAL_UID::UID_NOT_SET) && (val != HAL_UID::UID_INVALID); }
     bool HAL_UID::Invalid() {return val == HAL_UID::UID_INVALID; }
 
     bool operator==(const HAL_UID& lhs, const HAL_UID& rhs) {
         return lhs.val == rhs.val;
     }
-    /*bool operator==(const HAL_UID& lhs, const uint64_t& rhs) {
-        return lhs.val == rhs;
-    }
-    bool operator==(const uint64_t& lhs, const HAL_UID& rhs) {
-        return lhs == rhs.val;
-    }*/
-
     bool operator!=(const HAL_UID& lhs, const HAL_UID& rhs) {
         return lhs.val != rhs.val;
     }
@@ -35,7 +28,7 @@ namespace HAL_JSON {
         const char* const end = zcStr.end;
         int i = 0;
         while (p < end && i < (int)HAL_UID::Size) {
-            out.str[i++] = *p;//  ((HAL_UID)(uint8_t)*p) << (8 * (7 - i++)); // big-endian
+            out.str[i++] = *p;
             p++;
         }
         return out;
@@ -45,7 +38,7 @@ namespace HAL_JSON {
         HAL_UID out;
         if (!str || (strlen(str) == 0)) return out;
         for (int i = 0; i < (int)HAL_UID::Size && str[i]; ++i) {
-            out.str[i] = str[i];//out |= ((uint64_t)(uint8_t)str[i]) << (8 * (7 - i)); // big-endian
+            out.str[i] = str[i];
         }
         return out;
     }
@@ -54,19 +47,19 @@ namespace HAL_JSON {
         HAL_UID out;
         if (!str || (strlen(str) == 0) || (count == 0)) return out;
         for (uint32_t i = 0; i < (uint32_t)HAL_UID::Size && i < count && str[i]; ++i) {
-            out.str[i] = str[i];//out |= ((uint64_t)(uint8_t)str[i]) << (8 * (7 - i)); // big-endian
+            out.str[i] = str[i];
         }
         return out;
     }
 
-    std::string decodeUID(HAL_UID uid) {
-        if (uid == 0) return "<zero>";
+    std::string decodeUID(HAL_UID& uid) {
+        if (uid.NotSet()) return "<unset>";
         if (uid.Invalid()) return "<invalid>";
         char str[9] = {}; // 8 chars + null terminator
         for (int i = 0; i < (int)HAL_UID::Size; ++i) {
             // Extract each byte from most significant to least significant
-            str[i] = uid.str[i];// static_cast<char>((uid >> (8 * (7 - i))) & 0xFF);
-            if (str[i] == '\0') { // Stop if null terminator found
+            str[i] = uid.str[i];
+            if (str[i] == '\0') { // Stop early if null terminator found
                 str[i] = '\0';
                 break;
             }

@@ -5,6 +5,9 @@ namespace HAL_JSON {
     namespace Rules {
         static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
         static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
+
+        static const TokenType actionStartTypes[] = {TokenType::ActionSeparator, TokenType::And, TokenType::Else, TokenType::EndIf, TokenType::Then, TokenType::NotSet};
+        static const TokenType actionEndTypes[] =   {TokenType::ActionSeparator, TokenType::And, TokenType::Else, TokenType::EndIf, TokenType::If, TokenType::ElseIf, TokenType::EndOn, TokenType::NotSet};
         //static const char* actionUnsupportedAssignKeywords[] {"+=", "-=", "*=", "/=", "%=", "&=", "|=", nullptr};
        // static const char* actionAssignKeywords[] {"=", nullptr};
 
@@ -140,6 +143,8 @@ namespace HAL_JSON {
                 if (tokenIndex == tokenCount) {
                     return false; // something went terrible wrong
                 }
+                 //if (token_start==nullptr)
+                 //   std::cout << "token_start is nullptr\n";
                 tokens[tokenIndex++].Set(token_start, line, token_column);
             }
             
@@ -152,11 +157,12 @@ namespace HAL_JSON {
             int currLevel = 0;
             int maxLevel = 0;
             for (int i = 0; i < tokenCount; i++) {
-                if (IsType(tokens[i], "if")) {
+                Token& token = tokens[i];
+                if (token.type == TokenType::If) {
                     currLevel++;
                     if (currLevel > maxLevel) maxLevel = currLevel;
                 }
-                else if (IsType(tokens[i], "endif")) {
+                else if (token.type == TokenType::EndIf) {
                     currLevel--;
                 }
             }
@@ -180,17 +186,17 @@ namespace HAL_JSON {
 
             for (int i = 0; i < tokenCount; i++) {
                 Token& token = tokens[i];
-                if (IsType(token, "if")) {
+                if (token.type == TokenType::If) {
                     ifLevel++;
                     ifStack[ifStackIndex++] = &token;
                     expecting_do_then = true;
                     lastControlIndex = i;
                 }
-                else if (IsType(token, "elseif")) {
+                else if (token.type == TokenType::ElseIf) {
                     expecting_do_then = true;
                     lastControlIndex = i;
                 }
-                else if (IsType(token, "on")) {
+                else if (token.type == TokenType::On) {
                     if (ifLevel != 0 || onLevel != 0) {
                         ReportTokenError(token, "'on' block cannot be nested");
                         otherErrors = true;
@@ -201,7 +207,7 @@ namespace HAL_JSON {
                         lastControlIndex = i;
                     }
                 }
-                else if (IsType(token, "do") || IsType(token, "then")) {
+                else if (token.type == TokenType::Then) {
                     if (!expecting_do_then) {
                         ReportTokenError(token, "'do'/'then' without preceding 'if' or 'on'");
                         otherErrors = true;
@@ -212,7 +218,7 @@ namespace HAL_JSON {
                     }
                     expecting_do_then = false;
                 }
-                else if (IsType(token, "endif")) {
+                else if (token.type == TokenType::EndIf) {
                     if (ifLevel == 0) {
                         ReportTokenError(token, "'endif' without matching 'if'");
                         otherErrors = true;
@@ -228,7 +234,7 @@ namespace HAL_JSON {
                         otherErrors = true;
                     }
                 }
-                else if (IsType(token, "endon")) {
+                else if (token.type == TokenType::EndOn) {
                     if (onLevel == 0) {
                         ReportTokenError(token, "'endon' without matching 'on'");
                         otherErrors = true;
@@ -265,7 +271,7 @@ namespace HAL_JSON {
             int tokenCount = _tokens.count;
             int count = 0;
             for (int i = start; i < tokenCount; i++) {
-                if (IsType(tokens[i], "do") || IsType(tokens[i], "then")) {
+                if (tokens[i].type == TokenType::Then) {
                     return count;
                 }
                 else
@@ -278,7 +284,7 @@ namespace HAL_JSON {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             for (int i = 0; i < tokenCount; i++) {
-                if ((IsType(tokens[i], "if") || IsType(tokens[i], "elseif")) == false) continue;
+                if (((tokens[i].type == TokenType::If) || (tokens[i].type == TokenType::ElseIf)) == false) continue;
                 int conditionTokenCount = CountConditionTokens(_tokens, i+1);
 #ifdef _WIN32   
                 std::cout << "If case token count: " << conditionTokenCount << "\n";
@@ -300,13 +306,13 @@ namespace HAL_JSON {
                             str[1] = '|';
                         }
                     }
-                    tokens[i].InitSubTokens(conditionTokenCount);
+                    tokens[i].InitSubTokens(conditionTokenCount, TokenType::IfCondition);
                     i += conditionTokenCount; // skip all
                 }
             }
             return true;
         }
-
+/* replaced by MergeActions2 that allow multiline spanning actions
         bool Parser::MergeActions(Tokens& _tokens) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
@@ -348,9 +354,11 @@ namespace HAL_JSON {
                     if (lineTokenCount > 1) {
                         tokens[j].InitSubTokens(lineTokenCount);
                         tokens[j].isAction = true;
+                        tokens[j].type = TokenType::Action;
                         j += lineTokenCount;
                     } else {
                         tokens[j].isAction = true;
+                        tokens[j].type = TokenType::Action;
                         j++; // single token, skip merging
                     }
                 }
@@ -358,6 +366,7 @@ namespace HAL_JSON {
             }
             return true;
         }
+*/
 
         bool Parser::MergeActions2(Tokens& _tokens) {
             Token* tokens = _tokens.items;
@@ -411,11 +420,13 @@ namespace HAL_JSON {
                     }
 
                     if (lineTokenCount > 1) {
-                        tokens[j].InitSubTokens(lineTokenCount);
+                        tokens[j].InitSubTokens(lineTokenCount, TokenType::Action);
                         tokens[j].isAction = true;
+                        //tokens[j].type = TokenType::Action; set by using InitSubTokens
                         j += lineTokenCount;
                     } else {
                         tokens[j].isAction = true;
+                        tokens[j].type = TokenType::Action; // here it need to be set as InitSubTokens is not used
                         j++;
                     }
                 }
@@ -431,21 +442,21 @@ namespace HAL_JSON {
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
 
-                if (IsType(token, "on")) {
+                if (token.type == TokenType::On) {
                     int count = 0;
                     for (int j = i + 1; j < tokenCount; ++j) {
                         const Token& innerToken = tokens[j];
                         if (innerToken.Merged()) continue;
                         if (IsType(innerToken, "and")) continue;
                         if (IsType(innerToken, ";")) continue;
-                        if (IsType(innerToken, "endon")) {
+                        if (innerToken.type == TokenType::EndOn) {
                             break;
                         }
                         count++;
                     }
                     token.itemsInBlock = count;
                 }
-                else if (IsType(token, "if")) {
+                else if (token.type == TokenType::If) {
                     int count = 1;
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
@@ -453,18 +464,18 @@ namespace HAL_JSON {
                         if (innerToken.Merged()) continue;
                         if (IsType(innerToken, "and")) continue;
                         if (IsType(innerToken, ";")) continue;
-                        if (IsType(innerToken, "if")) level++;
-                        if (IsType(innerToken, "endif")) {
+                        if (innerToken.type == TokenType::If) level++;
+                        if (innerToken.type == TokenType::EndIf) {
                             level--;
                             if (level == 0) break;
                         }
-                        if (level == 1 && (IsType(innerToken, "elseif") || IsType(innerToken, "else"))) {
+                        if (level == 1 && (innerToken.type == TokenType::ElseIf || innerToken.type == TokenType::Else)) {
                             count++;
                         }
                     }
                     token.itemsInBlock = count;
                 }
-                else if (IsType(token, "then") || IsType(token, "else")) {//} || IsType(tok, "elseif")) {
+                else if (token.type == TokenType::Then || token.type == TokenType::Else) {
                     int count = 0;
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
@@ -472,12 +483,12 @@ namespace HAL_JSON {
                         if (innerToken.Merged()) continue;
                         if (IsType(innerToken, "and")) continue;
                         if (IsType(innerToken, ";")) continue;
-                        if (IsType(innerToken, "if")) level++;
-                        if (IsType(innerToken, "endif")) {
+                        if (innerToken.type == TokenType::If) level++;
+                        if (innerToken.type == TokenType::EndIf) {
                             level--;
                             if (level == 0) break;
                         }
-                        if (level == 1 && (IsType(innerToken, "elseif") || IsType(innerToken, "else"))) {
+                        if (level == 1 && ((innerToken.type == TokenType::ElseIf) || (innerToken.type == TokenType::Else))) {
                             break;
                         }
                         if (level == 1) count++;
@@ -493,7 +504,7 @@ namespace HAL_JSON {
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
                 const Token& token = tokens[i];
-                if ((IsType(token, "then") || IsType(token, "else")) == false) continue;
+                if (((token.type == TokenType::Then) || (token.type == TokenType::Else)) == false) continue;
                 if (token.itemsInBlock == 0) {
                     ReportTokenError(token, "EnsureActionBlocksContainItems - empty action(s) block detected");
                     anyError = true;
@@ -508,7 +519,7 @@ namespace HAL_JSON {
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
                 const Token& token = tokens[i];
-                if ((IsType(token, "if") || IsType(token, "elseif")) == false) continue;
+                if (((token.type == TokenType::If) || (token.type == TokenType::ElseIf)) == false) continue;
                 //const char* conditions = tokens[i+1].text;
                 Tokens conditions;
                 conditions.items = &tokens[i+1];
@@ -625,6 +636,8 @@ namespace HAL_JSON {
                         // Not a shift op, treat as normal compound assignment like +=, -=
                         firstAssigmentOperatorStart = firstCompoundAssignmentOperator;
                     }
+                } else {
+                    firstAssigmentOperatorStart = firstAssignmentOperator;
                 }
                 Token zcLHS_AssignmentOperand;
                 Tokens zcRHS_AssignmentOperands;
@@ -632,8 +645,8 @@ namespace HAL_JSON {
                 zcLHS_AssignmentOperand.line = token.line;
                 zcLHS_AssignmentOperand.column = token.column;
 
-
-                if (token.start == firstAssignmentOperatorToken->start) {
+                if (token == *firstAssignmentOperatorToken) { 
+                    std::cout << "(token.start == firstAssignmentOperatorToken->start):" << token.ToString() << "\n";
                     // this mean that the assigmentOperator is in the first token
                     // someVar= 5 or someVar=5(if this then token.subTokenCount == 0)
                     if (token.subTokenCount == 0) {
@@ -664,19 +677,7 @@ namespace HAL_JSON {
                     }
                     zcLHS_AssignmentOperand.end = token.end;
                 }
-                //ReportTokenInfo(zcLHS_AssignmentOperand,  "found zcLHS_AssignmentOperand: ", zcLHS_AssignmentOperand.ToString().c_str());
-                
-                //ReportInfo("\nzcRHS_AssignmentOperands:");
-                //ReportInfo(PrintTokens(zcRHS_AssignmentOperands));
-                //ReportInfo("\n");
-                std::cout << "***************************************************** zcRHS_AssignmentOperands: " << zcRHS_AssignmentOperands.ToString() << "\n";
-                // TODO
-                // need to check if we can safely split out a leftside var
-                // and then we should first make sure that it allows write
-                // could also support cmd like targets like <path>#<cmd>
-                // but that's just a matter of splitting by # as such <path>#<cmd> should never contain any spaces
-                // and then we can take out the right side and use ValidateExpression
-                // on that
+                std::cout << "zcLHS_AssignmentOperand: " << zcLHS_AssignmentOperand.ToString() << "\n";
                 if (firstCompoundAssignmentOperator) {
                     Expressions::ValidateOperand(zcLHS_AssignmentOperand, anyError, ValidateOperandMode::ReadWrite);
                 }

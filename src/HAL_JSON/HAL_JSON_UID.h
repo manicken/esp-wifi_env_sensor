@@ -15,10 +15,12 @@ namespace HAL_JSON {
     struct HAL_UID {
         static constexpr size_t Size = 8;
         static constexpr uint64_t UID_INVALID = 1;
+        static constexpr uint64_t UID_NOT_SET = 0;
         union
         {
             char str[Size];
             uint64_t val;
+            //uint32_t values[Size/4];
         };
         
         HAL_UID();
@@ -30,8 +32,6 @@ namespace HAL_JSON {
         HAL_UID& operator=(const HAL_UID& v);
 
     };
-    //bool operator==(const HAL_UID& lhs, const uint64_t& rhs);
-    //bool operator==(const uint64_t& lhs, const HAL_UID& rhs);
     bool operator==(const HAL_UID& lhs, const HAL_UID& rhs);
     bool operator!=(const HAL_UID& lhs, const HAL_UID& rhs);
 
@@ -39,5 +39,5 @@ namespace HAL_JSON {
     HAL_UID encodeUID(const char* str);
     HAL_UID encodeUID(const ZeroCopyString& zcStr);
     HAL_UID encodeUID(const char* str, uint32_t count);
-    std::string decodeUID(HAL_UID uid);
+    std::string decodeUID(HAL_UID& uid);
 }
