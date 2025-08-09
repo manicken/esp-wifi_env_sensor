@@ -641,7 +641,7 @@ namespace HAL_JSON {
             std::cout << "*                            RAW TOKEN LIST                                      *\n";
             std::cout << "**********************************************************************************\n";
 #endif
-            ReportInfo(PrintTokens(_tokens) + "\n");
+            ReportInfo(PrintTokens(_tokens,0) + "\n");
 
             ReportInfo("\nVerifyBlocks (BetterError): ");
             if (VerifyBlocks(_tokens) == false) {
@@ -675,7 +675,7 @@ namespace HAL_JSON {
             std::cout << "*                            PARSED TOKEN LIST                                   *\n";
             std::cout << "**********************************************************************************\n";
 #endif
-            ReportInfo(PrintTokens(_tokens) + "\n");
+            ReportInfo(PrintTokens(_tokens,0) + "\n");
 
             ReportInfo("\nVerifyConditionBlocks: \n");
             if (VerifyConditionBlocks(_tokens) == false) {

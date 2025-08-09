@@ -1,12 +1,12 @@
 if ((hum#humidity>= 50) and (var1 ==0)) then // using a variable to create a state machine
 
-    //BIRELSET=0 // =0 mean that the pre programmed pulse lenght will be used
+    BIRELSET=0 // =0 mean that the pre programmed pulse lenght will be used
     var0=0
     
     
 elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
 
-    //BIRELRST=0 // =0 mean that the pre programmed pulse lenght will be used
+    BIRELRST=0 // =0 mean that the pre programmed pulse lenght will be used
     
     var1= 1 and var2 = 2
     var3 =3 ; var4 = 4

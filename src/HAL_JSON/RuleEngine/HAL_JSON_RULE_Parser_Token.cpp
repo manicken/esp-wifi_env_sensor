@@ -47,12 +47,8 @@ namespace HAL_JSON {
         }
 
         void Token::Set(const char* _text, int _line, int _column) {
-            //isAction = false;
-            //merged = false;
-            //subTokenCount = 0;
             start = _text;
             end = (start!=nullptr)?(start + strlen(start)):nullptr;
-            //text = _text;
             line = _line;
             column = _column;
             itemsInBlock = 0;
@@ -68,29 +64,22 @@ namespace HAL_JSON {
         void Token::MarkTokenGroup(int size, TokenType constructType) {
             if (size == 1) {
                 this->type = constructType;
-                //subTokenCount = 0; // set as zero for the moment
                 itemsInBlock = 0;
-                //if (constructType == TokenType::Action) isAction = true; // TODO, to be removed in favor of using TokenType
                 return;
             }
-
-            //subTokenCount = size;
             itemsInBlock = size;
             
             // mark the following and inclusive this tokens merged
-            //this[0].merged = true; // TODO should be removed in favor of TokenType
             this[0].type = constructType;
             for (int i = 1; i < size; i++) {
-                //this[i].merged = true; // TODO should be removed in favor of TokenType
-                
+
                 if (constructType == TokenType::Action) {
-                    //isAction = true; // TODO should be removed in favor of TokenType
                     if (this[i].type == TokenType::ActionJoiner) {
                         this[i].type = TokenType::Ignore;
                         continue;
                     }
 
-                } 
+                }
                 this[i].type = TokenType::Merged;
             }
         }
@@ -157,39 +146,47 @@ namespace HAL_JSON {
     #endif
         }
 
-        std::string PrintTokens(Tokens& _tokens, bool sub) {
+        std::string PrintTokens(Tokens& _tokens, int subTokenIndexOffset) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             std::string msg;
             if (_tokens.firstTokenStartOffset != nullptr) {
                 msg += "firstTokenStartOffset set, ";
             }
+            bool lastWasBlock = false;
             for (int i=0;i<tokenCount;i++) {
                 Token& tok = tokens[i];
+                std::string msgLine;
+                if (subTokenIndexOffset > 0) msgLine += "    ";
                 // skip duplicate prints as theese will be printed as the Tokens block
                 // ignore types are allways part of a token block 
-                if ((tok.type == TokenType::Merged) && !sub) continue; 
+                if ((tok.type == TokenType::Merged) && subTokenIndexOffset == 0) {
+                    //msgLine += " skipping: ";
+                    continue; 
+                }
                 
-                std::string msgLine;
-                if (sub) msgLine += "    ";
+                
                 
                 // only print one level down and only if the type is Action or IfCondition
-                if (!sub && (tok.type == TokenType::Action || tok.type == TokenType::IfCondition)) {
-                    msgLine += "  Tokens block:\n";
+                if (subTokenIndexOffset == 0 && tok.itemsInBlock > 0 && (tok.type == TokenType::Action || tok.type == TokenType::IfCondition)) {
+                    if (lastWasBlock == false)
+                        msgLine += "\n";
+                    msgLine += "Tokens block:\n";
                     Tokens tokens;
                     tokens.items = &tok;
                     tokens.count = tok.itemsInBlock;
-                    msgLine += PrintTokens(tokens, true);
+                    msgLine += PrintTokens(tokens, i);
+                    lastWasBlock = true;
                 } else {
                     msgLine +=
-                    "Token(" + std::to_string(i) + "): " +
+                    "Token(" + std::to_string(i+subTokenIndexOffset) + "): " +
                     "(line:" + std::to_string(tok.line) + 
                     ", col:" + std::to_string(tok.column) + 
                     ", itemsInBlock:" + std::to_string(tok.itemsInBlock) + 
                     ", type:" + TokenTypeToString(tok.type) +
                     ")";
 
-
+                    lastWasBlock = false;
                     msgLine += " >>> " + tok.ToString() + " <<<";// size: " + std::to_string(tok.Length());// std::string(tok.text);
                 }
                 msg += msgLine + "\n";

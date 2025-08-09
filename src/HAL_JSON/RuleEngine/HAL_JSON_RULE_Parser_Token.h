@@ -137,6 +137,6 @@ namespace HAL_JSON {
         void ReportTokenError(const Token& t, const char* msg, const char* param = nullptr);
         void ReportTokenWarning(const Token& t, const char* msg, const char* param = nullptr);
         
-        std::string PrintTokens(Tokens& tokens, bool sub = false);
+        std::string PrintTokens(Tokens& tokens, int subTokenIndexOffset = 0);
     }
 }
