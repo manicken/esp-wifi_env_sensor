@@ -38,7 +38,10 @@
         std::cout << "********************************************************************" << std::endl;
 
         if (argc > 1) {
+            // one shot tests
+            HAL_JSON::Manager::setup();
             parseCommand(argv[1]);
+            return 0;
         }
         
         std::cout << "\n****** Starting REST api server:\n";

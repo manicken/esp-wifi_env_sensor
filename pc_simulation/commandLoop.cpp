@@ -67,7 +67,7 @@ void parseCommand(const char* cmd) {
         std::cout << message << "\n";
     } else if (zcCmdRoot == "expr") {
         exprTestLoad(zcCmd);
-    } else if (zcCmdRoot == "loadrules") {
+    } else if (zcCmdRoot == "loadrules" || zcCmdRoot == "lr") {
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
         std::cout << "using rule set file:" << zcFilePath.ToString() << "\n";
         std::string filePath;

@@ -27,7 +27,7 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
             var1/42
     
     // tests write and read only devices
-	wr_var = rd_var
+	wr_var=rd_var
     //rd_var = 1
     //rd_var += 1
     //wr_var += 1

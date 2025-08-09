@@ -40,7 +40,17 @@ namespace HAL_JSON {
         }
 
         bool Expressions::IsDoubleOperator(const char* c) {
-            if (c == nullptr || *(c + 1) == '\0') return false; // safety
+            if (c == nullptr) {
+                ReportError("IsDoubleOperator c - was nullptr");
+                return false;
+            } else if (*c == '\n') {
+                ReportError("IsDoubleOperator *c - was empty str");
+                return false;
+            } else if (*(c+1) == '\n') {
+                ReportError("IsDoubleOperator *(c+1) - was empty str");
+                return false;
+            }
+            //if (c == nullptr /*|| *c != '\0' */|| *(c + 1) == '\0') return false; // safety
 
             const char* op = DoubleOperatorList;
             while (*op != '\0') {

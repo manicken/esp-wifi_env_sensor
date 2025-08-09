@@ -285,102 +285,56 @@ namespace HAL_JSON {
             int tokenCount = _tokens.count;
             for (int i = 0; i < tokenCount; i++) {
                 if (((tokens[i].type == TokenType::If) || (tokens[i].type == TokenType::ElseIf)) == false) continue;
-                int conditionTokenCount = CountConditionTokens(_tokens, i+1);
+                i++;
+                int conditionTokenCount = CountConditionTokens(_tokens, i);
 #ifdef _WIN32   
                 std::cout << "If case token count: " << conditionTokenCount << "\n";
 #endif
                 if (conditionTokenCount == -1) return false; // failsafe
-
-                if (conditionTokenCount > 1) { // mergin need to be done
-                    i++;
+                
+                // if multiple tokens then there could be 'and' / 'or' keywords
+                // replace them with && || respective
+                // for uniform and easier condition parse
+                if (conditionTokenCount > 1) {
+                    
                     for (int j=i;j<i+conditionTokenCount;j++) {
-                        if (tokens[j].EqualsIC("and")) {
+                        if (tokens[j].type == TokenType::And) {
                             char* str = (char*)tokens[j].start; // need to change this text
                             str[0] = '&';
                             str[1] = '&';
                             str[2] = '\0';
                             tokens[j].end--;
-                        } else if (tokens[j].EqualsIC("or")) {
+                        } else if (tokens[j].type == TokenType::Or) {
                             char* str = (char*)tokens[j].start; // need to change this text
                             str[0] = '|';
                             str[1] = '|';
                         }
                     }
-                    tokens[i].InitSubTokens(conditionTokenCount, TokenType::IfCondition);
-                    i += conditionTokenCount; // skip all
+                    
                 }
+
+                tokens[i].MarkTokenGroup(conditionTokenCount, TokenType::IfCondition);
+                i += conditionTokenCount; // skip all
             }
             return true;
         }
-/* replaced by MergeActions2 that allow multiline spanning actions
-        bool Parser::MergeActions(Tokens& _tokens) {
-            Token* tokens = _tokens.items;
-            int tokenCount = _tokens.count;
-            for (int i = 0; i < tokenCount; ++i) {
-                //const char* text = tokens[i].text;
-
-                // Identify start of an action block
-                if (!tokens[i].EqualsICAny(actionStartKeywords)) {
-                    continue;
-                }
-
-                int start = i + 1;
-                int end = -1;
-
-                for (int j = start; j < tokenCount; ++j) {
-                    //const char* t = tokens[j].text;
-
-                    if (tokens[j].EqualsICAny(actionEndKeywords)) {
-                        end = j;
-                        break;
-                    }
-                }
-
-                if (end == -1 || start == end) {
-                    continue; // malformed or empty block, skip safely
-                }
-
-                int j = start;
-                while (j < end) {
-                    int currentLine = tokens[j].line;
-                    int lineTokenCount = 0;
-
-                    // Count how many tokens are on this line
-                    while (j + lineTokenCount < end &&
-                        tokens[j + lineTokenCount].line == currentLine) {
-                        lineTokenCount++;
-                    }
-
-                    if (lineTokenCount > 1) {
-                        tokens[j].InitSubTokens(lineTokenCount);
-                        tokens[j].isAction = true;
-                        tokens[j].type = TokenType::Action;
-                        j += lineTokenCount;
-                    } else {
-                        tokens[j].isAction = true;
-                        tokens[j].type = TokenType::Action;
-                        j++; // single token, skip merging
-                    }
-                }
-                i = end - 1; // continue after this block
-            }
-            return true;
-        }
-*/
 
         bool Parser::MergeActions2(Tokens& _tokens) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             for (int i = 0; i < tokenCount; ++i) {
-                if (!tokens[i].EqualsICAny(actionStartKeywords)) {
+                if (!tokens[i].AnyType(actionStartTypes)) { //.EqualsICAny(actionStartKeywords)) {
                     continue;
                 }
+                if (tokens[i].type == TokenType::And) tokens[i].type = TokenType::Ignore;
+                else if (tokens[i].type == TokenType::ActionSeparator) tokens[i].type = TokenType::Ignore;
 
                 int start = i + 1;
                 int end = -1;
 
                 for (int j = start; j < tokenCount; ++j) {
-                    if (tokens[j].EqualsICAny(actionEndKeywords)) {
+                    if (tokens[j].AnyType(actionEndTypes)) { //.EqualsICAny(actionEndKeywords)) {
+                        
                         end = j;
                         break;
                     }
@@ -396,21 +350,13 @@ namespace HAL_JSON {
                     int lineTokenCount = 0;
 
                     // Count tokens for current logical action line, respecting HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD continuation
-                    /*while (j + lineTokenCount < end &&
-                        (tokens[j + lineTokenCount].line == currentLine || 
-                            // If previous line ends with HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD, continue to next line's tokens
-                            (lineTokenCount > 0 &&
-                            tokens[j + lineTokenCount - 1].Equals(HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD)))) {
-                        lineTokenCount++;
-                    }*/
-
                     while (j + lineTokenCount < end) {
                         // If token line is current line, include it
                         if (tokens[j + lineTokenCount].line == currentLine) {
                             lineTokenCount++;
                         }
                         // If last token on current line is HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD, include next line tokens
-                        else if (lineTokenCount > 0 && tokens[j + lineTokenCount - 1].Equals(HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD)) {
+                        else if (lineTokenCount > 0 && tokens[j + lineTokenCount - 1].type == TokenType::ActionJoiner) { // .Equals(HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD)) {
                             // extend currentLine to next line to continue merging
                             currentLine = tokens[j + lineTokenCount].line;
                             lineTokenCount++;
@@ -418,17 +364,8 @@ namespace HAL_JSON {
                             break;
                         }
                     }
-
-                    if (lineTokenCount > 1) {
-                        tokens[j].InitSubTokens(lineTokenCount, TokenType::Action);
-                        tokens[j].isAction = true;
-                        //tokens[j].type = TokenType::Action; set by using InitSubTokens
-                        j += lineTokenCount;
-                    } else {
-                        tokens[j].isAction = true;
-                        tokens[j].type = TokenType::Action; // here it need to be set as InitSubTokens is not used
-                        j++;
-                    }
+                    tokens[j].MarkTokenGroup(lineTokenCount, TokenType::Action);
+                    j += lineTokenCount;
                 }
                 i = end - 1;
             }
@@ -442,28 +379,15 @@ namespace HAL_JSON {
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
 
-                if (token.type == TokenType::On) {
-                    int count = 0;
-                    for (int j = i + 1; j < tokenCount; ++j) {
-                        const Token& innerToken = tokens[j];
-                        if (innerToken.Merged()) continue;
-                        if (IsType(innerToken, "and")) continue;
-                        if (IsType(innerToken, ";")) continue;
-                        if (innerToken.type == TokenType::EndOn) {
-                            break;
-                        }
-                        count++;
-                    }
-                    token.itemsInBlock = count;
-                }
-                else if (token.type == TokenType::If) {
+                
+                if (token.type == TokenType::If) {
                     int count = 1;
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
                         const Token& innerToken = tokens[j];
-                        if (innerToken.Merged()) continue;
-                        if (IsType(innerToken, "and")) continue;
-                        if (IsType(innerToken, ";")) continue;
+                        if (innerToken.MergedOrIgnore()) continue;
+                        if (innerToken.type == TokenType::And) continue;
+                        if (innerToken.type == TokenType::ActionSeparator) continue;
                         if (innerToken.type == TokenType::If) level++;
                         if (innerToken.type == TokenType::EndIf) {
                             level--;
@@ -480,9 +404,9 @@ namespace HAL_JSON {
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
                         const Token& innerToken = tokens[j];
-                        if (innerToken.Merged()) continue;
-                        if (IsType(innerToken, "and")) continue;
-                        if (IsType(innerToken, ";")) continue;
+                        if (innerToken.MergedOrIgnore()) continue;
+                        if (innerToken.type == TokenType::And) continue;
+                        if (innerToken.type == TokenType::ActionSeparator) continue;
                         if (innerToken.type == TokenType::If) level++;
                         if (innerToken.type == TokenType::EndIf) {
                             level--;
@@ -492,6 +416,20 @@ namespace HAL_JSON {
                             break;
                         }
                         if (level == 1) count++;
+                    }
+                    token.itemsInBlock = count;
+                }
+                else if (token.type == TokenType::On) { // least occuring type
+                    int count = 0;
+                    for (int j = i + 1; j < tokenCount; ++j) {
+                        const Token& innerToken = tokens[j];
+                        if (innerToken.MergedOrIgnore()) continue;
+                        if (innerToken.type == TokenType::And) continue;
+                        if (innerToken.type == TokenType::ActionSeparator) continue;
+                        if (innerToken.type == TokenType::EndOn) {
+                            break;
+                        }
+                        count++;
                     }
                     token.itemsInBlock = count;
                 }
@@ -523,8 +461,8 @@ namespace HAL_JSON {
                 //const char* conditions = tokens[i+1].text;
                 Tokens conditions;
                 conditions.items = &tokens[i+1];
-                if (tokens[i+1].subTokenCount != 0) {
-                    conditions.count = tokens[i+1].subTokenCount;
+                if (tokens[i+1].itemsInBlock != 0) {
+                    conditions.count = tokens[i+1].itemsInBlock;
                 } else {
                     conditions.count = 1;
                 }
@@ -544,14 +482,14 @@ namespace HAL_JSON {
             bool anyError = false;
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
-                // 'isAction' is set only on the root token of an action (whether single-token or merged multi-token).
-                // Subtokens inside merged tokens do not have 'isAction' set.
-                if (token.isAction == false) continue;
+                // 'TokenType::Action' is set only on the root token of an action (whether single-token or merged multi-token).
+                // Subtokens inside merged tokens do not have the type TokenType::Action, instead they have the type TokenType::Merged
+                if (token.type != TokenType::Action) continue;
 
                 Tokens expressionTokens;
                 expressionTokens.items = &token;
-                if (token.subTokenCount != 0) {
-                    expressionTokens.count = token.subTokenCount;
+                if (token.itemsInBlock != 0) {
+                    expressionTokens.count = token.itemsInBlock;
                 } else {
                     expressionTokens.count = 1;
                 }
@@ -648,8 +586,8 @@ namespace HAL_JSON {
                 if (token == *firstAssignmentOperatorToken) { 
                     std::cout << "(token.start == firstAssignmentOperatorToken->start):" << token.ToString() << "\n";
                     // this mean that the assigmentOperator is in the first token
-                    // someVar= 5 or someVar=5(if this then token.subTokenCount == 0)
-                    if (token.subTokenCount == 0) {
+                    // someVar= 5 or someVar=5(if this then token.itemsInBlock == 0)
+                    if (token.itemsInBlock == 0) {
                         zcRHS_AssignmentOperands.items = expressionTokens.items;
                         zcRHS_AssignmentOperands.count = 1;
                         zcRHS_AssignmentOperands.firstTokenStartOffset = firstAssignmentOperator + 1;

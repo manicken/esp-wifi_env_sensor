@@ -13,6 +13,7 @@ namespace HAL_JSON {
             else if (StrEqualsIC(str, "do")) return TokenType::Then;
             else if (StrEqualsIC(str, "on")) return TokenType::On;
             else if (StrEqualsIC(str, "and")) return TokenType::And;
+            else if (StrEqualsIC(str, "or")) return TokenType::Or;
             else if (StrEqualsIC(str, ";")) return TokenType::ActionSeparator;
             else if (StrEqualsIC(str, "\\")) return TokenType::ActionJoiner;
             else if (StrEqualsIC(str, "endon")) return TokenType::EndOn;
@@ -30,6 +31,7 @@ namespace HAL_JSON {
                 case TokenType::ElseIf: return "ElseIf";
                 case TokenType::Then: return "Then";
                 case TokenType::And: return "And";
+                case TokenType::Or: return "Or";
                 case TokenType::ActionSeparator: return "ActionSeparator";
                 case TokenType::ActionJoiner: return "ActionJoiner";
                 case TokenType::Action: return "Action";
@@ -45,9 +47,9 @@ namespace HAL_JSON {
         }
 
         void Token::Set(const char* _text, int _line, int _column) {
-            isAction = false;
-            merged = false;
-            subTokenCount = 0;
+            //isAction = false;
+            //merged = false;
+            //subTokenCount = 0;
             start = _text;
             end = (start!=nullptr)?(start + strlen(start)):nullptr;
             //text = _text;
@@ -63,20 +65,38 @@ namespace HAL_JSON {
             // nothing to do here as no dynamic memory is allocated
         }
 
-        void Token::InitSubTokens(int size, TokenType constructType) {
-            subTokenCount = size;
+        void Token::MarkTokenGroup(int size, TokenType constructType) {
+            if (size == 1) {
+                this->type = constructType;
+                //subTokenCount = 0; // set as zero for the moment
+                itemsInBlock = 0;
+                //if (constructType == TokenType::Action) isAction = true; // TODO, to be removed in favor of using TokenType
+                return;
+            }
+
+            //subTokenCount = size;
+            itemsInBlock = size;
             
             // mark the following and inclusive this tokens merged
-            this[0].merged = true; // TODO should be removed in favor of TokenType
+            //this[0].merged = true; // TODO should be removed in favor of TokenType
             this[0].type = constructType;
             for (int i = 1; i < size; i++) {
-                this[i].merged = true; // TODO should be removed in favor of TokenType
+                //this[i].merged = true; // TODO should be removed in favor of TokenType
+                
+                if (constructType == TokenType::Action) {
+                    //isAction = true; // TODO should be removed in favor of TokenType
+                    if (this[i].type == TokenType::ActionJoiner) {
+                        this[i].type = TokenType::Ignore;
+                        continue;
+                    }
+
+                } 
                 this[i].type = TokenType::Merged;
             }
         }
 
-        bool Token::Merged() const {
-            return (merged && subTokenCount == 0);
+        bool Token::MergedOrIgnore() const {
+            return ((type == TokenType::Merged || type == TokenType::Ignore) && itemsInBlock == 0);
         }
 
         bool Token::AnyType(const TokenType* candidates) {
@@ -146,32 +166,27 @@ namespace HAL_JSON {
             }
             for (int i=0;i<tokenCount;i++) {
                 Token& tok = tokens[i];
-                if (tok.Merged() && !sub) continue;
-                //if (tok.EqualsIC("and")) continue;
-                //if (tok.EqualsIC(";")) continue;
+                // skip duplicate prints as theese will be printed as the Tokens block
+                // ignore types are allways part of a token block 
+                if ((tok.type == TokenType::Merged) && !sub) continue; 
+                
                 std::string msgLine;
                 if (sub) msgLine += "    ";
-                //char buffer[64];
-                //snprintf(buffer, sizeof(buffer), "addr: %p", (void*)&tokens[i]);
-                //std::string memaddr = buffer;
                 
-                if (!sub && tok.subTokenCount > 0) {
-                    msgLine += " Tokens block:\n";
+                // only print one level down and only if the type is Action or IfCondition
+                if (!sub && (tok.type == TokenType::Action || tok.type == TokenType::IfCondition)) {
+                    msgLine += "  Tokens block:\n";
                     Tokens tokens;
                     tokens.items = &tok;
-                    tokens.count = tok.subTokenCount;
+                    tokens.count = tok.itemsInBlock;
                     msgLine += PrintTokens(tokens, true);
                 } else {
                     msgLine +=
-                    //memaddr + "  " + 
                     "Token(" + std::to_string(i) + "): " +
                     "(line:" + std::to_string(tok.line) + 
                     ", col:" + std::to_string(tok.column) + 
+                    ", itemsInBlock:" + std::to_string(tok.itemsInBlock) + 
                     ", type:" + TokenTypeToString(tok.type) +
-                    ", itemCount:" + std::to_string(tok.itemsInBlock) + 
-                    ", merged:" + (tok.merged?"true":"false") + 
-                    ", isAction:" + (tok.isAction?"true":"false") + 
-                    ", subTokenCount:" + std::to_string(tok.subTokenCount) + 
                     ")";
 
 

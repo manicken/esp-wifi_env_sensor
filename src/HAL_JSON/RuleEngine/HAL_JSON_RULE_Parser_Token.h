@@ -36,8 +36,10 @@ namespace HAL_JSON {
             /** used to mark actions, note if a action spans multiple tokens only the root is marked, the rest is marked Merged */
             Action,
             Merged,
-            /** used both as a conditional and/&& and as a action separator in one line scripts */
+            /** used both as a conditional and / && and as a action separator in one line scripts */
             And,
+            /** used only as conditional || / or */
+            Or,
             /** specific action separator currently defined as ; should be marked as Ignored When consumed*/
             ActionSeparator,
             /** used to split actions into multiple lines currently \ (note it need to have a space before and whitespace after), should be marked as Ignored When consumed*/
@@ -62,17 +64,17 @@ namespace HAL_JSON {
             //Tokens subTokens; // if used like this is the default constructor called
             //Token* subTokens;
             TokenType type;
-            int subTokenCount;
+            //int subTokenCount;
             int line;
             int column;
             int itemsInBlock;
-            bool isAction;
+            //bool isAction;
             /** 
              * Set to true if this token is a subtoken of another token.
              * Used to skip it during post-processing checks.
              * basically (merged && subTokenCount == 0)
              */
-            bool merged;
+            //bool merged;
             Token();
             
 
@@ -89,13 +91,13 @@ namespace HAL_JSON {
              * TokenType::IfCondition
              * TokenType::Action
              */
-            void InitSubTokens(int size, TokenType constructType);
+            void MarkTokenGroup(int size, TokenType constructType);
             /** 
              * return true if this token is a subtoken of another token.
              * Used to skip it during post-processing checks.
              * basically (merged && subTokenCount == 0)
              */
-            bool Merged() const;
+            bool MergedOrIgnore() const;
             bool AnyType(const TokenType* candidates);
             ~Token();
         };
