@@ -121,7 +121,7 @@ namespace HAL_JSON {
             message += "\"error\":\"No value provided for writing.\"";
             return false;
         } else {
-            HALOperationResult  writeResult = HALOperationResult::UnsupportedOperation;
+            HALOperationResult writeResult = HALOperationResult::UnsupportedOperation;
 
             if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
                 uint32_t uintValue = 0;
@@ -239,7 +239,7 @@ namespace HAL_JSON {
 #ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
         message += params.ToString() + "},";
 #endif
-        HALOperationResult  readResult = HALOperationResult::UnsupportedOperation;
+        HALOperationResult readResult = HALOperationResult::UnsupportedOperation;
 
         if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
             UIDPath uidPath(params.zcUid);

@@ -17,7 +17,7 @@ namespace HAL_JSON {
         return new RuleVariableWriteOnlyTest(jsonObj, type);
     }
 
-    HALOperationResult  RuleVariableWriteOnlyTest::write(const HALValue& val) {
+    HALOperationResult RuleVariableWriteOnlyTest::write(const HALValue& val) {
         value = val;
         return HALOperationResult::Success;
     }

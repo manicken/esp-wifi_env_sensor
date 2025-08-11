@@ -45,7 +45,7 @@ namespace HAL_JSON {
         return true;
     }
 
-    HALOperationResult  TX433unit::write(const HALValue &val) {
+    HALOperationResult TX433unit::write(const HALValue &val) {
         RF433::init(pin); // ensure that the correct pin is used and that it's set to a output
         if (model == TX433_MODEL::FixedCode) {
             if (fixedState == false)

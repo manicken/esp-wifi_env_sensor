@@ -35,7 +35,7 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    HALOperationResult  DigitalInput::read(HALValue &val) {
+    HALOperationResult DigitalInput::read(HALValue &val) {
         //val.set((uint32_t)digitalRead(pin));
         val = (uint32_t)digitalRead(pin);
         return HALOperationResult::Success;
@@ -89,13 +89,13 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    HALOperationResult  DigitalOutput::read(HALValue &val) {
+    HALOperationResult DigitalOutput::read(HALValue &val) {
         //val.set(value); // read back the latest write value
         val = value;
         return HALOperationResult::Success;
     }
 
-    HALOperationResult  DigitalOutput::write(const HALValue &val) {
+    HALOperationResult DigitalOutput::write(const HALValue &val) {
         value = val;//val.asUInt();
         digitalWrite(pin, value);
         return HALOperationResult::Success;
@@ -163,7 +163,7 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    HALOperationResult  SinglePulseOutput::read(HALValue &val) {
+    HALOperationResult SinglePulseOutput::read(HALValue &val) {
         //val.set(value); // read back the latest write value
         val = pulseLength;
         return HALOperationResult::Success;
@@ -173,7 +173,7 @@ namespace HAL_JSON {
         context->endPulse();
     }
 
-    HALOperationResult  SinglePulseOutput::write(const HALValue &val) {
+    HALOperationResult SinglePulseOutput::write(const HALValue &val) {
         uint32_t t = val;
         if (t != 0) // only change if not zero
             pulseLength = t;//val.asUInt();
@@ -235,7 +235,7 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    HALOperationResult  AnalogInput::read(HALValue &val) {
+    HALOperationResult AnalogInput::read(HALValue &val) {
         //val.set((uint32_t)analogRead(pin));
         val = (uint32_t)analogRead(pin);
         return HALOperationResult::Success;
@@ -299,7 +299,7 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    HALOperationResult  PWMAnalogWriteConfig::write(const HALWriteStringRequestValue& value) {
+    HALOperationResult PWMAnalogWriteConfig::write(const HALWriteStringRequestValue& value) {
         // could be supported in the future
         // for direct set of cfg
         return HALOperationResult::UnsupportedOperation;
@@ -351,13 +351,13 @@ namespace HAL_JSON {
         else return nullptr;
     }
 #endif
-    HALOperationResult  PWMAnalogWrite::read(HALValue &val) {
+    HALOperationResult PWMAnalogWrite::read(HALValue &val) {
         //val.set(value); // just read back latest write
         val = value;
         return HALOperationResult::Success;
     }
 
-    HALOperationResult  PWMAnalogWrite::write(const HALValue &val) {
+    HALOperationResult PWMAnalogWrite::write(const HALValue &val) {
         //value = val.asUInt();
         value = val;
         if (inv_out)

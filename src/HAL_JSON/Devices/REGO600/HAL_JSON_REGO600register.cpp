@@ -47,7 +47,7 @@ namespace HAL_JSON {
         return new REGO600register(jsonObj, type);
     }
 
-    HALOperationResult  REGO600register::read(HALValue& val) {
+    HALOperationResult REGO600register::read(HALValue& val) {
         if (valueType == ValueType::FLOAT)
             val = (float)((float)value / 10.0f);
         else if (valueType == ValueType::BOOL)

@@ -188,37 +188,37 @@ namespace HAL_JSON {
         return nullptr;
     }
 
-    HALOperationResult  Manager::read(const HALReadRequest &req) {
+    HALOperationResult Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.out_value);
     }
-    HALOperationResult  Manager::write(const HALWriteRequest &req) {
+    HALOperationResult Manager::write(const HALWriteRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.value);
     }
-    HALOperationResult  Manager::read(const HALReadStringRequest &req) {
+    HALOperationResult Manager::read(const HALReadStringRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.value);
     }
-    HALOperationResult  Manager::write(const HALWriteStringRequest &req) {
+    HALOperationResult Manager::write(const HALWriteStringRequest &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.value);
     }
-    HALOperationResult  Manager::read(const HALReadValueByCmdReq &req) {
+    HALOperationResult Manager::read(const HALReadValueByCmdReq &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.valByCmd);
     }
-    HALOperationResult  Manager::write(const HALWriteValueByCmdReq &req) {
+    HALOperationResult Manager::write(const HALWriteValueByCmdReq &req) {
         Device* device = findDevice(req.path);
         if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
         //Serial.println(F("found device"));

@@ -32,19 +32,19 @@ namespace HAL_JSON {
         const char* type;
         bool loopTaskDone = false;
     public:
-        using ReadToHALValue_FuncType = HALOperationResult  (*)(Device*, HALValue&);
+        using ReadToHALValue_FuncType = HALOperationResult (*)(Device*, HALValue&);
         Device(UIDPathMaxLength uidMaxLength, const char* type);
         virtual ~Device();
 
         HAL_UID uid;
         const uint8_t uidMaxLength = 0;
         bool LoopTaskDone();
-        virtual HALOperationResult  read(HALValue& val);
-        virtual HALOperationResult  write(const HALValue& val);
-        virtual HALOperationResult  read(const HALReadStringRequestValue& val);
-        virtual HALOperationResult  write(const HALWriteStringRequestValue& val);
-        virtual HALOperationResult  read(const HALReadValueByCmd& val);
-        virtual HALOperationResult  write(const HALWriteValueByCmd& val);
+        virtual HALOperationResult read(HALValue& val);
+        virtual HALOperationResult write(const HALValue& val);
+        virtual HALOperationResult read(const HALReadStringRequestValue& val);
+        virtual HALOperationResult write(const HALWriteStringRequestValue& val);
+        virtual HALOperationResult read(const HALReadValueByCmd& val);
+        virtual HALOperationResult write(const HALWriteValueByCmd& val);
         virtual ReadToHALValue_FuncType GetReadToHALValue_Function(const char* funcName);
         virtual HALValue* GetValueDirectAccessPtr();
         /** called regulary from the main loop */

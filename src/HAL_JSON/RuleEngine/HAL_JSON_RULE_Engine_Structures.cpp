@@ -35,7 +35,7 @@ namespace HAL_JSON {
                 } // else its unset so nothing needs freeing
             }
 
-            HALOperationResult  RPNcalc_Item::GetAndPushVariableValue_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::GetAndPushVariableValue_Handler(void* context, RPNStack& stack) {
                 RPNcalc_Item* item = static_cast<RPNcalc_Item*>(context);
                 HALValue value;
                 if (item->cDevice->valueDirectAccessPtr != nullptr) {
@@ -43,11 +43,11 @@ namespace HAL_JSON {
                 }
                 else if (item->cDevice->readToHalValueFunc != nullptr) {
                     Device* device = item->cDevice->GetDevice();
-                    HALOperationResult  result = item->cDevice->readToHalValueFunc(device, value);
+                    HALOperationResult result = item->cDevice->readToHalValueFunc(device, value);
                     if (result != HALOperationResult::Success) return result;
                 } else {
                     Device* device = item->cDevice->GetDevice();
-                    HALOperationResult  result = device->read(value);
+                    HALOperationResult result = device->read(value);
                     if (result != HALOperationResult::Success) return result;
                 }
                     
@@ -58,7 +58,7 @@ namespace HAL_JSON {
                 return HALOperationResult::Success;
             }
 
-            HALOperationResult  RPNcalc_Item::GetAndPushConstValue_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::GetAndPushConstValue_Handler(void* context, RPNStack& stack) {
                 RPNcalc_Item* item = static_cast<RPNcalc_Item*>(context);
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (stack.sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
@@ -68,7 +68,7 @@ namespace HAL_JSON {
             }
 
 
-            HALOperationResult  RPNcalc_Item::Add_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::Add_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -81,7 +81,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::Subtract_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::Subtract_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -94,7 +94,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::Multiply_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::Multiply_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -107,7 +107,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::Divide_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::Divide_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -125,7 +125,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::Modulus_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::Modulus_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -142,7 +142,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::BitwiseAnd_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::BitwiseAnd_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -155,7 +155,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::BitwiseOr_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::BitwiseOr_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -168,7 +168,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::BitwiseExOr_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::BitwiseExOr_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -181,7 +181,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::BitwiseLeftShift_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::BitwiseLeftShift_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
@@ -194,7 +194,7 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-            HALOperationResult  RPNcalc_Item::BitwiseRightShift_Operation_Handler(void* context, RPNStack& stack) {
+            HALOperationResult RPNcalc_Item::BitwiseRightShift_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
                 if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check

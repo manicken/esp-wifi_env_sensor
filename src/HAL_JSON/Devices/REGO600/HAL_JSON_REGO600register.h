@@ -35,7 +35,7 @@ namespace HAL_JSON {
         static Device* Create(const JsonVariant &jsonObj, const char* type);
         REGO600register(const JsonVariant &jsonObj, const char* type);
 
-        HALOperationResult  read(HALValue& val) override;
+        HALOperationResult read(HALValue& val) override;
         String ToString() override;
     };
 

@@ -20,7 +20,7 @@ namespace HAL_JSON {
         const HALWriteValueByCmd& valByCmd;
         HALWriteValueByCmdReq(UIDPath& p, const HALWriteValueByCmd& valByCmd) : path(p), valByCmd(valByCmd) {}
     };
-    enum class HALOperationResult  {
+    enum class HALOperationResult {
         Success = 0,
         DeviceNotFound = 1,
         UnsupportedOperation = 2,  // was OperationNotSupported
@@ -34,7 +34,7 @@ namespace HAL_JSON {
         /** script engine specific error */
         DivideByZero = 12
     };
-    inline const char* ToString(HALOperationResult  result) {
+    inline const char* ToString(HALOperationResult result) {
         switch (result) {
             case HALOperationResult::Success: return "Success";
             case HALOperationResult::DeviceNotFound: return "DeviceNotFound";

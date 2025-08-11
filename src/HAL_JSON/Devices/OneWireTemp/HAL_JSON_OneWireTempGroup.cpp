@@ -109,7 +109,7 @@ namespace HAL_JSON {
         return nullptr;
     }
 
-    HALOperationResult  OneWireTempGroup::read(const HALReadStringRequestValue& val) {
+    HALOperationResult OneWireTempGroup::read(const HALReadStringRequestValue& val) {
         if (val.cmd == "getAllNewDevices") { // (as json) return a list of all new devices found for all busses (this will compare against the current ones and only print new ones)
             val.out_value = "[";
             for (int i=0;i<busCount;i++) {

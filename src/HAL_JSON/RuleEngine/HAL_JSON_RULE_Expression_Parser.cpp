@@ -293,7 +293,7 @@ namespace HAL_JSON {
                 return;
             }
             if (mode == ValidateOperandMode::Read || mode == ValidateOperandMode::ReadWrite) {
-                HALOperationResult  readResult = HALOperationResult::UnsupportedOperation;
+                HALOperationResult readResult = HALOperationResult::UnsupportedOperation;
                 if (funcName.Length() != 0) {
                     HALValue halValue;
                     HALReadValueByCmd readValueByCmd(halValue, funcName);
@@ -318,7 +318,7 @@ namespace HAL_JSON {
                 }
             }
             if (mode == ValidateOperandMode::Write || mode == ValidateOperandMode::ReadWrite) {
-                HALOperationResult  writeResult = HALOperationResult::UnsupportedOperation;
+                HALOperationResult writeResult = HALOperationResult::UnsupportedOperation;
                 if (funcName.Length() != 0) {
                     HALValue halValue;
                     HALWriteValueByCmd writeValueByCmd(halValue, funcName);

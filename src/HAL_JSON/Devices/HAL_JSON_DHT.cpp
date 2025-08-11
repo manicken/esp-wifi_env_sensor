@@ -79,7 +79,7 @@ namespace HAL_JSON {
         }
     }
 
-    HALOperationResult  DHT::read(HALValue &val) {
+    HALOperationResult DHT::read(HALValue &val) {
         val = data.humidity;
         return HALOperationResult::Success;
     }
@@ -107,7 +107,7 @@ namespace HAL_JSON {
         return HALOperationResult::Success;
     }
 
-    HALOperationResult  DHT::read(const HALReadValueByCmd &val) {
+    HALOperationResult DHT::read(const HALReadValueByCmd &val) {
         if (val.cmd == "temp") {
             val.out_value = data.temperature;
             return HALOperationResult::Success;
@@ -122,7 +122,7 @@ namespace HAL_JSON {
         }
     }
 
-    HALOperationResult  DHT::read(const HALReadStringRequestValue &val) {
+    HALOperationResult DHT::read(const HALReadStringRequestValue &val) {
         if (val.cmd == "temp") {
             val.out_value = "{\"temp\":" + std::to_string(data.temperature) + "}";
             return HALOperationResult::Success;

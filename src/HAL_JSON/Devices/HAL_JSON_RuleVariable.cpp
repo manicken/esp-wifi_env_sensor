@@ -20,11 +20,11 @@ namespace HAL_JSON {
         return &value;
     }
 
-    HALOperationResult  RuleVariable::read(HALValue& val) {
+    HALOperationResult RuleVariable::read(HALValue& val) {
         val = value;
         return HALOperationResult::Success;
     }
-    HALOperationResult  RuleVariable::write(const HALValue& val) {
+    HALOperationResult RuleVariable::write(const HALValue& val) {
         value = val;
         return HALOperationResult::Success;
     }

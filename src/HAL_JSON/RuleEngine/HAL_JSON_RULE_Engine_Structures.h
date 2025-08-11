@@ -60,19 +60,19 @@ namespace HAL_JSON {
                 RPNcalc_Item(RPNcalc_Item&& other) = delete;           // no move constructor
                 RPNcalc_Item& operator=(RPNcalc_Item&& other) = delete; // no move assignment
 
-                static HALOperationResult  GetAndPushVariableValue_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  GetAndPushConstValue_Handler(void* context, RPNStack& stack);
+                static HALOperationResult GetAndPushVariableValue_Handler(void* context, RPNStack& stack);
+                static HALOperationResult GetAndPushConstValue_Handler(void* context, RPNStack& stack);
 
-                static HALOperationResult  Add_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  Subtract_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  Multiply_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  Divide_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  Modulus_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  BitwiseAnd_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  BitwiseOr_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  BitwiseExOr_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  BitwiseLeftShift_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult  BitwiseRightShift_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult Add_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult Subtract_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult Multiply_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult Divide_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult Modulus_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult BitwiseAnd_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult BitwiseOr_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult BitwiseExOr_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult BitwiseLeftShift_Operation_Handler(void* context, RPNStack& stack);
+                static HALOperationResult BitwiseRightShift_Operation_Handler(void* context, RPNStack& stack);
 
                 RPNcalc_Item();
                 ~RPNcalc_Item();
