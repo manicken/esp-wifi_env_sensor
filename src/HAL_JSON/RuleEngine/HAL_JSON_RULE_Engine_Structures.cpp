@@ -207,7 +207,24 @@ namespace HAL_JSON {
                 stack.sp = sp - 1;
                 return HALOperationResult::Success;
             }
-
+            bool RPNCondition::NotEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs) {
+                return lhs != rhs;
+            }
+            bool RPNCondition::Equals_Operation_Handler(const HALValue& lhs, const HALValue& rhs) {
+                return lhs == rhs;
+            }
+            bool RPNCondition::LessThan_Operation_Handler(const HALValue& lhs, const HALValue& rhs) {
+                return lhs < rhs;
+            }
+            bool RPNCondition::LargerThan_Operation_Handler(const HALValue& lhs, const HALValue& rhs) {
+                return lhs > rhs;
+            }
+            bool RPNCondition::LessThanOrEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs) {
+                return lhs <= rhs;
+            }
+            bool RPNCondition::LargerThanOrEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs) {
+                return lhs >= rhs;
+            }
         }
     }
 }

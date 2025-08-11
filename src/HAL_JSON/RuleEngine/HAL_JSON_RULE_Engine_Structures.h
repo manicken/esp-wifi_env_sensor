@@ -26,7 +26,8 @@ namespace HAL_JSON {
                 RPNStack& operator=(RPNStack&& other) = delete; // no move assignment
             };
 
-            typedef bool (*OperatorFunc)(void* context, RPNStack& stack);
+            typedef HALOperationResult (*OperatorFunc)(void* context, RPNStack& stack);
+            typedef bool (*ConditionFunc)(const HALValue& lhs, const HALValue& rhs);
 
             enum class OpBlockType {
                 NotSet,
@@ -79,7 +80,8 @@ namespace HAL_JSON {
             };
 
             struct RPNCondition {
-                ConditionType type;
+                ConditionFunc handler;
+
                 RPNcalc_Item* lhsItems;
                 int lhsCount;
                 RPNcalc_Item* rhsItems;
@@ -89,6 +91,13 @@ namespace HAL_JSON {
                 RPNCondition& operator=(const RPNCondition&) = delete; // no copy assignment
                 RPNCondition(RPNCondition&& other) = delete;           // no move constructor
                 RPNCondition& operator=(RPNCondition&& other) = delete; // no move assignment
+
+                static bool NotEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
+                static bool Equals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
+                static bool LessThan_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
+                static bool LargerThan_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
+                static bool LessThanOrEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
+                static bool LargerThanOrEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
 
                 RPNCondition();
                 ~RPNCondition();

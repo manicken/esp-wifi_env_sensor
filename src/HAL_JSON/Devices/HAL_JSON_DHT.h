@@ -40,8 +40,8 @@ namespace HAL_JSON {
         
         void loop() override; // will need loop for automatic polling as this device is slow
 
-        static bool readTemperature(Device* context, HALValue &val);
-        static bool readHumidity(Device* context, HALValue &val);
+        static HALOperationResult readTemperature(Device* context, HALValue &val);
+        static HALOperationResult readHumidity(Device* context, HALValue &val);
         ReadToHALValue_FuncType GetReadToHALValue_Function(const char* funcName) override;
         
 
