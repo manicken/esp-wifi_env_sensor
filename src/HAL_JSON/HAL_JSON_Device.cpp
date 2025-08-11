@@ -18,13 +18,14 @@ namespace HAL_JSON {
 
     String Device::ToString() { return ""; }
 
-    HALDeviceOperationResult Device::read(HALValue& val) { return HALDeviceOperationResult::UnsupportedOperation; }
-    HALDeviceOperationResult Device::write(const HALValue& val) { return HALDeviceOperationResult::UnsupportedOperation; };
-    HALDeviceOperationResult Device::read(const HALReadStringRequestValue& val) { return HALDeviceOperationResult::UnsupportedOperation; }
-    HALDeviceOperationResult Device::write(const HALWriteStringRequestValue& val) { return HALDeviceOperationResult::UnsupportedOperation; }
-    HALDeviceOperationResult Device::read(const HALReadValueByCmd& val) { return HALDeviceOperationResult::UnsupportedOperation; }
-    HALDeviceOperationResult Device::write(const HALWriteValueByCmd& val) { return HALDeviceOperationResult::UnsupportedOperation; }
+    HALOperationResult  Device::read(HALValue& val) { return HALOperationResult ::UnsupportedOperation; }
+    HALOperationResult  Device::write(const HALValue& val) { return HALOperationResult ::UnsupportedOperation; };
+    HALOperationResult  Device::read(const HALReadStringRequestValue& val) { return HALOperationResult ::UnsupportedOperation; }
+    HALOperationResult  Device::write(const HALWriteStringRequestValue& val) { return HALOperationResult ::UnsupportedOperation; }
+    HALOperationResult  Device::read(const HALReadValueByCmd& val) { return HALOperationResult ::UnsupportedOperation; }
+    HALOperationResult  Device::write(const HALWriteValueByCmd& val) { return HALOperationResult ::UnsupportedOperation; }
     Device::ReadToHALValue_FuncType Device::GetReadToHALValue_Function(const char* funcName) { return nullptr; }
+    HALValue* Device::GetValueDirectAccessPtr() { return nullptr; }
 
     bool Device::DisabledInJson(const JsonVariant& jsonObj) {
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_DISABLED) == false) return false;

@@ -20,10 +20,19 @@ namespace HAL_JSON {
         int cachedVersion;
         UIDPath path;
         Device* device;
-        /** allows direct access to functions by name, 
-         * or actually sub values defined by using # in uidPath#subItem */
-        Device::ReadToHALValue_FuncType readToHalValueFunc;
+        
     public:
+        /** 
+         * some devices can give direct access to the internal value
+         * so in those cases this will allow that
+         */
+        HALValue* valueDirectAccessPtr;
+        /** 
+         * allows direct access to functions by name, 
+         * or actually sub values defined by using # in uidPath#subItem
+         */
+        Device::ReadToHALValue_FuncType readToHalValueFunc;
+        
         CachedDeviceAccess(const char* uidPath, const char* funcName = nullptr);
         Device* GetDevice();
     };

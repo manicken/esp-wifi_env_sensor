@@ -20,7 +20,7 @@ namespace HAL_JSON {
         static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj, const char* type);
         RuleVariableReadOnly(const JsonVariant &jsonObj, const char* type);
-        HALDeviceOperationResult read(HALValue& val) override;
+        HALOperationResult  read(HALValue& val) override;
 
         String ToString() override;
     };

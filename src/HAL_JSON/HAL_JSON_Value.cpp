@@ -1,6 +1,6 @@
 #include "HAL_JSON_Value.h"
 namespace HAL_JSON {
-    HALValue::HALValue() : type(Type::NONE) {}
+    HALValue::HALValue() : type(Type::UNSET) {}
 
     /*HALValue::HALValue(const HALValue& other) {
         type = other.type;
@@ -126,6 +126,53 @@ namespace HAL_JSON {
 
     bool operator>=(const HALValue& lhs, const HALValue& rhs) {
         return lhs.asFloat() >= rhs.asFloat();
+    }
+
+    HALValue HALValue::operator+(const HALValue& other) {
+        if (type == Type::FLOAT || other.type == Type::FLOAT) {
+            return fval + other.fval;
+        } else {
+            return uval + other.uval;
+        }
+    }
+    HALValue HALValue::operator-(const HALValue& other) {
+        if (type == Type::FLOAT || other.type == Type::FLOAT) {
+            return fval - other.fval;
+        } else {
+            return uval - other.uval;
+        }
+    }
+    HALValue HALValue::operator*(const HALValue& other) {
+        if (type == Type::FLOAT || other.type == Type::FLOAT) {
+            return fval * other.fval;
+        } else {
+            return uval * other.uval;
+        }
+    }
+    HALValue HALValue::operator/(const HALValue& other) {
+        if (type == Type::FLOAT || other.type == Type::FLOAT) {
+            return fval / other.fval;
+        } else {
+            return uval / other.uval;
+        }
+    }
+    HALValue HALValue::operator%(const HALValue& other) {
+        return uval % other.uval;
+    }
+    HALValue HALValue::operator&(const HALValue& other) {
+        return uval & other.uval;
+    }
+    HALValue HALValue::operator|(const HALValue& other) {
+        return uval | other.uval;
+    }
+    HALValue HALValue::operator^(const HALValue& other) {
+        return uval ^ other.uval;
+    }
+    HALValue HALValue::operator<<(const HALValue& other) {
+        return uval << other.uval;
+    }
+    HALValue HALValue::operator>>(const HALValue& other) {
+        return uval >> other.uval;
     }
 
 }

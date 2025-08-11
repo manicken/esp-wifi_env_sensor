@@ -16,14 +16,17 @@ namespace HAL_JSON {
     Device* RuleVariable::Create(const JsonVariant &jsonObj, const char* type) {
         return new RuleVariable(jsonObj, type);
     }
-
-    HALDeviceOperationResult RuleVariable::read(HALValue& val) {
-        val = value;
-        return HALDeviceOperationResult::Success;
+    HALValue* RuleVariable::GetValueDirectAccessPtr() {
+        return &value;
     }
-    HALDeviceOperationResult RuleVariable::write(const HALValue& val) {
+
+    HALOperationResult  RuleVariable::read(HALValue& val) {
+        val = value;
+        return HALOperationResult ::Success;
+    }
+    HALOperationResult  RuleVariable::write(const HALValue& val) {
         value = val;
-        return HALDeviceOperationResult::Success;
+        return HALOperationResult ::Success;
     }
 
     String RuleVariable::ToString() {

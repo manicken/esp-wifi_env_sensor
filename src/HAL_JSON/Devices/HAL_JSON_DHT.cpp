@@ -79,9 +79,9 @@ namespace HAL_JSON {
         }
     }
 
-    HALDeviceOperationResult DHT::read(HALValue &val) {
+    HALOperationResult  DHT::read(HALValue &val) {
         val = data.humidity;
-        return HALDeviceOperationResult::Success;
+        return HALOperationResult ::Success;
     }
 
     Device::ReadToHALValue_FuncType DHT::GetReadToHALValue_Function(const char* funcName) {
@@ -96,44 +96,44 @@ namespace HAL_JSON {
         }
     }
 
-    bool DHT::readTemperature(Device* context, HALValue& val) {
+    HALOperationResult  DHT::readTemperature(Device* context, HALValue& val) {
         DHT* dht = static_cast<DHT*>(context);
         val = dht->data.temperature;
-        return true;
+        return HALOperationResult ::Success;
     }
-    bool DHT::readHumidity(Device* context, HALValue& val) {
+    HALOperationResult  DHT::readHumidity(Device* context, HALValue& val) {
         DHT* dht = static_cast<DHT*>(context);
         val = dht->data.humidity;
-        return true;
+        return HALOperationResult ::Success;
     }
 
-    HALDeviceOperationResult DHT::read(const HALReadValueByCmd &val) {
+    HALOperationResult  DHT::read(const HALReadValueByCmd &val) {
         if (val.cmd == "temp") {
             val.out_value = data.temperature;
-            return HALDeviceOperationResult::Success;
+            return HALOperationResult ::Success;
         } else if (val.cmd == "humidity") {
             val.out_value = data.humidity;
-            return HALDeviceOperationResult::Success;
+            return HALOperationResult ::Success;
         }
         else {
             std::string stdStrCmd = val.cmd.ToString();
             GlobalLogger.Warn(F("DHT::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
-            return HALDeviceOperationResult::UnsupportedCommand;
+            return HALOperationResult ::UnsupportedCommand;
         }
     }
 
-    HALDeviceOperationResult DHT::read(const HALReadStringRequestValue &val) {
+    HALOperationResult  DHT::read(const HALReadStringRequestValue &val) {
         if (val.cmd == "temp") {
             val.out_value = "{\"temp\":" + std::to_string(data.temperature) + "}";
-            return HALDeviceOperationResult::Success;
+            return HALOperationResult ::Success;
         } else if (val.cmd == "humidity") {
             val.out_value = "{\"humidity\":" + std::to_string(data.humidity) + "}";
-            return HALDeviceOperationResult::Success;
+            return HALOperationResult ::Success;
         }
         else {
             std::string stdStrCmd = val.cmd.ToString();
             GlobalLogger.Warn(F("DHT::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
-            return HALDeviceOperationResult::UnsupportedCommand;
+            return HALOperationResult ::UnsupportedCommand;
         }
     }
     

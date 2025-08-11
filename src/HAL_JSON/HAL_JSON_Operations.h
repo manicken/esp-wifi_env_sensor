@@ -20,20 +20,27 @@ namespace HAL_JSON {
         const HALWriteValueByCmd& valByCmd;
         HALWriteValueByCmdReq(UIDPath& p, const HALWriteValueByCmd& valByCmd) : path(p), valByCmd(valByCmd) {}
     };
-    enum class HALDeviceOperationResult {
+    enum class HALOperationResult  {
         Success = 0,
         DeviceNotFound = 1,
         UnsupportedOperation = 2,  // was OperationNotSupported
         UnsupportedCommand = 3,   // was InvalidCommand
-        ExecutionFailed = 4       // was OperationFail
+        ExecutionFailed = 4,       // was OperationFail
+
+        /** script engine specific error */
+        StackUnderflow = 10,
+        /** script engine specific error */
+        StackOverflow = 11,
+        /** script engine specific error */
+        DivideByZero = 12
     };
-    inline const char* ToString(HALDeviceOperationResult result) {
+    inline const char* ToString(HALOperationResult  result) {
         switch (result) {
-            case HALDeviceOperationResult::Success: return "Success";
-            case HALDeviceOperationResult::DeviceNotFound: return "DeviceNotFound";
-            case HALDeviceOperationResult::UnsupportedOperation: return "UnsupportedOperation";
-            case HALDeviceOperationResult::UnsupportedCommand: return "UnsupportedCommand";
-            case HALDeviceOperationResult::ExecutionFailed: return "ExecutionFailed";
+            case HALOperationResult ::Success: return "Success";
+            case HALOperationResult ::DeviceNotFound: return "DeviceNotFound";
+            case HALOperationResult ::UnsupportedOperation: return "UnsupportedOperation";
+            case HALOperationResult ::UnsupportedCommand: return "UnsupportedCommand";
+            case HALOperationResult ::ExecutionFailed: return "ExecutionFailed";
             default: return "Unknown";
         }
     }

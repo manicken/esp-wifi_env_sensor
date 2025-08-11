@@ -42,7 +42,7 @@ namespace HAL_JSON {
         
         TX433unit(const JsonVariant &jsonObj, const char* type, const uint32_t pin);
         TX433unit(TX433unit&) = delete;
-        HALDeviceOperationResult write(const HALValue &val);
+        HALOperationResult  write(const HALValue &val);
 
         String ToString() override;
     };

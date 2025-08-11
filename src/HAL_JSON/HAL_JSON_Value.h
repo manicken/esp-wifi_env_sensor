@@ -9,7 +9,7 @@ namespace HAL_JSON {
 
     class HALValue {
     public:
-        enum class Type { NONE, UINT, INT, FLOAT/*, STRING*/ };
+        enum class Type { UNSET, UINT, INT, FLOAT/*, STRING*/ };
 
     private:
         Type type;
@@ -51,6 +51,17 @@ namespace HAL_JSON {
         operator uint32_t() const;
         operator int32_t() const;
         operator float() const;
+
+        HALValue operator+(const HALValue& other);
+        HALValue operator-(const HALValue& other);
+        HALValue operator*(const HALValue& other);
+        HALValue operator/(const HALValue& other);
+        HALValue operator%(const HALValue& other);
+        HALValue operator&(const HALValue& other);
+        HALValue operator|(const HALValue& other);
+        HALValue operator^(const HALValue& other);
+        HALValue operator<<(const HALValue& other);
+        HALValue operator>>(const HALValue& other);
     };
     // Comparison Operators
     bool operator==(const HALValue& lhs, const HALValue& rhs);
@@ -59,4 +70,6 @@ namespace HAL_JSON {
     bool operator>(const HALValue& lhs, const HALValue& rhs);
     bool operator<=(const HALValue& lhs, const HALValue& rhs);
     bool operator>=(const HALValue& lhs, const HALValue& rhs);
+
+    
 }

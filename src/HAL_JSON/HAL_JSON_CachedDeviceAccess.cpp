@@ -11,6 +11,8 @@ namespace HAL_JSON {
             readToHalValueFunc = device->GetReadToHALValue_Function(funcName);
         else
             readToHalValueFunc = nullptr;
+
+        valueDirectAccessPtr = device->GetValueDirectAccessPtr();
     }
 
     Device* CachedDeviceAccess::GetDevice() {

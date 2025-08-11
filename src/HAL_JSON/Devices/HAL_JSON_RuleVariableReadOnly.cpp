@@ -17,9 +17,9 @@ namespace HAL_JSON {
         return new RuleVariableReadOnly(jsonObj, type);
     }
 
-    HALDeviceOperationResult RuleVariableReadOnly::read(HALValue& val) {
+    HALOperationResult  RuleVariableReadOnly::read(HALValue& val) {
         val = value;
-        return HALDeviceOperationResult::Success;
+        return HALOperationResult ::Success;
     }
 
     String RuleVariableReadOnly::ToString() {

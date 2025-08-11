@@ -188,39 +188,39 @@ namespace HAL_JSON {
         return nullptr;
     }
 
-    HALDeviceOperationResult Manager::read(const HALReadRequest &req) {
+    HALOperationResult  Manager::read(const HALReadRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
+        if (device == nullptr) { return HALOperationResult ::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.out_value);
     }
-    HALDeviceOperationResult Manager::write(const HALWriteRequest &req) {
+    HALOperationResult  Manager::write(const HALWriteRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
+        if (device == nullptr) { return HALOperationResult ::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.value);
     }
-    HALDeviceOperationResult Manager::read(const HALReadStringRequest &req) {
+    HALOperationResult  Manager::read(const HALReadStringRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
+        if (device == nullptr) { return HALOperationResult ::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.value);
     }
-    HALDeviceOperationResult Manager::write(const HALWriteStringRequest &req) {
+    HALOperationResult  Manager::write(const HALWriteStringRequest &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
+        if (device == nullptr) { return HALOperationResult ::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.value);
     }
-    HALDeviceOperationResult Manager::read(const HALReadValueByCmdReq &req) {
+    HALOperationResult  Manager::read(const HALReadValueByCmdReq &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
+        if (device == nullptr) { return HALOperationResult ::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->read(req.valByCmd);
     }
-    HALDeviceOperationResult Manager::write(const HALWriteValueByCmdReq &req) {
+    HALOperationResult  Manager::write(const HALWriteValueByCmdReq &req) {
         Device* device = findDevice(req.path);
-        if (device == nullptr) { return HALDeviceOperationResult::DeviceNotFound; }
+        if (device == nullptr) { return HALOperationResult ::DeviceNotFound; }
         //Serial.println(F("found device"));
         return device->write(req.valByCmd);
     }
@@ -313,7 +313,7 @@ namespace HAL_JSON {
         HALReadStringRequestValue strVal = {cmd, result};
         UIDPath path("1WTG");
         HALReadStringRequest req{path, strVal};
-        if (read(req) == HALDeviceOperationResult::Success) {
+        if (read(req) == HALOperationResult ::Success) {
 
             Serial.println(result.c_str());
         }
@@ -321,7 +321,7 @@ namespace HAL_JSON {
         HALValue value;
         UIDPath path2("1WTG:D2");
         HALReadRequest req2(path2, value);
-        if (read(req2) == HALDeviceOperationResult::Success) {
+        if (read(req2) == HALOperationResult ::Success) {
             Serial.println(value.asFloat());
         }
     }
