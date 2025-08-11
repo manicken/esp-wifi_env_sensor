@@ -81,7 +81,7 @@ namespace HAL_JSON {
         std::string stdStrCmd = val.value.ToString();
         RF433::DecodeFromJSON(stdStrCmd); // TODO make this function take ZeroCopyString as argument, even thu it's copied internally
         // TODO better error check from DecodeFromJSON
-        return HALOperationResult ::Success;
+        return HALOperationResult::Success;
     }
 
     String TX433::ToString() {

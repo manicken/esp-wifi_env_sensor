@@ -52,16 +52,16 @@ namespace HAL_JSON {
                 RF433::SendTo433_FC(staticData, val.asUInt());
             else
                 RF433::SendTo433_FC(staticData);
-            return HALOperationResult ::Success;
+            return HALOperationResult::Success;
         }
         else if (model == TX433_MODEL::LearningCode) {
             if (fixedState == false)
                 RF433::SendTo433_LC(staticData, val.asUInt());
             else
                 RF433::SendTo433_LC(staticData);
-            return HALOperationResult ::Success;
+            return HALOperationResult::Success;
         }
-        return HALOperationResult ::ExecutionFailed; // this will never happend
+        return HALOperationResult::ExecutionFailed; // this will never happend
     }
 
     String TX433unit::ToString() {

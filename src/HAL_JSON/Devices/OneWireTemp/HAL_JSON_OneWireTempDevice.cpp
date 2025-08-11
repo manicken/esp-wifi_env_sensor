@@ -44,7 +44,7 @@ namespace HAL_JSON {
 
     HALOperationResult  OneWireTempDevice::read(HALValue& val) {
         val = value;
-        return HALOperationResult ::Success;
+        return HALOperationResult::Success;
     }
 
     
@@ -116,9 +116,9 @@ namespace HAL_JSON {
     HALOperationResult  OneWireTempDeviceAtRoot::write(const HALValue& val) {
 #ifdef _WIN32
         dTemp->setTempC(val); // only in simulator
-        return HALOperationResult ::Success;
+        return HALOperationResult::Success;
 #endif
-        return HALOperationResult ::UnsupportedOperation;
+        return HALOperationResult::UnsupportedOperation;
     }
 
     void OneWireTempDeviceAtRoot::loop() {

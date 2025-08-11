@@ -57,9 +57,9 @@ namespace HAL_JSON {
         else if (valueType == ValueType::INT)
             val = (int32_t)value;
         else {
-            return HALOperationResult ::ExecutionFailed; // should not happen
+            return HALOperationResult::ExecutionFailed; // should not happen
         }
-        return HALOperationResult ::Success;
+        return HALOperationResult::Success;
     }
 
     String REGO600register::ToString() {

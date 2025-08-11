@@ -36,11 +36,11 @@ namespace HAL_JSON {
     };
     inline const char* ToString(HALOperationResult  result) {
         switch (result) {
-            case HALOperationResult ::Success: return "Success";
-            case HALOperationResult ::DeviceNotFound: return "DeviceNotFound";
-            case HALOperationResult ::UnsupportedOperation: return "UnsupportedOperation";
-            case HALOperationResult ::UnsupportedCommand: return "UnsupportedCommand";
-            case HALOperationResult ::ExecutionFailed: return "ExecutionFailed";
+            case HALOperationResult::Success: return "Success";
+            case HALOperationResult::DeviceNotFound: return "DeviceNotFound";
+            case HALOperationResult::UnsupportedOperation: return "UnsupportedOperation";
+            case HALOperationResult::UnsupportedCommand: return "UnsupportedCommand";
+            case HALOperationResult::ExecutionFailed: return "ExecutionFailed";
             default: return "Unknown";
         }
     }

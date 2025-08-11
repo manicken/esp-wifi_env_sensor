@@ -19,7 +19,7 @@ namespace HAL_JSON {
 
     HALOperationResult  RuleVariableWriteOnlyTest::write(const HALValue& val) {
         value = val;
-        return HALOperationResult ::Success;
+        return HALOperationResult::Success;
     }
 
     String RuleVariableWriteOnlyTest::ToString() {

@@ -44,168 +44,168 @@ namespace HAL_JSON {
                 else if (item->cDevice->readToHalValueFunc != nullptr) {
                     Device* device = item->cDevice->GetDevice();
                     HALOperationResult  result = item->cDevice->readToHalValueFunc(device, value);
-                    if (result != HALOperationResult ::Success) return result;
+                    if (result != HALOperationResult::Success) return result;
                 } else {
                     Device* device = item->cDevice->GetDevice();
                     HALOperationResult  result = device->read(value);
-                    if (result != HALOperationResult ::Success) return result;
+                    if (result != HALOperationResult::Success) return result;
                 }
                     
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (stack.sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (stack.sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 stack.items[stack.sp++] = value;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
 
             HALOperationResult  RPNcalc_Item::GetAndPushConstValue_Handler(void* context, RPNStack& stack) {
                 RPNcalc_Item* item = static_cast<RPNcalc_Item*>(context);
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (stack.sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (stack.sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 stack.items[stack.sp++] = *item->constValue;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
 
 
             HALOperationResult  RPNcalc_Item::Add_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a + b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::Subtract_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a - b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::Multiply_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a * b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::Divide_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 if (b.asInt() == 0) {
                     // Log to GlobalLogger about divide by zero
-                    return HALOperationResult ::DivideByZero;
+                    return HALOperationResult::DivideByZero;
                 }
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a / b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::Modulus_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 if (b.asInt() == 0) {
                     // Log to GlobalLogger about divide by zero
-                    return HALOperationResult ::DivideByZero;
+                    return HALOperationResult::DivideByZero;
                 }
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a % b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::BitwiseAnd_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a & b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::BitwiseOr_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a | b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::BitwiseExOr_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a ^ b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::BitwiseLeftShift_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a << b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
             HALOperationResult  RPNcalc_Item::BitwiseRightShift_Operation_Handler(void* context, RPNStack& stack) {
                 int sp = stack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
-                if (sp < 2) { return HALOperationResult ::StackUnderflow; }    // underflow check
-                if (sp >= stack.size){ return HALOperationResult ::StackOverflow; }   // overflow check before push
+                if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+                if (sp >= stack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
                 HALValue* itemPtr = &stack.items[sp];
                 HALValue b = *--itemPtr;
                 HALValue a = *--itemPtr;
                 *itemPtr++ = (a >> b);
                 stack.sp = sp - 1;
-                return HALOperationResult ::Success;
+                return HALOperationResult::Success;
             }
 
         }

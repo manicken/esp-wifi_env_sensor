@@ -121,7 +121,7 @@ namespace HAL_JSON {
             message += "\"error\":\"No value provided for writing.\"";
             return false;
         } else {
-            HALOperationResult  writeResult = HALOperationResult ::UnsupportedOperation;
+            HALOperationResult  writeResult = HALOperationResult::UnsupportedOperation;
 
             if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
                 uint32_t uintValue = 0;
@@ -141,7 +141,7 @@ namespace HAL_JSON {
                 HALWriteRequest req(uidPath, halValue);
 
                 writeResult = Manager::write(req);
-                if (writeResult == HALOperationResult ::Success) {
+                if (writeResult == HALOperationResult::Success) {
                     message += "\"info\":{\"Value written\":\"";
                     message += std::to_string(uintValue);
                     message += "\"}";
@@ -158,7 +158,7 @@ namespace HAL_JSON {
                     HALWriteRequest req(uidPath, halValue);
 
                     writeResult = Manager::write(req);
-                    if (writeResult == HALOperationResult ::Success) {
+                    if (writeResult == HALOperationResult::Success) {
                         message += "\"info\":{\"Value written\":\"";
                         message += std::to_string(uintValue);
                         message += "\"}";
@@ -179,7 +179,7 @@ namespace HAL_JSON {
                     HALWriteRequest req(uidPath, halValue);
 
                     writeResult = Manager::write(req);
-                    if (writeResult == HALOperationResult ::Success) {
+                    if (writeResult == HALOperationResult::Success) {
                         message += "\"info\":{\"Value written\":\"";
                         message += std::to_string(floatValue);
                         message += "\"}";
@@ -194,7 +194,7 @@ namespace HAL_JSON {
                 HALWriteStringRequest req(uidPath, strHalValue);
 
                 writeResult = Manager::write(req);
-                if (writeResult == HALOperationResult ::Success) {
+                if (writeResult == HALOperationResult::Success) {
                     message += "\"info\":{\"String written\":\"OK\"}";
                     //message += stdString.c_str();
                     //message += "\"}";
@@ -207,7 +207,7 @@ namespace HAL_JSON {
                 HALWriteStringRequest req(uidPath, strHalValue);
 
                 writeResult = Manager::write(req);
-                if (writeResult == HALOperationResult ::Success) {
+                if (writeResult == HALOperationResult::Success) {
                     message += "\"info\":{\"Json written\":\"OK\"}";
                     //message += stdString.c_str();
                     //message += "}";
@@ -217,7 +217,7 @@ namespace HAL_JSON {
                 message += "\"error\":\"Unknown type for writing.\"";
                 return false;
             }
-            if (writeResult != HALOperationResult ::Success) {
+            if (writeResult != HALOperationResult::Success) {
                 message += "\"error\":\"";
                 message += ToString(writeResult);
                 message += "\"";
@@ -239,7 +239,7 @@ namespace HAL_JSON {
 #ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
         message += params.ToString() + "},";
 #endif
-        HALOperationResult  readResult = HALOperationResult ::UnsupportedOperation;
+        HALOperationResult  readResult = HALOperationResult::UnsupportedOperation;
 
         if (params.zcType == HAL_JSON_CMD_EXEC_BOOL_TYPE) {
             UIDPath uidPath(params.zcUid);
@@ -247,7 +247,7 @@ namespace HAL_JSON {
             HALReadRequest req(uidPath, halValue);
 
             readResult = Manager::read(req);
-            if (readResult == HALOperationResult ::Success) {
+            if (readResult == HALOperationResult::Success) {
                 valueStr = std::to_string(halValue.asUInt());
             }
         } else if (params.zcType == HAL_JSON_CMD_EXEC_UINT32_TYPE) {
@@ -256,7 +256,7 @@ namespace HAL_JSON {
             HALReadRequest req(uidPath, halValue);
 
             readResult = Manager::read(req);
-            if (readResult == HALOperationResult ::Success) {
+            if (readResult == HALOperationResult::Success) {
                 valueStr = std::to_string(halValue.asUInt());
             }
         } else if (params.zcType == HAL_JSON_CMD_EXEC_FLOAT_TYPE) {
@@ -266,7 +266,7 @@ namespace HAL_JSON {
                 HALReadRequest req(uidPath, halValue);
 
                 readResult = Manager::read(req);
-                if (readResult == HALOperationResult ::Success) {
+                if (readResult == HALOperationResult::Success) {
                     valueStr = std::to_string(halValue.asFloat());
                 }
             }
@@ -276,7 +276,7 @@ namespace HAL_JSON {
                 HALReadValueByCmdReq req(uidPath, valByCmd);
 
                 readResult = Manager::read(req);
-                if (readResult == HALOperationResult ::Success) {
+                if (readResult == HALOperationResult::Success) {
                     valueStr = std::to_string(halValue.asFloat());
                 }
             }
@@ -287,7 +287,7 @@ namespace HAL_JSON {
             HALReadStringRequest req(uidPath, strHalValue);
 
             readResult = Manager::read(req);
-            if (readResult == HALOperationResult ::Success) {
+            if (readResult == HALOperationResult::Success) {
                 valueStr = "\"";
                 valueStr += result;
                 valueStr += "\"";
@@ -296,7 +296,7 @@ namespace HAL_JSON {
             message += "\"error\":\"Unknown type for reading.\"";
             return false;
         }
-        if (readResult != HALOperationResult ::Success) {
+        if (readResult != HALOperationResult::Success) {
             message += "\"error\":\"";
             message += ToString(readResult);
             message += "\"";

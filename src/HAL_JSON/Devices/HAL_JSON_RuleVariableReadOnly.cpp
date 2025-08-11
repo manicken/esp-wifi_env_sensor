@@ -19,7 +19,7 @@ namespace HAL_JSON {
 
     HALOperationResult  RuleVariableReadOnly::read(HALValue& val) {
         val = value;
-        return HALOperationResult ::Success;
+        return HALOperationResult::Success;
     }
 
     String RuleVariableReadOnly::ToString() {

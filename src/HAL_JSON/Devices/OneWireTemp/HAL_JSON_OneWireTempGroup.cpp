@@ -120,7 +120,7 @@ namespace HAL_JSON {
                     val.out_value += ",";
             }
             val.out_value += "]";
-            return HALOperationResult ::Success;
+            return HALOperationResult::Success;
         }
         else if (val.cmd == "getAllNewDevicesWithTemp") {
             val.out_value = "[";
@@ -132,7 +132,7 @@ namespace HAL_JSON {
                     val.out_value += ",";
             }
             val.out_value += "]";
-            return HALOperationResult ::Success;
+            return HALOperationResult::Success;
         }
         else if (val.cmd == "getAllDevices") { // (as json) return a complete list of all devices found for all busses
             val.out_value = "[";
@@ -144,7 +144,7 @@ namespace HAL_JSON {
                     val.out_value += ",";
             }
             val.out_value += "]";
-            return HALOperationResult ::Success;
+            return HALOperationResult::Success;
         }
         else if (val.cmd == "getAllTemperatures") { // (as json) return a complete list of all temperatures each with it's uid as the keyname and the temp as the value
             val.out_value = "[";
@@ -156,12 +156,12 @@ namespace HAL_JSON {
                     val.out_value += ",";
             }
             val.out_value += "]";
-            return HALOperationResult ::Success;
+            return HALOperationResult::Success;
         }
         std::string stdStrCmd = val.cmd.ToString();
         GlobalLogger.Warn(F("OneWireTempGroup::read - cmd not found: "), stdStrCmd.c_str()); // this can then be read by getting the last entry from logger
         //val.out_value = F("{\"error\":\"cmd not found\"}");
-        return HALOperationResult ::UnsupportedCommand;  // cmd not found
+        return HALOperationResult::UnsupportedCommand;  // cmd not found
     }
 
     void OneWireTempGroup::requestTemperatures() {
