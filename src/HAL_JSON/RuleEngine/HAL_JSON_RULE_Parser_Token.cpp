@@ -157,7 +157,7 @@ namespace HAL_JSON {
             for (int i=0;i<tokenCount;i++) {
                 Token& tok = tokens[i];
                 std::string msgLine;
-                if (subTokenIndexOffset > 0) msgLine += "    ";
+                if (subTokenIndexOffset > 0) msgLine += "  ";
                 // skip duplicate prints as theese will be printed as the Tokens block
                 // ignore types are allways part of a token block 
                 if ((tok.type == TokenType::Merged) && subTokenIndexOffset == 0) {
@@ -182,12 +182,13 @@ namespace HAL_JSON {
                     "Token(" + std::to_string(i+subTokenIndexOffset) + "): " +
                     "(line:" + std::to_string(tok.line) + 
                     ", col:" + std::to_string(tok.column) + 
-                    ", itemsInBlock:" + std::to_string(tok.itemsInBlock) + 
+                    ", count:" + std::to_string(tok.itemsInBlock) + 
                     ", type:" + TokenTypeToString(tok.type) +
-                    ")";
+                    "): ";
 
                     lastWasBlock = false;
-                    msgLine += " >>> " + tok.ToString() + " <<<";// size: " + std::to_string(tok.Length());// std::string(tok.text);
+                    //msgLine += " >>> " + tok.ToString() + " <<<";// size: " + std::to_string(tok.Length());// std::string(tok.text);
+                    msgLine += tok.ToString();
                 }
                 msg += msgLine + "\n";
             }
