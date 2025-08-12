@@ -28,20 +28,14 @@ namespace HAL_JSON {
 
             typedef HALOperationResult (*OperatorFunc)(void* context, RPNStack& stack);
             typedef bool (*ConditionFunc)(const HALValue& lhs, const HALValue& rhs);
+            typedef HALOperationResult (*OpBlockFunc)(void* context);
 
-            enum class OpBlockType {
-                NotSet,
-                If,
-                Exec
-            };
-
-            enum class ConditionType {
-                Equals,
-                LessThan,
-                LargerThan,
-                LessThanOrEquals,
-                LargerThanOrEquals
-            };
+            // helpers
+            template<typename T>
+            void DeleteAs(void* ptr) {
+                delete static_cast<T*>(ptr);
+            }
+            typedef void (*Deleter)(void* context);
 
             enum class RPNlogical_ItemTypes {
                 Operand,
@@ -49,7 +43,7 @@ namespace HAL_JSON {
             };
 
             struct RPNcalc_Item {
-                OperatorFunc handler;
+                HALOperationResult (*handler)(RPNcalc_Item* context, RPNStack& stack);
 
                 union {
                     CachedDeviceAccess* cDevice;
@@ -104,7 +98,8 @@ namespace HAL_JSON {
             };
 
             struct RPNlogical_Item {
-                RPNlogical_ItemTypes type;
+                OperatorFunc handler;
+
                 union {
                     RPNCondition* item;
                     OperatorFunc op;
@@ -119,47 +114,43 @@ namespace HAL_JSON {
                 ~RPNlogical_Item();
             };
 
-            struct IfData
+            struct IfBlock
             {
                 RPNlogical_Item* conditionItems;
                 int conditionItemsCount;
                 OpBlock* opItems;
                 int opItemsCount;
 
-                IfData(IfData&) = delete;          // no copy constructor
-                IfData& operator=(const IfData&) = delete; // no copy assignment
-                IfData(IfData&& other) = delete;           // no move constructor
-                IfData& operator=(IfData&& other) = delete; // no move assignment
+                IfBlock(IfBlock&) = delete;          // no copy constructor
+                IfBlock& operator=(const IfBlock&) = delete; // no copy assignment
+                IfBlock(IfBlock&& other) = delete;           // no move constructor
+                IfBlock& operator=(IfBlock&& other) = delete; // no move assignment
 
-                IfData();
-                ~IfData();
+                IfBlock();
+                ~IfBlock();
             };
 
-            struct ExecData
+            struct ExecBlock
             {
                 CachedDeviceAccess* target;
                 RPNcalc_Item* sourceCalcItems;
                 int sourceCalcItemsCount;
 
-                ExecData(ExecData&) = delete;          // no copy constructor
-                ExecData& operator=(const ExecData&) = delete; // no copy assignment
-                ExecData(ExecData&& other) = delete;           // no move constructor
-                ExecData& operator=(ExecData&& other) = delete; // no move assignment
+                ExecBlock(ExecBlock&) = delete;          // no copy constructor
+                ExecBlock& operator=(const ExecBlock&) = delete; // no copy assignment
+                ExecBlock(ExecBlock&& other) = delete;           // no move constructor
+                ExecBlock& operator=(ExecBlock&& other) = delete; // no move assignment
 
-                ExecData();
-                ~ExecData();
+                ExecBlock();
+                ~ExecBlock();
             };
 
             struct OpBlock
             {
-                OpBlockType type;
-                union
-                {
-                    const void* unset;
-                    IfData* ifData;
-                    ExecData* execData;
-                };
-
+                void* context;
+                OpBlockFunc handler;
+                Deleter deleter;                
+ 
                 OpBlock(OpBlock&) = delete;          // no copy constructor
                 OpBlock& operator=(const OpBlock&) = delete; // no copy assignment
                 OpBlock(OpBlock&& other) = delete;           // no move constructor

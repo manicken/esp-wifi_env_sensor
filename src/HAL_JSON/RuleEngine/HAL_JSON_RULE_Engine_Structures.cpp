@@ -21,18 +21,11 @@ namespace HAL_JSON {
                 return true;
             }
 
-            OpBlock::OpBlock() : type(OpBlockType::NotSet) 
-            {
-                unset = nullptr;
-            }
+            OpBlock::OpBlock() : context(nullptr), handler(nullptr), deleter(nullptr) { }
 
             OpBlock::~OpBlock()
             {
-                if (type == OpBlockType::If) {
-                    delete ifData;
-                } else if (type == OpBlockType::Exec) {
-                    delete execData;
-                } // else its unset so nothing needs freeing
+                if (deleter) deleter(context);
             }
 
             HALOperationResult RPNcalc_Item::GetAndPushVariableValue_Handler(void* context, RPNStack& stack) {
