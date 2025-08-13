@@ -1,0 +1,39 @@
+Date : 2025-08-13 18:41:25
+Directory : g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON
+Total : 14 files,  -6 codes, 0 comments, 10 blanks, all 4 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C++      |         14 |         -6 |          0 |         10 |          4 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                       | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                          |         14 |         -6 |          0 |         10 |          4 |
+| RuleEngine                                                                                                 |         12 |         -9 |          0 |          9 |          0 |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                   | language | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON.cpp                                                | C++      |          1 |          0 |          0 |          1 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON.h                                                  | C++      |          2 |          0 |          1 |          3 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine.h                           | C++      |          1 |          0 |          0 |          1 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_ActionStatement.h           | C++      |         -2 |          0 |          0 |         -2 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_CalcRPNToken.h              | C++      |         -3 |          0 |         -1 |         -4 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_IfBlock.h                   | C++      |         -8 |          0 |          2 |         -6 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_IfConditionItem.h           | C++      |         -3 |          0 |          0 |         -3 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_LogicalExpressionRPNToken.h | C++      |         -3 |          0 |          0 |         -3 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_RPNStack.h                  | C++      |         -3 |          0 |          1 |         -2 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_Script.h                    | C++      |          8 |          0 |          6 |         14 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_StatementBlock_s.h          | C++      |         -6 |          0 |          0 |         -6 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine_Support.h                   | C++      |          4 |          0 |          1 |          5 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Parser.cpp                         | C++      |          4 |          0 |          0 |          4 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Parser_Token.cpp                   | C++      |          2 |          0 |          0 |          2 |
+| Total                                                                                                      |          |         -6 |          0 |         10 |          4 |
++------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

@@ -1,12 +1,15 @@
 #pragma once
 
 #include <Arduino.h>
+#include "HAL_JSON_RULE_Engine_Support.h"
 
 namespace HAL_JSON {
     namespace Rule {
         template<typename T>
         class RPNStack {
         public:
+            HAL_JSON_NOCOPY_NOMOVE(RPNStack);
+
             int size;
             T* items;
             int sp;
@@ -29,11 +32,6 @@ namespace HAL_JSON {
                 return true;
             }
 
-        private:
-            RPNStack(const RPNStack&) = delete;
-            RPNStack& operator=(const RPNStack&) = delete;
-            RPNStack(RPNStack&&) = delete;
-            RPNStack& operator=(RPNStack&&) = delete;
         };
         
         

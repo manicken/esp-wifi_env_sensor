@@ -5,6 +5,7 @@ namespace HAL_JSON {
     void begin() {
         REST::setup();
         Manager::setup();
+        Rules::Parser::ReadAndParseRuleSetFile("script.txt");
     }
 
     void loop() {

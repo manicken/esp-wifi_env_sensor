@@ -6,6 +6,15 @@ namespace HAL_JSON {
     namespace Rule {
         RPNStack<HALValue> halValueStack;
 
+        CalcRPNToken::CalcRPNToken()
+        {
+
+        }
+        CalcRPNToken::~CalcRPNToken()
+        {
+            if (deleter) deleter(context);
+        }
+
         HALOperationResult CalcRPNToken::GetAndPushVariableValue_Handler(void* context) {
             CachedDeviceAccess* item = static_cast<CachedDeviceAccess*>(context);
             HALValue value;

@@ -584,7 +584,9 @@ namespace HAL_JSON {
                 zcLHS_AssignmentOperand.column = token.column;
 
                 if (token == *firstAssignmentOperatorToken) { 
+#ifdef _WIN32
                     std::cout << "(token.start == firstAssignmentOperatorToken->start):" << token.ToString() << "\n";
+#endif
                     // this mean that the assigmentOperator is in the first token
                     // someVar= 5 or someVar=5(if this then token.itemsInBlock == 0)
                     if (token.itemsInBlock == 0) {
@@ -615,7 +617,9 @@ namespace HAL_JSON {
                     }
                     zcLHS_AssignmentOperand.end = token.end;
                 }
+#ifdef _WIN32
                 std::cout << "zcLHS_AssignmentOperand: " << zcLHS_AssignmentOperand.ToString() << "\n";
+#endif
                 if (firstCompoundAssignmentOperator) {
                     Expressions::ValidateOperand(zcLHS_AssignmentOperand, anyError, ValidateOperandMode::ReadWrite);
                 }
@@ -628,26 +632,46 @@ namespace HAL_JSON {
             }
             return anyError == false;
         }
-
+#include <chrono>
         bool Parser::ParseRuleSet(char* fileContents, Tokens& _tokens) {
-            
+           
+            auto start = std::chrono::high_resolution_clock::now();
+            FixNewLines(fileContents);
+            // replaces all comments with whitespace
+            // make it much simpler to parse the contents 
+            StripComments(fileContents);
+            //ReportInfo("\nFileContents (after comments removed and newlines fixed): ");
+            //ReportInfo(fileContents);
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> duration1 = end - start;
+            std::cout << "FixNewLines and StripComments time: " << duration1.count() << " ms\n";
+
+            start = std::chrono::high_resolution_clock::now();
             if (Tokenize(fileContents, _tokens) == false) {
                 ReportInfo("Error: could not Tokenize\n");
                 //std::cout << "Error: could not Tokenize" << std::endl;
                 return false;
             }
+            end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> duration2 = end - start;
+            std::cout << "Tokenize time: " << duration2.count() << " ms\n";
 #ifdef _WIN32
             std::cout << "**********************************************************************************\n";
             std::cout << "*                            RAW TOKEN LIST                                      *\n";
             std::cout << "**********************************************************************************\n";
 #endif
             ReportInfo(PrintTokens(_tokens,0) + "\n");
-
+           
             ReportInfo("\nVerifyBlocks (BetterError): ");
+            start = std::chrono::high_resolution_clock::now();
             if (VerifyBlocks(_tokens) == false) {
                 ReportInfo("[FAIL]\n");
                 return false;
             }
+            end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> duration3 = end - start;
+            std::cout << "VerifyBlocks time: " << duration3.count() << " ms\n";
+
             ReportInfo("[OK]\n");
             // if here then we can safely parse all blocks
 
@@ -699,13 +723,6 @@ namespace HAL_JSON {
                 return false;
             }
             
-            FixNewLines(fileContents);
-            // replaces all comments with whitespace
-            // make it much simpler to parse the contents 
-            StripComments(fileContents);
-            //ReportInfo("\nFileContents (after comments removed and newlines fixed): ");
-            //ReportInfo(fileContents);
-
             int tokenCount = CountTokens(fileContents);
             ReportInfo("Token count: " + std::to_string(tokenCount) + "\n");
             Tokens tokens(tokenCount);

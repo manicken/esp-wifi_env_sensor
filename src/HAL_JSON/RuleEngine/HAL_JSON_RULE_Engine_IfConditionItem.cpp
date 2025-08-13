@@ -5,6 +5,13 @@
 namespace HAL_JSON {
     namespace Rule {
 
+        IfConditionItem::IfConditionItem() {
+
+        }
+        IfConditionItem::~IfConditionItem() {
+            
+        }
+
         bool IfConditionItem::NotEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs) {
             return lhs != rhs;
         }

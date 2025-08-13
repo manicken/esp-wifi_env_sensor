@@ -5,7 +5,7 @@
 #include "../HAL_JSON_Value.h"
 #include "../HAL_JSON_Device.h"
 #include "../HAL_JSON_CachedDeviceAccess.h"
-#include "HAL_JSON_RUL_Engine_Support.h"
+#include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_RPNStack.h"
 
 namespace HAL_JSON {
@@ -14,6 +14,7 @@ namespace HAL_JSON {
         extern RPNStack<HALValue> halValueStack;
 
         struct CalcRPNToken {
+            HAL_JSON_NOCOPY_NOMOVE(CalcRPNToken);
             /** 
              * in this case this will either be:
              * CachedDeviceAccess
@@ -22,11 +23,6 @@ namespace HAL_JSON {
             void* context;
             HALOperationResult (*handler)(void* context);
             Deleter deleter;
-
-            CalcRPNToken(CalcRPNToken&) = delete;          // no copy constructor
-            CalcRPNToken& operator=(const CalcRPNToken&) = delete; // no copy assignment
-            CalcRPNToken(CalcRPNToken&& other) = delete;           // no move constructor
-            CalcRPNToken& operator=(CalcRPNToken&& other) = delete; // no move assignment
 
             static HALOperationResult GetAndPushVariableValue_Handler(void* context);
             static HALOperationResult GetAndPushConstValue_Handler(void* context);

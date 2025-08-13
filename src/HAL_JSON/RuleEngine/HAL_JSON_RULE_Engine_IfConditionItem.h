@@ -2,13 +2,15 @@
 #pragma once
 
 #include <Arduino.h>
-#include "HAL_JSON_RUL_Engine_Support.h"
+#include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_CalcRPNToken.h"
 
 namespace HAL_JSON {
     namespace Rule {
 
         struct IfConditionItem {
+            HAL_JSON_NOCOPY_NOMOVE(IfConditionItem);
+
             /** this is executed on the calc results of lhsItems and rhsItems */
             bool (*handler)(const HALValue& lhs, const HALValue& rhs);
 
@@ -16,11 +18,6 @@ namespace HAL_JSON {
             int lhsCount;
             CalcRPNToken* rhsItems;
             int rhsCount;
-
-            IfConditionItem(IfConditionItem&) = delete;          // no copy constructor
-            IfConditionItem& operator=(const IfConditionItem&) = delete; // no copy assignment
-            IfConditionItem(IfConditionItem&& other) = delete;           // no move constructor
-            IfConditionItem& operator=(IfConditionItem&& other) = delete; // no move assignment
 
             static bool NotEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
             static bool Equals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);

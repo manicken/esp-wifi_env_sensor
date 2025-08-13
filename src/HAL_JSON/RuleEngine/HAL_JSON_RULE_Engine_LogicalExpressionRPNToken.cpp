@@ -4,5 +4,13 @@
 namespace HAL_JSON {
     namespace Rule {
         RPNStack<bool> boolValueStack;
+
+        LogicalExpressionRPNToken::LogicalExpressionRPNToken() {
+
+        }
+
+        LogicalExpressionRPNToken::~LogicalExpressionRPNToken() {
+            
+        }
     }
 }

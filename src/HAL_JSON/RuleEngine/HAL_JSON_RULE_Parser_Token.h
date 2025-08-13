@@ -120,6 +120,11 @@ namespace HAL_JSON {
             const char* firstTokenStartOffset;
             Token* items;
             int count;
+            /** 
+             * Current token index during script parsing/loading.
+             * Used to track the read position within the token list.
+             */
+            int currIndex;
             /** this will initialize this instance as a zeroCopyPointer storage */
             Tokens();
             /** this will initialize this instance owned Token storage */

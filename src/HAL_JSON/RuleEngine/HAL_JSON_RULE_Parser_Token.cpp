@@ -4,7 +4,9 @@ namespace HAL_JSON {
     namespace Rules {
 
         TokenType GetFundamentalTokenType(const char* str) {
+#ifdef _WIN32
             std::cout << "GetFundamentalTokenType: >>>" << str << "<<<\n";
+#endif
             if (StrEqualsIC(str, "if")) return TokenType::If;
             else if (StrEqualsIC(str, "endif")) return TokenType::EndIf;
             else if (StrEqualsIC(str, "else")) return TokenType::Else;
