@@ -2,138 +2,55 @@
 #pragma once
 
 #include <Arduino.h>
+#include "HAL_JSON_RUL_Engine_Support.h"
+#include "HAL_JSON_RULE_Engine_LogicalExpressionRPNToken.h"
 #include "../HAL_JSON_CachedDeviceAccess.h"
 
 namespace HAL_JSON {
     namespace Rule {
         namespace Structures {
 
-            class RPNStack {
-            public:
-                const int size;
-                HALValue* items;
-                int sp;
-                
-                RPNStack() = delete;
-                RPNStack(int size);
-
-                bool GetFinalResult(HALValue& value);
-
-            private:
-                RPNStack(RPNStack&) = delete;          // no copy constructor
-                RPNStack& operator=(const RPNStack&) = delete; // no copy assignment
-                RPNStack(RPNStack&& other) = delete;           // no move constructor
-                RPNStack& operator=(RPNStack&& other) = delete; // no move assignment
-            };
-
-            typedef HALOperationResult (*OperatorFunc)(void* context, RPNStack& stack);
-            typedef bool (*ConditionFunc)(const HALValue& lhs, const HALValue& rhs);
-            typedef HALOperationResult (*OpBlockFunc)(void* context);
-
-            // helpers
-            template<typename T>
-            void DeleteAs(void* ptr) {
-                delete static_cast<T*>(ptr);
-            }
-            typedef void (*Deleter)(void* context);
-
-            enum class RPNlogical_ItemTypes {
-                Operand,
-                Operator
-            };
-
-            struct RPNcalc_Item {
-                HALOperationResult (*handler)(RPNcalc_Item* context, RPNStack& stack);
-
-                union {
-                    CachedDeviceAccess* cDevice;
-                    HALValue* constValue;
-                };
-
-                RPNcalc_Item(RPNcalc_Item&) = delete;          // no copy constructor
-                RPNcalc_Item& operator=(const RPNcalc_Item&) = delete; // no copy assignment
-                RPNcalc_Item(RPNcalc_Item&& other) = delete;           // no move constructor
-                RPNcalc_Item& operator=(RPNcalc_Item&& other) = delete; // no move assignment
-
-                static HALOperationResult GetAndPushVariableValue_Handler(void* context, RPNStack& stack);
-                static HALOperationResult GetAndPushConstValue_Handler(void* context, RPNStack& stack);
-
-                static HALOperationResult Add_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult Subtract_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult Multiply_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult Divide_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult Modulus_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult BitwiseAnd_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult BitwiseOr_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult BitwiseExOr_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult BitwiseLeftShift_Operation_Handler(void* context, RPNStack& stack);
-                static HALOperationResult BitwiseRightShift_Operation_Handler(void* context, RPNStack& stack);
-
-                RPNcalc_Item();
-                ~RPNcalc_Item();
-            };
-
-            struct RPNCondition {
-                ConditionFunc handler;
-
-                RPNcalc_Item* lhsItems;
-                int lhsCount;
-                RPNcalc_Item* rhsItems;
-                int rhsCount;
-
-                RPNCondition(RPNCondition&) = delete;          // no copy constructor
-                RPNCondition& operator=(const RPNCondition&) = delete; // no copy assignment
-                RPNCondition(RPNCondition&& other) = delete;           // no move constructor
-                RPNCondition& operator=(RPNCondition&& other) = delete; // no move assignment
-
-                static bool NotEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
-                static bool Equals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
-                static bool LessThan_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
-                static bool LargerThan_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
-                static bool LessThanOrEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
-                static bool LargerThanOrEquals_Operation_Handler(const HALValue& lhs, const HALValue& rhs);
-
-                RPNCondition();
-                ~RPNCondition();
-            };
-
-            struct RPNlogical_Item {
-                OperatorFunc handler;
-
-                union {
-                    RPNCondition* item;
-                    OperatorFunc op;
-                };
-
-                RPNlogical_Item(RPNlogical_Item&) = delete;          // no copy constructor
-                RPNlogical_Item& operator=(const RPNlogical_Item&) = delete; // no copy assignment
-                RPNlogical_Item(RPNlogical_Item&& other) = delete;           // no move constructor
-                RPNlogical_Item& operator=(RPNlogical_Item&& other) = delete; // no move assignment
-
-                RPNlogical_Item();
-                ~RPNlogical_Item();
-            };
-
-            struct IfBlock
+            /** OpBlock contains either a IfBlock or a ExecBlock */
+            struct OpBlock
             {
-                RPNlogical_Item* conditionItems;
-                int conditionItemsCount;
+                void* context;
+                HALOperationResult (*handler)(void* context);
+                Deleter deleter;
+ 
+                OpBlock(OpBlock&) = delete;          // no copy constructor
+                OpBlock& operator=(const OpBlock&) = delete; // no copy assignment
+                OpBlock(OpBlock&& other) = delete;           // no move constructor
+                OpBlock& operator=(OpBlock&& other) = delete; // no move assignment
+
+                OpBlock();
+                ~OpBlock();
+            };
+
+            /** collection of OpBlock(s) */
+            struct OpBlocks
+            {
                 OpBlock* opItems;
                 int opItemsCount;
 
-                IfBlock(IfBlock&) = delete;          // no copy constructor
-                IfBlock& operator=(const IfBlock&) = delete; // no copy assignment
-                IfBlock(IfBlock&& other) = delete;           // no move constructor
-                IfBlock& operator=(IfBlock&& other) = delete; // no move assignment
+                /** used to execute all opItems one after annother */
+                HALOperationResult (*Exec)(void);
 
-                IfBlock();
-                ~IfBlock();
+                /** returns true if exec should run */
+                bool (*ShouldExec)(void);
+
+                OpBlocks(OpBlocks&) = delete;          // no copy constructor
+                OpBlocks& operator=(const OpBlocks&) = delete; // no copy assignment
+                OpBlocks(OpBlocks&& other) = delete;           // no move constructor
+                OpBlocks& operator=(OpBlocks&& other) = delete; // no move assignment
+
+                OpBlocks();
+                ~OpBlocks();
             };
 
             struct ExecBlock
             {
                 CachedDeviceAccess* target;
-                RPNcalc_Item* sourceCalcItems;
+                CalcRPNToken* sourceCalcItems;
                 int sourceCalcItemsCount;
 
                 ExecBlock(ExecBlock&) = delete;          // no copy constructor
@@ -145,21 +62,100 @@ namespace HAL_JSON {
                 ~ExecBlock();
             };
 
-            struct OpBlock
+            struct ConditionalBranch : public OpBlocks
             {
-                void* context;
-                OpBlockFunc handler;
-                Deleter deleter;                
- 
-                OpBlock(OpBlock&) = delete;          // no copy constructor
-                OpBlock& operator=(const OpBlock&) = delete; // no copy assignment
-                OpBlock(OpBlock&& other) = delete;           // no move constructor
-                OpBlock& operator=(OpBlock&& other) = delete; // no move assignment
+                LogicalExpressionRPNToken* expressionTokens;
+                int expressionTokensCount;
 
-                OpBlock();
-                ~OpBlock();
+                /** the context that is passed into this is of type ConditionalBranch */
+                static bool ShouldExec(void* context);
+
+                ConditionalBranch(ConditionalBranch&) = delete;          // no copy constructor
+                ConditionalBranch& operator=(const ConditionalBranch&) = delete; // no copy assignment
+                ConditionalBranch(ConditionalBranch&& other) = delete;           // no move constructor
+                ConditionalBranch& operator=(ConditionalBranch&& other) = delete; // no move assignment
+
+                ConditionalBranch();
+                ~ConditionalBranch();
             };
-            
+
+            /** 
+             * this is a kind of of ConditionalBranch where there are not any LogicalExpressionRPNToken list
+             * and where the function ShouldExec allways return true
+             */
+            struct UnconditionalBranch : public OpBlocks
+            {
+                /** this will allways return true */
+                static bool ShouldExec(void* context);
+
+                UnconditionalBranch(UnconditionalBranch&) = delete;          // no copy constructor
+                UnconditionalBranch& operator=(const UnconditionalBranch&) = delete; // no copy assignment
+                UnconditionalBranch(UnconditionalBranch&& other) = delete;           // no move constructor
+                UnconditionalBranch& operator=(UnconditionalBranch&& other) = delete; // no move assignment
+
+                UnconditionalBranch();
+                ~UnconditionalBranch();
+            };
+
+            /** 
+             * contains collections of ConditionalBranch and one optional UnconditionalBranch at the end
+             * for example:
+             * if <condition> then (ConditionalBranch)
+             * 
+             * elseif <condition> then (ConditionalBranch)
+             * 
+             * else (UnconditionalBranch)
+             * 
+             * endif
+             * 
+             * else here just contain a collection of OpBlock items
+             */
+            struct IfBlock
+            {
+                OpBlocks* branchItems;
+                int branchItemsCount;
+
+                IfBlock(IfBlock&) = delete;          // no copy constructor
+                IfBlock& operator=(const IfBlock&) = delete; // no copy assignment
+                IfBlock(IfBlock&& other) = delete;           // no move constructor
+                IfBlock& operator=(IfBlock&& other) = delete; // no move assignment
+
+                IfBlock();
+                ~IfBlock();
+            };
+
+            /**
+             * A single trigger definition at the root level of a script.
+             * Each trigger is linked to one or more executable operation blocks.
+             */
+            struct TriggerBlock
+            {
+                bool (*triggerSource)();
+                //bool (*triggerSource)(void* context);
+                //void* context;  // optional — lets the triggerSource read its own state
+                OpBlocks* triggerExec;
+            };
+
+            /**
+             * Represents a single script file.
+             * A script may contain one or more top-level triggers.
+             */
+            struct ScriptBlock
+            {
+                TriggerBlock* triggerBlocks;
+                int triggerBlockCount;
+            };
+
+            /**
+             * Global container for all loaded scripts in the engine.
+             * This is the highest-level structure in the script engine hierarchy.
+             */
+            struct ScriptsBlock
+            {
+                static ScriptBlock* scriptBlocks;
+                static int scriptBlocksCount;
+            };
+
         }
     }
 }

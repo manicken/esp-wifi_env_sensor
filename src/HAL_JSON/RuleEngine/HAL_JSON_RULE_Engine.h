@@ -23,88 +23,17 @@
 #include <variant>
 
 namespace HAL_JSON {
+    namespace Rule {
+        /** 
+         * this will be a pure static class 
+         * i.e. only static members
+         */
+        class Engine {
+        private:
+            
 
-    enum class ConditionType {
-        Equals,
-        NotEquals,
-        LessThan,
-        GreaterThan,
-        LessOrEqual,
-        GreaterOrEqual
-    };
+        public:
 
-    enum class ActionType {
-        //SetLocalVariable,
-        //Increment,
-        HalWrite,
-        HalRead
-        //Toggle,
-        // Extend later
-    };
-    enum class OperandType {
-        Path,
-        //LocalValue,
-        Value
-    };
-
-    struct Operand {
-        OperandType type;
-        union {
-            UIDPath* path;
-            HALValue value;
-            //uint32_t localValueIndex;
         };
-    };
-
-    struct Condition {
-        Operand left;
-        Operand right;
-        ConditionType type;
-    };
-
-   /* struct ActionTarget {
-        OperandType type;
-        union {
-            UIDPath* path;
-            uint32_t localValueIndex;
-        };
-    };*/
-
-    struct Action {
-        UIDPath* path;
-        //ActionTarget target;
-        ActionType type;
-        HALValue value;
-    };
-
-    struct Rule {
-        std::vector<Condition> conditions;
-        std::vector<Action> actions;
-        bool allConditionsMustPass = true;  // AND/OR behavior
-    };
-
-    //static const int RULE_MGR_MAX_VARIABLES = 32;
-
-    class RuleEngine {
-        //inline constexpr int MAX_VARIABLES = 16;
-    private:
-        
-        //static CharArray::StringView tempVarNames[RULE_MGR_MAX_VARIABLES];
-        static std::vector<Rule> rules;
-        //static Rule rules[16]; // use when im sure that everything else works
-        //static HALValue variables[RULE_MGR_MAX_VARIABLES];
-        static HALValue resolveOperand(const Operand& op);
-        static bool evaluateCondition(const Condition& cond);
-        static void executeAction(const Action& action);
-
-        static bool decodeRuleLineType(const char* lineStr, const char* str);
-        /** a note here if length is zero then the length of ruleStr is used */
-        static bool validateRuleLine(const char* ruleStr, size_t length = 0);
-    public:
-        static void evaluateRules();
-        static bool validateRuleSet(const char* ruleSet);
-        
-        static void addRule(const char* ruleStr);
-
-    };
+    }
 }

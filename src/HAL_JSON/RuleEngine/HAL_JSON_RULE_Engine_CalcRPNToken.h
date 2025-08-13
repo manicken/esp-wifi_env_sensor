@@ -1,0 +1,49 @@
+
+#pragma once
+
+#include <Arduino.h>
+#include "../HAL_JSON_Value.h"
+#include "../HAL_JSON_Device.h"
+#include "../HAL_JSON_CachedDeviceAccess.h"
+#include "HAL_JSON_RUL_Engine_Support.h"
+#include "HAL_JSON_RULE_Engine_RPNStack.h"
+
+namespace HAL_JSON {
+    namespace Rule {
+        /** used for all value calculations */ 
+        extern RPNStack<HALValue> halValueStack;
+
+        struct CalcRPNToken {
+            /** 
+             * in this case this will either be:
+             * CachedDeviceAccess
+             * HALValue
+             */
+            void* context;
+            HALOperationResult (*handler)(void* context);
+            Deleter deleter;
+
+            CalcRPNToken(CalcRPNToken&) = delete;          // no copy constructor
+            CalcRPNToken& operator=(const CalcRPNToken&) = delete; // no copy assignment
+            CalcRPNToken(CalcRPNToken&& other) = delete;           // no move constructor
+            CalcRPNToken& operator=(CalcRPNToken&& other) = delete; // no move assignment
+
+            static HALOperationResult GetAndPushVariableValue_Handler(void* context);
+            static HALOperationResult GetAndPushConstValue_Handler(void* context);
+
+            static HALOperationResult Add_Operation_Handler(void* context);
+            static HALOperationResult Subtract_Operation_Handler(void* context);
+            static HALOperationResult Multiply_Operation_Handler(void* context);
+            static HALOperationResult Divide_Operation_Handler(void* context);
+            static HALOperationResult Modulus_Operation_Handler(void* context);
+            static HALOperationResult BitwiseAnd_Operation_Handler(void* context);
+            static HALOperationResult BitwiseOr_Operation_Handler(void* context);
+            static HALOperationResult BitwiseExOr_Operation_Handler(void* context);
+            static HALOperationResult BitwiseLeftShift_Operation_Handler(void* context);
+            static HALOperationResult BitwiseRightShift_Operation_Handler(void* context);
+
+            CalcRPNToken();
+            ~CalcRPNToken();
+        };
+    }
+}
