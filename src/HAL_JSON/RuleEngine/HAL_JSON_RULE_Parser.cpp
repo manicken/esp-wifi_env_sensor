@@ -635,24 +635,15 @@ namespace HAL_JSON {
 #include <chrono>
         bool Parser::ParseRuleSet(char* fileContents, Tokens& _tokens) {
            
-            auto start = std::chrono::high_resolution_clock::now();
-            FixNewLines(fileContents);
-            // replaces all comments with whitespace
-            // make it much simpler to parse the contents 
-            StripComments(fileContents);
-            //ReportInfo("\nFileContents (after comments removed and newlines fixed): ");
-            //ReportInfo(fileContents);
-            auto end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> duration1 = end - start;
-            std::cout << "FixNewLines and StripComments time: " << duration1.count() << " ms\n";
+            
 
-            start = std::chrono::high_resolution_clock::now();
+            auto start = std::chrono::high_resolution_clock::now();
             if (Tokenize(fileContents, _tokens) == false) {
                 ReportInfo("Error: could not Tokenize\n");
                 //std::cout << "Error: could not Tokenize" << std::endl;
                 return false;
             }
-            end = std::chrono::high_resolution_clock::now();
+            auto end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> duration2 = end - start;
             std::cout << "Tokenize time: " << duration2.count() << " ms\n";
 #ifdef _WIN32
@@ -722,6 +713,17 @@ namespace HAL_JSON {
                 ReportInfo("Error: file could not be read/or is empty\n");
                 return false;
             }
+
+            auto start = std::chrono::high_resolution_clock::now();
+            FixNewLines(fileContents);
+            // replaces all comments with whitespace
+            // make it much simpler to parse the contents 
+            StripComments(fileContents);
+            //ReportInfo("\nFileContents (after comments removed and newlines fixed): ");
+            //ReportInfo(fileContents);
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> duration1 = end - start;
+            std::cout << "FixNewLines and StripComments time: " << duration1.count() << " ms\n";
             
             int tokenCount = CountTokens(fileContents);
             ReportInfo("Token count: " + std::to_string(tokenCount) + "\n");

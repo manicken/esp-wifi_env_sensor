@@ -36,3 +36,4 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
     //|=var7+= = -= 0 /= // this is very unlikely to happend but tests all variants
 
 endif
+

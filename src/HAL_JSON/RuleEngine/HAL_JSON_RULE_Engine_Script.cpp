@@ -5,12 +5,13 @@
 
 namespace HAL_JSON {
     namespace Rule {
-
+       
         TriggerBlock::TriggerBlock() {
 
         }
         TriggerBlock::~TriggerBlock() {
             delete statementBlocks;
+            statementBlocks = nullptr;
         }
         bool TriggerBlock::AllwaysRun() {
             return true;

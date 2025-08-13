@@ -4,11 +4,21 @@
 namespace HAL_JSON {
     namespace Rule {
 
-        StatementBlock ::StatementBlock () : context(nullptr), handler(nullptr), deleter(nullptr) { }
+        StatementBlock::StatementBlock () : context(nullptr), handler(nullptr), deleter(nullptr) { }
 
-        StatementBlock ::~StatementBlock ()
+        StatementBlock::~StatementBlock ()
         {
             if (deleter) deleter(context);
+        }
+
+        StatementBlocks::StatementBlocks()
+        {
+
+        }
+
+        StatementBlocks::~StatementBlocks()
+        {
+            
         }
 
     }
