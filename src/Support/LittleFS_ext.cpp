@@ -4,25 +4,26 @@
 
 namespace LittleFS_ext
 {
-    bool load_from_file(const String& file_name, String &contents) {
+    
+    FileResult load_from_file(const String& file_name, String &contents) {
         contents = "";
         
         File this_file = LittleFS.open(file_name, "r");
         if (!this_file) { // failed to open the file, retrn empty result
-            return false;
+            return FileResult::FileNotFound;
         }
         while (this_file.available()) {
             contents += (char)this_file.read();
         }
         
         this_file.close();
-        return true;
+        return FileResult::Success;
     }
 
-    bool load_from_file(const String& file_name, char *buff) {
+    FileResult load_from_file(const String& file_name, char *buff) {
         File this_file = LittleFS.open(file_name, "r");
         if (!this_file) { // failed to open the file, retrn empty result
-            return false;
+            return FileResult::FileNotFound;
         }
         while (this_file.available()) {
             *buff = (char)this_file.read();
@@ -30,25 +31,25 @@ namespace LittleFS_ext
         }
         *buff = 0x00;
         this_file.close();
-        return true;
+        return FileResult::Success;
     }
-    bool load_from_file(const String& file_name, char** outBuffer, size_t* outSize) {
+    FileResult load_from_file(const String& file_name, char** outBuffer, size_t* outSize) {
         File this_file = LittleFS.open(file_name, "r");
         if (!this_file) {
-            return false;
+            return FileResult::FileNotFound;
         }
 
         size_t size = this_file.size();
         if (size == 0) {
             this_file.close();
-            return false;
+            return FileResult::FileEmpty;
         }
 
         // Allocate buffer (+1 for null terminator)
         char* buffer = new (std::nothrow) char[size + 1];
         if (!buffer) {
             this_file.close();
-            return false;
+            return FileResult::AllocFail;
         }
 
         // Read contents
@@ -62,13 +63,13 @@ namespace LittleFS_ext
 
         *outBuffer = buffer;
         if (outSize) *outSize = index;
-        return true;
+        return FileResult::Success;
     }
 
     int getFileSize(const String& file_name)
     {
         File this_file = LittleFS.open(file_name, "r");
-        if (!this_file) { // failed to open the file, retrn empty result
+        if (!this_file) { // failed to open the file, return empty result
             return -1;
         }
         int size = this_file.available();

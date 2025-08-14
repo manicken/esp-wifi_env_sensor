@@ -7,7 +7,7 @@
     T(T&&) = delete; T& operator=(T&&) = delete;
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
         template<typename T>
         void DeleteAs(void* ptr) {
             delete static_cast<T*>(ptr);

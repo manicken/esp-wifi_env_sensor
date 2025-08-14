@@ -6,7 +6,7 @@
 #include "HAL_JSON_RULE_Engine_CalcRPNToken.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
 
         struct IfConditionItem {
             HAL_JSON_NOCOPY_NOMOVE(IfConditionItem);

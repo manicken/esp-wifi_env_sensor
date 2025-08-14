@@ -18,14 +18,43 @@
 #include "../../Support/CharArrayHelpers.h"
 #include "../HAL_JSON_ZeroCopyString.h"
 
+
+#ifdef _WIN32
+#include <chrono>
+#include <iostream>
+
+#define MEASURE_TIME(message, block) \
+do { \
+    auto _mt_start = std::chrono::high_resolution_clock::now(); \
+    block; \
+    auto _mt_end = std::chrono::high_resolution_clock::now(); \
+    std::chrono::duration<double, std::milli> _mt_duration = _mt_end - _mt_start; \
+    std::cout << message << _mt_duration.count() << " ms\n"; \
+} while (0)
+
+#else
+// On embedded builds: expands to nothing, zero overhead
+#define MEASURE_TIME(message, block) do { block; } while (0)
+#endif
+
+
+
 namespace HAL_JSON {
     namespace Rules {
         
+        enum class ParserError {
+            FileNotFound,
+            FileEmpty,
+            FileContentsAllocFail
+        };
+
         class Parser {
         private:
             
             static void ReportError(const char* msg);
+#ifdef _WIN32
             static void ReportInfo(std::string msg);
+#endif
             //static inline bool IsType(const Token& t, const char* str) { return t.EqualsIC(str); }
 
             /** special note,
@@ -56,9 +85,6 @@ namespace HAL_JSON {
             static bool MergeConditions(Tokens& tokens);
 
             /** merge actions so that each action 'line'
-             *  is in one token for easier parse */
-            static bool MergeActions(Tokens& tokens);
-            /** merge actions so that each action 'line'
              *  is in one token for easier parse 
              *  this is a variant to MergeActions but
              *  allows the use of \ to make multiline spanning actions
@@ -71,10 +97,14 @@ namespace HAL_JSON {
 
             static bool VerifyConditionBlocks(Tokens& tokens);
             static bool VerifyActionBlocks(Tokens& tokens);
-            static bool ParseRuleSet(char* fileContents,Tokens& tokens);
+            static bool ValidateParseRuleSet(Tokens& tokens, bool validateOnly);
             
         public:
-            static bool ReadAndParseRuleSetFile(const char* filePath);
+        /** 
+         * if the callback is set this is considered a Load function
+         * if the callback is not set (nullptr) then it's validate only
+         */
+            static bool ReadAndParseRuleSetFile(const char* filePath, void (*parsedOKcallback)(Tokens& tokens) = nullptr);
 
         };
     }

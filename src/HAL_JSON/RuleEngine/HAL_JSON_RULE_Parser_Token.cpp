@@ -98,9 +98,9 @@ namespace HAL_JSON {
             return false;
         }
 
-        Tokens::Tokens() : zeroCopy(true), firstTokenStartOffset(nullptr), items(nullptr), count(0) {}
+        Tokens::Tokens() : zeroCopy(true), firstTokenStartOffset(nullptr), items(nullptr), count(0), rootBlockCount(0), currIndex(0) {}
 
-        Tokens::Tokens(int count) : zeroCopy(false), firstTokenStartOffset(nullptr), items(new Token[count]), count(count) { }
+        Tokens::Tokens(int count) : zeroCopy(false), firstTokenStartOffset(nullptr), items(new Token[count]), count(count), rootBlockCount(0), currIndex(0) { }
 
         Tokens::~Tokens() {
             if (zeroCopy == false)
@@ -152,6 +152,9 @@ namespace HAL_JSON {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             std::string msg;
+            if (subTokenIndexOffset == 0)
+                msg += "rootLevelBlockCount: " + std::to_string(_tokens.rootBlockCount) + "\n";
+
             if (_tokens.firstTokenStartOffset != nullptr) {
                 msg += "firstTokenStartOffset set, ";
             }

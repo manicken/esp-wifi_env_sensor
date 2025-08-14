@@ -238,7 +238,7 @@ namespace HAL_JSON {
         char* jsonBuffer = nullptr;
         size_t fileSize;
 
-        if (LittleFS_ext::load_from_file(path, &jsonBuffer, &fileSize) == false)
+        if (LittleFS_ext::load_from_file(path, &jsonBuffer, &fileSize) != LittleFS_ext::FileResult::Success)
         {
             GlobalLogger.Error(F("ReadJSON - error could not load json file: "),path);
             return false;

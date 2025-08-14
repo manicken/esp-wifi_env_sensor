@@ -3,7 +3,7 @@
 #include "HAL_JSON_RULE_Engine_CalcRPNToken.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
         RPNStack<HALValue> halValueStack;
 
         CalcRPNToken::CalcRPNToken()

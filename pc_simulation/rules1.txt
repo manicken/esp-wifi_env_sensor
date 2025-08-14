@@ -1,10 +1,22 @@
-if ((hum#humidity>= 50) and (var1 ==0)) then // using a variable to create a state machine
+on var1#trigger then // count 4
+	var1 = 0
+	var2 = 0
+	var3 = 0
+	
+	if (var6 < 5) then // count 2
+        var8 = 8 + var8
+        var9 = 9 + var9
+    endif
+	
+endon
+
+if ((hum#humidity>= 50) and (var1 ==0)) then // count 2 using a variable to create a state machine
 
     BIRELSET=0 // =0 mean that the pre programmed pulse lenght will be used
     var0=0
     
     
-elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
+elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then // count 11
 
     BIRELRST=0 // =0 mean that the pre programmed pulse lenght will be used
     
@@ -15,7 +27,7 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
     //var6 <= 0 // this is invalid
     var7 <<= 7 // valid
     
-    if (var6 < 5) then
+    if (var6 < 5) then // count 2
         var8 = 8 + var8
         var9 = 9 + var9
     endif
@@ -37,3 +49,8 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then
 
 endif
 
+
+on var1#trigger then
+	var1 = 0
+	
+endon

@@ -6,7 +6,7 @@
 #include "HAL_JSON_RULE_Engine_StatementBlock.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
         /**
          * A single trigger definition at the root level of a script.
          * Each trigger is linked to one or more executable operation blocks.
@@ -54,6 +54,7 @@ namespace HAL_JSON {
         {
             static ScriptBlock* scriptBlocks;
             static int scriptBlocksCount;
+            static int currentScriptIndex;
 
             /** should be run before using LoadAllActiveScripts */
             static bool ValidateAllActiveScripts();

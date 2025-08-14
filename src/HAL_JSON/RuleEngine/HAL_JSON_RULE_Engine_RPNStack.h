@@ -4,7 +4,7 @@
 #include "HAL_JSON_RULE_Engine_Support.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
         template<typename T>
         class RPNStack {
         public:

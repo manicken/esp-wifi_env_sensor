@@ -2,7 +2,7 @@
 #include "HAL_JSON_RULE_Engine_IfBlock.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
 
         BranchBlock::BranchBlock()
         {

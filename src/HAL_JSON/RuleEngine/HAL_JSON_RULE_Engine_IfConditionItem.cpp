@@ -3,7 +3,7 @@
 #include "HAL_JSON_RULE_Engine_IfConditionItem.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
 
         IfConditionItem::IfConditionItem() {
 

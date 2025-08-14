@@ -20,14 +20,13 @@ namespace HAL_JSON {
             GlobalLogger.Error(F("Rule Set Parse:"), msg);
     #endif
         }
-
+#ifdef _WIN32
         void Parser::ReportInfo(std::string msg) {
-    #ifdef _WIN32
             std::cout << msg;
-    #else
-            //GlobalLogger.Info(F("Expr Rule Parse:"), msg);
-    #endif
         }
+#else
+#define ReportInfo(msg)        
+#endif
         
         
 
@@ -322,12 +321,20 @@ namespace HAL_JSON {
         bool Parser::MergeActions2(Tokens& _tokens) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
+            int level = 0;
             for (int i = 0; i < tokenCount; ++i) {
                 if (!tokens[i].AnyType(actionStartTypes)) { //.EqualsICAny(actionStartKeywords)) {
+                    if (tokens[i].type == TokenType::If) level++;
                     continue;
                 }
                 if (tokens[i].type == TokenType::And) tokens[i].type = TokenType::Ignore;
                 else if (tokens[i].type == TokenType::ActionSeparator) tokens[i].type = TokenType::Ignore;
+                if (tokens[i].type == TokenType::EndIf) { level--;
+                    if (level == 0) {
+                        ReportTokenInfo(tokens[i], "iflevel is zero");
+                        continue; // skip start endif if at root level
+                    }
+                }
 
                 int start = i + 1;
                 int end = -1;
@@ -371,27 +378,31 @@ namespace HAL_JSON {
             }
             return true;
         }
-
-
+/*
         void Parser::CountBlockItems(Tokens& _tokens) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
+            int rootLevelBlockCount = 0;
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
 
                 
                 if (token.type == TokenType::If) {
+                    rootLevelBlockCount++;
                     int count = 1;
                     int level = 1;
+
                     for (int j = i + 1; j < tokenCount; ++j) {
-                        const Token& innerToken = tokens[j];
+                        Token& innerToken = tokens[j];
                         if (innerToken.MergedOrIgnore()) continue;
                         if (innerToken.type == TokenType::And) continue;
                         if (innerToken.type == TokenType::ActionSeparator) continue;
                         if (innerToken.type == TokenType::If) level++;
                         if (innerToken.type == TokenType::EndIf) {
                             level--;
-                            if (level == 0) break;
+                            if (level == 0) {
+                                break;
+                            }
                         }
                         if (level == 1 && (innerToken.type == TokenType::ElseIf || innerToken.type == TokenType::Else)) {
                             count++;
@@ -403,7 +414,7 @@ namespace HAL_JSON {
                     int count = 0;
                     int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
-                        const Token& innerToken = tokens[j];
+                        Token& innerToken = tokens[j];
                         if (innerToken.MergedOrIgnore()) continue;
                         if (innerToken.type == TokenType::And) continue;
                         if (innerToken.type == TokenType::ActionSeparator) continue;
@@ -420,7 +431,9 @@ namespace HAL_JSON {
                     token.itemsInBlock = count;
                 }
                 else if (token.type == TokenType::On) { // least occuring type
+                    rootLevelBlockCount++;
                     int count = 0;
+                    int level = 1;
                     for (int j = i + 1; j < tokenCount; ++j) {
                         const Token& innerToken = tokens[j];
                         if (innerToken.MergedOrIgnore()) continue;
@@ -429,12 +442,106 @@ namespace HAL_JSON {
                         if (innerToken.type == TokenType::EndOn) {
                             break;
                         }
-                        count++;
+                        if (innerToken.type == TokenType::If) level++;
+                        if (innerToken.type == TokenType::EndIf) {
+                            level--;
+                            if (level == 0) {
+                                break;
+                            }
+                        }
+                        if (level == 1 && (innerToken.type == TokenType::ElseIf || innerToken.type == TokenType::Else)) {
+                            count++;
+                        }
+                        //count++;
                     }
                     token.itemsInBlock = count;
                 }
             }
+            _tokens.rootBlockCount = rootLevelBlockCount;
         }
+        */
+        // this seems to work ok now
+        void Parser::CountBlockItems(Tokens& _tokens) {
+            Token* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
+            int rootLevelBlockCount = 0;
+            int blockLevel = 0;
+
+            for (int i = 0; i < tokenCount; ++i) {
+                Token& token = tokens[i];
+
+                // Root-level blocks
+                if (token.type == TokenType::If || token.type == TokenType::On) {
+                    if (blockLevel == 0)
+                        rootLevelBlockCount++;
+                    
+                    blockLevel++;
+                }
+                else if (token.type == TokenType::EndIf || token.type == TokenType::EndOn) { // EndOn is allready at root
+                    blockLevel--;
+                }
+
+                // Count items inside If block: Then + ElseIf + optional Else
+                if (token.type == TokenType::If) {
+                    int branchCount = 1; // initial Then branch
+                    for (int j = i + 1; j < tokenCount; ++j) {
+                        Token& t = tokens[j];
+                        if (t.MergedOrIgnore()) continue;
+
+                        if (t.type == TokenType::EndIf) break;
+                        if (t.type == TokenType::ElseIf || t.type == TokenType::Else) {
+                            branchCount++;
+                        }
+                    }
+                    token.itemsInBlock = branchCount;
+                }
+
+                // Count actions in Then, Else, ElseIf, or On blocks
+                else if (token.type == TokenType::Then || token.type == TokenType::Else || token.type == TokenType::ElseIf || token.type == TokenType::On) {
+                    int count = 0;
+                    int level = 0; // nested If inside the branch counts as 1
+
+                    TokenType endTokenType = (token.type == TokenType::On) ? TokenType::EndOn : TokenType::EndIf;
+
+                    for (int j = i + 1; j < tokenCount; ++j) {
+                        Token& t = tokens[j];
+                        if (t.MergedOrIgnore()) continue;
+                        if (t.type == TokenType::And || t.type == TokenType::ActionSeparator) continue;
+
+                        // Track nested If as a single action
+                        if (t.type == TokenType::If) {
+                            level++;
+                            count++; // counts as 1 for parent branch
+                            continue;
+                        }
+
+                        if (t.type == TokenType::EndIf || t.type == TokenType::EndOn) {
+                            if (level > 0) {
+                                level--;
+                                continue;
+                            } else {
+                                break; // branch ends
+                            }
+                        }
+
+                        // Break at next branch (ElseIf/Else) for If branch
+                        if (level == 0 && (t.type == TokenType::ElseIf || t.type == TokenType::Else)) {
+                            break;
+                        }
+
+                        if (level == 0) count++;
+                    }
+
+                    token.itemsInBlock = count;
+                }
+            }
+
+            _tokens.rootBlockCount = rootLevelBlockCount;
+        }
+
+
+
+
 
         bool Parser::EnsureActionBlocksContainItems(Tokens& _tokens) {
             const Token* tokens = _tokens.items;
@@ -633,37 +740,23 @@ namespace HAL_JSON {
             return anyError == false;
         }
 #include <chrono>
-        bool Parser::ParseRuleSet(char* fileContents, Tokens& _tokens) {
-           
-            
+        bool Parser::ValidateParseRuleSet(Tokens& _tokens, bool validateOnly) {
 
-            auto start = std::chrono::high_resolution_clock::now();
-            if (Tokenize(fileContents, _tokens) == false) {
-                ReportInfo("Error: could not Tokenize\n");
-                //std::cout << "Error: could not Tokenize" << std::endl;
-                return false;
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> duration2 = end - start;
-            std::cout << "Tokenize time: " << duration2.count() << " ms\n";
-#ifdef _WIN32
-            std::cout << "**********************************************************************************\n";
-            std::cout << "*                            RAW TOKEN LIST                                      *\n";
-            std::cout << "**********************************************************************************\n";
-#endif
-            ReportInfo(PrintTokens(_tokens,0) + "\n");
-           
-            ReportInfo("\nVerifyBlocks (BetterError): ");
-            start = std::chrono::high_resolution_clock::now();
-            if (VerifyBlocks(_tokens) == false) {
-                ReportInfo("[FAIL]\n");
-                return false;
-            }
-            end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> duration3 = end - start;
-            std::cout << "VerifyBlocks time: " << duration3.count() << " ms\n";
+            if (validateOnly) {
+                ReportInfo("**********************************************************************************\n");
+                ReportInfo("*                            RAW TOKEN LIST                                      *\n");
+                ReportInfo("**********************************************************************************\n");
+                ReportInfo(PrintTokens(_tokens,0) + "\n");
 
-            ReportInfo("[OK]\n");
+                ReportInfo("\nVerifyBlocks (BetterError): ");
+                MEASURE_TIME("VerifyBlocks time: ",
+                if (validateOnly && VerifyBlocks(_tokens) == false) {
+                    ReportInfo("[FAIL]\n");
+                    return false;
+                }
+                );
+                ReportInfo("[OK]\n");
+            }
             // if here then we can safely parse all blocks
 
             ReportInfo("\nMergeConditions: ");
@@ -677,63 +770,76 @@ namespace HAL_JSON {
             ReportInfo("\nCountBlockItems: ");
             CountBlockItems(_tokens); // sets the metadata itemsInBlock
             ReportInfo("[OK]\n");
-            
-            ReportInfo("\nEnsureActionBlocksContainItems: ");
-            if (EnsureActionBlocksContainItems(_tokens) == false) { // uses the metadata itemsInBlock to determine if there are invalid
-                ReportInfo("[FAIL]\n");
-                return false;
-            }
-            ReportInfo("[OK]\n");
 
-#ifdef _WIN32
-            std::cout << "**********************************************************************************\n";
-            std::cout << "*                            PARSED TOKEN LIST                                   *\n";
-            std::cout << "**********************************************************************************\n";
-#endif
+            ReportInfo("**********************************************************************************\n");
+            ReportInfo("*                            PARSED TOKEN LIST                                   *\n");
+            ReportInfo("**********************************************************************************\n");
+
             ReportInfo(PrintTokens(_tokens,0) + "\n");
+            
+            if (validateOnly) {
+                ReportInfo("\nEnsureActionBlocksContainItems: ");
+                if (validateOnly && EnsureActionBlocksContainItems(_tokens) == false) { // uses the metadata itemsInBlock to determine if there are invalid
+                    ReportInfo("[FAIL]\n");
+                    return false;
+                }
+                ReportInfo("[OK]\n");
 
-            ReportInfo("\nVerifyConditionBlocks: \n");
-            if (VerifyConditionBlocks(_tokens) == false) {
-                ReportInfo("[FAIL @ VerifyConditionBlocks]\n");
-                return false;
-            }
+                
 
-            ReportInfo("\nVerifyActionBlocks: \n");
-            if (VerifyActionBlocks(_tokens) == false) {
-                ReportInfo("[FAIL @ VerifyActionBlocks]\n");
-                return false;
+                ReportInfo("\nVerifyConditionBlocks: \n");
+                if (VerifyConditionBlocks(_tokens) == false) {
+                    ReportInfo("[FAIL @ VerifyConditionBlocks]\n");
+                    return false;
+                }
+
+                ReportInfo("\nVerifyActionBlocks: \n");
+                if (VerifyActionBlocks(_tokens) == false) {
+                    ReportInfo("[FAIL @ VerifyActionBlocks]\n");
+                    return false;
+                }
             }
             return true;
         }
 
-        bool Parser::ReadAndParseRuleSetFile(const char* filePath) {
+        bool Parser::ReadAndParseRuleSetFile(const char* filePath, void (*parsedOKcallback)(Tokens& tokens)) {
             size_t fileSize;
             char* fileContents;// = ReadFileToMutableBuffer(filePath, fileSize);
-            if (LittleFS_ext::load_from_file(filePath, &fileContents, &fileSize) == false) {
+            LittleFS_ext::FileResult fileResult = LittleFS_ext::load_from_file(filePath, &fileContents, &fileSize);
+            if (fileResult != LittleFS_ext::FileResult::Success) {
                 ReportInfo("Error: file could not be read/or is empty\n");
                 return false;
             }
 
-            auto start = std::chrono::high_resolution_clock::now();
+            MEASURE_TIME("FixNewLines and StripComments time: ",
             // fix newlines so that they only consists of \n 
             // for easier parsing
             FixNewLines(fileContents);
             // replaces all comments with whitespace
             // make it much simpler to parse the contents 
             StripComments(fileContents);
-            //ReportInfo("\nFileContents (after comments removed and newlines fixed): ");
-            //ReportInfo(fileContents);
-            auto end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> duration1 = end - start;
-            std::cout << "FixNewLines and StripComments time: " << duration1.count() << " ms\n";
-            
+            );
+
             int tokenCount = CountTokens(fileContents);
             ReportInfo("Token count: " + std::to_string(tokenCount) + "\n");
             Tokens tokens(tokenCount);
             
+            MEASURE_TIME("Tokenize time: ",
+
+            if (Tokenize(fileContents, tokens) == false) {
+                ReportInfo("Error: could not Tokenize\n");
+                delete[] fileContents;
+                return false;
+            }
+            );
+
             bool anyError = false;
-            if (ParseRuleSet(fileContents, tokens)) {
+            if (ValidateParseRuleSet(tokens, parsedOKcallback==nullptr)) {
                 ReportInfo("ParseRuleSet [OK]\n");
+
+                if (parsedOKcallback)
+                    parsedOKcallback(tokens);
+
             } else {
                 ReportInfo("ParseRuleSet [FAIL]\n");
                 anyError = true;

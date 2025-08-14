@@ -7,6 +7,8 @@
 #include "../HAL_JSON_Manager.h"
 #include "HAL_JSON_RULE_Parser_Token.h"
 
+#include <string>
+
 #ifdef _WIN32
 #include <iostream>
 #endif

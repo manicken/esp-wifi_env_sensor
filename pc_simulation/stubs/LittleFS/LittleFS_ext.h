@@ -5,6 +5,13 @@
 #include <fstream>
 namespace LittleFS_ext {
 
-    bool load_from_file(const char* file_name, char** outBuffer, size_t* outSize);
+    enum class FileResult {
+        Success,
+        FileNotFound,
+        FileEmpty,
+        AllocFail,
+        FileReadError
+    };
+    FileResult load_from_file(const char* file_name, char** outBuffer, size_t* outSize);
 
 }

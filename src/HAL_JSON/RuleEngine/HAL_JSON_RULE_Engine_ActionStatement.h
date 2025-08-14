@@ -7,7 +7,7 @@
 #include "../HAL_JSON_CachedDeviceAccess.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
 
         struct ActionStatement
         {

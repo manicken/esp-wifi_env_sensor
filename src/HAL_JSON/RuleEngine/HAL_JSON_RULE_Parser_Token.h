@@ -54,30 +54,13 @@ namespace HAL_JSON {
         struct Token : public ZeroCopyString {
             using ZeroCopyString::ZeroCopyString;
 
-            /**
-             * note this is only a pointer to a existing string in memory, 
-             * so no freeing should be done 
-             * TODO change it to ZeroCopyString to avoid confusion
-             */
-            //const char* text;
-            /** this only stores the pointer to where the subTokens block start */
-            //Tokens subTokens; // if used like this is the default constructor called
-            //Token* subTokens;
             TokenType type;
-            //int subTokenCount;
             int line;
             int column;
             int itemsInBlock;
-            //bool isAction;
-            /** 
-             * Set to true if this token is a subtoken of another token.
-             * Used to skip it during post-processing checks.
-             * basically (merged && subTokenCount == 0)
-             */
-            //bool merged;
+
             Token();
             
-
             /* no copy/move constructors/assigments needed*/
             Token(Token&) = delete;          // no copy constructor
             Token& operator=(const Token&) = delete; // no copy assignment
@@ -120,6 +103,8 @@ namespace HAL_JSON {
             const char* firstTokenStartOffset;
             Token* items;
             int count;
+            /** root blocks count i.e. all on/if that is at root level only */
+            int rootBlockCount;
             /** 
              * Current token index during script parsing/loading.
              * Used to track the read position within the token list.

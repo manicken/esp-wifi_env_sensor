@@ -34,9 +34,14 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
     std::string strFilePath = zcFilePath.ToString();
     size_t fileSize = 0;
     char* contents;// = HAL_JSON::ReadFileToMutableBuffer(filename.c_str(), fileSize);
-    
-    if (LittleFS_ext::load_from_file(strFilePath.c_str(), &contents, &fileSize) == false) {
-        std::cout << "Error: file empty or could not be found: " << strFilePath << "\n";
+    LittleFS_ext::FileResult fileResult = LittleFS_ext::load_from_file(strFilePath.c_str(), &contents, &fileSize);
+    if (fileResult != LittleFS_ext::FileResult::Success) {
+        if (fileResult == LittleFS_ext::FileResult::FileNotFound)
+            std::cout << "Error: file could not be found: " << strFilePath << "\n";
+        else if (fileResult == LittleFS_ext::FileResult::FileEmpty)
+            std::cout << "Error: file empty: " << strFilePath << "\n";
+        else
+            std::cout << "Error: other file error: " << strFilePath << "\n";
     } 
     HAL_JSON::Rules::Tokens tokens;
     HAL_JSON::Rules::Token token(contents);
@@ -77,7 +82,7 @@ void parseCommand(const char* cmd) {
             filePath = "ruleset.txt";
 
         auto start = std::chrono::high_resolution_clock::now();
-        HAL_JSON::Rules::Parser::ReadAndParseRuleSetFile(filePath.c_str());
+        HAL_JSON::Rules::Parser::ReadAndParseRuleSetFile(filePath.c_str(), nullptr);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
 

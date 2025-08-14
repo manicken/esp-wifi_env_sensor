@@ -6,7 +6,7 @@
 #include "HAL_JSON_RULE_Engine_StatementBlock.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
 
         /** collection of StatementBlock(s) */
         struct BranchBlock

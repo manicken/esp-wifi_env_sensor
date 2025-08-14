@@ -7,7 +7,7 @@
 #include "HAL_JSON_RULE_Engine_Script.h"
 
 namespace HAL_JSON {
-    namespace Rule {
+    namespace Rules {
         /** 
          * this will be a pure static class 
          * i.e. only static members
