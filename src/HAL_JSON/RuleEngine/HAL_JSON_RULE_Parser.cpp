@@ -715,6 +715,8 @@ namespace HAL_JSON {
             }
 
             auto start = std::chrono::high_resolution_clock::now();
+            // fix newlines so that they only consists of \n 
+            // for easier parsing
             FixNewLines(fileContents);
             // replaces all comments with whitespace
             // make it much simpler to parse the contents 

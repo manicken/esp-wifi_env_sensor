@@ -1,3 +1,25 @@
+███    ███  █████       ██  ██████  ██████      ████████  ██████  ██████   ██████  
+████  ████ ██   ██      ██ ██    ██ ██   ██        ██    ██    ██ ██   ██ ██    ██ 
+██ ████ ██ ███████      ██ ██    ██ ██████         ██    ██    ██ ██   ██ ██    ██ 
+██  ██  ██ ██   ██ ██   ██ ██    ██ ██   ██        ██    ██    ██ ██   ██ ██    ██ 
+██      ██ ██   ██  █████   ██████  ██   ██        ██     ██████  ██████   ██████  
+                                                                                   
+
+fix ReadAndParseRuleSetFile and ParseRuleSet
+so that they can be reused for both:
+Validate
+and
+LoadScript
+
+but as validate have some validate functions
+that should not be executed while LoadScript
+then there need to be separate functions that somehow share the functionality
+
+think a callback that takes a TokenArray as parameter can be used
+so the basic load/needed fixes are allways present
+such as newline fix and comment removal
+
+
 ████████  ██████  ██████   ██████  
    ██    ██    ██ ██   ██ ██    ██ 
    ██    ██    ██ ██   ██ ██    ██ 
