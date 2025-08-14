@@ -20,23 +20,7 @@ namespace HAL_JSON {
             ~StatementBlock();
         };
 
-        /** collection of StatementBlock(s) */
-        struct StatementBlocks
-        {
-            HAL_JSON_NOCOPY_NOMOVE(StatementBlocks);
-
-            StatementBlock* items;
-            int itemsCount;
-
-            /** used to execute all opItems one after annother */
-            HALOperationResult (*Exec)(void);
-
-            /** returns true if exec should run */
-            bool (*ShouldExec)(void);
-
-            StatementBlocks();
-            ~StatementBlocks();
-        };
+        
 
     }
 }
