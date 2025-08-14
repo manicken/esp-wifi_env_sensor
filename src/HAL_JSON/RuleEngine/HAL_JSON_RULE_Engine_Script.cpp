@@ -10,8 +10,9 @@ namespace HAL_JSON {
 
         }
         TriggerBlock::~TriggerBlock() {
-            delete statementBlocks;
-            statementBlocks = nullptr;
+            delete[] items;
+            items = nullptr;
+            itemsCount = 0;
         }
         bool TriggerBlock::AllwaysRun() {
             return true;

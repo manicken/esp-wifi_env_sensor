@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "HAL_JSON_RULE_Engine_Support.h"
-#include "HAL_JSON_RULE_Engine_StatementBlock_s.h"
+#include "HAL_JSON_RULE_Engine_StatementBlock.h"
 
 namespace HAL_JSON {
     namespace Rule {
@@ -19,7 +19,8 @@ namespace HAL_JSON {
             bool (*triggerSource)();
             //bool (*triggerSource)(void* context);
             //void* context;  // optional — lets the triggerSource read its own state
-            StatementBlocks* statementBlocks;
+            StatementBlock* items;
+            int itemsCount;
 
             static bool AllwaysRun();
 

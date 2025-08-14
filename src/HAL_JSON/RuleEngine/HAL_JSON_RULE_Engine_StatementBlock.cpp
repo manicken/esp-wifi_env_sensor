@@ -1,5 +1,5 @@
 
-#include "HAL_JSON_RULE_Engine_StatementBlock_s.h"
+#include "HAL_JSON_RULE_Engine_StatementBlock.h"
 
 namespace HAL_JSON {
     namespace Rule {
@@ -11,15 +11,7 @@ namespace HAL_JSON {
             if (deleter) deleter(context);
         }
 
-        StatementBlocks::StatementBlocks()
-        {
-
-        }
-
-        StatementBlocks::~StatementBlocks()
-        {
-            
-        }
+        
 
     }
 }

@@ -4,6 +4,16 @@
 namespace HAL_JSON {
     namespace Rule {
 
+        BranchBlock::BranchBlock()
+        {
+
+        }
+
+        BranchBlock::~BranchBlock()
+        {
+            
+        }
+
         ConditionalBranch::ConditionalBranch()
         {
 

@@ -3,12 +3,30 @@
 #include <Arduino.h>
 #include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_LogicalExpressionRPNToken.h"
-#include "HAL_JSON_RULE_Engine_StatementBlock_s.h"
+#include "HAL_JSON_RULE_Engine_StatementBlock.h"
 
 namespace HAL_JSON {
     namespace Rule {
 
-        struct ConditionalBranch : public StatementBlocks
+        /** collection of StatementBlock(s) */
+        struct BranchBlock
+        {
+            HAL_JSON_NOCOPY_NOMOVE(BranchBlock);
+
+            StatementBlock* items;
+            int itemsCount;
+
+            /** used to execute all opItems one after annother */
+            HALOperationResult (*Exec)(void);
+
+            /** returns true if exec should run */
+            bool (*ShouldExec)(void);
+
+            BranchBlock();
+            ~BranchBlock();
+        };
+
+        struct ConditionalBranch : public BranchBlock
         {
             HAL_JSON_NOCOPY_NOMOVE(ConditionalBranch);
 
@@ -26,7 +44,7 @@ namespace HAL_JSON {
          * this is a kind of of ConditionalBranch where there are not any LogicalExpressionRPNToken list
          * and where the function ShouldExec allways return true
          */
-        struct UnconditionalBranch : public StatementBlocks
+        struct UnconditionalBranch : public BranchBlock
         {
             HAL_JSON_NOCOPY_NOMOVE(UnconditionalBranch);
 
@@ -54,10 +72,8 @@ namespace HAL_JSON {
         {
             HAL_JSON_NOCOPY_NOMOVE(IfBlock);
 
-            StatementBlocks* branchItems;
+            BranchBlock* branchItems;
             int branchItemsCount;
-
-            
 
             IfBlock();
             ~IfBlock();
