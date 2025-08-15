@@ -1,6 +1,6 @@
 
 #include "HAL_JSON_RULE_Engine_Script.h"
-#include "HAL_JSON_RULE_Parser.h"
+
 
 #define HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
 
@@ -39,30 +39,68 @@ namespace HAL_JSON {
             return true;
         }
 
-        void ScriptFileParsed(Tokens& tokens) {
+        void ScriptsBlock::ScriptFileParsed(Tokens& tokens) {
 
-            ScriptsBlock::scriptBlocks[ScriptsBlock::currentScriptIndex].triggerBlockCount = tokens.rootBlockCount;
-            ScriptsBlock::scriptBlocks[ScriptsBlock::currentScriptIndex].triggerBlocks = new TriggerBlock[tokens.rootBlockCount];
+            ScriptBlock& script = scriptBlocks[currentScriptIndex];
+            // here script.Set should be used and pass in tokens
+            // that way it's the beginning of separation into the multiple structs
 
+            script.triggerBlockCount = tokens.rootBlockCount;
+            script.triggerBlocks = new TriggerBlock[tokens.rootBlockCount];
+            int currTriggerBlockIndex = 0;
+            tokens.currIndex = 0;
+            while (tokens.currIndex < tokens.count) {
+                Token& token = tokens.items[tokens.currIndex];
+                
+                if (token.type == TokenType::On)
+                {
+                    TriggerBlock& triggerBlock = script.triggerBlocks[currTriggerBlockIndex++];
+
+                    // set allways run for now
+                    triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
+                    // a on statement can contain multiple blocks
+                    // however the 'on' token don't contain the actual itemcount
+                    // it's the 'then' token that follows
+                    // so i need to find the following 'then' token
+                    // by some helper function
+                    // but as 'on'/triggers is defined in one string without spaces
+                    // it will just be the next next token
+                    triggerBlock.items = new StatementBlock[tokens.items[tokens.currIndex+2].itemsInBlock];
+                    triggerBlock.itemsCount = token.itemsInBlock;
+                }
+                else if (token.type == TokenType::If)
+                {
+                    TriggerBlock& triggerBlock = script.triggerBlocks[currTriggerBlockIndex++];
+
+                    triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
+                    // a if block at root only contain one item
+                    // which is itself only
+                    triggerBlock.items = new StatementBlock[1];
+                    triggerBlock.itemsCount = 1;
+
+                }
+                else
+                    tokens.currIndex++;
+            }
 
         }
 
         bool ScriptsBlock::LoadAllActiveScripts()
         {
-            delete[] ScriptsBlock::scriptBlocks;
-            ScriptsBlock::scriptBlocks = nullptr;
-            ScriptsBlock::scriptBlocksCount = 0;
+            delete[] scriptBlocks;
+            scriptBlocks = nullptr;
+            scriptBlocksCount = 0;
 
             // here i will load the active scripts file and parse which scripts to load
             // and how many to load
             // currently for development first test we only load one file
             
             int count = 1; // set to 1 for development test
-            ScriptsBlock::scriptBlocks = new ScriptBlock[count];
-            ScriptsBlock::scriptBlocksCount = count;
+            scriptBlocks = new ScriptBlock[count];
+            scriptBlocksCount = count;
 
             for (int i = 0;i<count;i++) {
-                ScriptsBlock::currentScriptIndex = i;
+                currentScriptIndex = i;
                 // this should now pass and execute the given callback
                 Rules::Parser::ReadAndParseRuleSetFile("rules1.txt", ScriptFileParsed);
             }

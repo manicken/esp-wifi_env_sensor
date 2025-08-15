@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_StatementBlock.h"
+#include "HAL_JSON_RULE_Parser.h"
+#include "HAL_JSON_RULE_Parser_Token.h"
 
 namespace HAL_JSON {
     namespace Rules {
@@ -56,6 +58,7 @@ namespace HAL_JSON {
             static int scriptBlocksCount;
             static int currentScriptIndex;
 
+            static void ScriptFileParsed(Tokens& tokens);
             /** should be run before using LoadAllActiveScripts */
             static bool ValidateAllActiveScripts();
             /** ValidateAllActiveScripts should be run before using this function */
