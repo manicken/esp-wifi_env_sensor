@@ -12,7 +12,7 @@ namespace HAL_JSON {
 
         BranchBlock::~BranchBlock()
         {
-            
+            delete[] items;
         }
 
         HALOperationResult BranchBlock::Exec()
@@ -26,11 +26,24 @@ namespace HAL_JSON {
         }
         ConditionalBranch::~ConditionalBranch()
         {
-
+            //delete[] items; is deleted by BranchBlock destructor
         }
         void ConditionalBranch::Set(Tokens& tokens)
         {
+            // first increment to next and then get
+            const Token& expression = tokens.items[++tokens.currIndex];
+            // TODO consume if expression 
+            tokens.currIndex += expression.itemsInBlock; // dummy consume
 
+            //when consumed we are at the then
+            Token& thenToken = tokens.items[tokens.currIndex++]; // get and consume
+            // here extract the itemsCount
+            itemsCount = thenToken.itemsInBlock;
+            items = new StatementBlock[itemsCount];
+
+            for (int i=0;i<itemsCount;i++) {
+                items[i].Set(tokens);
+            }
         }
         bool ConditionalBranch::ShouldExec()
         {
@@ -39,11 +52,18 @@ namespace HAL_JSON {
 
         UnconditionalBranch::UnconditionalBranch(Tokens& tokens)
         {
+            const Token& elseToken = tokens.items[tokens.currIndex++]; // get and consume
 
+            itemsCount = elseToken.itemsInBlock;
+            items = new StatementBlock[itemsCount];
+
+            for (int i=0;i<itemsCount;i++) {
+                items[i].Set(tokens);
+            }
         }
         UnconditionalBranch::~UnconditionalBranch()
         {
-
+            //delete[] items; is deleted by BranchBlock destructor
         }
 
         IfStatement::IfStatement(Tokens& tokens)

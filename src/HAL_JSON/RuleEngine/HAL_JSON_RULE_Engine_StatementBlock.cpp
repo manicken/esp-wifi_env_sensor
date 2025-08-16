@@ -13,7 +13,7 @@ namespace HAL_JSON {
         }
 
         void StatementBlock::Set(Tokens& tokens) {
-            Token& token = tokens.items[tokens.currIndex];
+            Token& token = tokens.Current();
             if (token.type == TokenType::If) {
                 context = new IfStatement(tokens);
                 handler = IfStatement::Handler;

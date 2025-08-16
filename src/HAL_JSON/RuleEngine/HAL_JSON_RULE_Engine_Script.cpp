@@ -19,11 +19,11 @@ namespace HAL_JSON {
             return true;
         }
 
-        void TriggerBlock::Set(int itemsCount, Tokens& tokens) {
-            items = new StatementBlock[itemsCount];
-            itemsCount = itemsCount;
+        void TriggerBlock::Set(int _itemsCount, Tokens& tokens) {
+            items = new StatementBlock[_itemsCount];
+            itemsCount = _itemsCount;
 
-            for (int i=0;i<itemsCount;i++) {
+            for (int i=0;i<_itemsCount;i++) {
                 items[i].Set(tokens);
             }
         }
