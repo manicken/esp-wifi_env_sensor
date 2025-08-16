@@ -21,7 +21,7 @@ namespace HAL_JSON {
          * for the fundamentala types
          * this is set in the tokenize function.
          */
-        enum class TokenType {
+        enum class TokenType : uint16_t {
             /** used to make it easier to see unset tokens, is also used as terminator item when defining a list of token types */
             NotSet, 
             On,
@@ -54,10 +54,11 @@ namespace HAL_JSON {
         struct Token : public ZeroCopyString {
             using ZeroCopyString::ZeroCopyString;
 
+            uint16_t line;
+            uint16_t column;
+            uint16_t itemsInBlock;
+            uint16_t hasElse;
             TokenType type;
-            int line;
-            int column;
-            int itemsInBlock;
 
             Token();
             
@@ -115,6 +116,19 @@ namespace HAL_JSON {
             /** this will initialize this instance owned Token storage */
             Tokens(int count);
             ~Tokens();
+
+            // Inline accessor
+            inline Token& Current() {
+                // Optional: assert to catch out-of-bounds in debug builds
+                //assert(currIndex < count);
+                return items[currIndex];
+            }
+
+            // Optional: const version
+            inline const Token& Current() const {
+                //assert(currIndex < count);
+                return items[currIndex];
+            }
 
             Tokens(Tokens&) = delete;          // no copy constructor
             Tokens& operator=(const Tokens&) = delete; // no copy assignment

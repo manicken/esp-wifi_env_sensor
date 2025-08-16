@@ -54,6 +54,7 @@ namespace HAL_JSON {
             line = _line;
             column = _column;
             itemsInBlock = 0;
+            hasElse = 0;
             if (start!=nullptr) { // start is only nullptr when the token array is first created
                 type = GetFundamentalTokenType(start);
                 //std::cout << "FundamentalTokenType is set to: " << TokenTypeToString(type) << "\n";
@@ -189,6 +190,7 @@ namespace HAL_JSON {
                     ", col:" + std::to_string(tok.column) + 
                     ", count:" + std::to_string(tok.itemsInBlock) + 
                     ", type:" + TokenTypeToString(tok.type) +
+                    ((tok.type == TokenType::If)?((tok.hasElse==1)?", hasElse:true":", hasElse:false"):"")+
                     "): ";
 
                     lastWasBlock = false;

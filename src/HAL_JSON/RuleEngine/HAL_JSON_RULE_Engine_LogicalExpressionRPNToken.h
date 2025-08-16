@@ -5,6 +5,7 @@
 #include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_RPNStack.h"
 #include "HAL_JSON_RULE_Engine_IfConditionItem.h"
+#include "HAL_JSON_RULE_Parser_Token.h"
 
 namespace HAL_JSON {
     namespace Rules {

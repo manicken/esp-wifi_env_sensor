@@ -4,12 +4,16 @@
 namespace HAL_JSON {
     namespace Rules {
 
-        ActionStatement::ActionStatement()
+        ActionStatement::ActionStatement(Tokens& tokens)
         {
-
+            Token& token = tokens.Current(); // this now point to the action-type token
         }
         ActionStatement::~ActionStatement()
         {
+
+        }
+
+        HALOperationResult ActionStatement::Handler(void* context) {
 
         }
         

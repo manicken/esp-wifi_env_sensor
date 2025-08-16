@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include "HAL_JSON_RULE_Engine_Support.h"
+#include "HAL_JSON_RULE_Parser_Token.h"
 
 namespace HAL_JSON {
     namespace Rules {

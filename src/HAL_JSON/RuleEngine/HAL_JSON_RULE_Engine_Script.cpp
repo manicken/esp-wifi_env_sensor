@@ -15,8 +15,17 @@ namespace HAL_JSON {
             items = nullptr;
             itemsCount = 0;
         }
-        bool TriggerBlock::AllwaysRun() {
+        bool TriggerBlock::AllwaysRun(void* context) {
             return true;
+        }
+
+        void TriggerBlock::Set(int itemsCount, Tokens& tokens) {
+            items = new StatementBlock[itemsCount];
+            itemsCount = itemsCount;
+
+            for (int i=0;i<itemsCount;i++) {
+                items[i].Set(tokens);
+            }
         }
 
         ScriptBlock::ScriptBlock()
@@ -26,6 +35,46 @@ namespace HAL_JSON {
         ScriptBlock::~ScriptBlock()
         {
             delete[] triggerBlocks;
+        }
+
+        void ScriptBlock::Set(Tokens& tokens) {
+            
+            triggerBlockCount = tokens.rootBlockCount;
+            triggerBlocks = new TriggerBlock[tokens.rootBlockCount];
+            
+            tokens.currIndex = 0;
+
+            for (int i = 0; i < tokens.rootBlockCount || tokens.currIndex < tokens.count; i++) { // tokens.currIndex is incremented elsewhere and is included here as a out of bounds failsafe
+                TriggerBlock& triggerBlock = triggerBlocks[i];
+                Token& token = tokens.Current();
+                
+                if (token.type == TokenType::On)
+                {
+                    tokens.currIndex++;
+                    
+                    Token& triggerSourceToken = tokens.items[tokens.currIndex++];
+                    if (triggerSourceToken.EqualsIC("eachloop"))
+                        triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
+                    else
+                    {
+                        // set allways run for now
+                        // TODO implement other sources
+                        // if not reserved trigger sources then try to get it as a device based trigger
+                        // this should allready be checked in the validate script part
+                        // so accessing it here should allways pass
+                        triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
+                    }
+                    triggerBlock.Set(tokens.items[tokens.currIndex++].itemsInBlock, tokens);
+                }
+                else if (token.type == TokenType::If)
+                {
+                    // wrap root-level if into a trigger block that always runs
+                    triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
+                    triggerBlock.Set(1, tokens);
+                }
+                else
+                    tokens.currIndex++;
+            }
         }
 
         
@@ -40,49 +89,7 @@ namespace HAL_JSON {
         }
 
         void ScriptsBlock::ScriptFileParsed(Tokens& tokens) {
-
-            ScriptBlock& script = scriptBlocks[currentScriptIndex];
-            // here script.Set should be used and pass in tokens
-            // that way it's the beginning of separation into the multiple structs
-
-            script.triggerBlockCount = tokens.rootBlockCount;
-            script.triggerBlocks = new TriggerBlock[tokens.rootBlockCount];
-            int currTriggerBlockIndex = 0;
-            tokens.currIndex = 0;
-            while (tokens.currIndex < tokens.count) {
-                Token& token = tokens.items[tokens.currIndex];
-                
-                if (token.type == TokenType::On)
-                {
-                    TriggerBlock& triggerBlock = script.triggerBlocks[currTriggerBlockIndex++];
-
-                    // set allways run for now
-                    triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
-                    // a on statement can contain multiple blocks
-                    // however the 'on' token don't contain the actual itemcount
-                    // it's the 'then' token that follows
-                    // so i need to find the following 'then' token
-                    // by some helper function
-                    // but as 'on'/triggers is defined in one string without spaces
-                    // it will just be the next next token
-                    triggerBlock.items = new StatementBlock[tokens.items[tokens.currIndex+2].itemsInBlock];
-                    triggerBlock.itemsCount = token.itemsInBlock;
-                }
-                else if (token.type == TokenType::If)
-                {
-                    TriggerBlock& triggerBlock = script.triggerBlocks[currTriggerBlockIndex++];
-
-                    triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
-                    // a if block at root only contain one item
-                    // which is itself only
-                    triggerBlock.items = new StatementBlock[1];
-                    triggerBlock.itemsCount = 1;
-
-                }
-                else
-                    tokens.currIndex++;
-            }
-
+            scriptBlocks[currentScriptIndex].Set(tokens);
         }
 
         bool ScriptsBlock::LoadAllActiveScripts()

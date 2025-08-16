@@ -1,12 +1,17 @@
 
 #pragma once
 #include <Arduino.h>
+#include "../HAL_JSON_Device.h" // HALOperationResult
 #include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_LogicalExpressionRPNToken.h"
-#include "HAL_JSON_RULE_Engine_StatementBlock.h"
+
+#include "HAL_JSON_RULE_Parser_Token.h"
 
 namespace HAL_JSON {
     namespace Rules {
+
+        // Forward declare StatementBlock
+        struct StatementBlock;
 
         /** collection of StatementBlock(s) */
         struct BranchBlock
@@ -17,10 +22,7 @@ namespace HAL_JSON {
             int itemsCount;
 
             /** used to execute all opItems one after annother */
-            HALOperationResult (*Exec)(void);
-
-            /** returns true if exec should run */
-            bool (*ShouldExec)(void);
+            HALOperationResult Exec(void);
 
             BranchBlock();
             ~BranchBlock();
@@ -33,8 +35,9 @@ namespace HAL_JSON {
             LogicalExpressionRPNToken* expressionTokens;
             int expressionTokensCount;
 
-            /** the context that is passed into this is of type ConditionalBranch */
-            static bool ShouldExec(void* context);
+            bool ShouldExec();
+
+            void Set(Tokens& tokens);
 
             ConditionalBranch();
             ~ConditionalBranch();
@@ -42,16 +45,13 @@ namespace HAL_JSON {
 
         /** 
          * this is a kind of of ConditionalBranch where there are not any LogicalExpressionRPNToken list
-         * and where the function ShouldExec allways return true
+         * there is only one instance of it inside a IfBlock item
          */
         struct UnconditionalBranch : public BranchBlock
         {
             HAL_JSON_NOCOPY_NOMOVE(UnconditionalBranch);
 
-            /** this will allways return true */
-            static bool ShouldExec(void* context);
-
-            UnconditionalBranch();
+            UnconditionalBranch(Tokens& tokens);
             ~UnconditionalBranch();
         };
 
@@ -68,15 +68,19 @@ namespace HAL_JSON {
          * 
          * else here just contain a collection of OpBlock items
          */
-        struct IfBlock
+        struct IfStatement
         {
-            HAL_JSON_NOCOPY_NOMOVE(IfBlock);
+            HAL_JSON_NOCOPY_NOMOVE(IfStatement);
 
-            BranchBlock* branchItems;
+            ConditionalBranch* branchItems;
             int branchItemsCount;
+            /** set when there are a else branch defined, else it's set to nullptr */
+            UnconditionalBranch* elseBranch; 
 
-            IfBlock();
-            ~IfBlock();
+            IfStatement(Tokens& tokens);
+            ~IfStatement();
+
+            static HALOperationResult Handler(void* context);
         };
 
     }

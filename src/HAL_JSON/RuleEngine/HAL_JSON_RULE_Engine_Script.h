@@ -18,16 +18,18 @@ namespace HAL_JSON {
             HAL_JSON_NOCOPY_NOMOVE(TriggerBlock);
 
             /** the function set to this pointer should return true if the StatementBlock(s) should execute */
-            bool (*triggerSource)();
-            //bool (*triggerSource)(void* context);
-            //void* context;  // optional — lets the triggerSource read its own state
+            //bool (*triggerSource)();
+            bool (*triggerSource)(void* context);
+            void* context;  // optional — lets the triggerSource read its own state
             StatementBlock* items;
             int itemsCount;
 
-            static bool AllwaysRun();
+            static bool AllwaysRun(void* context);
 
             TriggerBlock();
             ~TriggerBlock();
+
+            void Set(int statementBlockCount, Tokens& tokens);
         };
 
         /**
@@ -46,6 +48,8 @@ namespace HAL_JSON {
 
             ScriptBlock();
             ~ScriptBlock();
+
+            void Set(Tokens& tokens);
         };
 
         /**
@@ -58,12 +62,15 @@ namespace HAL_JSON {
             static int scriptBlocksCount;
             static int currentScriptIndex;
 
+            /** just a callback wrapper to begin initializing the structures */
             static void ScriptFileParsed(Tokens& tokens);
             /** should be run before using LoadAllActiveScripts */
             static bool ValidateAllActiveScripts();
             /** ValidateAllActiveScripts should be run before using this function */
             static bool LoadAllActiveScripts();
-
+            /** begins with validating all scripts
+             * and if all pass then it begins to load in the structures
+             */
             static bool ValidateAndLoadAllActiveScripts();
         };
     }

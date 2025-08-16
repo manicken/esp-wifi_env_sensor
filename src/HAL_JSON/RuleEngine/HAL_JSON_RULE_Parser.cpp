@@ -181,7 +181,7 @@ namespace HAL_JSON {
             bool otherErrors = false;
 
             bool expecting_do_then = false;
-            int lastControlIndex = 0;
+            int last_If_or_On_Index = 0;
 
             for (int i = 0; i < tokenCount; i++) {
                 Token& token = tokens[i];
@@ -189,29 +189,26 @@ namespace HAL_JSON {
                     ifLevel++;
                     ifStack[ifStackIndex++] = &token;
                     expecting_do_then = true;
-                    lastControlIndex = i;
+                    last_If_or_On_Index = i;
                 }
                 else if (token.type == TokenType::ElseIf) {
                     expecting_do_then = true;
-                    lastControlIndex = i;
-                }
-                else if (token.type == TokenType::On) {
-                    if (ifLevel != 0 || onLevel != 0) {
-                        ReportTokenError(token, "'on' block cannot be nested");
+                    last_If_or_On_Index = i;
+
+                    Token* currentIf = ifStack[ifStackIndex - 1]; // top of the stack
+
+                    // check that no Else has already been found
+                    if (currentIf->hasElse) {
+                        ReportTokenError(token, "'elseif' cannot appear after 'else'");
                         otherErrors = true;
-                    } else {
-                        lastOn = &token;
-                        onLevel++;
-                        expecting_do_then = true;
-                        lastControlIndex = i;
                     }
                 }
                 else if (token.type == TokenType::Then) {
                     if (!expecting_do_then) {
-                        ReportTokenError(token, "'do'/'then' without preceding 'if' or 'on'");
+                        ReportTokenError(token, "'do/then' without preceding 'if' or 'on'");
                         otherErrors = true;
                     }
-                    else if (lastControlIndex + 1 == i) {
+                    else if (last_If_or_On_Index + 1 == i) {
                         ReportTokenError(token, "Missing condition between 'if/on/elseif' and 'then/do'");
                         otherErrors = true;
                     }
@@ -229,8 +226,30 @@ namespace HAL_JSON {
                     }
 
                     if (expecting_do_then) {
-                        ReportTokenError(token, "missing 'do' after last 'if'");
+                        ReportTokenError(token, "missing 'do/then' after last 'if'");
                         otherErrors = true;
+                    }
+                }
+                else if (token.type == TokenType::Else) {
+                    Token* currentIf = ifStack[ifStackIndex - 1]; // top of the stack
+
+                    // check for multiple Else
+                    if (currentIf->hasElse) {
+                        ReportTokenError(token, "Multiple 'else' blocks in the same 'if'");
+                        otherErrors = true;
+                    } else {
+                        currentIf->hasElse = 1;
+                    }
+                } 
+                else if (token.type == TokenType::On) {
+                    if (ifLevel != 0 || onLevel != 0) {
+                        ReportTokenError(token, "'on' block cannot be nested");
+                        otherErrors = true;
+                    } else {
+                        lastOn = &token;
+                        onLevel++;
+                        expecting_do_then = true;
+                        last_If_or_On_Index = i;
                     }
                 }
                 else if (token.type == TokenType::EndOn) {
@@ -244,7 +263,8 @@ namespace HAL_JSON {
                         ReportTokenError(token, "missing 'do' after last 'on'");
                         otherErrors = true;
                     }
-                } else if (onLevel == 0 && ifLevel == 0) {
+                }
+                else if (onLevel == 0 && ifLevel == 0) {
                     ReportTokenError(token, "tokens cannot be outside root blocks");
                     otherErrors = true;
                 }
@@ -378,89 +398,7 @@ namespace HAL_JSON {
             }
             return true;
         }
-/*
-        void Parser::CountBlockItems(Tokens& _tokens) {
-            Token* tokens = _tokens.items;
-            int tokenCount = _tokens.count;
-            int rootLevelBlockCount = 0;
-            for (int i = 0; i < tokenCount; ++i) {
-                Token& token = tokens[i];
-
-                
-                if (token.type == TokenType::If) {
-                    rootLevelBlockCount++;
-                    int count = 1;
-                    int level = 1;
-
-                    for (int j = i + 1; j < tokenCount; ++j) {
-                        Token& innerToken = tokens[j];
-                        if (innerToken.MergedOrIgnore()) continue;
-                        if (innerToken.type == TokenType::And) continue;
-                        if (innerToken.type == TokenType::ActionSeparator) continue;
-                        if (innerToken.type == TokenType::If) level++;
-                        if (innerToken.type == TokenType::EndIf) {
-                            level--;
-                            if (level == 0) {
-                                break;
-                            }
-                        }
-                        if (level == 1 && (innerToken.type == TokenType::ElseIf || innerToken.type == TokenType::Else)) {
-                            count++;
-                        }
-                    }
-                    token.itemsInBlock = count;
-                }
-                else if (token.type == TokenType::Then || token.type == TokenType::Else) {
-                    int count = 0;
-                    int level = 1;
-                    for (int j = i + 1; j < tokenCount; ++j) {
-                        Token& innerToken = tokens[j];
-                        if (innerToken.MergedOrIgnore()) continue;
-                        if (innerToken.type == TokenType::And) continue;
-                        if (innerToken.type == TokenType::ActionSeparator) continue;
-                        if (innerToken.type == TokenType::If) level++;
-                        if (innerToken.type == TokenType::EndIf) {
-                            level--;
-                            if (level == 0) break;
-                        }
-                        if (level == 1 && ((innerToken.type == TokenType::ElseIf) || (innerToken.type == TokenType::Else))) {
-                            break;
-                        }
-                        if (level == 1) count++;
-                    }
-                    token.itemsInBlock = count;
-                }
-                else if (token.type == TokenType::On) { // least occuring type
-                    rootLevelBlockCount++;
-                    int count = 0;
-                    int level = 1;
-                    for (int j = i + 1; j < tokenCount; ++j) {
-                        const Token& innerToken = tokens[j];
-                        if (innerToken.MergedOrIgnore()) continue;
-                        if (innerToken.type == TokenType::And) continue;
-                        if (innerToken.type == TokenType::ActionSeparator) continue;
-                        if (innerToken.type == TokenType::EndOn) {
-                            break;
-                        }
-                        if (innerToken.type == TokenType::If) level++;
-                        if (innerToken.type == TokenType::EndIf) {
-                            level--;
-                            if (level == 0) {
-                                break;
-                            }
-                        }
-                        if (level == 1 && (innerToken.type == TokenType::ElseIf || innerToken.type == TokenType::Else)) {
-                            count++;
-                        }
-                        //count++;
-                    }
-                    token.itemsInBlock = count;
-                }
-            }
-            _tokens.rootBlockCount = rootLevelBlockCount;
-        }
-        */
-        // this seems to work ok now
+// this version do work but is ineffective
         void Parser::CountBlockItems(Tokens& _tokens) {
             Token* tokens = _tokens.items;
             int tokenCount = _tokens.count;
@@ -470,37 +408,57 @@ namespace HAL_JSON {
             for (int i = 0; i < tokenCount; ++i) {
                 Token& token = tokens[i];
 
-                // Root-level blocks
+                // Track root-level blocks
                 if (token.type == TokenType::If || token.type == TokenType::On) {
                     if (blockLevel == 0)
                         rootLevelBlockCount++;
-                    
                     blockLevel++;
                 }
-                else if (token.type == TokenType::EndIf || token.type == TokenType::EndOn) { // EndOn is allready at root
+                else if (token.type == TokenType::EndIf || token.type == TokenType::EndOn) {
                     blockLevel--;
                 }
 
-                // Count items inside If block: Then + ElseIf + optional Else
+                // Count branches in an If block: Then + ElseIf + optional Else
                 if (token.type == TokenType::If) {
-                    int branchCount = 1; // initial Then branch
+                    int branchCount = 1;  // initial Then branch
+                    token.hasElse = 0;
+
                     for (int j = i + 1; j < tokenCount; ++j) {
                         Token& t = tokens[j];
                         if (t.MergedOrIgnore()) continue;
 
+                        // Break at parent EndIf
                         if (t.type == TokenType::EndIf) break;
+
+                        // Count ElseIf or Else
                         if (t.type == TokenType::ElseIf || t.type == TokenType::Else) {
                             branchCount++;
+                            if (t.type == TokenType::Else) {
+                                token.hasElse = 1;
+                            }
+                        }
+
+                        // Skip nested If blocks entirely
+                        if (t.type == TokenType::If) {
+                            int nestedLevel = 1;
+                            for (++j; j < tokenCount && nestedLevel > 0; ++j) {
+                                Token& nt = tokens[j];
+                                if (nt.MergedOrIgnore()) continue;
+                                if (nt.type == TokenType::If) nestedLevel++;
+                                else if (nt.type == TokenType::EndIf) nestedLevel--;
+                            }
+                            --j; // adjust outer loop
                         }
                     }
+
                     token.itemsInBlock = branchCount;
                 }
+                // Count actions in Then, ElseIf, Else, or On blocks
+                else if (token.type == TokenType::Then || token.type == TokenType::Else || 
+                        token.type == TokenType::ElseIf || token.type == TokenType::On) {
 
-                // Count actions in Then, Else, ElseIf, or On blocks
-                else if (token.type == TokenType::Then || token.type == TokenType::Else || token.type == TokenType::ElseIf || token.type == TokenType::On) {
                     int count = 0;
-                    int level = 0; // nested If inside the branch counts as 1
-
+                    int nestedLevel = 0;
                     TokenType endTokenType = (token.type == TokenType::On) ? TokenType::EndOn : TokenType::EndIf;
 
                     for (int j = i + 1; j < tokenCount; ++j) {
@@ -508,28 +466,29 @@ namespace HAL_JSON {
                         if (t.MergedOrIgnore()) continue;
                         if (t.type == TokenType::And || t.type == TokenType::ActionSeparator) continue;
 
-                        // Track nested If as a single action
+                        // Nested If counts as single statement in parent branch
                         if (t.type == TokenType::If) {
-                            level++;
-                            count++; // counts as 1 for parent branch
+                            nestedLevel++;
+                            count++;
                             continue;
                         }
 
+                        // Track nested EndIf/EndOn
                         if (t.type == TokenType::EndIf || t.type == TokenType::EndOn) {
-                            if (level > 0) {
-                                level--;
+                            if (nestedLevel > 0) {
+                                nestedLevel--;
                                 continue;
                             } else {
                                 break; // branch ends
                             }
                         }
 
-                        // Break at next branch (ElseIf/Else) for If branch
-                        if (level == 0 && (t.type == TokenType::ElseIf || t.type == TokenType::Else)) {
+                        // Stop at next sibling branch
+                        if (nestedLevel == 0 && (t.type == TokenType::ElseIf || t.type == TokenType::Else)) {
                             break;
                         }
 
-                        if (level == 0) count++;
+                        if (nestedLevel == 0) count++;
                     }
 
                     token.itemsInBlock = count;
@@ -538,10 +497,158 @@ namespace HAL_JSON {
 
             _tokens.rootBlockCount = rootLevelBlockCount;
         }
+            /*
+            // should work but counts wrong when nested if
+            void Parser::CountBlockItems(Tokens& _tokens) {
+                Token* tokens = _tokens.items;
+                int tokenCount = _tokens.count;
+                int rootLevelBlockCount = 0;
 
+                int ifTokenCount = Count_IfTokens(_tokens);
+                if (ifTokenCount <= 0) ifTokenCount = 1;
+                Token** ifStack = new Token*[ifTokenCount]();
+                int ifStackIndex = 0;
+                int onLevel = 0;
 
+                for (int i = 0; i < tokenCount; i++) {
+                    Token& token = tokens[i];
 
+                    // Track root-level blocks
+                    if (token.type == TokenType::If) {
+                        if (ifStackIndex == 0 && onLevel == 0)
+                            rootLevelBlockCount++;
 
+                        ifStack[ifStackIndex++] = &token;
+                        token.hasElse = 0;
+                        token.itemsInBlock = 1; // Then branch counts as 1
+
+                    } else if (token.type == TokenType::On) {
+                        if (ifStackIndex == 0 && onLevel == 0)
+                            rootLevelBlockCount++;
+
+                        onLevel++;
+                        token.itemsInBlock = 0;
+                    }
+                    // End of If/On blocks
+                    else if (token.type == TokenType::EndIf) {
+                        if (ifStackIndex > 0) ifStackIndex--;
+                    } else if (token.type == TokenType::EndOn) {
+                        if (onLevel > 0) onLevel--;
+                    }
+
+                    // Count branches (ElseIf / Else) inside top If
+                    if (token.type == TokenType::ElseIf || token.type == TokenType::Else) {
+                        if (ifStackIndex > 0) {
+                            Token* currentIf = ifStack[ifStackIndex - 1];
+                            currentIf->itemsInBlock++;
+
+                            if (token.type == TokenType::Else)
+                                currentIf->hasElse = 1;
+                        }
+                    }
+
+                    // Count statements inside Then/Else/ElseIf/On
+                    if (token.type == TokenType::Then || token.type == TokenType::Else || 
+                        token.type == TokenType::ElseIf || token.type == TokenType::On) {
+
+                        int count = 0;
+                        int nestedLevel = 0;
+                        TokenType endTokenType = (token.type == TokenType::On) ? TokenType::EndOn : TokenType::EndIf;
+
+                        for (int j = i + 1; j < tokenCount; ++j) {
+                            Token& t = tokens[j];
+                            if (t.MergedOrIgnore()) continue;
+                            if (t.type == TokenType::And || t.type == TokenType::ActionSeparator) continue;
+
+                            if (t.type == TokenType::If) {
+                                nestedLevel++;
+                                count++;
+                                continue;
+                            }
+                            if (t.type == TokenType::EndIf || t.type == TokenType::EndOn) {
+                                if (nestedLevel > 0) nestedLevel--;
+                                else break;
+                            }
+                            if (nestedLevel == 0 && (t.type == TokenType::ElseIf || t.type == TokenType::Else))
+                                break;
+
+                            if (nestedLevel == 0) count++;
+                        }
+
+                        token.itemsInBlock = count;
+                    }
+                }
+
+                _tokens.rootBlockCount = rootLevelBlockCount;
+                delete[] ifStack;
+            }*/
+    /* still dont work chatgpt is really stupid
+void Parser::CountBlockItems(Tokens& _tokens) {
+    Token* tokens = _tokens.items;
+    int tokenCount = _tokens.count;
+
+    // Allocate stack for nested blocks
+    int maxBlocks = Count_IfTokens(_tokens);
+    if (maxBlocks <= 0) maxBlocks = 1; // at least 1
+    Token** blockStack = new Token*[32]();
+    int stackIndex = 0;
+
+    int rootLevelBlockCount = 0;
+
+    for (int i = 0; i < tokenCount; i++) {
+        Token& token = tokens[i];
+
+        // Skip merged/ignored tokens if needed
+        if (token.MergedOrIgnore()) continue;
+
+        switch (token.type) {
+
+            case TokenType::If:
+                if (stackIndex == 0) rootLevelBlockCount++;
+                token.itemsInBlock = 1; // base Then branch
+                token.hasElse = 0;
+                blockStack[stackIndex++] = &token;
+                break;
+
+            case TokenType::On:
+                if (stackIndex == 0) rootLevelBlockCount++;
+                token.itemsInBlock = 0;
+                blockStack[stackIndex++] = &token;
+                break;
+
+            case TokenType::Then:
+            case TokenType::ElseIf:
+            case TokenType::Else:
+                if (stackIndex > 0) {
+                    Token* top = blockStack[stackIndex - 1];
+                    // Only If blocks can have Else / ElseIf
+                    if (token.type == TokenType::Else)
+                        top->hasElse = 1;
+                    // Count this branch as one statement in the top block
+                    if (token.type != TokenType::Then)
+                        top->itemsInBlock++;
+                }
+                break;
+
+            case TokenType::EndIf:
+            case TokenType::EndOn:
+                if (stackIndex > 0) stackIndex--;
+                break;
+
+            default:
+                // Regular statement or action
+                if (stackIndex > 0) {
+                    Token* top = blockStack[stackIndex - 1];
+                    top->itemsInBlock++;
+                }
+                break;
+        }
+    }
+
+    _tokens.rootBlockCount = rootLevelBlockCount;
+    delete[] blockStack;
+}
+*/
 
         bool Parser::EnsureActionBlocksContainItems(Tokens& _tokens) {
             const Token* tokens = _tokens.items;
