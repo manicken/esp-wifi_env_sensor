@@ -87,7 +87,13 @@ void parseCommand(const char* cmd) {
         std::chrono::duration<double, std::milli> duration = end - start;
 
         std::cout << "Parse time: " << duration.count() << " ms\n";
-    } else {
+    } else if (zcCmdRoot == "ldex") {
+        HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
+        std::cout << "using expression to RPN conv file:" << zcFilePath.ToString() << "\n";
+        std::string filePath = zcFilePath.ToString();
+        HAL_JSON::Rules::Parser::ParseExpressionTest(filePath.c_str());
+    }
+    else {
         std::cout << "Unknown command: " << cmd << "\n";
     }
 }

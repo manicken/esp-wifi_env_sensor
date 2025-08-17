@@ -106,6 +106,8 @@ namespace HAL_JSON {
          */
             static bool ReadAndParseRuleSetFile(const char* filePath, void (*parsedOKcallback)(Tokens& tokens) = nullptr);
 
+
+            static bool ParseExpressionTest(const char* filePath);
         };
     }
 }

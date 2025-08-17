@@ -343,5 +343,261 @@ namespace HAL_JSON {
                 }
             }
         }
+
+        LogicRPN Expressions::BuildRPN(const Tokens& tokens) {
+            LogicRPN result;
+
+            std::vector<ZeroCopyString> current;        // collects tokens for one calc expression
+            std::stack<ZeroCopyString> logicOpStack;    // &&, ||
+
+            auto flushOperand = [&]() {
+                if (!current.empty()) {
+                    result.operands.push_back(ToCalcRPN(current));
+                    current.clear();
+                }
+            };
+
+            for (int cti = 0; cti < tokens.count; ++cti) {
+                const Token& token = tokens.items[cti];
+                ZeroCopyString t = token;  // implicit slice
+
+                if (IsLogicOperator(t)) {
+                    // finish previous calc expression
+                    flushOperand();
+
+                    // shunting-yard at logic level
+                    while (!logicOpStack.empty() &&
+                        LogicPrecedence(logicOpStack.top()) >= LogicPrecedence(t)) {
+                        result.ops.push_back(logicOpStack.top());
+                        logicOpStack.pop();
+                    }
+                    logicOpStack.push(t);
+
+                } else {
+                    // belongs to current calc expression
+                    current.push_back(t);
+                }
+            }
+
+            flushOperand();
+
+            while (!logicOpStack.empty()) {
+                result.ops.push_back(logicOpStack.top());
+                logicOpStack.pop();
+            }
+
+            return result;
+        }
+
+        CalcRPN Expressions::ToCalcRPN(const std::vector<ZeroCopyString>& tokens) {
+            CalcRPN rpn;
+            std::stack<ZeroCopyString> opstack;
+
+            for (auto& t : tokens) {
+                if (IsCalcOperator(t)) {
+                    while (!opstack.empty() && IsCalcOperator(opstack.top()) &&
+                        CalcPrecedence(opstack.top()) >= CalcPrecedence(t)) {
+                        rpn.tokens.push_back(opstack.top());
+                        opstack.pop();
+                    }
+                    opstack.push(t);
+                } else if (t == "(") {
+                    opstack.push(t);
+                } else if (t == ")") {
+                    while (!opstack.empty() && opstack.top() != "(") {
+                        rpn.tokens.push_back(opstack.top());
+                        opstack.pop();
+                    }
+                    if (!opstack.empty()) opstack.pop(); // discard "("
+                } else {
+                    rpn.tokens.push_back(t);
+                }
+            }
+            while (!opstack.empty()) {
+                rpn.tokens.push_back(opstack.top());
+                opstack.pop();
+            }
+            return rpn;
+        }
+
+        // Recursive print
+        void Expressions::printLogicRPNNode(const LogicRPNNode& node) {
+            if (node.op.IsEmpty()) {
+                // Leaf node → print calc RPN
+                std::cout << "[";
+                for (size_t i = 0; i < node.calcRPN.size(); ++i) {
+                    std::cout << node.calcRPN[i].ToString().c_str();
+                    if (i + 1 < node.calcRPN.size()) std::cout << " ";
+                }
+                std::cout << "]";
+            } else {
+                // Operator node → print children first, then operator
+                std::cout << "[";
+                for (size_t i = 0; i < node.children.size(); ++i) {
+                    printLogicRPNNode(node.children[i]);
+                    if (i + 1 < node.children.size()) std::cout << " ";
+                }
+                std::cout << " " << node.op.ToString() << "]";
+            }
+        }
+
+        LogicRPNNode Expressions::buildNestedLogicRPN(const Tokens& tokens) {
+            std::stack<ZeroCopyString> opStack;          // logic operators &&, ||
+            std::stack<LogicRPNNode> outStack;           // nested RPN nodes
+            std::vector<ZeroCopyString> calcBuffer;      // temporary calc RPN
+
+            auto flushCalcBuffer = [&]() {
+                if (!calcBuffer.empty()) {
+                    LogicRPNNode leaf;
+                    leaf.calcRPN = calcBuffer;
+                    outStack.push(leaf);
+                    calcBuffer.clear();
+                }
+            };
+
+            auto applyOperator = [&]() {
+                ZeroCopyString op = opStack.top(); opStack.pop();
+                LogicRPNNode right = outStack.top(); outStack.pop();
+                LogicRPNNode left  = outStack.top(); outStack.pop();
+                LogicRPNNode parent;
+                parent.op = op;
+                parent.children = {left, right};
+                outStack.push(parent);
+            };
+
+
+            for (int cti = 0; cti < tokens.count; ++cti) {
+                const Token& tok = tokens.items[cti];
+                if (IsCalcOperator(tok)) {
+                    // math/comparison → part of calcRPN
+                    calcBuffer.push_back(tok);
+                } else if (IsLogicOperator(tok)) {
+                    // flush previous calcRPN as leaf
+                    flushCalcBuffer();
+
+                    while (!opStack.empty() && LogicPrecedence(opStack.top()) >= LogicPrecedence(tok)) {
+                        applyOperator();
+                        /*ZeroCopyString op = opStack.top(); opStack.pop();
+                        LogicRPNNode right = outStack.top(); outStack.pop();
+                        LogicRPNNode left  = outStack.top(); outStack.pop();
+                        LogicRPNNode parent;
+                        parent.op = op;
+                        parent.children = {left, right};
+                        outStack.push(parent);*/
+                    }
+
+                    opStack.push(tok);
+                } else if (tok.Equals("(")) {
+                    opStack.push(tok);
+                } else if (tok.Equals(")")) {
+                    flushCalcBuffer();
+                    while (!opStack.empty() && opStack.top() != "(") {
+                        applyOperator();
+                        /*ZeroCopyString op = opStack.top(); opStack.pop();
+                        LogicRPNNode right = outStack.top(); outStack.pop();
+                        LogicRPNNode left  = outStack.top(); outStack.pop();
+                        LogicRPNNode parent;
+                        parent.op = op;
+                        parent.children = {left, right};
+                        outStack.push(parent);*/
+                    }
+                    opStack.pop(); // remove '('
+                } else {
+                    // Variable/constant → part of calcRPN
+                    calcBuffer.push_back(tok);
+                }
+            }
+
+            flushCalcBuffer();
+
+            while (!opStack.empty()) {
+                applyOperator();
+                /*ZeroCopyString op = opStack.top(); opStack.pop();
+                LogicRPNNode right = outStack.top(); outStack.pop();
+                LogicRPNNode left  = outStack.top(); outStack.pop();
+                LogicRPNNode parent;
+                parent.op = op;
+                parent.children = {left, right};
+                outStack.push(parent);*/
+            }
+
+            return outStack.top();
+        }
+
+/*
+LogicRPNNode Expressions::buildNestedLogicRPN(const Tokens& tokens) {
+    std::stack<ZeroCopyString> opStack;          // logic operators &&, ||
+    std::stack<LogicRPNNode> outStack;           // nested RPN nodes
+    std::vector<ZeroCopyString> calcBuffer;      // temporary calc RPN
+
+    auto flushCalcBuffer = [&]() {
+        if (!calcBuffer.empty()) {
+            LogicRPNNode leaf;
+            leaf.calcRPN = calcBuffer;
+            outStack.push(leaf);
+            calcBuffer.clear();
+        }
+    };
+
+    auto applyOperator = [&](const ZeroCopyString& op) {
+        // Pop at least two nodes
+        LogicRPNNode right = outStack.top(); outStack.pop();
+        LogicRPNNode left  = outStack.top(); outStack.pop();
+
+        LogicRPNNode parent;
+        parent.op = op;
+
+        // Flatten if left node has the same operator
+        if (left.op == op) {
+            parent.children = left.children;   // take left's children
+            parent.children.push_back(right);  // append right
+        } else {
+            parent.children = {left, right};
+        }
+
+        outStack.push(parent);
+    };
+
+
+    for (int cti = 0; cti < tokens.count; ++cti) {
+        const Token& tok = tokens.items[cti];
+
+        if (IsCalcOperator(tok)) {
+            // math/comparison → part of calcRPN
+            calcBuffer.push_back(tok);
+        } else if (IsLogicOperator(tok)) {
+            flushCalcBuffer();
+
+            while (!opStack.empty() && LogicPrecedence(opStack.top()) >= LogicPrecedence(tok)) {
+                ZeroCopyString op = opStack.top(); opStack.pop();
+                applyOperator(op);
+            }
+
+            opStack.push(tok);
+        } else if (tok.Equals("(")) {
+            opStack.push(tok);
+        } else if (tok.Equals(")")) {
+            flushCalcBuffer();
+            while (!opStack.empty() && opStack.top() != "(") {
+                ZeroCopyString op = opStack.top(); opStack.pop();
+                applyOperator(op);
+            }
+            opStack.pop(); // remove '('
+        } else {
+            // Variable/constant → part of calcRPN
+            calcBuffer.push_back(tok);
+        }
+    }
+
+    flushCalcBuffer();
+
+    while (!opStack.empty()) {
+        ZeroCopyString op = opStack.top(); opStack.pop();
+        applyOperator(op);
+    }
+
+    return outStack.top();
+}*/
+
     }
 }

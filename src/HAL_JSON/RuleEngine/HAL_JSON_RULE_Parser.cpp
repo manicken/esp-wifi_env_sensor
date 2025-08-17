@@ -955,5 +955,69 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             delete[] fileContents;
             return anyError == false;
         }
+
+        void PrintCalcRPN(const CalcRPN& rpn) {
+            std::cout << "    CalcRPN: ";
+            for (auto& t : rpn.tokens) {
+                std::cout << t.ToString() << " ";
+            }
+            std::cout << "\n";
+        }
+
+        void PrintLogicRPN(const LogicRPN& logic) {
+            std::cout << "LogicRPN contents:\n";
+            for (size_t i = 0; i < logic.operands.size(); ++i) {
+                std::cout << "  Operand[" << i << "]:\n";
+                PrintCalcRPN(logic.operands[i]);
+                if (i < logic.ops.size()) {
+                    std::cout << "  LogicOp: " << logic.ops[i].ToString() << "\n";
+                }
+            }
+        }
+
+        bool Parser::ParseExpressionTest(const char* filePath) {
+            size_t fileSize;
+            char* fileContents;// = ReadFileToMutableBuffer(filePath, fileSize);
+            LittleFS_ext::FileResult fileResult = LittleFS_ext::load_from_file(filePath, &fileContents, &fileSize);
+            if (fileResult != LittleFS_ext::FileResult::Success) {
+                ReportInfo("Error: file could not be read/or is empty\n");
+                return false;
+            }
+
+            MEASURE_TIME("FixNewLines and StripComments time: ",
+            // fix newlines so that they only consists of \n 
+            // for easier parsing
+            FixNewLines(fileContents);
+            // replaces all comments with whitespace
+            // make it much simpler to parse the contents 
+            StripComments(fileContents);
+            );
+
+            int tokenCount = CountTokens(fileContents);
+            ReportInfo("Token count: " + std::to_string(tokenCount) + "\n");
+            Tokens tokens(tokenCount);
+            
+            MEASURE_TIME("Tokenize time: ",
+
+            if (Tokenize(fileContents, tokens) == false) {
+                ReportInfo("Error: could not Tokenize\n");
+                delete[] fileContents;
+                return false;
+            }
+            );
+
+            ReportInfo("**********************************************************************************\n");
+            ReportInfo("*                            PARSED TOKEN LIST                                   *\n");
+            ReportInfo("**********************************************************************************\n");
+
+            ReportInfo(PrintTokens(tokens,0) + "\n");
+
+            LogicRPNNode lrpnNode = Expressions::buildNestedLogicRPN(tokens);
+            //LogicRPN lrpn = Expressions::BuildRPN(tokens);
+            Expressions::printLogicRPNNode(lrpnNode);
+            //PrintLogicRPN(lrpn);
+
+            delete[] fileContents;
+        }
     }
 }

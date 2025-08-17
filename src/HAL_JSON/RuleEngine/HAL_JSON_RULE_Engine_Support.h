@@ -12,6 +12,10 @@ namespace HAL_JSON {
         void DeleteAs(void* ptr) {
             delete static_cast<T*>(ptr);
         }
+        template<typename T>
+        void DeleteAsArray(void* ptr) {
+            delete[] static_cast<T*>(ptr);
+        }
         
         typedef void (*Deleter)(void* context);
     }
