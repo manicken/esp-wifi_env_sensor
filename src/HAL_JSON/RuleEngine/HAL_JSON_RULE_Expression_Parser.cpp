@@ -477,13 +477,6 @@ namespace HAL_JSON {
 
                     while (!opStack.empty() && LogicPrecedence(opStack.top()) >= LogicPrecedence(tok)) {
                         applyOperator();
-                        /*ZeroCopyString op = opStack.top(); opStack.pop();
-                        LogicRPNNode right = outStack.top(); outStack.pop();
-                        LogicRPNNode left  = outStack.top(); outStack.pop();
-                        LogicRPNNode parent;
-                        parent.op = op;
-                        parent.children = {left, right};
-                        outStack.push(parent);*/
                     }
 
                     opStack.push(tok);
@@ -493,13 +486,6 @@ namespace HAL_JSON {
                     flushCalcBuffer();
                     while (!opStack.empty() && opStack.top() != "(") {
                         applyOperator();
-                        /*ZeroCopyString op = opStack.top(); opStack.pop();
-                        LogicRPNNode right = outStack.top(); outStack.pop();
-                        LogicRPNNode left  = outStack.top(); outStack.pop();
-                        LogicRPNNode parent;
-                        parent.op = op;
-                        parent.children = {left, right};
-                        outStack.push(parent);*/
                     }
                     opStack.pop(); // remove '('
                 } else {
@@ -512,13 +498,6 @@ namespace HAL_JSON {
 
             while (!opStack.empty()) {
                 applyOperator();
-                /*ZeroCopyString op = opStack.top(); opStack.pop();
-                LogicRPNNode right = outStack.top(); outStack.pop();
-                LogicRPNNode left  = outStack.top(); outStack.pop();
-                LogicRPNNode parent;
-                parent.op = op;
-                parent.children = {left, right};
-                outStack.push(parent);*/
             }
 
             return outStack.top();
