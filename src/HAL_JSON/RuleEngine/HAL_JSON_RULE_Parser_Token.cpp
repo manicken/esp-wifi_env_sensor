@@ -27,8 +27,8 @@ namespace HAL_JSON {
             else if (StrEqualsIC(str, "!=")) return TokenType::CompareNotEqualsTo;
             else if (StrEqualsIC(str, "<")) return TokenType::CompareLessThan;
             else if (StrEqualsIC(str, ">")) return TokenType::CompareGreaterThan;
-            else if (StrEqualsIC(str, "<=")) return TokenType::CompareLessOrEqualsTo;
-            else if (StrEqualsIC(str, ">=")) return TokenType::CompareGreaterOrEqualsTo;
+            else if (StrEqualsIC(str, "<=")) return TokenType::CompareLessThanOrEqual;
+            else if (StrEqualsIC(str, ">=")) return TokenType::CompareGreaterThanOrEqual;
             else if (StrEqualsIC(str, "+")) return TokenType::CalcPlus;
             else if (StrEqualsIC(str, "-")) return TokenType::CalcMinus;
             else if (StrEqualsIC(str, "*")) return TokenType::CalcMultiply;
@@ -67,8 +67,8 @@ namespace HAL_JSON {
                 case TokenType::CompareNotEqualsTo: return "CompareNotEqualsTo";
                 case TokenType::CompareLessThan: return "CompareLessThan";
                 case TokenType::CompareGreaterThan: return "CompareGreaterThan";
-                case TokenType::CompareLessOrEqualsTo: return "CompareLessOrEqualsTo";
-                case TokenType::CompareGreaterOrEqualsTo: return "CompareGreaterOrEqualsTo";
+                case TokenType::CompareLessThanOrEqual: return "CompareLessThanOrEqual";
+                case TokenType::CompareGreaterThanOrEqual: return "CompareGreaterThanOrEqual";
                 case TokenType::CalcPlus: return "CalcPlus";
                 case TokenType::CalcMinus: return "CalcMinus";
                 case TokenType::CalcMultiply: return "CalcMultiply";
@@ -84,13 +84,15 @@ namespace HAL_JSON {
             }
         }
 
-        ExpressionToken::ExpressionToken() : type(TokenType::NotSet) {
+        ExpressionToken::ExpressionToken() : type(TokenType::NotSet), matchingIndex(-1) {
 
         }
         ExpressionToken::~ExpressionToken() {
             // nothing to free here
         }
-
+        ExpressionTokens::ExpressionTokens() {
+            
+        }
         ExpressionTokens::ExpressionTokens(int _count) {
             items = new ExpressionToken[_count];
             count = _count;
@@ -267,10 +269,11 @@ namespace HAL_JSON {
                 std::string msgLine;
 
                 msgLine +=
-                    "Token(" + std::to_string(i) + "): (" +
+                    "Token(" + std::to_string(i) + ")  " + tok.ToString() + "  (" +
                     "type:" + TokenTypeToString(tok.type) +
+                    ", matchingIndex:" + std::to_string(tok.matchingIndex) +
                     "): ";
-                    msgLine += tok.ToString();
+                    //msgLine += tok.ToString();
                 msg += msgLine + "\n";
             }
             return msg;

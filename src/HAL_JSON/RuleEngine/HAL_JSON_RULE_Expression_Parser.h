@@ -35,6 +35,22 @@ namespace HAL_JSON {
         };
 
         struct LogicRPNNode {
+
+            enum class OpType {
+                Invalid,
+                LogicalAnd,
+                LogicalOr,
+                Equals,
+                NotEquals,
+                Less,
+                Greater,
+                LessEqual,
+                GreaterEqual,
+                CalcLeaf
+            } type = OpType::Invalid;
+
+
+
             std::vector<ExpressionToken> calcRPN;  // leaf if op.empty()
             std::vector<LogicRPNNode> children;   // nested nodes
             ExpressionToken op;                     // "&&" or "||", empty for leaf
@@ -55,12 +71,14 @@ namespace HAL_JSON {
                     optype == TokenType::CalcMinus) return 5;
                 if (optype == TokenType::CompareLessThan || 
                     optype == TokenType::CompareGreaterThan || 
-                    optype == TokenType::CompareLessOrEqualsTo ||
-                    optype == TokenType::CompareGreaterOrEqualsTo) return 4;
+                    optype == TokenType::CompareLessThanOrEqual ||
+                    optype == TokenType::CompareGreaterThanOrEqual) return 4;
                 if (optype == TokenType::CompareEqualsTo || 
                     optype == TokenType::CompareNotEqualsTo) return 3;
                 return 0;
             }
+
+            
 
             static inline bool IsCalcOperator(TokenType optype) {
                 return CalcPrecedence(optype) > 0;
@@ -98,8 +116,8 @@ namespace HAL_JSON {
                 else if (c == '|' && next == '|') return TokenType::LogicalOr;
                 else if (c == '=' && next == '=') return TokenType::CompareEqualsTo;
                 else if (c == '!' && next == '=') return TokenType::CompareNotEqualsTo;
-                else if (c == '<' && next == '=') return TokenType::CompareLessOrEqualsTo;
-                else if (c == '>' && next == '=') return TokenType::CompareGreaterOrEqualsTo;
+                else if (c == '<' && next == '=') return TokenType::CompareLessThanOrEqual;
+                else if (c == '>' && next == '=') return TokenType::CompareGreaterThanOrEqual;
                 return TokenType::NotSet;
             }
             
@@ -120,11 +138,13 @@ namespace HAL_JSON {
             static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken>& tokens);
 
             static void printLogicRPNNode(const LogicRPNNode& node);
+            static void printLogicRPNNodeTree(const LogicRPNNode& node, int indent = 0);
+
             static LogicRPNNode buildNestedLogicRPN(const ExpressionTokens& tokens);
 
             static int preParseTokensCount(const Tokens& rawTokens);
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
-
+            static void RemoveRedundantParentheses(ExpressionTokens& tokens);
         };
     }
 }

@@ -995,14 +995,25 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ExpressionTokens* expressionTokens = Expressions::preParseTokens(tokens);
             ReportInfo("**********************************************************************************\n");
-            ReportInfo("*                            EXPRESSION TOKEN LIST                                 *\n");
+            ReportInfo("*                            EXPRESSION TOKEN LIST  raw                          *\n");
+            ReportInfo("**********************************************************************************\n");
+
+            ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
+
+            Expressions::RemoveRedundantParentheses(*expressionTokens);
+
+            ReportInfo("**********************************************************************************\n");
+            ReportInfo("*                            EXPRESSION TOKEN LIST  pre parse                    *\n");
             ReportInfo("**********************************************************************************\n");
 
             ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
 
             LogicRPNNode lrpnNode = Expressions::buildNestedLogicRPN(*expressionTokens);
             //LogicRPN lrpn = Expressions::BuildRPN(tokens);
+            ReportInfo("linear view:\n");
             Expressions::printLogicRPNNode(lrpnNode);
+            ReportInfo("\n\ntree view:\n");
+            Expressions::printLogicRPNNodeTree(lrpnNode);
             //PrintLogicRPN(lrpn);
 
             //ReportInfo("\nAll done!!!\n");

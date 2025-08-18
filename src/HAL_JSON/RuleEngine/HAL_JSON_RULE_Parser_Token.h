@@ -65,9 +65,9 @@ namespace HAL_JSON {
             /** used by expressions */
             CompareGreaterThan,
             /** used by expressions */
-            CompareLessOrEqualsTo,
+            CompareLessThanOrEqual,
             /** used by expressions */
-            CompareGreaterOrEqualsTo,
+            CompareGreaterThanOrEqual,
             /** used by expressions */
             CalcPlus,
             /** used by expressions */
@@ -96,13 +96,14 @@ namespace HAL_JSON {
         struct ExpressionToken : public ZeroCopyString {
             using ZeroCopyString::ZeroCopyString;
             TokenType type;
+            int matchingIndex;
             ExpressionToken();
             ~ExpressionToken();
         };
         struct ExpressionTokens {
             ExpressionToken* items;
             int count;
-
+            ExpressionTokens();
             ExpressionTokens(int count);
             ~ExpressionTokens();
         };
