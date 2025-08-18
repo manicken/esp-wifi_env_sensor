@@ -54,7 +54,7 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
     }
     delete[] contents;
 }
-void parseCommand(const char* cmd) {
+void parseCommand(const char* cmd, bool oneShot) {
     HAL_JSON::ZeroCopyString zcCmd(cmd);
 
     HAL_JSON::ZeroCopyString zcCmdRoot = zcCmd.SplitOffHead('/');
@@ -73,6 +73,9 @@ void parseCommand(const char* cmd) {
     } else if (zcCmdRoot == "expr") {
         exprTestLoad(zcCmd);
     } else if (zcCmdRoot == "loadrules" || zcCmdRoot == "lr") {
+        if (oneShot) {
+            HAL_JSON::Manager::setup();
+        }
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
         std::cout << "using rule set file:" << zcFilePath.ToString() << "\n";
         std::string filePath;
@@ -88,10 +91,18 @@ void parseCommand(const char* cmd) {
 
         std::cout << "Parse time: " << duration.count() << " ms\n";
     } else if (zcCmdRoot == "ldex") {
+        if (oneShot) {
+            //HAL_JSON::Manager::setup(); // could use this later on
+        }
+        auto start = std::chrono::high_resolution_clock::now();
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
         std::cout << "using expression to RPN conv file:" << zcFilePath.ToString() << "\n";
         std::string filePath = zcFilePath.ToString();
         HAL_JSON::Rules::Parser::ParseExpressionTest(filePath.c_str());
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+
+        std::cout << "Parse time: " << duration.count() << " ms\n";
     }
     else {
         std::cout << "Unknown command: " << cmd << "\n";

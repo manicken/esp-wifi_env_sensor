@@ -344,94 +344,176 @@ namespace HAL_JSON {
             }
         }
 
-        LogicRPN Expressions::BuildRPN(const Tokens& tokens) {
-            LogicRPN result;
+        
 
-            std::vector<ZeroCopyString> current;        // collects tokens for one calc expression
-            std::stack<ZeroCopyString> logicOpStack;    // &&, ||
+        #include <cctype>  // for isspace, isdigit, isalpha
 
-            auto flushOperand = [&]() {
-                if (!current.empty()) {
-                    result.operands.push_back(ToCalcRPN(current));
-                    current.clear();
-                }
-            };
+        
 
-            for (int cti = 0; cti < tokens.count; ++cti) {
-                const Token& token = tokens.items[cti];
-                ZeroCopyString t = token;  // implicit slice
-
-                if (IsLogicOperator(t)) {
-                    // finish previous calc expression
-                    flushOperand();
-
-                    // shunting-yard at logic level
-                    while (!logicOpStack.empty() &&
-                        LogicPrecedence(logicOpStack.top()) >= LogicPrecedence(t)) {
-                        result.ops.push_back(logicOpStack.top());
-                        logicOpStack.pop();
+        // Count total number of clean tokens first
+        int Expressions::preParseTokensCount(const Tokens& rawTokens) {
+            int count = 0;
+            for (int i = 0; i < rawTokens.count; ++i) {
+                ZeroCopyString str = rawTokens.items[i];
+                int j = 0;
+                while (j < str.Length()) {
+                    char c = str[j];
+                    if (std::isspace(c)) {
+                        ++j;
+                    } else if (c == '(' || c == ')') {
+                        ++count; ++j;
+                    } else if (j + 1 < str.Length() && IsTwoCharOp(c, str[j+1]) != TokenType::NotSet) {
+                        ++count; j += 2;
+                    } else if (IsSingleOp(c) != TokenType::NotSet) {
+                        ++count; ++j;
+                    } else {
+                        // identifier/number
+                        while (j < str.Length() && !std::isspace(str[j]) &&
+                            str[j] != '(' && str[j] != ')' &&
+                            IsSingleOp(str[j]) == TokenType::NotSet) ++j;
+                        ++count;
                     }
-                    logicOpStack.push(t);
-
-                } else {
-                    // belongs to current calc expression
-                    current.push_back(t);
                 }
             }
-
-            flushOperand();
-
-            while (!logicOpStack.empty()) {
-                result.ops.push_back(logicOpStack.top());
-                logicOpStack.pop();
-            }
-
-            return result;
+            return count;
         }
 
-        CalcRPN Expressions::ToCalcRPN(const std::vector<ZeroCopyString>& tokens) {
-            CalcRPN rpn;
-            std::stack<ZeroCopyString> opstack;
+        // The actual pre-parser
+        ExpressionTokens* Expressions::preParseTokens(const Tokens& rawTokens) {
+            size_t totalCount = preParseTokensCount(rawTokens);
+            ExpressionTokens* cleanTokens = new ExpressionTokens(totalCount);
+            int cleanTokensIndex = 0;
+
+            for (int i = 0; i < rawTokens.count; ++i) {
+                const Token& tok = rawTokens.items[i];
+                ZeroCopyString str = tok;
+                int j = 0;
+
+                while (j < str.Length()) {
+                    char c = str[j];
+
+                    // Skip whitespace
+                    if (std::isspace(c)) {
+                        ++j;
+                        continue;
+                    }
+
+                    // Parentheses
+                    if (c == '(' || c == ')') {
+                        ExpressionToken& cleanToken = cleanTokens->items[cleanTokensIndex++];
+                        cleanToken.start  = str.start + j;
+                        cleanToken.end    = str.start + j + 1;
+                        cleanToken.type   = (c == '(')?TokenType::LeftParenthesis:TokenType::RightParenthesis;
+                        ++j;
+                        continue;
+                    }
+
+                    // Two-character operators
+                    TokenType twoCharOpType = IsTwoCharOp(c, str[j+1]);
+                    if (j + 1 < str.Length() && twoCharOpType != TokenType::NotSet) {
+                        ExpressionToken& cleanToken = cleanTokens->items[cleanTokensIndex++];
+                        //cleanToken.line   = tok.line;
+                        //cleanToken.column = tok.column + j;
+                        cleanToken.start  = str.start + j;
+                        cleanToken.end    = str.start + j + 2;
+                        cleanToken.type   = twoCharOpType;
+                        j += 2;
+                        continue;
+                    }
+
+                    // Single-character operator
+                    TokenType oneCharOpType = IsSingleOp(c);
+                    if (oneCharOpType != TokenType::NotSet) {
+                        ExpressionToken& cleanToken = cleanTokens->items[cleanTokensIndex++];
+                        //cleanToken.line   = tok.line;
+                        //cleanToken.column = tok.column + j;
+                        cleanToken.start  = str.start + j;
+                        cleanToken.end    = str.start + j + 1;
+                        cleanToken.type   = oneCharOpType;
+                        ++j;
+                        continue;
+                    }
+
+                    // Identifier / number
+                    int startIdx = j;
+                    while (j < str.Length() &&
+                        !std::isspace(str[j]) &&
+                        str[j] != '(' &&
+                        str[j] != ')' &&
+                        IsSingleOp(str[j]) == TokenType::NotSet &&
+                        !(j + 1 < str.Length() && IsTwoCharOp(str[j], str[j+1])!=TokenType::NotSet)) {
+                        ++j;
+                    }
+                    ExpressionToken& cleanToken = cleanTokens->items[cleanTokensIndex++];
+                    //cleanToken.line   = tok.line;
+                    //cleanToken.column = tok.column + startIdx;
+                    cleanToken.start  = str.start + startIdx;
+                    cleanToken.end    = str.start + j;
+                    cleanToken.type   = TokenType::Operand;
+                }
+            }
+
+            return cleanTokens;
+        }
+
+        //    ██████  ██████  ███    ██ 
+        //    ██   ██ ██   ██ ████   ██ 
+        //    ██████  ██████  ██ ██  ██ 
+        //    ██   ██ ██      ██  ██ ██ 
+        //    ██   ██ ██      ██   ████ 
+                                                                      
+
+        std::vector<ExpressionToken> Expressions::ToCalcRPN(const std::vector<ExpressionToken>& tokens) {
+            std::vector<ExpressionToken> rpn;
+            std::stack<ExpressionToken> opstack;
 
             for (auto& t : tokens) {
-                if (IsCalcOperator(t)) {
-                    while (!opstack.empty() && IsCalcOperator(opstack.top()) &&
-                        CalcPrecedence(opstack.top()) >= CalcPrecedence(t)) {
-                        rpn.tokens.push_back(opstack.top());
+                if (IsCalcOperator(t.type)) {
+                    while (!opstack.empty() && IsCalcOperator(opstack.top().type) &&
+                        CalcPrecedence(opstack.top().type) >= CalcPrecedence(t.type)) {
+                        rpn.push_back(opstack.top());
                         opstack.pop();
                     }
                     opstack.push(t);
-                } else if (t == "(") {
+                } else if (t.type == TokenType::LeftParenthesis) {
                     opstack.push(t);
-                } else if (t == ")") {
-                    while (!opstack.empty() && opstack.top() != "(") {
-                        rpn.tokens.push_back(opstack.top());
+                } else if (t.type == TokenType::RightParenthesis) {
+                    while (!opstack.empty() && opstack.top().type != TokenType::LeftParenthesis) {
+                        rpn.push_back(opstack.top());
                         opstack.pop();
                     }
                     if (!opstack.empty()) opstack.pop(); // discard "("
                 } else {
-                    rpn.tokens.push_back(t);
+                    rpn.push_back(t);
                 }
             }
             while (!opstack.empty()) {
-                rpn.tokens.push_back(opstack.top());
+                rpn.push_back(opstack.top());
                 opstack.pop();
             }
             return rpn;
+        }
+
+        std::string CalcExpressionToString(const std::vector<ExpressionToken>& calcExpr) {
+            std::string out;
+            for (int i=0;i<calcExpr.size();i++) {
+                out += calcExpr[i].ToString();
+                if (i + 1 < calcExpr.size()) out += " ";
+            }
+            return out;
         }
 
         // Recursive print
         void Expressions::printLogicRPNNode(const LogicRPNNode& node) {
             if (node.op.IsEmpty()) {
                 // Leaf node → print calc RPN
+                //std::cout << " lf(" + std::to_string(node.calcRPN.size()) + ") ";
                 std::cout << "[";
-                for (size_t i = 0; i < node.calcRPN.size(); ++i) {
-                    std::cout << node.calcRPN[i].ToString().c_str();
-                    if (i + 1 < node.calcRPN.size()) std::cout << " ";
-                }
+                std::cout << CalcExpressionToString(node.calcRPN);
                 std::cout << "]";
             } else {
                 // Operator node → print children first, then operator
+                //std::cout << " op(" + std::to_string(node.children.size()) + ") ";
                 std::cout << "[";
                 for (size_t i = 0; i < node.children.size(); ++i) {
                     printLogicRPNNode(node.children[i]);
@@ -441,142 +523,108 @@ namespace HAL_JSON {
             }
         }
 
-        LogicRPNNode Expressions::buildNestedLogicRPN(const Tokens& tokens) {
-            std::stack<ZeroCopyString> opStack;          // logic operators &&, ||
-            std::stack<LogicRPNNode> outStack;           // nested RPN nodes
-            std::vector<ZeroCopyString> calcBuffer;      // temporary calc RPN
+        /*bool IsComparisonOperator(const ZeroCopyString& tok) {
+            return tok.Equals(">") || tok.Equals("<") || tok.Equals("==") ||
+                tok.Equals("!=") || tok.Equals(">=") || tok.Equals("<=");
+        }*/
 
+        bool IsComparisonOperator(TokenType type) {
+            return type == TokenType::CompareGreaterThan ||
+                   type == TokenType::CompareLessThan || 
+                   type == TokenType::CompareEqualsTo ||
+                   type == TokenType::CompareNotEqualsTo ||
+                   type == TokenType::CompareGreaterOrEqualsTo ||
+                   type == TokenType::CompareLessOrEqualsTo;
+        }
+
+        LogicRPNNode Expressions::buildNestedLogicRPN(const ExpressionTokens& tokens) {
+            std::stack<ExpressionToken> opStack;        // Logic operators: &&, ||, (
+            std::stack<LogicRPNNode> outStack;         // Nested RPN nodes
+            std::vector<ExpressionToken> calcBuffer;    // Temp calc tokens for arithmetic/comparison
+            int parenCount = 0;                        // Track parentheses depth for arithmetic
+
+            // Flush calcBuffer as a leaf node
             auto flushCalcBuffer = [&]() {
                 if (!calcBuffer.empty()) {
                     LogicRPNNode leaf;
-                    leaf.calcRPN = calcBuffer;
+                    std::cout << "calc expression infix: [" << CalcExpressionToString(calcBuffer) << "]\n";
+                    leaf.calcRPN = ToCalcRPN(calcBuffer); // Convert infix to RPN
                     outStack.push(leaf);
                     calcBuffer.clear();
+                    parenCount = 0;
                 }
             };
 
+            // Apply top logic operator to top two nodes in outStack
             auto applyOperator = [&]() {
-                ZeroCopyString op = opStack.top(); opStack.pop();
+                ExpressionToken op = opStack.top(); opStack.pop();
                 LogicRPNNode right = outStack.top(); outStack.pop();
-                LogicRPNNode left  = outStack.top(); outStack.pop();
+                LogicRPNNode left = outStack.top(); outStack.pop();
                 LogicRPNNode parent;
                 parent.op = op;
                 parent.children = {left, right};
                 outStack.push(parent);
             };
 
+            for (int i = 0; i < tokens.count; ++i) {
+                const ExpressionToken& tok = tokens.items[i];
 
-            for (int cti = 0; cti < tokens.count; ++cti) {
-                const Token& tok = tokens.items[cti];
-                if (IsCalcOperator(tok)) {
-                    // math/comparison → part of calcRPN
+                if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) { // &&, ||
+                    flushCalcBuffer(); // Complete the current arithmetic expression
+                    while (!opStack.empty() && opStack.top().type != TokenType::LeftParenthesis &&
+                        LogicPrecedence(opStack.top().type) >= LogicPrecedence(tok.type)) {
+                        applyOperator();
+                    }
+                    opStack.push(tok);
+                } else if (tok.type == TokenType::LeftParenthesis) {
+                    opStack.push(tok); // Always push to opStack for logical grouping
+                    if (parenCount > 0 || !calcBuffer.empty()) {
+                        // Part of an arithmetic expression
+                        calcBuffer.push_back(tok);
+                        parenCount++;
+                    }
+                } else if (tok.type == TokenType::RightParenthesis) {
+                    if (parenCount > 0) {
+                        // Closing an arithmetic expression parenthesis
+                        calcBuffer.push_back(tok);
+                        parenCount--;
+                    } else {
+                        // Closing a logical grouping parenthesis
+                        flushCalcBuffer();
+                        while (!opStack.empty() && opStack.top().type != TokenType::LeftParenthesis) {
+                            applyOperator();
+                        }
+                        if (!opStack.empty() && opStack.top().type == TokenType::LeftParenthesis) {
+                            opStack.pop(); // Pop the '('
+                        }
+                    }
+                } else if (IsComparisonOperator(tok.type)) { // >, <, ==, etc.
                     calcBuffer.push_back(tok);
-                } else if (IsLogicOperator(tok)) {
-                    // flush previous calcRPN as leaf
-                    flushCalcBuffer();
-
-                    while (!opStack.empty() && LogicPrecedence(opStack.top()) >= LogicPrecedence(tok)) {
-                        applyOperator();
-                    }
-
-                    opStack.push(tok);
-                } else if (tok.Equals("(")) {
-                    opStack.push(tok);
-                } else if (tok.Equals(")")) {
-                    flushCalcBuffer();
-                    while (!opStack.empty() && opStack.top() != "(") {
-                        applyOperator();
-                    }
-                    opStack.pop(); // remove '('
+                    // Don't flush yet; wait for the second operand
                 } else {
-                    // Variable/constant → part of calcRPN
-                    calcBuffer.push_back(tok);
+                    calcBuffer.push_back(tok); // Operands or arithmetic operators
+                    // Only flush if we have a complete comparison expression
+                    if (calcBuffer.size() >= 3 && parenCount == 0) {
+                        std::cout << "Checking calcBuffer: [" << CalcExpressionToString(calcBuffer) << "]\n";
+                        if (IsComparisonOperator(calcBuffer[calcBuffer.size() - 2].type)) {
+                            flushCalcBuffer();
+                        }
+                    }
                 }
             }
 
-            flushCalcBuffer();
-
+            flushCalcBuffer(); // Flush any remaining tokens
             while (!opStack.empty()) {
-                applyOperator();
+                if (!opStack.top().Equals("(")) {
+                    applyOperator();
+                } else {
+                    opStack.pop(); // Discard unmatched '('
+                }
             }
 
-            return outStack.top();
+            return outStack.empty() ? LogicRPNNode() : outStack.top();
         }
 
-/*
-LogicRPNNode Expressions::buildNestedLogicRPN(const Tokens& tokens) {
-    std::stack<ZeroCopyString> opStack;          // logic operators &&, ||
-    std::stack<LogicRPNNode> outStack;           // nested RPN nodes
-    std::vector<ZeroCopyString> calcBuffer;      // temporary calc RPN
-
-    auto flushCalcBuffer = [&]() {
-        if (!calcBuffer.empty()) {
-            LogicRPNNode leaf;
-            leaf.calcRPN = calcBuffer;
-            outStack.push(leaf);
-            calcBuffer.clear();
-        }
-    };
-
-    auto applyOperator = [&](const ZeroCopyString& op) {
-        // Pop at least two nodes
-        LogicRPNNode right = outStack.top(); outStack.pop();
-        LogicRPNNode left  = outStack.top(); outStack.pop();
-
-        LogicRPNNode parent;
-        parent.op = op;
-
-        // Flatten if left node has the same operator
-        if (left.op == op) {
-            parent.children = left.children;   // take left's children
-            parent.children.push_back(right);  // append right
-        } else {
-            parent.children = {left, right};
-        }
-
-        outStack.push(parent);
-    };
-
-
-    for (int cti = 0; cti < tokens.count; ++cti) {
-        const Token& tok = tokens.items[cti];
-
-        if (IsCalcOperator(tok)) {
-            // math/comparison → part of calcRPN
-            calcBuffer.push_back(tok);
-        } else if (IsLogicOperator(tok)) {
-            flushCalcBuffer();
-
-            while (!opStack.empty() && LogicPrecedence(opStack.top()) >= LogicPrecedence(tok)) {
-                ZeroCopyString op = opStack.top(); opStack.pop();
-                applyOperator(op);
-            }
-
-            opStack.push(tok);
-        } else if (tok.Equals("(")) {
-            opStack.push(tok);
-        } else if (tok.Equals(")")) {
-            flushCalcBuffer();
-            while (!opStack.empty() && opStack.top() != "(") {
-                ZeroCopyString op = opStack.top(); opStack.pop();
-                applyOperator(op);
-            }
-            opStack.pop(); // remove '('
-        } else {
-            // Variable/constant → part of calcRPN
-            calcBuffer.push_back(tok);
-        }
-    }
-
-    flushCalcBuffer();
-
-    while (!opStack.empty()) {
-        ZeroCopyString op = opStack.top(); opStack.pop();
-        applyOperator(op);
-    }
-
-    return outStack.top();
-}*/
 
     }
 }

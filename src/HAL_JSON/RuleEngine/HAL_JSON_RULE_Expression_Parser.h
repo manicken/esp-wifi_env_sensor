@@ -33,19 +33,11 @@ namespace HAL_JSON {
             Write,
             ReadWrite
         };
-        struct CalcRPN {
-            std::vector<ZeroCopyString> tokens;   // postfix order
-        };
-
-        struct LogicRPN {
-            std::vector<CalcRPN> operands;        // each operand is one sub-expression
-            std::vector<ZeroCopyString> ops;      // &&, || in postfix order
-        };
 
         struct LogicRPNNode {
-            std::vector<ZeroCopyString> calcRPN;  // leaf if op.empty()
+            std::vector<ExpressionToken> calcRPN;  // leaf if op.empty()
             std::vector<LogicRPNNode> children;   // nested nodes
-            ZeroCopyString op;                     // "&&" or "||", empty for leaf
+            ExpressionToken op;                     // "&&" or "||", empty for leaf
         };
         class Expressions {
         private:
@@ -56,26 +48,59 @@ namespace HAL_JSON {
             static const char* SingleOperatorList;
             static const char* DoubleOperatorList;
             
-            static inline int CalcPrecedence(const ZeroCopyString& op) {
-                if (op == "*" || op == "/") return 6;
-                if (op == "+" || op == "-") return 5;
-                if (op == "<" || op == "<=" || op == ">" || op == ">=") return 4;
-                if (op == "==" || op == "!=") return 3;
+            static inline int CalcPrecedence(TokenType optype) {
+                if (optype == TokenType::CalcMultiply || 
+                    optype == TokenType::CalcDivide) return 6;
+                if (optype == TokenType::CalcPlus || 
+                    optype == TokenType::CalcMinus) return 5;
+                if (optype == TokenType::CompareLessThan || 
+                    optype == TokenType::CompareGreaterThan || 
+                    optype == TokenType::CompareLessOrEqualsTo ||
+                    optype == TokenType::CompareGreaterOrEqualsTo) return 4;
+                if (optype == TokenType::CompareEqualsTo || 
+                    optype == TokenType::CompareNotEqualsTo) return 3;
                 return 0;
             }
 
-            static inline bool IsCalcOperator(const ZeroCopyString& op) {
-                return CalcPrecedence(op) > 0;
+            static inline bool IsCalcOperator(TokenType optype) {
+                return CalcPrecedence(optype) > 0;
             }
 
-            static inline int LogicPrecedence(const ZeroCopyString& op) {
-                if (op == "||") return 1;
-                if (op == "&&") return 2;
+            static inline int LogicPrecedence(TokenType optype) {
+                if (optype == TokenType::LogicalOr) return 1;
+                if (optype == TokenType::LogicalAnd) return 2;
                 return 0;
             }
 
-            static inline bool IsLogicOperator(const ZeroCopyString& op) {
-                return op == "&&" || op == "||";
+            static inline bool IsLogicOperator(TokenType optype) {
+                return optype == TokenType::LogicalOr || optype == TokenType::LogicalAnd;
+            }
+
+            // Helper: returns true if c can be part of an identifier
+            static inline bool IsIdentifierChar(char c) {
+                return std::isalnum(c) || c == '_';
+            }
+
+            // Helper: returns true if c is a single-character operator
+            static inline TokenType IsSingleOp(char c) {
+                if (c == '+') return TokenType::CalcPlus;
+                else if (c == '-') return TokenType::CalcMinus;
+                else if (c == '*')  return TokenType::CalcMultiply;
+                else if (c == '/') return TokenType::CalcDivide;
+                else if (c == '<') return TokenType::CompareLessThan;
+                else if (c == '>') return TokenType::CompareGreaterThan;
+                return TokenType::NotSet;
+            }
+
+            // Helper: checks if c + next form a 2-char operator
+            static inline TokenType IsTwoCharOp(char c, char next) {
+                if (c == '&' && next == '&') return TokenType::LogicalAnd;
+                else if (c == '|' && next == '|') return TokenType::LogicalOr;
+                else if (c == '=' && next == '=') return TokenType::CompareEqualsTo;
+                else if (c == '!' && next == '=') return TokenType::CompareNotEqualsTo;
+                else if (c == '<' && next == '=') return TokenType::CompareLessOrEqualsTo;
+                else if (c == '>' && next == '=') return TokenType::CompareGreaterOrEqualsTo;
+                return TokenType::NotSet;
             }
             
             //static void GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount);
@@ -92,11 +117,13 @@ namespace HAL_JSON {
             static bool IsValidOperandChar(char c);
             static bool ValidateExpression(Tokens& tokens, ExpressionContext exprContext);
 
-            static LogicRPN BuildRPN(const Tokens& tokens);
-            static CalcRPN ToCalcRPN(const std::vector<ZeroCopyString>& tokens);
+            static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken>& tokens);
 
             static void printLogicRPNNode(const LogicRPNNode& node);
-            static LogicRPNNode buildNestedLogicRPN(const Tokens& tokens);
+            static LogicRPNNode buildNestedLogicRPN(const ExpressionTokens& tokens);
+
+            static int preParseTokensCount(const Tokens& rawTokens);
+            static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
 
         };
     }

@@ -956,25 +956,6 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             return anyError == false;
         }
 
-        void PrintCalcRPN(const CalcRPN& rpn) {
-            std::cout << "    CalcRPN: ";
-            for (auto& t : rpn.tokens) {
-                std::cout << t.ToString() << " ";
-            }
-            std::cout << "\n";
-        }
-
-        void PrintLogicRPN(const LogicRPN& logic) {
-            std::cout << "LogicRPN contents:\n";
-            for (size_t i = 0; i < logic.operands.size(); ++i) {
-                std::cout << "  Operand[" << i << "]:\n";
-                PrintCalcRPN(logic.operands[i]);
-                if (i < logic.ops.size()) {
-                    std::cout << "  LogicOp: " << logic.ops[i].ToString() << "\n";
-                }
-            }
-        }
-
         bool Parser::ParseExpressionTest(const char* filePath) {
             size_t fileSize;
             char* fileContents;// = ReadFileToMutableBuffer(filePath, fileSize);
@@ -1012,12 +993,23 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo(PrintTokens(tokens,0) + "\n");
 
-            LogicRPNNode lrpnNode = Expressions::buildNestedLogicRPN(tokens);
+            ExpressionTokens* expressionTokens = Expressions::preParseTokens(tokens);
+            ReportInfo("**********************************************************************************\n");
+            ReportInfo("*                            EXPRESSION TOKEN LIST                                 *\n");
+            ReportInfo("**********************************************************************************\n");
+
+            ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
+
+            LogicRPNNode lrpnNode = Expressions::buildNestedLogicRPN(*expressionTokens);
             //LogicRPN lrpn = Expressions::BuildRPN(tokens);
             Expressions::printLogicRPNNode(lrpnNode);
             //PrintLogicRPN(lrpn);
 
+            //ReportInfo("\nAll done!!!\n");
+
             delete[] fileContents;
+
+            ReportInfo("\nAll done!!!\n");
         }
     }
 }

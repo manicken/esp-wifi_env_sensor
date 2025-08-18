@@ -14,4 +14,4 @@
 extern std::atomic<bool> running;
 
 void commandLoop();
-void parseCommand(const char* cmd);
+void parseCommand(const char* cmd, bool oneShot = false);

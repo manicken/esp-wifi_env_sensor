@@ -4,9 +4,9 @@ namespace HAL_JSON {
     namespace Rules {
 
         TokenType GetFundamentalTokenType(const char* str) {
-#ifdef _WIN32
+        #ifdef _WIN32
             std::cout << "GetFundamentalTokenType: >>>" << str << "<<<\n";
-#endif
+        #endif
             if (StrEqualsIC(str, "if")) return TokenType::If;
             else if (StrEqualsIC(str, "endif")) return TokenType::EndIf;
             else if (StrEqualsIC(str, "else")) return TokenType::Else;
@@ -19,7 +19,27 @@ namespace HAL_JSON {
             else if (StrEqualsIC(str, ";")) return TokenType::ActionSeparator;
             else if (StrEqualsIC(str, "\\")) return TokenType::ActionJoiner;
             else if (StrEqualsIC(str, "endon")) return TokenType::EndOn;
-            else return TokenType::NotSet;
+            else if (StrEqualsIC(str, "(")) return TokenType::LeftParenthesis;
+            else if (StrEqualsIC(str, ")")) return TokenType::RightParenthesis;
+            else if (StrEqualsIC(str, "&&")) return TokenType::LogicalAnd;
+            else if (StrEqualsIC(str, "||")) return TokenType::LogicalOr;
+            else if (StrEqualsIC(str, "==")) return TokenType::CompareEqualsTo;
+            else if (StrEqualsIC(str, "!=")) return TokenType::CompareNotEqualsTo;
+            else if (StrEqualsIC(str, "<")) return TokenType::CompareLessThan;
+            else if (StrEqualsIC(str, ">")) return TokenType::CompareGreaterThan;
+            else if (StrEqualsIC(str, "<=")) return TokenType::CompareLessOrEqualsTo;
+            else if (StrEqualsIC(str, ">=")) return TokenType::CompareGreaterOrEqualsTo;
+            else if (StrEqualsIC(str, "+")) return TokenType::CalcPlus;
+            else if (StrEqualsIC(str, "-")) return TokenType::CalcMinus;
+            else if (StrEqualsIC(str, "*")) return TokenType::CalcMultiply;
+            else if (StrEqualsIC(str, "/")) return TokenType::CalcDivide;
+            else if (StrEqualsIC(str, "%")) return TokenType::CalcModulus;
+            else if (StrEqualsIC(str, "&")) return TokenType::CalcBitwiseAnd;
+            else if (StrEqualsIC(str, "|")) return TokenType::CalcBitwiseOr;
+            else if (StrEqualsIC(str, "^")) return TokenType::CalcBitwiseExOr;
+            else if (StrEqualsIC(str, "<<")) return TokenType::CalcBitwiseLeftShift;
+            else if (StrEqualsIC(str, ">>")) return TokenType::CalcBitwiseRightShift;
+            else return TokenType::Operand;
         }
         const char* TokenTypeToString(TokenType type) {
             switch (type) {
@@ -39,9 +59,44 @@ namespace HAL_JSON {
                 case TokenType::Action: return "Action";
                 case TokenType::Merged: return "Merged";
                 case TokenType::Ignore: return "Ignore";
-                default:
-                    return "Unknown";
+                case TokenType::LeftParenthesis: return "LeftParenthesis";
+                case TokenType::RightParenthesis: return "RightParenthesis";
+                case TokenType::LogicalAnd: return "LogicalAnd";
+                case TokenType::LogicalOr: return "LogicalOr";
+                case TokenType::CompareEqualsTo: return "CompareEqualsTo";
+                case TokenType::CompareNotEqualsTo: return "CompareNotEqualsTo";
+                case TokenType::CompareLessThan: return "CompareLessThan";
+                case TokenType::CompareGreaterThan: return "CompareGreaterThan";
+                case TokenType::CompareLessOrEqualsTo: return "CompareLessOrEqualsTo";
+                case TokenType::CompareGreaterOrEqualsTo: return "CompareGreaterOrEqualsTo";
+                case TokenType::CalcPlus: return "CalcPlus";
+                case TokenType::CalcMinus: return "CalcMinus";
+                case TokenType::CalcMultiply: return "CalcMultiply";
+                case TokenType::CalcDivide: return "CalcDivide";
+                case TokenType::CalcModulus: return "CalcModulus";
+                case TokenType::CalcBitwiseAnd: return "CalcBitwiseAnd";
+                case TokenType::CalcBitwiseOr: return "CalcBitwiseOr";
+                case TokenType::CalcBitwiseExOr: return "CalcBitwiseExOr";
+                case TokenType::CalcBitwiseLeftShift: return "CalcBitwiseLeftShift";
+                case TokenType::CalcBitwiseRightShift: return "CalcBitwiseRightShift";
+                case TokenType::Operand: return "Operand";
+                default: return "Unknown";
             }
+        }
+
+        ExpressionToken::ExpressionToken() : type(TokenType::NotSet) {
+
+        }
+        ExpressionToken::~ExpressionToken() {
+            // nothing to free here
+        }
+
+        ExpressionTokens::ExpressionTokens(int _count) {
+            items = new ExpressionToken[_count];
+            count = _count;
+        }
+        ExpressionTokens::~ExpressionTokens() {
+            delete[] items;
         }
         
         Token::Token(): type(TokenType::NotSet) {
@@ -197,6 +252,25 @@ namespace HAL_JSON {
                     //msgLine += " >>> " + tok.ToString() + " <<<";// size: " + std::to_string(tok.Length());// std::string(tok.text);
                     msgLine += tok.ToString();
                 }
+                msg += msgLine + "\n";
+            }
+            return msg;
+        }
+
+        std::string PrintExpressionTokens(ExpressionTokens& _tokens) {
+            ExpressionToken* tokens = _tokens.items;
+            int tokenCount = _tokens.count;
+            std::string msg;
+ 
+            for (int i=0;i<tokenCount;i++) {
+                ExpressionToken& tok = tokens[i];
+                std::string msgLine;
+
+                msgLine +=
+                    "Token(" + std::to_string(i) + "): (" +
+                    "type:" + TokenTypeToString(tok.type) +
+                    "): ";
+                    msgLine += tok.ToString();
                 msg += msgLine + "\n";
             }
             return msg;

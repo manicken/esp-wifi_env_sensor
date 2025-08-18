@@ -39,8 +39,7 @@
 
         if (argc > 1) {
             // one shot tests
-            HAL_JSON::Manager::setup();
-            parseCommand(argv[1]);
+            parseCommand(argv[1], true); // true mean one short test
             return 0;
         }
         

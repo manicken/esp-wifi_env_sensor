@@ -408,6 +408,15 @@ namespace HAL_JSON {
         return true;
     }
 
+    char ZeroCopyString::operator[](size_t idx) const {
+        if (idx >= Length()) {
+            return '\0';
+
+            //throw std::out_of_range("ZeroCopyString index out of range");
+        }
+        return start[idx];
+    }
+
     bool operator==(const ZeroCopyString& lhs, const ZeroCopyString& rhs) { return lhs.Equals(rhs); }
     bool operator!=(const ZeroCopyString& lhs, const ZeroCopyString& rhs) { return !lhs.Equals(rhs); }
     bool operator==(const char* lhs, const ZeroCopyString& rhs) { return rhs.Equals(lhs); }

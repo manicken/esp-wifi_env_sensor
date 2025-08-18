@@ -45,11 +45,67 @@ namespace HAL_JSON {
             /** used to split actions into multiple lines currently \ (note it need to have a space before and whitespace after), should be marked as Ignored When consumed*/
             ActionJoiner,
             /** marks the token to be ignored in futher parsing, should be marked as Ignored When consumed*/
-            Ignore
+            Ignore,
+            /** used by expressions */
+            Operand,
+            /** used by expressions */
+            LeftParenthesis,
+            /** used by expressions */
+            RightParenthesis,
+            /** used by expressions */
+            LogicalAnd,
+            /** used by expressions */
+            LogicalOr,
+            /** used by expressions */
+            CompareEqualsTo,
+            /** used by expressions */
+            CompareNotEqualsTo,
+            /** used by expressions */
+            CompareLessThan,
+            /** used by expressions */
+            CompareGreaterThan,
+            /** used by expressions */
+            CompareLessOrEqualsTo,
+            /** used by expressions */
+            CompareGreaterOrEqualsTo,
+            /** used by expressions */
+            CalcPlus,
+            /** used by expressions */
+            CalcMinus,
+            /** used by expressions */
+            CalcMultiply,
+            /** used by expressions */
+            CalcDivide,
+            /** used by expressions */
+            CalcModulus,
+            /** used by expressions */
+            CalcBitwiseAnd,
+            /** used by expressions */
+            CalcBitwiseOr,
+            /** used by expressions */
+            CalcBitwiseExOr,
+            /** used by expressions */
+            CalcBitwiseLeftShift,
+            /** used by expressions */
+            CalcBitwiseRightShift
         };
 
         const char* TokenTypeToString(TokenType type);
         TokenType GetFundamentalTokenType(const char* str);
+
+        struct ExpressionToken : public ZeroCopyString {
+            using ZeroCopyString::ZeroCopyString;
+            TokenType type;
+            ExpressionToken();
+            ~ExpressionToken();
+        };
+        struct ExpressionTokens {
+            ExpressionToken* items;
+            int count;
+
+            ExpressionTokens(int count);
+            ~ExpressionTokens();
+        };
 
         struct Token : public ZeroCopyString {
             using ZeroCopyString::ZeroCopyString;
@@ -63,10 +119,10 @@ namespace HAL_JSON {
             Token();
             
             /* no copy/move constructors/assigments needed*/
-            Token(Token&) = delete;          // no copy constructor
-            Token& operator=(const Token&) = delete; // no copy assignment
-            Token(Token&& other) = delete;           // no move constructor
-            Token& operator=(Token&& other) = delete; // no move assignment
+            //Token(Token&) = delete;          // no copy constructor
+            //Token& operator=(const Token&) = delete; // no copy assignment
+            //Token(Token&& other) = delete;           // no move constructor
+            //Token& operator=(Token&& other) = delete; // no move assignment
 
             void Set(const char* text, int line, int column);
             /** 
@@ -142,5 +198,6 @@ namespace HAL_JSON {
         void ReportTokenWarning(const Token& t, const char* msg, const char* param = nullptr);
         
         std::string PrintTokens(Tokens& tokens, int subTokenIndexOffset = 0);
+        std::string PrintExpressionTokens(ExpressionTokens& _tokens);
     }
 }
