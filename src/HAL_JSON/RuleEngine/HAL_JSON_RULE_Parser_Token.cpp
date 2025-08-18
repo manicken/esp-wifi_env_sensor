@@ -19,6 +19,7 @@ namespace HAL_JSON {
             else if (StrEqualsIC(str, ";")) return TokenType::ActionSeparator;
             else if (StrEqualsIC(str, "\\")) return TokenType::ActionJoiner;
             else if (StrEqualsIC(str, "endon")) return TokenType::EndOn;
+            /*
             else if (StrEqualsIC(str, "(")) return TokenType::LeftParenthesis;
             else if (StrEqualsIC(str, ")")) return TokenType::RightParenthesis;
             else if (StrEqualsIC(str, "&&")) return TokenType::LogicalAnd;
@@ -38,8 +39,8 @@ namespace HAL_JSON {
             else if (StrEqualsIC(str, "|")) return TokenType::CalcBitwiseOr;
             else if (StrEqualsIC(str, "^")) return TokenType::CalcBitwiseExOr;
             else if (StrEqualsIC(str, "<<")) return TokenType::CalcBitwiseLeftShift;
-            else if (StrEqualsIC(str, ">>")) return TokenType::CalcBitwiseRightShift;
-            else return TokenType::Operand;
+            else if (StrEqualsIC(str, ">>")) return TokenType::CalcBitwiseRightShift;*/
+            else return TokenType::NotSet;
         }
         const char* TokenTypeToString(TokenType type) {
             switch (type) {
@@ -266,14 +267,15 @@ namespace HAL_JSON {
  
             for (int i=0;i<tokenCount;i++) {
                 ExpressionToken& tok = tokens[i];
-                std::string msgLine;
-
-                msgLine +=
-                    "Token(" + std::to_string(i) + ")  " + tok.ToString() + "  (" +
-                    "type:" + TokenTypeToString(tok.type) +
-                    ", matchingIndex:" + std::to_string(tok.matchingIndex) +
-                    "): ";
-                    //msgLine += tok.ToString();
+                if (tok.type == TokenType::Ignore) continue;
+                std::string msgLine = "Token[" + std::to_string(i) + "]  ";
+                if (tok.type != TokenType::Operand) {
+                    msgLine += "---";
+                    msgLine += TokenTypeToString(tok.type);
+                    msgLine += "---";
+                } else {
+                    msgLine += tok.ToString();
+                }
                 msg += msgLine + "\n";
             }
             return msg;

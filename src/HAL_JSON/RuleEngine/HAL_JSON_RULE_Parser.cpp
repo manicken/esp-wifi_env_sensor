@@ -1000,7 +1000,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
 
-            Expressions::RemoveRedundantParentheses(*expressionTokens);
+            Expressions::MarkRedundantParentheses(*expressionTokens);
 
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            EXPRESSION TOKEN LIST  pre parse                    *\n");
@@ -1008,19 +1008,19 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
 
-            LogicRPNNode lrpnNode = Expressions::buildNestedLogicRPN(*expressionTokens);
+            LogicRPNNode* lrpnNode = Expressions::buildNestedLogicRPN(*expressionTokens);
             //LogicRPN lrpn = Expressions::BuildRPN(tokens);
             ReportInfo("linear view:\n");
             Expressions::printLogicRPNNode(lrpnNode);
             ReportInfo("\n\ntree view:\n");
             Expressions::printLogicRPNNodeTree(lrpnNode);
-            //PrintLogicRPN(lrpn);
 
-            //ReportInfo("\nAll done!!!\n");
-
+            delete lrpnNode; // deletes the whole tree recursive
+            delete expressionTokens;
             delete[] fileContents;
 
             ReportInfo("\nAll done!!!\n");
+            return true;
         }
     }
 }

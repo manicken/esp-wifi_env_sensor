@@ -40,20 +40,17 @@ namespace HAL_JSON {
                 Invalid,
                 LogicalAnd,
                 LogicalOr,
-                Equals,
-                NotEquals,
-                Less,
-                Greater,
-                LessEqual,
-                GreaterEqual,
                 CalcLeaf
             } type = OpType::Invalid;
 
-
-
             std::vector<ExpressionToken> calcRPN;  // leaf if op.empty()
-            std::vector<LogicRPNNode> children;   // nested nodes
-            ExpressionToken op;                     // "&&" or "||", empty for leaf
+            /** theese are owned and needs to be deleted */
+            LogicRPNNode* children[2];   // nested nodes
+            /** this is non owned, it's owned by the input token stream */
+            ExpressionToken* op;                     // "&&" or "||", empty for leaf
+
+            LogicRPNNode();
+            ~LogicRPNNode();
         };
         class Expressions {
         private:
@@ -137,14 +134,19 @@ namespace HAL_JSON {
 
             static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken>& tokens);
 
-            static void printLogicRPNNode(const LogicRPNNode& node);
-            static void printLogicRPNNodeTree(const LogicRPNNode& node, int indent = 0);
+            static void printLogicRPNNode(const LogicRPNNode* node);
+            static void printLogicRPNNodeTree(const LogicRPNNode* node, int indent = 0);
 
-            static LogicRPNNode buildNestedLogicRPN(const ExpressionTokens& tokens);
+            
 
             static int preParseTokensCount(const Tokens& rawTokens);
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
-            static void RemoveRedundantParentheses(ExpressionTokens& tokens);
+            static void MarkRedundantParentheses(ExpressionTokens& tokens);
+            /** to use the following function 
+             * preParseTokens 
+             * and specially MarkRedundantParentheses
+             * needs to be used first */
+            static LogicRPNNode* buildNestedLogicRPN(const ExpressionTokens& tokens);
         };
     }
 }

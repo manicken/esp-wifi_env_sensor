@@ -485,7 +485,7 @@ namespace HAL_JSON {
             return cleanTokens;
         }
 
-        void Expressions::RemoveRedundantParentheses(ExpressionTokens& tokens) {
+        void Expressions::MarkRedundantParentheses(ExpressionTokens& tokens) {
             for (size_t i = 0; i < tokens.count; ++i) {
                 auto& tok = tokens.items[i];
 
@@ -560,37 +560,46 @@ namespace HAL_JSON {
         }
 
         // Recursive print
-        void Expressions::printLogicRPNNode(const LogicRPNNode& node) {
-            if (node.op.IsEmpty()) {
+        void Expressions::printLogicRPNNode(const LogicRPNNode* node) {
+            if (!node) return;
+
+            if (node->op == nullptr || node->op->IsEmpty()) {
                 // Leaf node → print calc RPN
                 //std::cout << " lf(" + std::to_string(node.calcRPN.size()) + ") ";
                 std::cout << "[";
-                std::cout << CalcExpressionToString(node.calcRPN);
+                std::cout << CalcExpressionToString(node->calcRPN);
                 std::cout << "]";
             } else {
                 // Operator node → print children first, then operator
                 //std::cout << " op(" + std::to_string(node.children.size()) + ") ";
                 std::cout << "[";
-                for (size_t i = 0; i < node.children.size(); ++i) {
+                if (node->children[0]) printLogicRPNNode(node->children[0]);
+                std::cout << " ";
+                if (node->children[1]) printLogicRPNNode(node->children[1]);
+                /*for (size_t i = 0; i < 2; ++i) {
                     printLogicRPNNode(node.children[i]);
-                    if (i + 1 < node.children.size()) std::cout << " ";
-                }
-                std::cout << " " << node.op.ToString() << "]";
+                    if (i + 1 < 2) std::cout << " ";
+                }*/
+                std::cout << " " << (node->op?node->op->ToString():"") << "]";
             }
         }
 
-        void Expressions::printLogicRPNNodeTree(const LogicRPNNode& node, int indent) {
+        void Expressions::printLogicRPNNodeTree(const LogicRPNNode* node, int indent) {
+            if (!node) return;
+
             std::string padding(indent * 2, ' '); // 2 spaces per level
 
-            if (node.op.IsEmpty()) {
+            if (node->op == nullptr || node->op->IsEmpty()) {
                 // Leaf node → print calc RPN
-                std::cout << padding << "- Leaf: [" << CalcExpressionToString(node.calcRPN) << "]\n";
+                std::cout << padding << "- Leaf: [" << CalcExpressionToString(node->calcRPN) << "]\n";
             } else {
                 // Operator node
-                std::cout << padding << "- Op: " << node.op.ToString() << "\n";
-                for (size_t i = 0; i < node.children.size(); ++i) {
+                std::cout << padding << "- Op: " << (node->op?node->op->ToString():"") << "\n";
+                if (node->children[0]) printLogicRPNNodeTree(node->children[0], indent + 1);
+                if (node->children[1]) printLogicRPNNodeTree(node->children[1], indent + 1);
+                /*for (size_t i = 0; i < 2; ++i) {
                     printLogicRPNNodeTree(node.children[i], indent + 1);
-                }
+                }*/
             }
         }
 
@@ -607,16 +616,24 @@ namespace HAL_JSON {
                     return false;
             }
         }
-        LogicRPNNode Expressions::buildNestedLogicRPN(const ExpressionTokens& tokens) {
-            std::stack<ExpressionToken> opStack;       // Logic operators: &&, ||
-            std::stack<LogicRPNNode> outStack;         // Nested RPN nodes
+
+        LogicRPNNode::LogicRPNNode()
+            : children{nullptr, nullptr}, op(nullptr), type(OpType::Invalid) {}
+
+        LogicRPNNode::~LogicRPNNode() {
+            delete children[0];
+            delete children[1];
+        }
+        LogicRPNNode* Expressions::buildNestedLogicRPN(const ExpressionTokens& tokens) {
+            std::stack<ExpressionToken*> opStack;       // Logic operators: &&, ||
+            std::stack<LogicRPNNode*> outStack;         // Nested RPN nodes
             std::vector<ExpressionToken> calcBuffer;   // Arithmetic/comparison buffer
 
             auto flushCalcBuffer = [&]() {
                 if (!calcBuffer.empty()) {
-                    LogicRPNNode leaf;
-                    leaf.type = LogicRPNNode::OpType::CalcLeaf;
-                    leaf.calcRPN = ToCalcRPN(calcBuffer); // Convert infix -> RPN
+                    LogicRPNNode* leaf = new LogicRPNNode();
+                    leaf->type = LogicRPNNode::OpType::CalcLeaf;
+                    leaf->calcRPN = ToCalcRPN(calcBuffer); // Convert infix -> RPN
                     outStack.push(leaf);
                     calcBuffer.clear();
                 }
@@ -624,44 +641,47 @@ namespace HAL_JSON {
 
             auto applyOperator = [&]() {
                 if (!opStack.empty() && outStack.size() >= 2) {
-                    ExpressionToken op = opStack.top(); opStack.pop();
-                    LogicRPNNode right = outStack.top(); outStack.pop();
-                    LogicRPNNode left = outStack.top(); outStack.pop();
-                    LogicRPNNode parent;
-                    parent.op = op;
-                    parent.children = {left, right};
-                    switch (op.type) {
-                        case TokenType::LogicalAnd: parent.type = LogicRPNNode::OpType::LogicalAnd; break;
-                        case TokenType::LogicalOr:  parent.type = LogicRPNNode::OpType::LogicalOr;  break;
-                        default:                    parent.type = LogicRPNNode::OpType::Invalid;    break;
+                    
+                    ExpressionToken* op = opStack.top(); opStack.pop();
+                    LogicRPNNode* right = outStack.top(); outStack.pop();
+                    LogicRPNNode* left = outStack.top(); outStack.pop();
+                    LogicRPNNode* parent = new LogicRPNNode();
+                    parent->op = op;
+                    parent->children[0] = left;
+                    parent->children[1] = right;
+                    //parent.children = {left, right};
+                    switch (op->type) {
+                        case TokenType::LogicalAnd: parent->type = LogicRPNNode::OpType::LogicalAnd; break;
+                        case TokenType::LogicalOr:  parent->type = LogicRPNNode::OpType::LogicalOr;  break;
+                        default:                    parent->type = LogicRPNNode::OpType::Invalid;    break;
                     }
                     outStack.push(parent);
                 }
             };
 
             for (int i = 0; i < tokens.count; ++i) {
-                const ExpressionToken& tok = tokens.items[i];
+                ExpressionToken& tok = tokens.items[i];
 
                 if (tok.type == TokenType::Ignore)
                     continue;
 
                 if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
                     flushCalcBuffer();
-                    while (!opStack.empty() && opStack.top().type != TokenType::LeftParenthesis &&
-                        LogicPrecedence(opStack.top().type) >= LogicPrecedence(tok.type)) {
+                    while (!opStack.empty() && opStack.top()->type != TokenType::LeftParenthesis &&
+                        LogicPrecedence(opStack.top()->type) >= LogicPrecedence(tok.type)) {
                         applyOperator();
                     }
-                    opStack.push(tok);
+                    opStack.push(&tok);//&tokens.items[i]);
                 }
                 else if (tok.type == TokenType::LeftParenthesis) {
-                    opStack.push(tok);
+                    opStack.push(&tok);//&tokens.items[i]);
                 }
                 else if (tok.type == TokenType::RightParenthesis) {
                     flushCalcBuffer();
-                    while (!opStack.empty() && opStack.top().type != TokenType::LeftParenthesis) {
+                    while (!opStack.empty() && opStack.top()->type != TokenType::LeftParenthesis) {
                         applyOperator();
                     }
-                    if (!opStack.empty() && opStack.top().type == TokenType::LeftParenthesis) {
+                    if (!opStack.empty() && opStack.top()->type == TokenType::LeftParenthesis) {
                         opStack.pop();
                     }
                 }
@@ -687,13 +707,13 @@ namespace HAL_JSON {
 
             flushCalcBuffer();
             while (!opStack.empty()) {
-                if (opStack.top().type != TokenType::LeftParenthesis)
+                if (opStack.top()->type != TokenType::LeftParenthesis)
                     applyOperator();
                 else
                     opStack.pop();
             }
 
-            return outStack.empty() ? LogicRPNNode() : outStack.top();
+            return outStack.empty() ? nullptr : outStack.top();
         }
 
 
