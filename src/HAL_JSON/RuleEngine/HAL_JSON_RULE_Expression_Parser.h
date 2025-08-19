@@ -134,21 +134,16 @@ namespace HAL_JSON {
 
             static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken>& tokens);
             static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken*>& tokens);
+            static void Expressions::InplaceCalcRPN(std::vector<ExpressionToken*>& tokens);
 
             static void printLogicRPNNode(const LogicRPNNode* node);
-            static void printLogicRPNNodeTree(const LogicRPNNode* node, int indent = 0);
+            static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
 
             
 
             static int preParseTokensCount(const Tokens& rawTokens);
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
-            //static void MarkRedundantParentheses(ExpressionTokens& tokens);
-            /** to use the following function 
-             * preParseTokens 
-             * and specially MarkRedundantParentheses
-             * needs to be used first */
-            //static LogicRPNNode* buildNestedLogicRPN(const ExpressionTokens& tokens);
-
+ 
             /** to use this function preParseTokens is needed to be run before */
             static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, int start = 0, int end = -1);
         };

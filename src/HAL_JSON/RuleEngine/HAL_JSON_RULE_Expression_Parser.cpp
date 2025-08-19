@@ -598,6 +598,42 @@ namespace HAL_JSON {
             return rpn;
         }
 
+        void Expressions::InplaceCalcRPN(std::vector<ExpressionToken*>& tokens) {
+            std::stack<ExpressionToken*> opstack;
+            size_t outIndex = 0; // points to the current output position in tokens
+
+            for (size_t i = 0; i < tokens.size(); ++i) {
+                ExpressionToken* t = tokens[i];
+                if (t->type == TokenType::Ignore) continue;
+
+                if (IsCalcOperator(t->type)) {
+                    while (!opstack.empty() && IsCalcOperator(opstack.top()->type) &&
+                        CalcPrecedence(opstack.top()->type) >= CalcPrecedence(t->type)) {
+                        tokens[outIndex++] = opstack.top(); // write operator to output
+                        opstack.pop();
+                    }
+                    opstack.push(t);
+                } else if (t->type == TokenType::LeftParenthesis) {
+                    opstack.push(t);
+                } else if (t->type == TokenType::RightParenthesis) {
+                    while (!opstack.empty() && opstack.top()->type != TokenType::LeftParenthesis) {
+                        tokens[outIndex++] = opstack.top();
+                        opstack.pop();
+                    }
+                    if (!opstack.empty()) opstack.pop(); // discard "("
+                } else {
+                    tokens[outIndex++] = t; // operands are written in place
+                }
+            }
+
+            while (!opstack.empty()) {
+                tokens[outIndex++] = opstack.top();
+                opstack.pop();
+            }
+
+            tokens.resize(outIndex); // shrink vector to actual RPN length
+        }
+
         std::string CalcExpressionToString(const std::vector<ExpressionToken>& calcExpr) {
             std::string out;
             for (int i=0;i<calcExpr.size();i++) {
@@ -640,13 +676,14 @@ namespace HAL_JSON {
             }
         }
 
-        void Expressions::printLogicRPNNodeTree(const LogicRPNNode* node, int indent) {
+        void Expressions::printLogicRPNNodeTree(LogicRPNNode* node, int indent) {
             if (!node) return;
 
             std::string padding(indent * 2, ' '); // 2 spaces per level
 
             if (node->op == nullptr || node->op->IsEmpty()) {
                 // Leaf node → print calc RPN
+                InplaceCalcRPN(node->calcRPN);
                 std::cout << padding << "- calc: [" << CalcExpressionToString(node->calcRPN) << "]\n";
             } else {
                 // Operator node
@@ -684,20 +721,18 @@ namespace HAL_JSON {
         LogicRPNNode* Expressions::ParseConditionalExpression(ExpressionTokens& tokens, int start, int end) {
             if (end == -1) end = tokens.count;
 
-            std::cout << "\n********** parsing start:\n" << PrintExpressionTokens(tokens, start, end);
+            //std::cout << "\n********** parsing start:\n" << PrintExpressionTokens(tokens, start, end);
 
             std::stack<ExpressionToken*> opStack;         // logic ops: &&, ||
             std::stack<LogicRPNNode*> outStack;         // logic nodes
             std::vector<ExpressionToken*> tempStack;    // calc tokens inside a logic island
 
             auto flushCalc = [&]() {
-                if (tempStack.empty()) return;
                 LogicRPNNode* node = new LogicRPNNode();
                 node->children[0] = node->children[1] = nullptr;
                 node->op = nullptr;
-                // convert to calc RPN here:
-                std::cout << CalcExpressionToString(tempStack) + "\n";
-                node->calcRPN = tempStack;//Expressions::ToCalcRPN(tempStack);
+                 std::cout << CalcExpressionToString(tempStack) + "\n";
+                node->calcRPN = tempStack;
                 tempStack.clear();
                 outStack.push(node);
             };
@@ -721,30 +756,34 @@ namespace HAL_JSON {
 
                 if (tok.type == TokenType::LeftParenthesis) {
                     int matching = tok.matchingIndex;
-                    
-                    // 1. Flush any pending calc tokens (like `2 *`)
-                    //flushCalc();
 
-                    // 2. Parse the inner subexpression
-                    LogicRPNNode* sub = ParseLogicExpression(tokens, i + 1, matching);
+                    LogicRPNNode* sub = ParseConditionalExpression(tokens, i + 1, matching);
 
                     // merge into current calc if return is pure calcstream
                     if (sub->calcRPN.size() != 0) {
-                        tempStack.push_back(&tok);
+                        tempStack.push_back(&tok); // the first parenthesis
                         for (int stcrpni=0;stcrpni<sub->calcRPN.size();stcrpni++) {
                             
                             tempStack.push_back(sub->calcRPN[stcrpni]);
                         }
-                        tempStack.push_back(&tokens.items[matching]);
+                        tempStack.push_back(&tokens.items[matching]); // the last parenthesis
                     }else {
-                        flushCalc();
+                        // flushCalc() here is technically redundant for valid inputs,
+                        // because any pending calc tokens should have been flushed
+                        // when we saw a logical operator. But keeping it guards against
+                        // accidental merging of calc and logic nodes.
+                        if (tempStack.empty() == false) {
+                            std::cout << "found orphaned calc expression:\n";
+                            flushCalc();
+                        }
                         outStack.push(sub);
                     }
                     i = matching; // skip
                 }
                 else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
-                    std::cout << "flush calc because of logic operator\n";
-                    flushCalc();
+                    //std::cout << "flush calc because of logic operator\n";
+                    if (tempStack.empty() == false)
+                        flushCalc();
                     while (!opStack.empty() &&
                         Expressions::LogicPrecedence(opStack.top()->type) >= Expressions::LogicPrecedence(tok.type)) {
                         reduce();
@@ -756,15 +795,17 @@ namespace HAL_JSON {
                 }
             }
 
-            std::cout << "flush leftover calc\n";
+            //std::cout << "flush leftover calc\n";
             // flush leftover calc
-            flushCalc();
+            if (tempStack.empty() == false)
+                flushCalc();
 
             // reduce remaining ops
             while (!opStack.empty()) {
                 reduce();
             }
-            std::cout << "******* parsing end ********\n\n";
+            std::cout << "********* outStack.size():" << std::to_string(outStack.size()) << "\n";
+            //std::cout << "******* parsing end ********\n\n";
             return outStack.empty() ? nullptr : outStack.top();
         }
 

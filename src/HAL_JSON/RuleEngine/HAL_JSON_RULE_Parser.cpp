@@ -993,6 +993,11 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo(PrintTokens(tokens,0) + "\n");
 
+            ReportInfo("**********************************************************************************\n");
+            ReportInfo("*                            VALIDATE PARSED TOKEN LIST                          *\n");
+            ReportInfo("**********************************************************************************\n");
+            Expressions::ValidateExpression(tokens, ExpressionContext::IfCondition);
+
             ExpressionTokens* expressionTokens = Expressions::preParseTokens(tokens);
             if (expressionTokens == nullptr) {
                 ReportInfo("Error: could not pre parse tokens\n");
@@ -1000,11 +1005,15 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                 return false;
             }
 
+
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            EXPRESSION TOKEN LIST  raw                          *\n");
             ReportInfo("**********************************************************************************\n");
 
             ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
+
+            
+            
 
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            EXPRESSION TOKEN LIST  PARSING                      *\n");
