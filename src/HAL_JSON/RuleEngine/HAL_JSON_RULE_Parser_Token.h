@@ -199,6 +199,6 @@ namespace HAL_JSON {
         void ReportTokenWarning(const Token& t, const char* msg, const char* param = nullptr);
         
         std::string PrintTokens(Tokens& tokens, int subTokenIndexOffset = 0);
-        std::string PrintExpressionTokens(ExpressionTokens& _tokens);
+        std::string PrintExpressionTokens(ExpressionTokens& _tokens, int start = 0, int end = -1); // -1 mean defaults to _tokens.count
     }
 }

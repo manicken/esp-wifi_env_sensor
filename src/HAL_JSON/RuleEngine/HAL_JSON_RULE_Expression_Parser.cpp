@@ -361,27 +361,35 @@ namespace HAL_JSON {
             for (int i = 0; i < rawTokens.count; ++i) {
                 const Token& str = rawTokens.items[i];
                 int j = 0;
-                while (j < str.Length()) {
+                const int strLength = str.Length();
+                while (j < strLength) {
                     char c = str[j];
                     if (std::isspace(c)) {
                         ++j;
                     } else if (c == '(' || c == ')') {
                         ++count; ++j;
-                    } else if (j + 1 < str.Length() && IsTwoCharOp(c, str[j+1]) != TokenType::NotSet) {
+                    } else if ((j + 1) < strLength && IsTwoCharOp(c, str[j+1]) != TokenType::NotSet) {
                         ++count; j += 2;
                     } else if (IsSingleOp(c) != TokenType::NotSet) {
                         ++count; ++j;
                     } else {
                         // identifier/number
-                        while (j < str.Length() && !std::isspace(str[j]) &&
-                            str[j] != '(' && str[j] != ')' &&
-                            IsSingleOp(str[j]) == TokenType::NotSet) ++j;
+                        int startIdx = j;
+                        while (j < strLength &&
+                            !std::isspace(str[j]) &&
+                            str[j] != '(' &&
+                            str[j] != ')' &&
+                            IsSingleOp(str[j]) == TokenType::NotSet &&
+                            !((j + 1) < strLength && IsTwoCharOp(str[j], str[j+1]) != TokenType::NotSet)) {
+                            ++j;
+                        }
                         ++count;
                     }
                 }
             }
             return count;
         }
+
 
         // The actual pre-parser
         ExpressionTokens* Expressions::preParseTokens(const Tokens& rawTokens) {
@@ -398,11 +406,11 @@ namespace HAL_JSON {
                 while (j < strLength) {
                     char c = str[j];
 
-                    // Skip whitespace
-                    if (std::isspace(c)) {
-                        ++j;
-                        continue;
-                    }
+                    // Skip whitespace // there should not be any as the tokenizer 'removes' that
+                    //if (std::isspace(c)) {
+                    //    ++j;
+                    //    continue;
+                    //}
 
                     // Parentheses
                     if (c == '(' || c == ')') {
@@ -415,16 +423,19 @@ namespace HAL_JSON {
                     }
 
                     // Two-character operators
-                    TokenType twoCharOpType = IsTwoCharOp(c, str[j+1]);
-                    if (j + 1 < strLength && twoCharOpType != TokenType::NotSet) {
-                        ExpressionToken& cleanToken = cleanTokenItems[cleanTokensIndex++];
-                        //cleanToken.line   = tok.line;
-                        //cleanToken.column = tok.column + j;
-                        cleanToken.start  = str.start + j;
-                        cleanToken.end    = str.start + j + 2;
-                        cleanToken.type   = twoCharOpType;
-                        j += 2;
-                        continue;
+                    
+                    if ((j + 1) < strLength) {
+                        TokenType twoCharOpType = IsTwoCharOp(c, str[j+1]);
+                        if (twoCharOpType != TokenType::NotSet) {
+                            ExpressionToken& cleanToken = cleanTokenItems[cleanTokensIndex++];
+                            //cleanToken.line   = tok.line;
+                            //cleanToken.column = tok.column + j;
+                            cleanToken.start  = str.start + j;
+                            cleanToken.end    = str.start + j + 2;
+                            cleanToken.type   = twoCharOpType;
+                            j += 2;
+                            continue;
+                        }
                     }
 
                     // Single-character operator
@@ -447,7 +458,7 @@ namespace HAL_JSON {
                         str[j] != '(' &&
                         str[j] != ')' &&
                         IsSingleOp(str[j]) == TokenType::NotSet &&
-                        !(j + 1 < strLength && IsTwoCharOp(str[j], str[j+1])!=TokenType::NotSet)) {
+                        !((j + 1) < strLength && IsTwoCharOp(str[j], str[j+1])!=TokenType::NotSet)) {
                         ++j;
                     }
                     ExpressionToken& cleanToken = cleanTokenItems[cleanTokensIndex++];
@@ -458,7 +469,11 @@ namespace HAL_JSON {
                     cleanToken.type   = TokenType::Operand;
                 }
             }
-
+            if (cleanTokensIndex != totalCount) {
+                std::string msg = "cleanTokensIndex(" + std::to_string(cleanTokensIndex) +  ") != totalCount(" + std::to_string(totalCount) + ")";
+                std::cout << msg << "\n";
+                throw std::runtime_error(msg); 
+            }
             int parenthesisCount = 0;
             const int cleanTokensCount = cleanTokens->count;
             
@@ -466,25 +481,25 @@ namespace HAL_JSON {
                 if (cleanTokenItems[i].type == TokenType::LeftParenthesis)
                     parenthesisCount++;
             }
+            if (parenthesisCount > 0) {
+                int* parethesisStack = new int[parenthesisCount];
+                int parethesisStackIndex = 0;
 
-            int* parethesisStack = new int[parenthesisCount];
-            int parethesisStackIndex = 0;
-
-            for (int i = 0; i < cleanTokensCount; ++i) {
-                ExpressionToken& token = cleanTokenItems[i];
-                if (token.type == TokenType::LeftParenthesis) {
-                    parethesisStack[parethesisStackIndex++] = i;
-                } else if (token.type == TokenType::RightParenthesis) {
-                    int index = parethesisStack[--parethesisStackIndex];
-                    token.matchingIndex = index;
-                    cleanTokenItems[index].matchingIndex = i;
+                for (int i = 0; i < cleanTokensCount; ++i) {
+                    ExpressionToken& token = cleanTokenItems[i];
+                    if (token.type == TokenType::LeftParenthesis) {
+                        parethesisStack[parethesisStackIndex++] = i;
+                    } else if (token.type == TokenType::RightParenthesis) {
+                        int index = parethesisStack[--parethesisStackIndex];
+                        token.matchingIndex = index;
+                        cleanTokenItems[index].matchingIndex = i;
+                    }
                 }
+                delete[] parethesisStack;
             }
-            delete[] parethesisStack;
-
             return cleanTokens;
         }
-
+/*
         void Expressions::MarkRedundantParentheses(ExpressionTokens& tokens) {
             for (size_t i = 0; i < tokens.count; ++i) {
                 auto& tok = tokens.items[i];
@@ -516,6 +531,7 @@ namespace HAL_JSON {
                 }
             }
         }
+            */
 
         std::vector<ExpressionToken> Expressions::ToCalcRPN(const std::vector<ExpressionToken>& tokens) {
             std::vector<ExpressionToken> rpn;
@@ -549,11 +565,51 @@ namespace HAL_JSON {
             }
             return rpn;
         }
+        std::vector<ExpressionToken> Expressions::ToCalcRPN(const std::vector<ExpressionToken*>& tokens) {
+            std::vector<ExpressionToken> rpn;
+            std::stack<ExpressionToken*> opstack;
+
+            for (ExpressionToken* t : tokens) {
+                if (t->type == TokenType::Ignore) continue;
+
+                if (IsCalcOperator(t->type)) {
+                    while (!opstack.empty() && IsCalcOperator(opstack.top()->type) &&
+                        CalcPrecedence(opstack.top()->type) >= CalcPrecedence(t->type)) {
+                        rpn.push_back(*opstack.top());
+                        opstack.pop();
+                    }
+                    opstack.push(t);
+                } else if (t->type == TokenType::LeftParenthesis) {
+                    opstack.push(t);
+                } else if (t->type == TokenType::RightParenthesis) {
+                    while (!opstack.empty() && opstack.top()->type != TokenType::LeftParenthesis) {
+                        rpn.push_back(*opstack.top());
+                        opstack.pop();
+                    }
+                    if (!opstack.empty()) opstack.pop(); // discard "("
+                } else {
+                    rpn.push_back(*t);
+                }
+            }
+            while (!opstack.empty()) {
+                rpn.push_back(*opstack.top());
+                opstack.pop();
+            }
+            return rpn;
+        }
 
         std::string CalcExpressionToString(const std::vector<ExpressionToken>& calcExpr) {
             std::string out;
             for (int i=0;i<calcExpr.size();i++) {
                 out += calcExpr[i].ToString();
+                if (i + 1 < calcExpr.size()) out += " ";
+            }
+            return out;
+        }
+        std::string CalcExpressionToString(const std::vector<ExpressionToken*>& calcExpr) {
+            std::string out;
+            for (int i=0;i<calcExpr.size();i++) {
+                out += calcExpr[i]->ToString();
                 if (i + 1 < calcExpr.size()) out += " ";
             }
             return out;
@@ -591,10 +647,10 @@ namespace HAL_JSON {
 
             if (node->op == nullptr || node->op->IsEmpty()) {
                 // Leaf node → print calc RPN
-                std::cout << padding << "- Leaf: [" << CalcExpressionToString(node->calcRPN) << "]\n";
+                std::cout << padding << "- calc: [" << CalcExpressionToString(node->calcRPN) << "]\n";
             } else {
                 // Operator node
-                std::cout << padding << "- Op: " << (node->op?node->op->ToString():"") << "\n";
+                std::cout << padding << "[" << (node->op?TokenTypeToString(node->op->type):"") << "]\n";
                 if (node->children[0]) printLogicRPNNodeTree(node->children[0], indent + 1);
                 if (node->children[1]) printLogicRPNNodeTree(node->children[1], indent + 1);
                 /*for (size_t i = 0; i < 2; ++i) {
@@ -624,98 +680,93 @@ namespace HAL_JSON {
             delete children[0];
             delete children[1];
         }
-        LogicRPNNode* Expressions::buildNestedLogicRPN(const ExpressionTokens& tokens) {
-            std::stack<ExpressionToken*> opStack;       // Logic operators: &&, ||
-            std::stack<LogicRPNNode*> outStack;         // Nested RPN nodes
-            std::vector<ExpressionToken> calcBuffer;   // Arithmetic/comparison buffer
 
-            auto flushCalcBuffer = [&]() {
-                if (!calcBuffer.empty()) {
-                    LogicRPNNode* leaf = new LogicRPNNode();
-                    leaf->type = LogicRPNNode::OpType::CalcLeaf;
-                    leaf->calcRPN = ToCalcRPN(calcBuffer); // Convert infix -> RPN
-                    outStack.push(leaf);
-                    calcBuffer.clear();
-                }
+        LogicRPNNode* Expressions::ParseConditionalExpression(ExpressionTokens& tokens, int start, int end) {
+            if (end == -1) end = tokens.count;
+
+            std::cout << "\n********** parsing start:\n" << PrintExpressionTokens(tokens, start, end);
+
+            std::stack<ExpressionToken*> opStack;         // logic ops: &&, ||
+            std::stack<LogicRPNNode*> outStack;         // logic nodes
+            std::vector<ExpressionToken*> tempStack;    // calc tokens inside a logic island
+
+            auto flushCalc = [&]() {
+                if (tempStack.empty()) return;
+                LogicRPNNode* node = new LogicRPNNode();
+                node->children[0] = node->children[1] = nullptr;
+                node->op = nullptr;
+                // convert to calc RPN here:
+                std::cout << CalcExpressionToString(tempStack) + "\n";
+                node->calcRPN = tempStack;//Expressions::ToCalcRPN(tempStack);
+                tempStack.clear();
+                outStack.push(node);
             };
 
-            auto applyOperator = [&]() {
-                if (!opStack.empty() && outStack.size() >= 2) {
-                    
-                    ExpressionToken* op = opStack.top(); opStack.pop();
-                    LogicRPNNode* right = outStack.top(); outStack.pop();
-                    LogicRPNNode* left = outStack.top(); outStack.pop();
-                    LogicRPNNode* parent = new LogicRPNNode();
-                    parent->op = op;
-                    parent->children[0] = left;
-                    parent->children[1] = right;
-                    //parent.children = {left, right};
-                    switch (op->type) {
-                        case TokenType::LogicalAnd: parent->type = LogicRPNNode::OpType::LogicalAnd; break;
-                        case TokenType::LogicalOr:  parent->type = LogicRPNNode::OpType::LogicalOr;  break;
-                        default:                    parent->type = LogicRPNNode::OpType::Invalid;    break;
-                    }
-                    outStack.push(parent);
-                }
+            auto reduce = [&]() {
+                if (opStack.empty() || outStack.size() < 2) return;
+                ExpressionToken* op = opStack.top(); opStack.pop();
+                LogicRPNNode* rhs = outStack.top(); outStack.pop();
+                LogicRPNNode* lhs = outStack.top(); outStack.pop();
+
+                LogicRPNNode* parent = new LogicRPNNode();
+                parent->children[0] = lhs;
+                parent->children[1] = rhs;
+                parent->op = op;//new ExpressionToken(TokenType::LogicOp, op); // non-owned: pointer from tokens is also fine
+                outStack.push(parent);
             };
 
-            for (int i = 0; i < tokens.count; ++i) {
+            for (int i = start; i < end; i++) {
                 ExpressionToken& tok = tokens.items[i];
+                if (tok.type == TokenType::Ignore) continue;
 
-                if (tok.type == TokenType::Ignore)
-                    continue;
+                if (tok.type == TokenType::LeftParenthesis) {
+                    int matching = tok.matchingIndex;
+                    
+                    // 1. Flush any pending calc tokens (like `2 *`)
+                    //flushCalc();
 
-                if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
-                    flushCalcBuffer();
-                    while (!opStack.empty() && opStack.top()->type != TokenType::LeftParenthesis &&
-                        LogicPrecedence(opStack.top()->type) >= LogicPrecedence(tok.type)) {
-                        applyOperator();
+                    // 2. Parse the inner subexpression
+                    LogicRPNNode* sub = ParseLogicExpression(tokens, i + 1, matching);
+
+                    // merge into current calc if return is pure calcstream
+                    if (sub->calcRPN.size() != 0) {
+                        tempStack.push_back(&tok);
+                        for (int stcrpni=0;stcrpni<sub->calcRPN.size();stcrpni++) {
+                            
+                            tempStack.push_back(sub->calcRPN[stcrpni]);
+                        }
+                        tempStack.push_back(&tokens.items[matching]);
+                    }else {
+                        flushCalc();
+                        outStack.push(sub);
                     }
-                    opStack.push(&tok);//&tokens.items[i]);
+                    i = matching; // skip
                 }
-                else if (tok.type == TokenType::LeftParenthesis) {
-                    opStack.push(&tok);//&tokens.items[i]);
-                }
-                else if (tok.type == TokenType::RightParenthesis) {
-                    flushCalcBuffer();
-                    while (!opStack.empty() && opStack.top()->type != TokenType::LeftParenthesis) {
-                        applyOperator();
+                else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
+                    std::cout << "flush calc because of logic operator\n";
+                    flushCalc();
+                    while (!opStack.empty() &&
+                        Expressions::LogicPrecedence(opStack.top()->type) >= Expressions::LogicPrecedence(tok.type)) {
+                        reduce();
                     }
-                    if (!opStack.empty() && opStack.top()->type == TokenType::LeftParenthesis) {
-                        opStack.pop();
-                    }
+                    opStack.push(&tok);
                 }
                 else {
-                    // Arithmetic or comparison token
-                    calcBuffer.push_back(tok);
-
-                    // Flush when a comparison operator has both operands
-                    if (calcBuffer.size() >= 3 &&
-                        (tok.type == TokenType::Operand ||
-                        tok.type == TokenType::CompareEqualsTo ||
-                        tok.type == TokenType::CompareNotEqualsTo ||
-                        tok.type == TokenType::CompareLessThan ||
-                        tok.type == TokenType::CompareGreaterThan ||
-                        tok.type == TokenType::CompareLessThanOrEqual ||
-                        tok.type == TokenType::CompareGreaterThanOrEqual)) {
-                        if (IsComparisonOperator(calcBuffer[calcBuffer.size() - 2].type)) {
-                            flushCalcBuffer();
-                        }
-                    }
+                    tempStack.push_back(&tok);
                 }
             }
 
-            flushCalcBuffer();
-            while (!opStack.empty()) {
-                if (opStack.top()->type != TokenType::LeftParenthesis)
-                    applyOperator();
-                else
-                    opStack.pop();
-            }
+            std::cout << "flush leftover calc\n";
+            // flush leftover calc
+            flushCalc();
 
+            // reduce remaining ops
+            while (!opStack.empty()) {
+                reduce();
+            }
+            std::cout << "******* parsing end ********\n\n";
             return outStack.empty() ? nullptr : outStack.top();
         }
-
 
     }
 }

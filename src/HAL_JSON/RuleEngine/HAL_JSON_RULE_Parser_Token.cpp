@@ -260,12 +260,13 @@ namespace HAL_JSON {
             return msg;
         }
 
-        std::string PrintExpressionTokens(ExpressionTokens& _tokens) {
+        std::string PrintExpressionTokens(ExpressionTokens& _tokens, int start, int end) {
             ExpressionToken* tokens = _tokens.items;
             int tokenCount = _tokens.count;
             std::string msg;
+            if (end == -1) end = tokenCount;
  
-            for (int i=0;i<tokenCount;i++) {
+            for (int i=start;i<end;i++) {
                 ExpressionToken& tok = tokens[i];
                 if (tok.type == TokenType::Ignore) continue;
                 std::string msgLine = "Token[" + std::to_string(i) + "]  ";

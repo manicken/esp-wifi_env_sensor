@@ -43,7 +43,7 @@ namespace HAL_JSON {
                 CalcLeaf
             } type = OpType::Invalid;
 
-            std::vector<ExpressionToken> calcRPN;  // leaf if op.empty()
+            std::vector<ExpressionToken*> calcRPN;  // leaf if op.empty()
             /** theese are owned and needs to be deleted */
             LogicRPNNode* children[2];   // nested nodes
             /** this is non owned, it's owned by the input token stream */
@@ -60,7 +60,7 @@ namespace HAL_JSON {
 
             static const char* SingleOperatorList;
             static const char* DoubleOperatorList;
-            
+        public:
             static inline int CalcPrecedence(TokenType optype) {
                 if (optype == TokenType::CalcMultiply || 
                     optype == TokenType::CalcDivide) return 6;
@@ -133,6 +133,7 @@ namespace HAL_JSON {
             static bool ValidateExpression(Tokens& tokens, ExpressionContext exprContext);
 
             static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken>& tokens);
+            static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken*>& tokens);
 
             static void printLogicRPNNode(const LogicRPNNode* node);
             static void printLogicRPNNodeTree(const LogicRPNNode* node, int indent = 0);
@@ -141,12 +142,15 @@ namespace HAL_JSON {
 
             static int preParseTokensCount(const Tokens& rawTokens);
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
-            static void MarkRedundantParentheses(ExpressionTokens& tokens);
+            //static void MarkRedundantParentheses(ExpressionTokens& tokens);
             /** to use the following function 
              * preParseTokens 
              * and specially MarkRedundantParentheses
              * needs to be used first */
-            static LogicRPNNode* buildNestedLogicRPN(const ExpressionTokens& tokens);
+            //static LogicRPNNode* buildNestedLogicRPN(const ExpressionTokens& tokens);
+
+            /** to use this function preParseTokens is needed to be run before */
+            static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, int start = 0, int end = -1);
         };
     }
 }

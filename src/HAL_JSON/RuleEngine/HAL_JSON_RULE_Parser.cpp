@@ -994,22 +994,29 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo(PrintTokens(tokens,0) + "\n");
 
             ExpressionTokens* expressionTokens = Expressions::preParseTokens(tokens);
+            if (expressionTokens == nullptr) {
+                ReportInfo("Error: could not pre parse tokens\n");
+                delete[] fileContents;
+                return false;
+            }
+
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            EXPRESSION TOKEN LIST  raw                          *\n");
             ReportInfo("**********************************************************************************\n");
 
             ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
 
-            Expressions::MarkRedundantParentheses(*expressionTokens);
-
             ReportInfo("**********************************************************************************\n");
-            ReportInfo("*                            EXPRESSION TOKEN LIST  pre parse                    *\n");
+            ReportInfo("*                            EXPRESSION TOKEN LIST  PARSING                      *\n");
             ReportInfo("**********************************************************************************\n");
 
-            ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
-
-            LogicRPNNode* lrpnNode = Expressions::buildNestedLogicRPN(*expressionTokens);
-            //LogicRPN lrpn = Expressions::BuildRPN(tokens);
+            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression(*expressionTokens);
+            if (lrpnNode == nullptr) {
+                ReportInfo("Error: could not ParseConditionalExpression\n");
+                delete expressionTokens;
+                delete[] fileContents;
+                return false;
+            }
             ReportInfo("linear view:\n");
             Expressions::printLogicRPNNode(lrpnNode);
             ReportInfo("\n\ntree view:\n");
