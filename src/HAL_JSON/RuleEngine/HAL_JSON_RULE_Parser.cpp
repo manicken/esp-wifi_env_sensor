@@ -1019,17 +1019,24 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("*                            EXPRESSION TOKEN LIST  PARSING                      *\n");
             ReportInfo("**********************************************************************************\n");
 
-            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression(*expressionTokens);
+            int opStackSize = expressionTokens->count;
+            int outStackSize = expressionTokens->count;
+            int tempStackSize = expressionTokens->count;
+
+            ParseContext parseContext(opStackSize, outStackSize, tempStackSize);
+            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression(*expressionTokens, 0, -1, parseContext);
+
             if (lrpnNode == nullptr) {
                 ReportInfo("Error: could not ParseConditionalExpression\n");
                 delete expressionTokens;
                 delete[] fileContents;
                 return false;
             }
+            Expressions::DoAllInplaceCalcRPN(lrpnNode);
             ReportInfo("linear view:\n");
             Expressions::printLogicRPNNode(lrpnNode);
             ReportInfo("\n\ntree view:\n");
-            Expressions::printLogicRPNNodeTree(lrpnNode);
+            Expressions::printLogicRPNNodeTree(lrpnNode, 0);
 
             delete lrpnNode; // deletes the whole tree recursive
             delete expressionTokens;

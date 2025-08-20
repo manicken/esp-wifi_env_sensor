@@ -6,6 +6,7 @@
 #include "../HAL_JSON_UID_Path.h"
 #include "../HAL_JSON_Manager.h"
 #include "HAL_JSON_RULE_Parser_Token.h"
+#include "HAL_JSON_RULE_Engine_Support.h"
 
 #include <string>
 
@@ -34,33 +35,152 @@ namespace HAL_JSON {
             ReadWrite
         };
 
+        
+
         struct LogicRPNNode {
 
-            enum class OpType {
+            /*enum class OpType {
                 Invalid,
                 LogicalAnd,
                 LogicalOr,
                 CalcLeaf
-            } type = OpType::Invalid;
+            } type = OpType::Invalid;*/
 
             std::vector<ExpressionToken*> calcRPN;  // leaf if op.empty()
-            /** theese are owned and needs to be deleted */
-            LogicRPNNode* children[2];   // nested nodes
+            /** is owned and needs to be deleted */
+            LogicRPNNode* childA;   // nested nodes
+            /** is owned and needs to be deleted */
+            LogicRPNNode* childB;   // nested nodes
             /** this is non owned, it's owned by the input token stream */
             ExpressionToken* op;                     // "&&" or "||", empty for leaf
 
             LogicRPNNode();
             ~LogicRPNNode();
         };
+
+        void SliceStackReportError(const char* msg, const char* param);
+
+        template<typename T, const char* TypeName>
+        struct SliceStack {
+            static constexpr const char* Name = TypeName;
+            T* data;
+            int minIndex;     // beginning of current slice
+            int currIndex;    // next free slot
+            int stackSize;
+
+            inline SliceStack() = delete;
+
+            inline SliceStack(int _size) {
+                data = new T[_size];
+                stackSize = _size;
+                minIndex = 0;
+                currIndex = 0;
+            }
+            inline ~SliceStack() {
+                delete[] data;
+            }
+            // push
+            inline void push(const T& v) {
+                if (currIndex >= stackSize) {
+                    SliceStackReportError("push - stack overflow:",Name);
+                    return;
+                }
+                data[currIndex++] = v;
+            }
+
+            // pop
+            inline T top_n_pop() {
+                if (currIndex == minIndex) {
+                    SliceStackReportError("top_n_pop - stack underflow:",Name);
+                    return nullptr;
+                }
+                return data[--currIndex];
+            }
+
+            inline void pop() {
+                if (currIndex == minIndex) {
+                    SliceStackReportError("pop - stack underflow:",Name);
+                    return;
+                }
+                currIndex--;
+            }
+
+            // top
+            inline T& top() {
+                if (currIndex == minIndex) {
+                    SliceStackReportError("top - stack underflow:",Name);
+                    static T dummy{}; // reference to dummy
+                    return dummy;
+                }
+                return data[currIndex - 1];
+            }
+
+            // size of *this slice*
+            inline int size() const {
+                return currIndex - minIndex;
+            }
+
+            // check empty
+            inline bool empty() const {
+                return currIndex == minIndex;
+            }
+
+            inline void ClearCurrSlice() {
+                currIndex = minIndex;
+            }
+
+            // restore slice (like leaving it)
+            inline void Restore(int prevMin, int prevCurr) {
+                minIndex = prevMin;
+                currIndex = prevCurr;
+            }
+
+            // start a nested slice (local context)
+            inline void BeginSlice(int& _currMinIndex, int& _currIndex) {
+                _currIndex = currIndex;
+                _currMinIndex = minIndex;
+                minIndex = currIndex;
+            }
+
+            inline T& operator[](int idx) const {
+                if (idx < 0 || idx >= currIndex - minIndex) {
+                    SliceStackReportError("stack out of bounds",Name);
+                    static T dummy{}; // reference to dummy
+                    return dummy;
+                }
+                return data[minIndex + idx];
+            }
+        };
+        constexpr char PrintName[] = "print";
+        constexpr char OpName[] = "op";
+        constexpr char OutName[] = "out";
+        constexpr char TempName[] = "temp";
+        struct ParseContext {
+            HAL_JSON_NOCOPY_NOMOVE(ParseContext);
+         
+            SliceStack<ExpressionToken*, OpName> opStack;
+            SliceStack<ExpressionToken*, TempName> tempStack;
+            SliceStack<LogicRPNNode*, OutName> outStack;
+
+            ParseContext() = delete; // prevents misuse
+            ParseContext(int opStackSize, int outStackSize, int tempStackSize);
+            
+            void TEMP_merge_from(LogicRPNNode* node);
+            void TEMP_FlushToNode(LogicRPNNode* node);
+
+            std::string PrintTempStackSlice();
+            
+        };
         class Expressions {
         private:
-            static void ReportError(const char* msg, const char* param = nullptr);
-            static void ReportWarning(const char* msg, const char* param = nullptr);
-            static void ReportInfo(std::string msg);
+            
 
             static const char* SingleOperatorList;
             static const char* DoubleOperatorList;
         public:
+            static void ReportError(const char* msg, const char* param = nullptr);
+            static void ReportWarning(const char* msg, const char* param = nullptr);
+            static void ReportInfo(std::string msg);
             static inline int CalcPrecedence(TokenType optype) {
                 if (optype == TokenType::CalcMultiply || 
                     optype == TokenType::CalcDivide) return 6;
@@ -126,7 +246,7 @@ namespace HAL_JSON {
             static const char* ValidOperandVariableName(const Token& operand);
             static bool CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount, ExpressionContext exprContext);
             static void ValidateOperand(const Token& operand, bool& anyError, ValidateOperandMode mode = ValidateOperandMode::Read);
-            static bool OperandIsVariable(const Token& operand);
+            //static bool OperandIsVariable(const Token& operand);
             static bool IsSingleOperator(char c);
             static bool IsDoubleOperator(const char* c);
             static bool IsValidOperandChar(char c);
@@ -134,7 +254,7 @@ namespace HAL_JSON {
 
             static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken>& tokens);
             static std::vector<ExpressionToken> ToCalcRPN(const std::vector<ExpressionToken*>& tokens);
-            static void Expressions::InplaceCalcRPN(std::vector<ExpressionToken*>& tokens);
+            static void InplaceCalcRPN(std::vector<ExpressionToken*>& tokens);
 
             static void printLogicRPNNode(const LogicRPNNode* node);
             static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
@@ -145,7 +265,9 @@ namespace HAL_JSON {
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
  
             /** to use this function preParseTokens is needed to be run before */
-            static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, int start = 0, int end = -1);
+            static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, int start, int end, ParseContext& ctx);
+            /** this should be run at root after ParseConditionalExpression */
+            static void DoAllInplaceCalcRPN(LogicRPNNode* node);
         };
     }
 }
