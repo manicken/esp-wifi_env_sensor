@@ -996,7 +996,12 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            VALIDATE PARSED TOKEN LIST                          *\n");
             ReportInfo("**********************************************************************************\n");
-            Expressions::ValidateExpression(tokens, ExpressionContext::IfCondition);
+            if (Expressions::ValidateExpression(tokens, ExpressionContext::IfCondition) == false)
+            {
+                ReportInfo("Error: validate tokens fail\n");
+                delete[] fileContents;
+                return false;
+            }
 
             ExpressionTokens* expressionTokens = Expressions::preParseTokens(tokens);
             if (expressionTokens == nullptr) {

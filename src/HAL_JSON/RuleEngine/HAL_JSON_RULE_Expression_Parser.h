@@ -56,6 +56,8 @@ namespace HAL_JSON {
 
             LogicRPNNode();
             ~LogicRPNNode();
+
+            bool IsPureCalcNode();
         };
 
         void SliceStackReportError(const char* msg, const char* param);
@@ -165,8 +167,11 @@ namespace HAL_JSON {
             ParseContext() = delete; // prevents misuse
             ParseContext(int opStackSize, int outStackSize, int tempStackSize);
             
-            void TEMP_merge_from(LogicRPNNode* node);
+            void merge_calc_from(LogicRPNNode* node);
             void TEMP_FlushToNode(LogicRPNNode* node);
+
+            void FlushCalc();
+            void ApplyOperator();
 
             std::string PrintTempStackSlice();
             
