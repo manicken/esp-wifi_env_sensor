@@ -264,8 +264,6 @@ namespace HAL_JSON {
             static void printLogicRPNNode(const LogicRPNNode* node);
             static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
 
-            
-
             static int preParseTokensCount(const Tokens& rawTokens);
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
  
