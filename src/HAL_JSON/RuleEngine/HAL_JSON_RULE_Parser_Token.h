@@ -96,12 +96,13 @@ namespace HAL_JSON {
         struct ExpressionToken : public ZeroCopyString {
             using ZeroCopyString::ZeroCopyString;
             TokenType type;
-            int matchingIndex;
+            //int matchingIndex;
             ExpressionToken();
             ~ExpressionToken();
         };
         struct ExpressionTokens {
             ExpressionToken* items;
+            int index;
             int count;
             ExpressionTokens();
             ExpressionTokens(int count);

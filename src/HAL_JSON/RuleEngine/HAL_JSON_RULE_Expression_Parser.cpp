@@ -477,7 +477,7 @@ namespace HAL_JSON {
 
                 throw std::runtime_error(msg); 
             }
-            int parenthesisCount = 0;
+            /*int parenthesisCount = 0;
             const int cleanTokensCount = cleanTokens->count;
             
             for (int i = 0; i < cleanTokensCount; ++i) {
@@ -499,7 +499,7 @@ namespace HAL_JSON {
                     }
                 }
                 delete[] parethesisStack;
-            }
+            }*/
             return cleanTokens;
         }
 /*
@@ -640,7 +640,7 @@ namespace HAL_JSON {
                 tempStack.push(calcRPN[i]);     
             }
         }
-        void ParseContext::TEMP_FlushToNode(LogicRPNNode* node) {
+        void ParseContext::FlushTempToNode(LogicRPNNode* node) {
             std::vector<ExpressionToken*>& calcRPN = node->calcRPN;
             calcRPN.clear();
             int tempStackSize = tempStack.size();
@@ -665,7 +665,7 @@ namespace HAL_JSON {
 
             LogicRPNNode* node = new LogicRPNNode();
 
-            TEMP_FlushToNode(node);
+            FlushTempToNode(node);
             outStack.push(node);
         }
 
@@ -681,10 +681,10 @@ namespace HAL_JSON {
             parent->op = op;
             outStack.push(parent);
         }
-        LogicRPNNode* Expressions::ParseConditionalExpression(ExpressionTokens& tokens, int start, int end, ParseContext& ctx) {
-            if (end == -1) end = tokens.count;
+        LogicRPNNode* Expressions::ParseConditionalExpression(ExpressionTokens& tokens, ParseContext& ctx) {
+            int end = tokens.count;
 
-            //std::cout << "\n********** parsing start:\n" << PrintExpressionTokens(tokens, start, end);
+            //std::cout << "\n********** parsing start:\n";// << PrintExpressionTokens(tokens, start, end);
 
             int opStackCurrIndex=0, opStackMinIndex=0;
             ctx.opStack.BeginSlice(opStackMinIndex, opStackCurrIndex);
@@ -693,15 +693,17 @@ namespace HAL_JSON {
             int tempStackCurrIndex=0, tempStackMinIndex=0;
             ctx.tempStack.BeginSlice(tempStackMinIndex, tempStackCurrIndex);
 
-            for (int i = start; i < end; i++) {
+            for (int i = tokens.index; i < end; i++) {
+                //tokens.index = i;
+                //std::cout << "\ntokens.index:" << std::to_string(tokens.index) << "\n";
                 ExpressionToken& tok = tokens.items[i];
                 if (tok.type == TokenType::Ignore) continue;
 
                 if (tok.type == TokenType::LeftParenthesis) {
-                    int matching = tok.matchingIndex;
-
-                    LogicRPNNode* sub = ParseConditionalExpression(tokens, i + 1, matching, ctx);
+                    tokens.index = i + 1;
+                    LogicRPNNode* sub = ParseConditionalExpression(tokens, ctx);
                     if (sub == nullptr) {
+                        ReportError("sub was nullptr\n");
                         return nullptr; // this will propagate down as a error to the caller
                     }
 
@@ -709,7 +711,8 @@ namespace HAL_JSON {
                     if (sub->IsPureCalcNode()) {
                         ctx.tempStack.push(&tok); // the first parenthesis
                         ctx.merge_calc_from(sub);
-                        ctx.tempStack.push(&tokens.items[matching]); // the last parenthesis
+                        
+                        ctx.tempStack.push(&tokens.items[tokens.index]); // the last parenthesis
                         delete sub; // when it's a pure calc node delete it
                     }else {
                         // flushCalc() here is technically redundant for valid inputs,
@@ -722,8 +725,13 @@ namespace HAL_JSON {
                             ctx.FlushCalc();
                         }
                         ctx.outStack.push(sub);
-                    }
-                    i = matching; // skip
+                    }                    
+                    i = tokens.index; // skip
+                }
+                else if (tok.type == TokenType::RightParenthesis) {
+                    //std::cout << "right found\n";
+                    tokens.index = i;
+                    break;
                 }
                 else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
                     //std::cout << "flush calc because of logic operator\n";
@@ -735,10 +743,13 @@ namespace HAL_JSON {
                         ctx.ApplyOperator();
                     }
                     ctx.opStack.push(&tok);
+                    tokens.index = i;
                 }
                 else {
+                    //std::cout << "push token to tempStack:" << tok.ToString() << "\n";
                     ctx.tempStack.push(&tok);
                 }
+                
             }
 
             //std::cout << "flush leftover calc\n";

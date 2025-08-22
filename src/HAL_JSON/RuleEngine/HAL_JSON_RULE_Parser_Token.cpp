@@ -85,18 +85,21 @@ namespace HAL_JSON {
             }
         }
 
-        ExpressionToken::ExpressionToken() : type(TokenType::NotSet), matchingIndex(-1) {
+        ExpressionToken::ExpressionToken() : type(TokenType::NotSet) {
 
         }
         ExpressionToken::~ExpressionToken() {
             // nothing to free here
         }
         ExpressionTokens::ExpressionTokens() {
-            
+            items = nullptr;
+            count = 0;
+            index = 0;
         }
         ExpressionTokens::ExpressionTokens(int _count) {
             items = new ExpressionToken[_count];
             count = _count;
+            index = 0;
         }
         ExpressionTokens::~ExpressionTokens() {
             delete[] items;

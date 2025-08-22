@@ -1023,13 +1023,13 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            EXPRESSION TOKEN LIST  PARSING                      *\n");
             ReportInfo("**********************************************************************************\n");
-
+            //ReportInfo("expressionTokens->count:" + std::to_string(expressionTokens->count) + "\n");
             int opStackSize = expressionTokens->count;
             int outStackSize = expressionTokens->count;
             int tempStackSize = expressionTokens->count;
 
             ParseContext parseContext(opStackSize, outStackSize, tempStackSize);
-            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression(*expressionTokens, 0, -1, parseContext);
+            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression(*expressionTokens, parseContext);
 
             if (lrpnNode == nullptr) {
                 ReportInfo("Error: could not ParseConditionalExpression\n");

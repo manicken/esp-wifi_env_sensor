@@ -168,7 +168,7 @@ namespace HAL_JSON {
             ParseContext(int opStackSize, int outStackSize, int tempStackSize);
             
             void merge_calc_from(LogicRPNNode* node);
-            void TEMP_FlushToNode(LogicRPNNode* node);
+            void FlushTempToNode(LogicRPNNode* node);
 
             void FlushCalc();
             void ApplyOperator();
@@ -268,7 +268,7 @@ namespace HAL_JSON {
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
  
             /** to use this function preParseTokens is needed to be run before */
-            static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, int start, int end, ParseContext& ctx);
+            static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, ParseContext& ctx);
             /** this should be run at root after ParseConditionalExpression */
             static void DoAllInplaceCalcRPN(LogicRPNNode* node);
         };
