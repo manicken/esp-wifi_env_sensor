@@ -69,6 +69,7 @@ namespace HAL_JSON {
             int minIndex;     // beginning of current slice
             int currIndex;    // next free slot
             int stackSize;
+            int maxUsage;
 
             inline SliceStack() = delete;
 
@@ -77,6 +78,7 @@ namespace HAL_JSON {
                 stackSize = _size;
                 minIndex = 0;
                 currIndex = 0;
+                maxUsage = 0;
             }
             inline ~SliceStack() {
                 delete[] data;
@@ -88,6 +90,8 @@ namespace HAL_JSON {
                     return;
                 }
                 data[currIndex++] = v;
+                if (currIndex > maxUsage)
+                    maxUsage = currIndex;
             }
 
             // pop
@@ -271,6 +275,9 @@ namespace HAL_JSON {
             static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, ParseContext& ctx);
             /** this should be run at root after ParseConditionalExpression */
             static void DoAllInplaceCalcRPN(LogicRPNNode* node);
+
+
+            static void ParseConditionalExpression(ExpressionTokens& tokens)
         };
     }
 }

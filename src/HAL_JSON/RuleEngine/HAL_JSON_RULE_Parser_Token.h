@@ -97,6 +97,7 @@ namespace HAL_JSON {
             using ZeroCopyString::ZeroCopyString;
             TokenType type;
             //int matchingIndex;
+            bool AnyType(const TokenType* candidates);
             ExpressionToken();
             ~ExpressionToken();
         };

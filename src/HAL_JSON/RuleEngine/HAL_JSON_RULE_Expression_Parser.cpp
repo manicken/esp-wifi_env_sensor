@@ -455,7 +455,6 @@ namespace HAL_JSON {
                     // Identifier / number
                     int startIdx = j;
                     while (j < strLength &&
-                        //!std::isspace(str[j]) &&
                         str[j] != '(' &&
                         str[j] != ')' &&
                         IsSingleOp(str[j]) == TokenType::NotSet &&
@@ -477,29 +476,7 @@ namespace HAL_JSON {
 
                 throw std::runtime_error(msg); 
             }
-            /*int parenthesisCount = 0;
-            const int cleanTokensCount = cleanTokens->count;
             
-            for (int i = 0; i < cleanTokensCount; ++i) {
-                if (cleanTokenItems[i].type == TokenType::LeftParenthesis)
-                    parenthesisCount++;
-            }
-            if (parenthesisCount > 0) {
-                int* parethesisStack = new int[parenthesisCount];
-                int parethesisStackIndex = 0;
-
-                for (int i = 0; i < cleanTokensCount; ++i) {
-                    ExpressionToken& token = cleanTokenItems[i];
-                    if (token.type == TokenType::LeftParenthesis) {
-                        parethesisStack[parethesisStackIndex++] = i;
-                    } else if (token.type == TokenType::RightParenthesis) {
-                        int index = parethesisStack[--parethesisStackIndex];
-                        token.matchingIndex = index;
-                        cleanTokenItems[index].matchingIndex = i;
-                    }
-                }
-                delete[] parethesisStack;
-            }*/
             return cleanTokens;
         }
 /*
@@ -670,6 +647,7 @@ namespace HAL_JSON {
         }
 
         void ParseContext::ApplyOperator() {
+            
             if (opStack.empty() || outStack.size() < 2) return;
             ExpressionToken* op = opStack.top_n_pop();
             LogicRPNNode* rhs = outStack.top_n_pop();
@@ -682,7 +660,7 @@ namespace HAL_JSON {
             outStack.push(parent);
         }
         LogicRPNNode* Expressions::ParseConditionalExpression(ExpressionTokens& tokens, ParseContext& ctx) {
-            int end = tokens.count;
+            
 
             //std::cout << "\n********** parsing start:\n";// << PrintExpressionTokens(tokens, start, end);
 
@@ -692,7 +670,8 @@ namespace HAL_JSON {
             ctx.outStack.BeginSlice(outStackMinIndex, outStackCurrIndex);
             int tempStackCurrIndex=0, tempStackMinIndex=0;
             ctx.tempStack.BeginSlice(tempStackMinIndex, tempStackCurrIndex);
-
+            
+            int end = tokens.count;
             for (int i = tokens.index; i < end; i++) {
                 //tokens.index = i;
                 //std::cout << "\ntokens.index:" << std::to_string(tokens.index) << "\n";
@@ -711,7 +690,6 @@ namespace HAL_JSON {
                     if (sub->IsPureCalcNode()) {
                         ctx.tempStack.push(&tok); // the first parenthesis
                         ctx.merge_calc_from(sub);
-                        
                         ctx.tempStack.push(&tokens.items[tokens.index]); // the last parenthesis
                         delete sub; // when it's a pure calc node delete it
                     }else {
@@ -782,6 +760,45 @@ namespace HAL_JSON {
                 if (node->childA) DoAllInplaceCalcRPN(node->childA);
                 if (node->childB) DoAllInplaceCalcRPN(node->childB);
              }
+        }
+        static const TokenType logicOperators[] = {TokenType::LogicalOr, TokenType::LogicalAnd, 
+                                                TokenType::NotSet};
+        // actually compare and calc operators fall into the same type check
+        // but we keep them separate here for clarity
+        static const TokenType compareOperators[] = {TokenType::CompareEqualsTo, TokenType::CompareNotEqualsTo,
+                                                     TokenType::CompareGreaterThanOrEqual, TokenType::CompareLessThanOrEqual,
+                                                     TokenType::CompareGreaterThan, TokenType::CompareLessThan, 
+                                                     TokenType::NotSet};
+                                                     
+        static const TokenType calcOperators[] = {TokenType::CalcPlus, TokenType::CalcMinus, TokenType::CalcMultiply, TokenType::CalcDivide, TokenType::CalcModulus,
+                                                  TokenType::CalcBitwiseAnd, TokenType::CalcBitwiseOr, TokenType::CalcBitwiseExOr, 
+                                                  TokenType::CalcBitwiseLeftShift, TokenType::CalcBitwiseRightShift, TokenType::NotSet};
+
+        void Expressions::ParseConditionalExpression(ExpressionTokens& tokens) 
+        {
+            std::vector<ExpressionToken*> opStack;
+            std::vector<ExpressionToken*> tempStack;
+            std::vector<LogicRPNNode*> outStack;
+            opStack.reserve(tokens.count);
+            tempStack.reserve(tokens.count);
+            outStack.reserve(tokens.count);
+
+            for (int i = 0; i < tokens.count; i++)
+            {
+                ExpressionToken& token = tokens.items[i];
+                if (token.type == TokenType::LeftParenthesis) {
+                    opStack.push_back(&token);
+                } else if (token.type == TokenType::RightParenthesis) {
+
+                } else if (token.AnyType(calcOperators) || token.AnyType(compareOperators)) {
+
+                } else if (token.AnyType(logicOperators)) {
+
+                } else {
+                    tempStack.push_back(&token);
+                }
+            }
+            
         }
 
     }

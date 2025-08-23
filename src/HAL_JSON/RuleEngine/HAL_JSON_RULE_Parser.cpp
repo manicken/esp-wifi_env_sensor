@@ -1037,6 +1037,11 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                 delete[] fileContents;
                 return false;
             }
+
+            ReportInfo("parseContext outMaxUsage:" + std::to_string(parseContext.outStack.maxUsage) + "\n");
+            ReportInfo("parseContext opMaxUsage:" + std::to_string(parseContext.opStack.maxUsage) + "\n");
+            ReportInfo("parseContext tempMaxUsage:" + std::to_string(parseContext.tempStack.maxUsage) + "\n");
+
             Expressions::DoAllInplaceCalcRPN(lrpnNode);
             ReportInfo("linear view:\n");
             Expressions::printLogicRPNNode(lrpnNode);

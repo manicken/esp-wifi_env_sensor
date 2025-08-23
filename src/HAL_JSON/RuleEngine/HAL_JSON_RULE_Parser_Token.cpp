@@ -91,6 +91,13 @@ namespace HAL_JSON {
         ExpressionToken::~ExpressionToken() {
             // nothing to free here
         }
+        bool ExpressionToken::AnyType(const TokenType* candidates) {
+            while(*candidates != TokenType::NotSet) {
+                if (type == *candidates) return true;
+                candidates++;
+            }
+            return false;
+        }
         ExpressionTokens::ExpressionTokens() {
             items = nullptr;
             count = 0;
