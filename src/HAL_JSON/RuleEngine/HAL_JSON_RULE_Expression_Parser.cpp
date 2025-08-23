@@ -769,11 +769,17 @@ namespace HAL_JSON {
                                                      TokenType::CompareGreaterThanOrEqual, TokenType::CompareLessThanOrEqual,
                                                      TokenType::CompareGreaterThan, TokenType::CompareLessThan, 
                                                      TokenType::NotSet};
-                                                     
+
         static const TokenType calcOperators[] = {TokenType::CalcPlus, TokenType::CalcMinus, TokenType::CalcMultiply, TokenType::CalcDivide, TokenType::CalcModulus,
                                                   TokenType::CalcBitwiseAnd, TokenType::CalcBitwiseOr, TokenType::CalcBitwiseExOr, 
                                                   TokenType::CalcBitwiseLeftShift, TokenType::CalcBitwiseRightShift, TokenType::NotSet};
-
+        /** this is the first step to make 
+         * a more general function that in it's final state
+         * can take the 'raw' 'chaos' structure
+         * and generate the final 'executable' structure
+         * with basically as low ram footprint as possible
+         * to avoid heap fragmentation
+         */
         void Expressions::ParseConditionalExpression(ExpressionTokens& tokens) 
         {
             std::vector<ExpressionToken*> opStack;
