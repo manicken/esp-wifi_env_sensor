@@ -1,0 +1,16 @@
+think i know how i should be done now:
+have a flush function that can pop/push(move) tokens from one stack to annother
+until the source is either empty or a leftparenthesis is found
+
+clearly separate out the calc rpn and logic rpn:
+
+no seperate tempStack that is at root instead utilize LogicRPNNode:
+std::vector<ExpressionToken*> tempStack;
+instead have:
+std::vector<LogicRPNNode*> tempStack;
+
+first create the root object LogicRPNNode:
+
+use this root object:s std::vector<ExpressionToken*> calcRPN
+to use as the current outstack
+

@@ -1029,7 +1029,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             int tempStackSize = expressionTokens->count;
 
             ParseContext parseContext(opStackSize, outStackSize, tempStackSize);
-            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression(*expressionTokens, parseContext);
+            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression2(*expressionTokens, parseContext);
 
             if (lrpnNode == nullptr) {
                 ReportInfo("Error: could not ParseConditionalExpression\n");
@@ -1042,12 +1042,13 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("parseContext opMaxUsage:" + std::to_string(parseContext.opStack.maxUsage) + "\n");
             ReportInfo("parseContext tempMaxUsage:" + std::to_string(parseContext.tempStack.maxUsage) + "\n");
 
-            Expressions::DoAllInplaceCalcRPN(lrpnNode);
-            ReportInfo("linear view:\n");
-            Expressions::printLogicRPNNode(lrpnNode);
+            //Expressions::DoAllInplaceCalcRPN(lrpnNode);
+            //ReportInfo("linear view:\n");
+            //Expressions::printLogicRPNNode(lrpnNode);
             ReportInfo("\n\ntree view:\n");
             Expressions::printLogicRPNNodeTree(lrpnNode, 0);
 
+            //Expressions::ParseConditionalExpression(*expressionTokens);
             delete lrpnNode; // deletes the whole tree recursive
             delete expressionTokens;
             delete[] fileContents;

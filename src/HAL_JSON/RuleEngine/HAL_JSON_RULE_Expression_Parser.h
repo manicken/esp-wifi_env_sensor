@@ -39,20 +39,13 @@ namespace HAL_JSON {
 
         struct LogicRPNNode {
 
-            /*enum class OpType {
-                Invalid,
-                LogicalAnd,
-                LogicalOr,
-                CalcLeaf
-            } type = OpType::Invalid;*/
-
             std::vector<ExpressionToken*> calcRPN;  // leaf if op.empty()
             /** is owned and needs to be deleted */
-            LogicRPNNode* childA;   // nested nodes
+            LogicRPNNode* childA;   // nested nodes, nullptr when leaf
             /** is owned and needs to be deleted */
-            LogicRPNNode* childB;   // nested nodes
+            LogicRPNNode* childB;   // nested nodes, nullptr when leaf
             /** this is non owned, it's owned by the input token stream */
-            ExpressionToken* op;                     // "&&" or "||", empty for leaf
+            ExpressionToken* op;                     // "&&" or "||", nullptr when leaf
 
             LogicRPNNode();
             ~LogicRPNNode();
@@ -129,6 +122,11 @@ namespace HAL_JSON {
             // check empty
             inline bool empty() const {
                 return currIndex == minIndex;
+            }
+
+            // check not empty
+            inline bool notEmpty() const {
+                return currIndex != minIndex;
             }
 
             inline void ClearCurrSlice() {
@@ -273,11 +271,12 @@ namespace HAL_JSON {
  
             /** to use this function preParseTokens is needed to be run before */
             static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, ParseContext& ctx);
+            static LogicRPNNode* ParseConditionalExpression2(ExpressionTokens& tokens, ParseContext& ctx);
             /** this should be run at root after ParseConditionalExpression */
             static void DoAllInplaceCalcRPN(LogicRPNNode* node);
 
 
-            static void ParseConditionalExpression(ExpressionTokens& tokens)
+            static void ParseConditionalExpression(ExpressionTokens& tokens);
         };
     }
 }
