@@ -649,7 +649,7 @@ namespace HAL_JSON {
 
         void ParseContext::ApplyOperator() {
             
-            if (opStack.empty() || outStack.size() < 2) return;
+            if (/*opStack.empty() || */outStack.size() < 2) return; // it make no sense to check if it's empty as that is allways false
             ExpressionToken* op = opStack.top_n_pop();
             LogicRPNNode* rhs = outStack.top_n_pop();
             LogicRPNNode* lhs = outStack.top_n_pop();
@@ -714,11 +714,13 @@ namespace HAL_JSON {
                 }
                 else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
                     //std::cout << "flush calc because of logic operator\n";
-                    if (ctx.tempStack.empty() == false)
+                    if (ctx.tempStack.notEmpty())
                         ctx.FlushCalc();
                     // Applies higher-or-equal precedence operators on the stack before pushing current token
-                    while (!ctx.opStack.empty() &&
-                        Expressions::LogicPrecedence(ctx.opStack.top()->type) >= Expressions::LogicPrecedence(tok.type)) {
+                    while (ctx.opStack.notEmpty() &&
+                        Expressions::LogicPrecedence(ctx.opStack.top()->type) >= Expressions::LogicPrecedence(tok.type))
+                    {
+                        ReportInfo("*************************####################***********************************************************************");
                         ctx.ApplyOperator();
                     }
                     ctx.opStack.push(&tok);
@@ -733,11 +735,12 @@ namespace HAL_JSON {
 
             //std::cout << "flush leftover calc\n";
             // flush leftover calc
-            if (ctx.tempStack.empty() == false)
+            if (ctx.tempStack.notEmpty())
                 ctx.FlushCalc();
 
             // Apply remaining Operators
-            while (!ctx.opStack.empty()) {
+            while (ctx.opStack.notEmpty()) {
+                ReportInfo("*************************&&&&&&&&&&&&&&&&&&&&&&&***********************************************************************");
                 ctx.ApplyOperator();
             }
             //std::cout << "******* parsing end ********\n\n";
@@ -781,28 +784,19 @@ namespace HAL_JSON {
                     ctx.opStack.push(&tok);
                 }
                 else if (tok.type == TokenType::RightParenthesis) {
-                    // Pop until LeftParenthesis is found
-                    while (ctx.opStack.notEmpty())
+                    while (ctx.opStack.notEmpty() && ctx.opStack.top()->type != TokenType::LeftParenthesis)
                     {
-                        ExpressionToken* opTok = ctx.opStack.top();
-                        if (opTok->type == TokenType::LeftParenthesis) break;
-                        if (opTok->type == TokenType::LogicalAnd || opTok->type == TokenType::LogicalOr) {
-                            if (ctx.outStack.size() >= 2) {
-                                ctx.ApplyOperator();
-                            }
-                            else {
-                                break; // leave it, wait until rhs is flushed
-                            }
-                        }
-                        else {
-                            break;
-                            //ctx.tempStack.push(opTok);
-                            //ctx.opStack.pop();
-                        }
+                        ctx.tempStack.push(ctx.opStack.top_n_pop());                      
                     }
 
-                    if (ctx.opStack.notEmpty() && ctx.opStack.top()->type == TokenType::LeftParenthesis) {
-                        ctx.opStack.pop(); // discard '('
+                    if (ctx.opStack.notEmpty())
+                    {
+                        ctx.opStack.pop(); // discard the LeftParenthesis
+                        
+                    }
+                    else
+                    {
+                        ReportError("Mismatched parenthesis");
                     }
                 }
                 else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
@@ -813,7 +807,8 @@ namespace HAL_JSON {
                     ReportInfo("\nflush done\n");
                     // Apply higher-or-equal precedence operators
                     while (ctx.opStack.notEmpty() &&
-                        Expressions::LogicPrecedence(ctx.opStack.top()->type) >= Expressions::LogicPrecedence(tok.type)) {
+                        Expressions::LogicPrecedence(ctx.opStack.top()->type) >= Expressions::LogicPrecedence(tok.type))
+                    {
                         ctx.ApplyOperator();
                     }
                     ReportInfo("\nApply higher-or-equal precedence operators - done\n");
