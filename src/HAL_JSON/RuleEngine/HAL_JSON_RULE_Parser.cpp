@@ -1,8 +1,6 @@
 
 #include "HAL_JSON_RULE_Parser.h"
 
-#include <vector>
-
 namespace HAL_JSON {
     namespace Rules {
         static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
@@ -848,7 +846,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             }
             return anyError == false;
         }
-#include <chrono>
+
         bool Parser::ValidateParseRuleSet(Tokens& _tokens, bool validateOnly) {
 
             if (validateOnly) {
@@ -959,6 +957,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
         }
 
         bool Parser::ParseExpressionTest(const char* filePath) {
+            
             size_t fileSize;
             char* fileContents;// = ReadFileToMutableBuffer(filePath, fileSize);
             LittleFS_ext::FileResult fileResult = LittleFS_ext::load_from_file(filePath, &fileContents, &fileSize);
@@ -1019,9 +1018,6 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo(PrintExpressionTokens(*expressionTokens) + "\n");
 
-            
-            
-
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            EXPRESSION TOKEN LIST  PARSING                      *\n");
             ReportInfo("**********************************************************************************\n");
@@ -1031,24 +1027,8 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             int tempStackSize = expressionTokens->count;
 
             ParseContext parseContext(opStackSize, outStackSize, tempStackSize);
-            /*LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression3(*expressionTokens, parseContext);
+            
 
-            if (lrpnNode == nullptr) {
-                ReportInfo("Error: could not ParseConditionalExpression\n");
-                delete expressionTokens;
-                delete[] fileContents;
-                return false;
-            }
-
-            ReportInfo("parseContext outMaxUsage:" + std::to_string(parseContext.outStack.maxUsage) + "\n");
-            ReportInfo("parseContext opMaxUsage:" + std::to_string(parseContext.opStack.maxUsage) + "\n");
-            ReportInfo("parseContext tempMaxUsage:" + std::to_string(parseContext.tempStack.maxUsage) + "\n");
-
-            //Expressions::DoAllInplaceCalcRPN(lrpnNode);
-            //ReportInfo("linear view:\n");
-            //Expressions::printLogicRPNNode(lrpnNode);
-            ReportInfo("\n\ntree view:\n");
-            Expressions::printLogicRPNNodeTree(lrpnNode, 0);*/
             std::vector<ExpressionToken*> outStack;
             Expressions::ParseConditionalExpression(*expressionTokens, outStack);
             LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(outStack);

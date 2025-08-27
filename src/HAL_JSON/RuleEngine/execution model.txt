@@ -96,3 +96,29 @@ we can just utilize the fact that a rpnToken can take any context including a ar
 RPNToken* rpnTokens
 then the handler is just set to a function that handle it as a array of RPNToken:s 
 and the deleter should also be set to the correct type
+
+
+
+so basically 
+we need to handle the following situations:
+
+a || b && c // this will generate subRPN containing b && c
+
+(a || b) && c // this will generate subRPN containing a || b
+
+a && (b || c) // this will generate subRPN containing b || c
+
+a || b || c // here all are the same operators and can be just a flat RPN
+
+a && b && c // here all are the same operators and can be just a flat RPN
+
+i understand that the following:
+( a > 1 ) && ( b < 5 || c == 6 || d != 5 ) 
+will be (with that code):
+[[a > 1] [[[b < 5] [c == 6] ||] [d != 5] ||] &&]
+instead of simpler(flatter):
+[[a > 1] [[b < 5] [c == 6] || [d != 5] ||] &&]
+
+is it worth it to change the code so that if
+logic operands that occurs in the same parenthesis
+are all the same it could be a flatter output instead
