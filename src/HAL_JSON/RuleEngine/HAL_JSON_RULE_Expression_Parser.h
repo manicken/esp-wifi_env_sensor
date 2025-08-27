@@ -103,6 +103,14 @@ namespace HAL_JSON {
                 }
                 currIndex--;
             }
+            inline void collapseTop() {
+                if (currIndex - minIndex < 2) {
+                    SliceStackReportError("pop - stack underflow:",Name);
+                    return;
+                }
+                data[currIndex-2] = data[currIndex-1];
+                currIndex--;
+            }
 
             // top
             inline T& top() {
@@ -272,6 +280,7 @@ namespace HAL_JSON {
             /** to use this function preParseTokens is needed to be run before */
             static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, ParseContext& ctx);
             static LogicRPNNode* ParseConditionalExpression2(ExpressionTokens& tokens, ParseContext& ctx);
+            static LogicRPNNode* ParseConditionalExpression3(ExpressionTokens& tokens, ParseContext& ctx);
             /** this should be run at root after ParseConditionalExpression */
             static void DoAllInplaceCalcRPN(LogicRPNNode* node);
 

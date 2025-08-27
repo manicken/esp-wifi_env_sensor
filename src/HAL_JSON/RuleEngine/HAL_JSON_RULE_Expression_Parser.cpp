@@ -644,7 +644,7 @@ namespace HAL_JSON {
 
             FlushTempToNode(node);
             outStack.push(node);
-            Expressions::ReportInfo("flushCalc: [DONE]\n");
+            Expressions::ReportInfo("flushCalc [DONE]\n");
         }
 
         void ParseContext::ApplyOperator() {
@@ -772,101 +772,6 @@ namespace HAL_JSON {
             }
             Expressions::ReportInfo("\n");
         }
-        LogicRPNNode* Expressions::ParseConditionalExpression2(ExpressionTokens& tokens, ParseContext& ctx) {
-            LogicRPNNode* currentNode = new LogicRPNNode();  // This will hold all calc tokens directly
-            int end = tokens.count;
-
-            for (int i = tokens.index; i < end; i++) {
-                ExpressionToken& tok = tokens.items[i];
-                ReportInfo("token:" + tok.ToString() + "\n");
-               // if (tok.type == TokenType::Ignore) continue; // this will never happend
-                if (tok.type == TokenType::LeftParenthesis) {
-                    ctx.opStack.push(&tok);
-                }
-                else if (tok.type == TokenType::RightParenthesis) {
-                    while (ctx.opStack.notEmpty() && ctx.opStack.top()->type != TokenType::LeftParenthesis)
-                    {
-                        ctx.tempStack.push(ctx.opStack.top_n_pop());                      
-                    }
-
-                    if (ctx.opStack.notEmpty())
-                    {
-                        ctx.opStack.pop(); // discard the LeftParenthesis
-                        
-                    }
-                    else
-                    {
-                        ReportError("Mismatched parenthesis");
-                    }
-                }
-                else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
-                    // Flush tempStack as a single calc node
-                    if (ctx.tempStack.notEmpty()) {
-                        ctx.FlushCalc();
-                    }
-                    ReportInfo("\nflush done\n");
-                    // Apply higher-or-equal precedence operators
-                    while (ctx.opStack.notEmpty() &&
-                        Expressions::LogicPrecedence(ctx.opStack.top()->type) >= Expressions::LogicPrecedence(tok.type))
-                    {
-                        ctx.ApplyOperator();
-                    }
-                    ReportInfo("\nApply higher-or-equal precedence operators - done\n");
-                    ctx.opStack.push(&tok);
-                }
-                else {
-                    // Arithmetic or comparison token
-                    ctx.tempStack.push(&tok);
-                }
-                ReportInfo("tempStack:");
-                for (int i=0;i<ctx.tempStack.size();i++) {
-                    ReportInfo(ctx.tempStack[i]->ToString() + " ");
-                }
-                ReportInfo("\nopStack:");
-                for (int i=0;i<ctx.opStack.size();i++) {
-                    ReportInfo(ctx.opStack[i]->ToString() + " ");
-                }
-                ReportInfo("\noutStack:");
-                for (int i=0;i<ctx.outStack.size();i++) {
-                    printLogicRPNNode(ctx.outStack[i]);
-                }
-                ReportInfo("\n");
-            }
-            ReportInfo("\nflushing leftover calc:\n");
-            // flush leftover calc
-            if (ctx.tempStack.notEmpty())
-                ctx.FlushCalc();
-            ReportInfo("\napply remaining operators:\n");
-            // apply remaining operators
-            while (ctx.opStack.notEmpty() && ctx.outStack.size() >= 2) {
-                ctx.ApplyOperator();
-            }
-            if (ctx.opStack.notEmpty()) {
-                ReportInfo("\nopStack remains:");
-                for (int i=0;i<ctx.opStack.size();i++) {
-                    ReportInfo(ctx.opStack[i]->ToString() + " ");
-                }
-            }
-
-            return ctx.outStack.notEmpty() ? ctx.outStack.top() : nullptr;
-        }
-
-
-
-        void Expressions::DoAllInplaceCalcRPN(LogicRPNNode* node) {
-            if (!node) return;
-
-            if (node->op == nullptr || node->op->IsEmpty()) {
-                // Leaf node
-                InplaceCalcRPN(node->calcRPN);
-            } else {
-                // Operator node
-                if (node->childA) DoAllInplaceCalcRPN(node->childA);
-                if (node->childB) DoAllInplaceCalcRPN(node->childB);
-             }
-        }
-        
-
         // precedence map
         static const std::unordered_map<TokenType, int> precedence = {
             // calc
@@ -888,6 +793,189 @@ namespace HAL_JSON {
             auto it = precedence.find(t);
             return (it != precedence.end()) ? it->second : -1;
         }
+
+        LogicRPNNode* Expressions::ParseConditionalExpression2(ExpressionTokens& tokens, ParseContext& ctx) {
+            LogicRPNNode* currentNode = new LogicRPNNode();  // This will hold all calc tokens directly
+            int end = tokens.count;
+
+            for (int i = tokens.index; i < end; i++) {
+                ExpressionToken& tok = tokens.items[i];
+                ReportInfo("token:" + tok.ToString() + "\n");
+               // if (tok.type == TokenType::Ignore) continue; // this will never happend
+                if (tok.type == TokenType::LeftParenthesis) {
+                    ctx.opStack.push(&tok);
+                }
+                else if (tok.type == TokenType::RightParenthesis) {
+                    // 1. Pop calc ops into tempStack
+                    while (ctx.opStack.notEmpty() &&
+                        ctx.opStack.top()->type != TokenType::LeftParenthesis &&
+                        ctx.opStack.top()->type != TokenType::LogicalAnd &&
+                        ctx.opStack.top()->type != TokenType::LogicalOr) 
+                    {
+                        ctx.tempStack.push(ctx.opStack.top_n_pop());
+                    }
+
+                    // 2. Now we might have stopped at ( or at a logic op
+                    if (ctx.opStack.notEmpty()) {
+                        if (ctx.opStack.top()->type == TokenType::LeftParenthesis) {
+                            ctx.opStack.pop(); // discard marker
+                        }
+                        else if (ctx.opStack.top()->type == TokenType::LogicalAnd ||
+                                ctx.opStack.top()->type == TokenType::LogicalOr) 
+                        {
+                            // Skip past the logic op until we see its matching '('
+                            int logicIndex = ctx.opStack.size() - 1; // index of && / ||
+                            int parenIndex = -1;
+
+                            for (int j = logicIndex - 1; j >= 0; --j) {
+                                if (ctx.opStack[j]->type == TokenType::LeftParenthesis) {
+                                    parenIndex = j;
+                                    break;
+                                }
+                            }
+
+                            if (parenIndex >= 0) {
+                                // remove that '(' and shift everything down
+                                for (int k = parenIndex; k < ctx.opStack.size() - 1; ++k) {
+                                    ctx.opStack[k] = ctx.opStack[k + 1];
+                                }
+                                ctx.opStack.pop();
+                            }
+                            else {
+                                ReportError("Mismatched parenthesis near logic operator");
+                            }
+                        }
+                    }
+                }
+                else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
+                    ReportInfo("*********************************** FOUND LOGIC OPERATOR *********************************\n");
+                    // here we need to also flush opStack until either empty or when a LeftParenthesis is found
+                    while (ctx.opStack.notEmpty() && 
+                            ctx.opStack.top()->type != TokenType::LeftParenthesis && 
+                            ctx.opStack.top()->type != TokenType::LogicalAnd && 
+                            ctx.opStack.top()->type != TokenType::LogicalOr)
+                    {
+                        ctx.tempStack.push(ctx.opStack.top_n_pop());                      
+                    }
+                    // Flush tempStack as a single calc node
+                    if (ctx.tempStack.notEmpty()) {
+                        ctx.FlushCalc();
+                        ReportInfo("\noutStack (after flushcalc):");
+                        for (int i=0;i<ctx.outStack.size();i++) {
+                            printLogicRPNNode(ctx.outStack[i]);
+                        }
+                        ReportInfo("\n");
+                    }
+                    
+                    // Apply higher-or-equal precedence operators
+                    while (ctx.opStack.notEmpty() && ctx.outStack.size() >= 2 && 
+                        Expressions::LogicPrecedence(ctx.opStack.top()->type) >= Expressions::LogicPrecedence(tok.type))
+                    {
+                        
+                        ctx.ApplyOperator();
+                        ReportInfo("\nApply higher-or-equal precedence operators - done\n");
+                        ReportInfo("\noutStack (after ApplyOperator):");
+                        for (int i=0;i<ctx.outStack.size();i++) {
+                            printLogicRPNNode(ctx.outStack[i]);
+                        }
+                        ReportInfo("\n");
+                    }
+                    //ReportInfo("\nApply higher-or-equal precedence operators - done\n");
+                    ctx.opStack.push(&tok);
+                }
+                else if (tok.AnyType(calcOperators) || tok.AnyType(compareOperators)) {
+                    // While there's an operator on top of the opStack with greater or equal precedence
+                    while (ctx.opStack.notEmpty() &&
+                        ctx.opStack.top()->type != TokenType::LeftParenthesis &&
+                        getPrecedence(ctx.opStack.top()->type) >= getPrecedence(tok.type))
+                    {
+                        ctx.tempStack.push(ctx.opStack.top_n_pop());
+                    }
+                    // Push current operator
+                    ctx.opStack.push(&tok);
+                }
+                else {
+                    // Arithmetic or comparison token
+                    ctx.tempStack.push(&tok);
+                }
+                ReportInfo("tempStack:");
+                for (int i=0;i<ctx.tempStack.size();i++) {
+                    ReportInfo(ctx.tempStack[i]->ToString() + " ");
+                }
+                ReportInfo("\nopStack:");
+                for (int i=0;i<ctx.opStack.size();i++) {
+                    ReportInfo(ctx.opStack[i]->ToString() + " ");
+                }
+                ReportInfo("\n");
+            }
+            ReportInfo("\nflushing leftover calc:\n");
+            // flush leftover calc
+            if (ctx.tempStack.notEmpty())
+                ctx.FlushCalc();
+
+
+            
+            ReportInfo("\noutStack (at end):");
+            for (int i=0;i<ctx.outStack.size();i++) {
+                printLogicRPNNode(ctx.outStack[i]);
+            }
+            ReportInfo("\n");
+
+            // injecting ther correct order
+            /*ctx.opStack.ClearCurrSlice();
+            ExpressionToken* orToken = new ExpressionToken("||");
+            ExpressionToken* andToken = new ExpressionToken("&&");
+            orToken->type = TokenType::LogicalOr;
+            andToken->type = TokenType::LogicalAnd;
+            ctx.opStack.push(orToken);
+            ctx.opStack.push(andToken);
+            ctx.opStack.push(andToken);
+            ctx.opStack.push(orToken);
+            */
+            ReportInfo("\nopStack at end:");
+                for (int i=0;i<ctx.opStack.size();i++) {
+                    ReportInfo(ctx.opStack[i]->ToString() + " ");
+                }
+            ReportInfo("\napply remaining operators:\n");
+            // apply remaining operators
+            while (ctx.opStack.notEmpty() && ctx.outStack.size() >= 2) {
+                ctx.ApplyOperator();
+            }
+            if (ctx.opStack.notEmpty()) {
+                ReportInfo("\nopStack remains:");
+                for (int i=0;i<ctx.opStack.size();i++) {
+                    ReportInfo(ctx.opStack[i]->ToString() + " ");
+                }
+            }
+
+            ReportInfo("\noutStack @ end:\n");
+            for (int i=0;i<ctx.outStack.size();i++) {
+                ReportInfo("item (" + std::to_string(i) + "): ");
+                printLogicRPNNode(ctx.outStack[i]);
+                ReportInfo("\n");
+            }
+            ReportInfo("\n");
+
+            return ctx.outStack.notEmpty() ? ctx.outStack.top() : nullptr;
+        }
+
+
+
+        void Expressions::DoAllInplaceCalcRPN(LogicRPNNode* node) {
+            if (!node) return;
+
+            if (node->op == nullptr || node->op->IsEmpty()) {
+                // Leaf node
+                InplaceCalcRPN(node->calcRPN);
+            } else {
+                // Operator node
+                if (node->childA) DoAllInplaceCalcRPN(node->childA);
+                if (node->childB) DoAllInplaceCalcRPN(node->childB);
+             }
+        }
+        
+
+        
         /** this is the first step to make 
          * a more general function that in it's final state
          * can take the 'raw' 'chaos' structure
@@ -979,6 +1067,128 @@ namespace HAL_JSON {
                 ReportInfo(tempStack[i]->ToString() + " ");
             }
         }
+
+        static LogicRPNNode* ParseConditionalExpression3(ExpressionTokens& tokens, ParseContext& /*ctx*/) {
+            std::vector<ExpressionToken*>   calcOps;   // comparison/arithmetic + "("
+            std::vector<ExpressionToken*>   logicOps;  // logical ops + "("
+            std::vector<ExpressionToken*>   temp;      // current calc expression buffer
+            std::vector<LogicRPNNode*> out; // completed nodes
+
+            // Turn a RPN token buffer into a LogicRPNNode*
+            auto flushCalc = [&]() {
+                if (temp.empty()) return;
+
+                // For now we just wrap the token sequence into a leaf node
+                LogicRPNNode* node = new LogicRPNNode();
+                node->calcRPN = temp; // you probably have something like this
+                node->childA = nullptr;
+                node->childB = nullptr;
+
+                out.push_back(node);
+                temp.clear();
+            };
+
+            // Build logic node
+            auto applyLogicOp = [&](ExpressionToken& op) {
+                if (out.size() < 2)
+                    throw std::runtime_error("Logic operator with <2 operands");
+
+                LogicRPNNode* rhs = out.back(); out.pop_back();
+                LogicRPNNode* lhs = out.back(); out.pop_back();
+
+                LogicRPNNode* node = new LogicRPNNode();
+                node->op = &op;  // store the operator
+                node->childA = lhs;
+                node->childB = rhs;
+
+                out.push_back(node);
+            };
+
+            auto precedence = [&](ExpressionToken& op) -> int {
+                if (op.type == TokenType::LogicalAnd) return 2;
+                if (op.type == TokenType::LogicalOr)  return 1;
+                return 0;
+            };
+
+            for (size_t i = 0; i < tokens.count; ++i) {
+                ExpressionToken& tok = tokens[i];
+
+                if (tok.type == TokenType::Identifier || tok.type == TokenType::Number) {
+                    temp.push_back(&tok);
+                }
+                else if (tok.isComparisonOp()) { // > < == etc.
+                    calcOps.push_back(&tok);
+                }
+                else if (tok.type == TokenType::LeftParenthesis) {
+                    calcOps.push_back(&tok);
+                    logicOps.push_back(&tok);
+                }
+                else if (tok.type == TokenType::RightParenthesis) {
+                    // close calc part
+                    while (!calcOps.empty() && calcOps.back().type != TokenType::LeftParenthesis) {
+                        temp.push_back(calcOps.back());
+                        calcOps.pop_back();
+                    }
+                    if (!calcOps.empty() && calcOps.back().type == TokenType::LeftParenthesis)
+                        calcOps.pop_back();
+
+                    flushCalc();
+
+                    // close logic part
+                    while (!logicOps.empty() && logicOps.back().type != TokenType::LeftParenthesis) {
+                        ExpressionToken op = logicOps.back(); logicOps.pop_back();
+                        applyLogicOp(op);
+                    }
+                    if (!logicOps.empty() && logicOps.back().type == TokenType::LeftParenthesis)
+                        logicOps.pop_back();
+                }
+                else if (tok.type == TokenType::AndAnd || tok.type == TokenType::OrOr) {
+                    // finish calc block first
+                    while (!calcOps.empty() && calcOps.back().type != TokenType::LeftParenthesis) {
+                        temp.push_back(calcOps.back());
+                        calcOps.pop_back();
+                    }
+                    flushCalc();
+
+                    // handle precedence in logic stack
+                    while (!logicOps.empty()
+                        && logicOps.back().type != TokenType::LeftParenthesis
+                        && precedence(logicOps.back()) >= precedence(tok))
+                    {
+                        ExpressionToken& op = logicOps.back(); logicOps.pop_back();
+                        applyLogicOp(op);
+                    }
+
+                    logicOps.push_back(&tok);
+                }
+                else {
+                    // unknown token → treat as part of calc
+                    temp.push_back(&tok);
+                }
+            }
+
+            // final flush of calc
+            while (!calcOps.empty()) {
+                temp.push_back(calcOps.back());
+                calcOps.pop_back();
+            }
+            flushCalc();
+
+            // apply remaining logic ops
+            while (!logicOps.empty()) {
+                ExpressionToken op = logicOps.back(); logicOps.pop_back();
+                if (op.type == TokenType::LeftParenthesis)
+                    throw std::runtime_error("Mismatched parentheses");
+                applyLogicOp(op);
+            }
+
+            if (out.size() != 1)
+                throw std::runtime_error("ParseConditionalExpression3: invalid final out size");
+
+            return out.back();
+        }
+
+
 
     }
 }

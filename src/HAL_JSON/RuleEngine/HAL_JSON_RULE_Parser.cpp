@@ -1049,6 +1049,8 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             Expressions::printLogicRPNNodeTree(lrpnNode, 0);
 
             //Expressions::ParseConditionalExpression(*expressionTokens);
+
+            ReportInfo("\nInput expression: " + tokens.ToString());
             delete lrpnNode; // deletes the whole tree recursive
             delete expressionTokens;
             delete[] fileContents;
