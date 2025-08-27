@@ -187,5 +187,85 @@ namespace HAL_JSON {
             halValueStack.sp = sp - 1;
             return HALOperationResult::Success;
         }
+
+        HALOperationResult CalcRPNToken::NotEquals_Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            HALValue a = *--itemPtr;
+            *itemPtr++ = (a != b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
+        HALOperationResult CalcRPNToken::Equals_Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            HALValue a = *--itemPtr;
+            *itemPtr++ = (a == b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
+        HALOperationResult CalcRPNToken::LessThan_Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            HALValue a = *--itemPtr;
+            *itemPtr++ = (a < b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
+        HALOperationResult CalcRPNToken::LargerThan_Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            HALValue a = *--itemPtr;
+            *itemPtr++ = (a > b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
+        HALOperationResult CalcRPNToken::LessThanOrEquals_Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            HALValue a = *--itemPtr;
+            *itemPtr++ = (a <= b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
+        HALOperationResult CalcRPNToken::LargerThanOrEquals_Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            HALValue a = *--itemPtr;
+            *itemPtr++ = (a >= b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
+
     }
 }

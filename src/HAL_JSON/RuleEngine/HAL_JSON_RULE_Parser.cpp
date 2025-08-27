@@ -1,6 +1,8 @@
 
 #include "HAL_JSON_RULE_Parser.h"
 
+#include <vector>
+
 namespace HAL_JSON {
     namespace Rules {
         static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
@@ -1029,7 +1031,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             int tempStackSize = expressionTokens->count;
 
             ParseContext parseContext(opStackSize, outStackSize, tempStackSize);
-            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression3(*expressionTokens, parseContext);
+            /*LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression3(*expressionTokens, parseContext);
 
             if (lrpnNode == nullptr) {
                 ReportInfo("Error: could not ParseConditionalExpression\n");
@@ -1046,9 +1048,17 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             //ReportInfo("linear view:\n");
             //Expressions::printLogicRPNNode(lrpnNode);
             ReportInfo("\n\ntree view:\n");
-            Expressions::printLogicRPNNodeTree(lrpnNode, 0);
+            Expressions::printLogicRPNNodeTree(lrpnNode, 0);*/
+            std::vector<ExpressionToken*> outStack;
+            Expressions::ParseConditionalExpression(*expressionTokens, outStack);
+            LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(outStack);
+            ReportInfo("complete RPN:");
+            for (int i=0;i<outStack.size();i++) {
+                ReportInfo(outStack[i]->ToString() + " ");
+            }
 
-            //Expressions::ParseConditionalExpression(*expressionTokens);
+            ReportInfo("\n\ntree view:\n");
+            Expressions::printLogicRPNNodeTree(lrpnNode, 0);
 
             ReportInfo("\nInput expression: " + tokens.ToString());
             delete lrpnNode; // deletes the whole tree recursive

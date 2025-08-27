@@ -39,6 +39,13 @@ namespace HAL_JSON {
             static HALOperationResult BitwiseLeftShift_Operation_Handler(void* context);
             static HALOperationResult BitwiseRightShift_Operation_Handler(void* context);
 
+            static HALOperationResult NotEquals_Operation_Handler(void* context);
+            static HALOperationResult Equals_Operation_Handler(void* context);
+            static HALOperationResult LessThan_Operation_Handler(void* context);
+            static HALOperationResult LargerThan_Operation_Handler(void* context);
+            static HALOperationResult LessThanOrEquals_Operation_Handler(void* context);
+            static HALOperationResult LargerThanOrEquals_Operation_Handler(void* context);
+
             CalcRPNToken();
             ~CalcRPNToken();
         };

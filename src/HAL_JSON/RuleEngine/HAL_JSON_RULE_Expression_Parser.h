@@ -280,12 +280,13 @@ namespace HAL_JSON {
             /** to use this function preParseTokens is needed to be run before */
             static LogicRPNNode* ParseConditionalExpression(ExpressionTokens& tokens, ParseContext& ctx);
             static LogicRPNNode* ParseConditionalExpression2(ExpressionTokens& tokens, ParseContext& ctx);
-            static LogicRPNNode* ParseConditionalExpression3(ExpressionTokens& tokens, ParseContext& ctx);
+            
             /** this should be run at root after ParseConditionalExpression */
             static void DoAllInplaceCalcRPN(LogicRPNNode* node);
 
 
-            static void ParseConditionalExpression(ExpressionTokens& tokens);
+            static void ParseConditionalExpression(ExpressionTokens& tokens,std::vector<ExpressionToken*>& tempStack);
+            static LogicRPNNode* BuildLogicTree(const std::vector<ExpressionToken*>& tokens);
         };
     }
 }

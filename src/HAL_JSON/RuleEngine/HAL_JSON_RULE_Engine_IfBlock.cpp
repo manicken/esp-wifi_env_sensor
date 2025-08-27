@@ -33,7 +33,7 @@ namespace HAL_JSON {
             // first increment to next and then get
             const Token& expression = tokens.items[++tokens.currIndex];
             // TODO consume if expression 
-            tokens.currIndex += expression.itemsInBlock; // dummy consume
+            tokens.currIndex += expression.itemsInBlock; // dummy consume here the conditional expression should be feed in
 
             //when consumed we are at the then
             Token& thenToken = tokens.items[tokens.currIndex++]; // get and consume
