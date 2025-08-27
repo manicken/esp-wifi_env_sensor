@@ -1089,7 +1089,7 @@ namespace HAL_JSON {
             };
 
             // Build logic node
-            auto applyLogicOp = [&](ExpressionToken& op) {
+            auto applyLogicOp = [&](ExpressionToken* op) {
                 if (out.size() < 2)
                     throw std::runtime_error("Logic operator with <2 operands");
 
@@ -1097,26 +1097,26 @@ namespace HAL_JSON {
                 LogicRPNNode* lhs = out.back(); out.pop_back();
 
                 LogicRPNNode* node = new LogicRPNNode();
-                node->op = &op;  // store the operator
+                node->op = op;  // store the operator
                 node->childA = lhs;
                 node->childB = rhs;
 
                 out.push_back(node);
             };
 
-            auto precedence = [&](ExpressionToken& op) -> int {
-                if (op.type == TokenType::LogicalAnd) return 2;
-                if (op.type == TokenType::LogicalOr)  return 1;
+            auto precedence = [&](ExpressionToken* op) -> int {
+                if (op->type == TokenType::LogicalAnd) return 2;
+                if (op->type == TokenType::LogicalOr)  return 1;
                 return 0;
             };
 
             for (size_t i = 0; i < tokens.count; ++i) {
-                ExpressionToken& tok = tokens[i];
+                ExpressionToken& tok = tokens.items[i];
 
-                if (tok.type == TokenType::Identifier || tok.type == TokenType::Number) {
+                /*if (tok.AnyType(calcOperators)) {
                     temp.push_back(&tok);
                 }
-                else if (tok.isComparisonOp()) { // > < == etc.
+                else*/ if (tok.AnyType(compareOperators)) { // > < == etc.
                     calcOps.push_back(&tok);
                 }
                 else if (tok.type == TokenType::LeftParenthesis) {
@@ -1125,26 +1125,26 @@ namespace HAL_JSON {
                 }
                 else if (tok.type == TokenType::RightParenthesis) {
                     // close calc part
-                    while (!calcOps.empty() && calcOps.back().type != TokenType::LeftParenthesis) {
+                    while (!calcOps.empty() && calcOps.back()->type != TokenType::LeftParenthesis) {
                         temp.push_back(calcOps.back());
                         calcOps.pop_back();
                     }
-                    if (!calcOps.empty() && calcOps.back().type == TokenType::LeftParenthesis)
+                    if (!calcOps.empty() && calcOps.back()->type == TokenType::LeftParenthesis)
                         calcOps.pop_back();
 
                     flushCalc();
 
                     // close logic part
-                    while (!logicOps.empty() && logicOps.back().type != TokenType::LeftParenthesis) {
-                        ExpressionToken op = logicOps.back(); logicOps.pop_back();
+                    while (!logicOps.empty() && logicOps.back()->type != TokenType::LeftParenthesis) {
+                        ExpressionToken* op = logicOps.back(); logicOps.pop_back();
                         applyLogicOp(op);
                     }
-                    if (!logicOps.empty() && logicOps.back().type == TokenType::LeftParenthesis)
+                    if (!logicOps.empty() && logicOps.back()->type == TokenType::LeftParenthesis)
                         logicOps.pop_back();
                 }
-                else if (tok.type == TokenType::AndAnd || tok.type == TokenType::OrOr) {
+                else if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
                     // finish calc block first
-                    while (!calcOps.empty() && calcOps.back().type != TokenType::LeftParenthesis) {
+                    while (!calcOps.empty() && calcOps.back()->type != TokenType::LeftParenthesis) {
                         temp.push_back(calcOps.back());
                         calcOps.pop_back();
                     }
@@ -1152,10 +1152,10 @@ namespace HAL_JSON {
 
                     // handle precedence in logic stack
                     while (!logicOps.empty()
-                        && logicOps.back().type != TokenType::LeftParenthesis
-                        && precedence(logicOps.back()) >= precedence(tok))
+                        && logicOps.back()->type != TokenType::LeftParenthesis
+                        && precedence(logicOps.back()) >= precedence(&tok))
                     {
-                        ExpressionToken& op = logicOps.back(); logicOps.pop_back();
+                        ExpressionToken* op = logicOps.back(); logicOps.pop_back();
                         applyLogicOp(op);
                     }
 
@@ -1176,8 +1176,8 @@ namespace HAL_JSON {
 
             // apply remaining logic ops
             while (!logicOps.empty()) {
-                ExpressionToken op = logicOps.back(); logicOps.pop_back();
-                if (op.type == TokenType::LeftParenthesis)
+                ExpressionToken* op = logicOps.back(); logicOps.pop_back();
+                if (op->type == TokenType::LeftParenthesis)
                     throw std::runtime_error("Mismatched parentheses");
                 applyLogicOp(op);
             }

@@ -1029,7 +1029,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             int tempStackSize = expressionTokens->count;
 
             ParseContext parseContext(opStackSize, outStackSize, tempStackSize);
-            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression2(*expressionTokens, parseContext);
+            LogicRPNNode* lrpnNode = Expressions::ParseConditionalExpression3(*expressionTokens, parseContext);
 
             if (lrpnNode == nullptr) {
                 ReportInfo("Error: could not ParseConditionalExpression\n");
