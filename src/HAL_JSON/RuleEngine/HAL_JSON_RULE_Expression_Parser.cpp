@@ -984,13 +984,10 @@ namespace HAL_JSON {
          * to avoid heap fragmentation
          */
                 
-        void Expressions::ParseConditionalExpression(ExpressionTokens& tokens,std::vector<ExpressionToken*>& tempStack) 
+        void Expressions::ParseConditionalExpression(ExpressionTokens& tokens,std::vector<ExpressionToken*>& outStack) 
         {
             std::vector<ExpressionToken*> opStack;
-            
             opStack.reserve(tokens.count);
-            tempStack.clear();
-            tempStack.reserve(tokens.count);
 
             for (int i = 0; i < tokens.count; i++)
             {
@@ -1005,9 +1002,8 @@ namespace HAL_JSON {
                     // Pop until LeftParenthesis is found
                     while (!opStack.empty() && opStack.back()->type != TokenType::LeftParenthesis)
                     {
-                        tempStack.push_back(opStack.back());
+                        outStack.push_back(opStack.back());
                         opStack.pop_back();
-                        
                     }
 
                     if (opStack.empty())
@@ -1026,7 +1022,7 @@ namespace HAL_JSON {
                         opStack.back()->type != TokenType::LeftParenthesis &&
                         getPrecedence(opStack.back()->type) >= getPrecedence(token.type))
                     {
-                        tempStack.push_back(opStack.back());
+                        outStack.push_back(opStack.back());
                         opStack.pop_back();
                     }
                     // Push current operator
@@ -1034,11 +1030,11 @@ namespace HAL_JSON {
                 }
                 else
                 {
-                    tempStack.push_back(&token);
+                    outStack.push_back(&token);
                 }
-                /*ReportInfo("tempStack:");
-                for (int i=0;i<tempStack.size();i++) {
-                    ReportInfo(tempStack[i]->ToString() + " ");
+                /*ReportInfo("outStack:");
+                for (int i=0;i<outStack.size();i++) {
+                    ReportInfo(outStack[i]->ToString() + " ");
                 }
                 ReportInfo("\n");
                 ReportInfo("opStack:");
@@ -1056,7 +1052,7 @@ namespace HAL_JSON {
                 {
                     ReportError("Mismatched parenthesis");
                 }
-                tempStack.push_back(opStack.back());
+                outStack.push_back(opStack.back());
                 opStack.pop_back();
             }
 
@@ -1122,6 +1118,135 @@ namespace HAL_JSON {
             return stack.back();
         }
 
+        ExpressionTokens* Expressions::GenerateRPNTokens(const Tokens& rawTokens) {
+            
+            size_t totalCount = preParseTokensCount(rawTokens);
+            
+            ExpressionTokens* outTokens = new ExpressionTokens(totalCount);
+            ExpressionToken** outTokenItems = outTokens->items;
 
+            ExpressionToken** opStack = new ExpressionToken*[totalCount];
+            int opStackIndex = 0;
+
+            int outTokensIndex = 0;
+            const int rawTokensCount = rawTokens.count;
+            for (int i = 0; i < rawTokensCount; ++i) {
+                const Token& str = rawTokens.items[i];
+
+                int j = 0;
+                const int strLength = str.Length();
+                for (int j=0; j < strLength; j++) {
+                    char c = str[j];
+
+                    // Parentheses
+                    if (c == '(') {
+                        ExpressionToken* cleanToken = new ExpressionToken();
+
+                        //cleanToken.line   = tok.line;
+                        //cleanToken.column = tok.column + j;
+                        cleanToken->start  = str.start + j;
+                        cleanToken->end    = str.start + j + 1;
+                        cleanToken->type   = TokenType::LeftParenthesis;
+                        opStack[opStackIndex++] = cleanToken;
+
+                    }
+                    else if ( c == ')') {
+                        // Pop until LeftParenthesis is found
+                        while (opStackIndex != 0 && opStack[opStackIndex-1]->type != TokenType::LeftParenthesis)
+                        {
+                            outTokenItems[outTokensIndex++] = opStack[opStackIndex-1];
+                            opStackIndex--;
+                            //opStack.pop_back();
+                        }
+
+                        if (opStackIndex == 0)
+                        {
+                            ReportError("Mismatched parenthesis");
+                        }
+                        else
+                        {
+                            opStackIndex--;
+                            //opStack.pop_back(); // discard the LeftParenthesis
+                        }
+                        
+                    }
+                    else if ((j+1) < strLength) { // Two-character operators
+                        TokenType twoCharOpType = IsTwoCharOp(c, str[j+1]);
+                        if (twoCharOpType != TokenType::NotSet) {
+                            ExpressionToken* cleanToken = new ExpressionToken();
+                            //cleanToken.line   = tok.line;
+                            //cleanToken.column = tok.column + j;
+                            cleanToken->start  = str.start + j;
+                            cleanToken->end    = str.start + j + 2;
+                            cleanToken->type   = twoCharOpType;
+                            // While there's an operator on top of the opStack with greater or equal precedence
+                            while (opStackIndex != 0 &&
+                                opStack[opStackIndex-1]->type != TokenType::LeftParenthesis &&
+                                getPrecedence(opStack[opStackIndex-1]->type) >= getPrecedence(cleanToken->type))
+                            {
+                                outTokenItems[outTokensIndex++] = opStack[opStackIndex-1];
+                                opStackIndex--;
+                            }
+                            // Push current operator
+                            opStack[opStackIndex++] = cleanToken;
+                            
+                            j++; // consume one extra token
+                        }
+                    }
+                    else {
+                        // Single-character operator
+                        TokenType oneCharOpType = IsSingleOp(c);
+                        if (oneCharOpType != TokenType::NotSet) {
+                            ExpressionToken* cleanToken = new ExpressionToken();
+                            //cleanToken.line   = tok.line;
+                            //cleanToken.column = tok.column + j;
+                            cleanToken->start  = str.start + j;
+                            cleanToken->end    = str.start + j + 1;
+                            cleanToken->type   = oneCharOpType;
+
+                            // While there's an operator on top of the opStack with greater or equal precedence
+                            while (opStackIndex != 0 &&
+                                opStack[opStackIndex-1]->type != TokenType::LeftParenthesis &&
+                                getPrecedence(opStack[opStackIndex-1]->type) >= getPrecedence(cleanToken->type))
+                            {
+                                outTokenItems[outTokensIndex++] = opStack[opStackIndex-1];
+                                opStackIndex--;
+                            }
+                            // Push current operator
+                            opStack[opStackIndex++] = cleanToken;
+                        }
+                        else {
+                            // Identifier / number
+                            int startIdx = j;
+                            for (;j < strLength;j++) {
+                                if (str[j] == '(') break;
+                                if (str[j] == ')') break;
+                                if (((j + 1) < strLength && IsTwoCharOp(str[j], str[j+1])!=TokenType::NotSet)) break;
+                                if (IsSingleOp(str[j]) == TokenType::NotSet) break;
+                            }
+                            ExpressionToken* cleanToken = new ExpressionToken();
+                            //cleanToken.line   = tok.line;
+                            //cleanToken.column = tok.column + startIdx;
+                            cleanToken->start  = str.start + startIdx;
+                            cleanToken->end    = str.start + j;
+                            cleanToken->type   = TokenType::Operand;
+                            outTokenItems[outTokensIndex++] = cleanToken;
+                            j--; 
+
+                        }
+                    }
+
+                    
+                }
+            }
+            // After loop: pop remaining ops
+            while (opStackIndex != 0)
+            {
+                opStackIndex--;
+                outTokenItems[outTokensIndex++] = opStack[opStackIndex];
+            }
+            
+            return outTokens;
+        }
     }
 }

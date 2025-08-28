@@ -104,7 +104,7 @@ namespace HAL_JSON {
             index = 0;
         }
         ExpressionTokens::ExpressionTokens(int _count) {
-            items = new ExpressionToken[_count];
+            items = new ExpressionToken*[_count];
             count = _count;
             index = 0;
         }

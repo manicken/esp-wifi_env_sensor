@@ -287,6 +287,7 @@ namespace HAL_JSON {
 
             static void ParseConditionalExpression(ExpressionTokens& tokens,std::vector<ExpressionToken*>& tempStack);
             static LogicRPNNode* BuildLogicTree(const std::vector<ExpressionToken*>& tokens);
+            static ExpressionTokens* GenerateRPNTokens(const Tokens& rawTokens);
         };
     }
 }

@@ -1022,14 +1022,15 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("*                            EXPRESSION TOKEN LIST  PARSING                      *\n");
             ReportInfo("**********************************************************************************\n");
             //ReportInfo("expressionTokens->count:" + std::to_string(expressionTokens->count) + "\n");
-            int opStackSize = expressionTokens->count;
+            /*int opStackSize = expressionTokens->count;
             int outStackSize = expressionTokens->count;
             int tempStackSize = expressionTokens->count;
 
             ParseContext parseContext(opStackSize, outStackSize, tempStackSize);
-            
+            */
 
             std::vector<ExpressionToken*> outStack;
+            outStack.reserve(expressionTokens->count);
             Expressions::ParseConditionalExpression(*expressionTokens, outStack);
             LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(outStack);
             ReportInfo("complete RPN:");

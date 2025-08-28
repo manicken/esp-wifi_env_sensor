@@ -103,7 +103,7 @@ namespace HAL_JSON {
             ~ExpressionToken();
         };
         struct ExpressionTokens {
-            ExpressionToken* items;
+            ExpressionToken** items;
             int index;
             int count;
             ExpressionTokens();
