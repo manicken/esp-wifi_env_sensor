@@ -59,33 +59,33 @@ namespace HAL_JSON {
             static void ReportInfo(std::string msg);
 
             // Helper: returns true if c is a single-character operator
-            static inline TokenType IsSingleOp(char c) {
-                if (c == '+') return TokenType::CalcPlus;
-                else if (c == '-') return TokenType::CalcMinus;
-                else if (c == '*')  return TokenType::CalcMultiply;
-                else if (c == '/') return TokenType::CalcDivide;
-                else if (c == '<') return TokenType::CompareLessThan;
-                else if (c == '>') return TokenType::CompareGreaterThan;
-                else if (c == '&') return TokenType::CalcBitwiseAnd;
-                else if (c == '|') return TokenType::CalcBitwiseOr;
-                else if (c == '^') return TokenType::CalcBitwiseExOr;
-                else if (c == '&') return TokenType::CalcModulus;
-                return TokenType::NotSet;
+            static inline ExpTokenType IsSingleOp(char c) {
+                if (c == '+') return ExpTokenType::CalcPlus;
+                else if (c == '-') return ExpTokenType::CalcMinus;
+                else if (c == '*')  return ExpTokenType::CalcMultiply;
+                else if (c == '/') return ExpTokenType::CalcDivide;
+                else if (c == '<') return ExpTokenType::CompareLessThan;
+                else if (c == '>') return ExpTokenType::CompareGreaterThan;
+                else if (c == '&') return ExpTokenType::CalcBitwiseAnd;
+                else if (c == '|') return ExpTokenType::CalcBitwiseOr;
+                else if (c == '^') return ExpTokenType::CalcBitwiseExOr;
+                else if (c == '&') return ExpTokenType::CalcModulus;
+                return ExpTokenType::NotSet;
             }
 
             // Helper: checks if c + next form a 2-char operator
-            static inline TokenType IsTwoCharOp(const char* c) {
+            static inline ExpTokenType IsTwoCharOp(const char* c) {
                 char first = *(c++);
                 char next = *c;
-                if (first == '&' && next == '&') return TokenType::LogicalAnd;
-                else if (first == '|' && next == '|') return TokenType::LogicalOr;
-                else if (first == '=' && next == '=') return TokenType::CompareEqualsTo;
-                else if (first == '!' && next == '=') return TokenType::CompareNotEqualsTo;
-                else if (first == '<' && next == '=') return TokenType::CompareLessThanOrEqual;
-                else if (first == '>' && next == '=') return TokenType::CompareGreaterThanOrEqual;
-                else if (first == '>' && next == '>') return TokenType::CalcBitwiseRightShift;
-                else if (first == '<' && next == '<') return TokenType::CalcBitwiseLeftShift;
-                return TokenType::NotSet;
+                if (first == '&' && next == '&') return ExpTokenType::LogicalAnd;
+                else if (first == '|' && next == '|') return ExpTokenType::LogicalOr;
+                else if (first == '=' && next == '=') return ExpTokenType::CompareEqualsTo;
+                else if (first == '!' && next == '=') return ExpTokenType::CompareNotEqualsTo;
+                else if (first == '<' && next == '=') return ExpTokenType::CompareLessThanOrEqual;
+                else if (first == '>' && next == '=') return ExpTokenType::CompareGreaterThanOrEqual;
+                else if (first == '>' && next == '>') return ExpTokenType::CalcBitwiseRightShift;
+                else if (first == '<' && next == '<') return ExpTokenType::CalcBitwiseLeftShift;
+                return ExpTokenType::NotSet;
             }
             
             //static void GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount);

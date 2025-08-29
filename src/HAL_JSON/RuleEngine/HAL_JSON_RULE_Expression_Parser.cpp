@@ -32,23 +32,23 @@ namespace HAL_JSON {
         }
 
         // precedence map
-        static const std::unordered_map<TokenType, int> precedence = {
+        static const std::unordered_map<ExpTokenType, int> precedence = {
             // calc
-            {TokenType::CalcMultiply, 7}, {TokenType::CalcDivide, 7}, {TokenType::CalcModulus, 7},
-            {TokenType::CalcPlus, 6}, {TokenType::CalcMinus, 6},
-            {TokenType::CalcBitwiseLeftShift, 5}, {TokenType::CalcBitwiseRightShift, 5},
-            {TokenType::CalcBitwiseAnd, 4}, {TokenType::CalcBitwiseExOr, 4}, {TokenType::CalcBitwiseOr, 4},
+            {ExpTokenType::CalcMultiply, 7}, {ExpTokenType::CalcDivide, 7}, {ExpTokenType::CalcModulus, 7},
+            {ExpTokenType::CalcPlus, 6}, {ExpTokenType::CalcMinus, 6},
+            {ExpTokenType::CalcBitwiseLeftShift, 5}, {ExpTokenType::CalcBitwiseRightShift, 5},
+            {ExpTokenType::CalcBitwiseAnd, 4}, {ExpTokenType::CalcBitwiseExOr, 4}, {ExpTokenType::CalcBitwiseOr, 4},
 
             // compare
-            {TokenType::CompareGreaterThan, 3}, {TokenType::CompareLessThan, 3},
-            {TokenType::CompareGreaterThanOrEqual, 3}, {TokenType::CompareLessThanOrEqual, 3},
-            {TokenType::CompareEqualsTo, 2}, {TokenType::CompareNotEqualsTo, 2},
+            {ExpTokenType::CompareGreaterThan, 3}, {ExpTokenType::CompareLessThan, 3},
+            {ExpTokenType::CompareGreaterThanOrEqual, 3}, {ExpTokenType::CompareLessThanOrEqual, 3},
+            {ExpTokenType::CompareEqualsTo, 2}, {ExpTokenType::CompareNotEqualsTo, 2},
 
             // logic
-            {TokenType::LogicalAnd, 1}, {TokenType::LogicalOr, 0}
+            {ExpTokenType::LogicalAnd, 1}, {ExpTokenType::LogicalOr, 0}
         };
 
-        inline int getPrecedence(TokenType t) {
+        inline int getPrecedence(ExpTokenType t) {
             auto it = precedence.find(t);
             return (it != precedence.end()) ? it->second : -1;
         }
@@ -398,7 +398,7 @@ namespace HAL_JSON {
             } else {
                 // Operator node
 
-                ReportInfo(padding + "[" + (node->op?TokenTypeToString(node->op->type):"") + "]\n");
+                ReportInfo(padding + "[" + (node->op?ExpTokenTypeToString(node->op->type):"") + "]\n");
 
                 if (node->childA) printLogicRPNNodeTree(node->childA, indent + 1);
                 if (node->childB) printLogicRPNNodeTree(node->childB, indent + 1);
@@ -428,10 +428,10 @@ namespace HAL_JSON {
                         ++j;
                     } else if (c == ')') {                      
                         ++j;
-                    } else if ((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j) != TokenType::NotSet) {
+                    } else if ((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j) != ExpTokenType::NotSet) {
                         ++totalCountTemp; j += 2;
                         operatorCountTemp++;
-                    } else if (IsSingleOp(c) != TokenType::NotSet) {
+                    } else if (IsSingleOp(c) != ExpTokenType::NotSet) {
                         ++totalCountTemp; ++j;
                         operatorCountTemp++;
                     } else {
@@ -440,8 +440,8 @@ namespace HAL_JSON {
                         while (j < tokenStrLength &&
                             token[j] != '(' &&
                             token[j] != ')' &&
-                            IsSingleOp(token[j]) == TokenType::NotSet &&
-                            !((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j) != TokenType::NotSet)) {
+                            IsSingleOp(token[j]) == ExpTokenType::NotSet &&
+                            !((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j) != ExpTokenType::NotSet)) {
                             ++j;
                         }
                         ++totalCountTemp;
@@ -456,7 +456,7 @@ namespace HAL_JSON {
             int maxOperatorUsage = 0;  // track maximum usage for this expression
 
             // Dry-run op stack (store only TokenType, not full ExpressionToken*)
-            TokenType* opStack = new TokenType[initialSize];
+            ExpTokenType* opStack = new ExpTokenType[initialSize];
             int opStackIndex = 0;      // current operator stack depth
 
             const int rawTokensCount = rawTokens.count;
@@ -469,15 +469,15 @@ namespace HAL_JSON {
 
                     // Parentheses
                     if (c == '(') {
-                        opStack[opStackIndex++] = TokenType::LeftParenthesis;
+                        opStack[opStackIndex++] = ExpTokenType::LeftParenthesis;
 
                         if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex;
                     }
                     else if (c == ')') {
                         // Pop until LeftParenthesis is found
                         while (opStackIndex != 0) {
-                            TokenType top = opStack[opStackIndex - 1];
-                            if (top == TokenType::LeftParenthesis) break;
+                            ExpTokenType top = opStack[opStackIndex - 1];
+                            if (top == ExpTokenType::LeftParenthesis) break;
                             opStackIndex--;
                         }
                         if (opStackIndex != 0)
@@ -485,14 +485,14 @@ namespace HAL_JSON {
                     }
                     else {
                         // Detect operator type
-                        TokenType twoCharOpType = TokenType::NotSet;
+                        ExpTokenType twoCharOpType = ExpTokenType::NotSet;
                         if ((j + 1) < tokenStrLength) twoCharOpType = IsTwoCharOp(token.start + j);
 
-                        if (twoCharOpType != TokenType::NotSet) {
+                        if (twoCharOpType != ExpTokenType::NotSet) {
                             // Pop higher or equal precedence operators
                             while (opStackIndex != 0) {
-                                TokenType top = opStack[opStackIndex - 1];
-                                if (top == TokenType::LeftParenthesis) break;
+                                ExpTokenType top = opStack[opStackIndex - 1];
+                                if (top == ExpTokenType::LeftParenthesis) break;
                                 if (getPrecedence(top) < getPrecedence(twoCharOpType)) break;
                                 opStackIndex--;
                             }
@@ -503,11 +503,11 @@ namespace HAL_JSON {
                         }
 
                         // Single-character operator
-                        TokenType oneCharOpType = IsSingleOp(c);
-                        if (oneCharOpType != TokenType::NotSet) {
+                        ExpTokenType oneCharOpType = IsSingleOp(c);
+                        if (oneCharOpType != ExpTokenType::NotSet) {
                             while (opStackIndex != 0) {
-                                TokenType top = opStack[opStackIndex - 1];
-                                if (top == TokenType::LeftParenthesis) break;
+                                ExpTokenType top = opStack[opStackIndex - 1];
+                                if (top == ExpTokenType::LeftParenthesis) break;
                                 if (getPrecedence(top) < getPrecedence(oneCharOpType)) break;
                                 opStackIndex--;
                             }
@@ -519,8 +519,8 @@ namespace HAL_JSON {
                             while (j < tokenStrLength &&
                                 token[j] != '(' &&
                                 token[j] != ')' &&
-                                IsSingleOp(token[j]) == TokenType::NotSet &&
-                                !((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j) != TokenType::NotSet)) {
+                                IsSingleOp(token[j]) == ExpTokenType::NotSet &&
+                                !((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j) != ExpTokenType::NotSet)) {
                                 ++j;
                             }
                             j--; // adjust for outer loop increment
@@ -562,7 +562,7 @@ namespace HAL_JSON {
 
                     // Parentheses
                     if (c == '(') {
-                        opStack[opStackIndex++] = new ExpressionToken(token.start+j, 1, TokenType::LeftParenthesis);
+                        opStack[opStackIndex++] = new ExpressionToken(token.start+j, 1, ExpTokenType::LeftParenthesis);
                         if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                     }
                     else if ( c == ')') {
@@ -570,7 +570,7 @@ namespace HAL_JSON {
                         while (opStackIndex != 0)
                         {
                             ExpressionToken* top = opStack[opStackIndex - 1];
-                            if (top->type == TokenType::LeftParenthesis) break;
+                            if (top->type == ExpTokenType::LeftParenthesis) break;
                             outTokenItems[outTokensIndex++] = top;
                             opStackIndex--;
                         }
@@ -581,22 +581,18 @@ namespace HAL_JSON {
                             ReportError("Mismatched parenthesis"); // should never happend
                     }
                     else {
-                        TokenType twoCharOpType = TokenType::NotSet;
+                        ExpTokenType twoCharOpType = ExpTokenType::NotSet;
                         if ((j + 1) < tokenStrLength) twoCharOpType = IsTwoCharOp(token.start + j);
                         
-                        if (twoCharOpType != TokenType::NotSet) {
+                        if (twoCharOpType != ExpTokenType::NotSet) {
                             
                             // While there's an operator on top of the opStack with greater or equal precedence
                             while (opStackIndex != 0)
                             {
                                 ExpressionToken* top = opStack[opStackIndex - 1];
-                                if (top->type == TokenType::LeftParenthesis) break;
+                                if (top->type == ExpTokenType::LeftParenthesis) break;
                                 if (getPrecedence(top->type) < getPrecedence(twoCharOpType)) break;
                                 outTokenItems[outTokensIndex++] = top; 
-                                // SPECIAL NOTE: here it should be possible to build the logic tree direclty if the operator is a logic && ||
-                                // however as the following expression: a > 2 || b < 5 && (c == 6 && (d == 7 || e == 8)) 
-                                // become the following RPN: a 2 > b 5 < c 6 == d 7 == e 8 == || && && ||
-                                // there are no savings
                                 opStackIndex--;
                             }
                             // Push current operator as new item
@@ -607,14 +603,14 @@ namespace HAL_JSON {
                         }
 
                         // Single-character operator
-                        TokenType oneCharOpType = IsSingleOp(c);
-                        if (oneCharOpType != TokenType::NotSet) {
+                        ExpTokenType oneCharOpType = IsSingleOp(c);
+                        if (oneCharOpType != ExpTokenType::NotSet) {
                             
                             // While there's an operator on top of the opStack with greater or equal precedence
                             while (opStackIndex != 0)
                             {
                                 ExpressionToken* top = opStack[opStackIndex - 1];
-                                if (top->type == TokenType::LeftParenthesis) break;
+                                if (top->type == ExpTokenType::LeftParenthesis) break;
                                 if (getPrecedence(top->type) < getPrecedence(oneCharOpType)) break;
                                 outTokenItems[outTokensIndex++] = top;
                                 opStackIndex--;
@@ -628,10 +624,10 @@ namespace HAL_JSON {
                             int startIdx = j;
                             for (;j < tokenStrLength;j++) {
                                 if (token[j] == '(' || token[j] == ')') break;
-                                if (((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j)!=TokenType::NotSet)) break;
-                                if (IsSingleOp(token[j]) != TokenType::NotSet) break;
+                                if (((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j)!=ExpTokenType::NotSet)) break;
+                                if (IsSingleOp(token[j]) != ExpTokenType::NotSet) break;
                             }
-                            outTokenItems[outTokensIndex++] = new ExpressionToken(token.start + startIdx, token.start + j, TokenType::Operand);
+                            outTokenItems[outTokensIndex++] = new ExpressionToken(token.start + startIdx, token.start + j, ExpTokenType::Operand);
                             j--; 
 
                         }
@@ -669,10 +665,10 @@ namespace HAL_JSON {
             delete childB;
         }
         
-        static const TokenType compareOperators[] = {TokenType::CompareEqualsTo, TokenType::CompareNotEqualsTo,
-                                                     TokenType::CompareGreaterThanOrEqual, TokenType::CompareLessThanOrEqual,
-                                                     TokenType::CompareGreaterThan, TokenType::CompareLessThan, 
-                                                     TokenType::NotSet};
+        static const ExpTokenType compareOperators[] = {ExpTokenType::CompareEqualsTo, ExpTokenType::CompareNotEqualsTo,
+                                                     ExpTokenType::CompareGreaterThanOrEqual, ExpTokenType::CompareLessThanOrEqual,
+                                                     ExpTokenType::CompareGreaterThan, ExpTokenType::CompareLessThan, 
+                                                     ExpTokenType::NotSet};
 
         LogicRPNNode* Expressions::BuildLogicTree(ExpressionTokens* tokens)
         {
@@ -699,7 +695,7 @@ namespace HAL_JSON {
             int tokensCount = tokens->count;
             for (int i=0;i<tokensCount;i++) {
                 ExpressionToken& tok = *tokens->items[i];
-                if (tok.type == TokenType::LogicalAnd || tok.type == TokenType::LogicalOr) {
+                if (tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) {
                     // first flush pending calc as a leaf
                     if (!currentCalc.empty()) {
                         stack.push_back(makeCalc(currentCalc));

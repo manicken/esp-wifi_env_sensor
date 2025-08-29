@@ -19,27 +19,6 @@ namespace HAL_JSON {
             else if (StrEqualsIC(str, ";")) return TokenType::ActionSeparator;
             else if (StrEqualsIC(str, "\\")) return TokenType::ActionJoiner;
             else if (StrEqualsIC(str, "endon")) return TokenType::EndOn;
-            /*
-            else if (StrEqualsIC(str, "(")) return TokenType::LeftParenthesis;
-            else if (StrEqualsIC(str, ")")) return TokenType::RightParenthesis;
-            else if (StrEqualsIC(str, "&&")) return TokenType::LogicalAnd;
-            else if (StrEqualsIC(str, "||")) return TokenType::LogicalOr;
-            else if (StrEqualsIC(str, "==")) return TokenType::CompareEqualsTo;
-            else if (StrEqualsIC(str, "!=")) return TokenType::CompareNotEqualsTo;
-            else if (StrEqualsIC(str, "<")) return TokenType::CompareLessThan;
-            else if (StrEqualsIC(str, ">")) return TokenType::CompareGreaterThan;
-            else if (StrEqualsIC(str, "<=")) return TokenType::CompareLessThanOrEqual;
-            else if (StrEqualsIC(str, ">=")) return TokenType::CompareGreaterThanOrEqual;
-            else if (StrEqualsIC(str, "+")) return TokenType::CalcPlus;
-            else if (StrEqualsIC(str, "-")) return TokenType::CalcMinus;
-            else if (StrEqualsIC(str, "*")) return TokenType::CalcMultiply;
-            else if (StrEqualsIC(str, "/")) return TokenType::CalcDivide;
-            else if (StrEqualsIC(str, "%")) return TokenType::CalcModulus;
-            else if (StrEqualsIC(str, "&")) return TokenType::CalcBitwiseAnd;
-            else if (StrEqualsIC(str, "|")) return TokenType::CalcBitwiseOr;
-            else if (StrEqualsIC(str, "^")) return TokenType::CalcBitwiseExOr;
-            else if (StrEqualsIC(str, "<<")) return TokenType::CalcBitwiseLeftShift;
-            else if (StrEqualsIC(str, ">>")) return TokenType::CalcBitwiseRightShift;*/
             else return TokenType::NotSet;
         }
         const char* TokenTypeToString(TokenType type) {
@@ -60,40 +39,47 @@ namespace HAL_JSON {
                 case TokenType::Action: return "Action";
                 case TokenType::Merged: return "Merged";
                 case TokenType::Ignore: return "Ignore";
-                case TokenType::LeftParenthesis: return "LeftParenthesis";
-                case TokenType::RightParenthesis: return "RightParenthesis";
-                case TokenType::LogicalAnd: return "LogicalAnd";
-                case TokenType::LogicalOr: return "LogicalOr";
-                case TokenType::CompareEqualsTo: return "CompareEqualsTo";
-                case TokenType::CompareNotEqualsTo: return "CompareNotEqualsTo";
-                case TokenType::CompareLessThan: return "CompareLessThan";
-                case TokenType::CompareGreaterThan: return "CompareGreaterThan";
-                case TokenType::CompareLessThanOrEqual: return "CompareLessThanOrEqual";
-                case TokenType::CompareGreaterThanOrEqual: return "CompareGreaterThanOrEqual";
-                case TokenType::CalcPlus: return "CalcPlus";
-                case TokenType::CalcMinus: return "CalcMinus";
-                case TokenType::CalcMultiply: return "CalcMultiply";
-                case TokenType::CalcDivide: return "CalcDivide";
-                case TokenType::CalcModulus: return "CalcModulus";
-                case TokenType::CalcBitwiseAnd: return "CalcBitwiseAnd";
-                case TokenType::CalcBitwiseOr: return "CalcBitwiseOr";
-                case TokenType::CalcBitwiseExOr: return "CalcBitwiseExOr";
-                case TokenType::CalcBitwiseLeftShift: return "CalcBitwiseLeftShift";
-                case TokenType::CalcBitwiseRightShift: return "CalcBitwiseRightShift";
-                case TokenType::Operand: return "Operand";
                 default: return "Unknown";
             }
         }
 
-        ExpressionToken::ExpressionToken() : type(TokenType::NotSet) {
+        const char* ExpTokenTypeToString(ExpTokenType type) {
+            switch (type) {
+                case ExpTokenType::NotSet: return "NotSet";
+                case ExpTokenType::LeftParenthesis: return "LeftParenthesis";
+                case ExpTokenType::RightParenthesis: return "RightParenthesis";
+                case ExpTokenType::LogicalAnd: return "LogicalAnd";
+                case ExpTokenType::LogicalOr: return "LogicalOr";
+                case ExpTokenType::CompareEqualsTo: return "CompareEqualsTo";
+                case ExpTokenType::CompareNotEqualsTo: return "CompareNotEqualsTo";
+                case ExpTokenType::CompareLessThan: return "CompareLessThan";
+                case ExpTokenType::CompareGreaterThan: return "CompareGreaterThan";
+                case ExpTokenType::CompareLessThanOrEqual: return "CompareLessThanOrEqual";
+                case ExpTokenType::CompareGreaterThanOrEqual: return "CompareGreaterThanOrEqual";
+                case ExpTokenType::CalcPlus: return "CalcPlus";
+                case ExpTokenType::CalcMinus: return "CalcMinus";
+                case ExpTokenType::CalcMultiply: return "CalcMultiply";
+                case ExpTokenType::CalcDivide: return "CalcDivide";
+                case ExpTokenType::CalcModulus: return "CalcModulus";
+                case ExpTokenType::CalcBitwiseAnd: return "CalcBitwiseAnd";
+                case ExpTokenType::CalcBitwiseOr: return "CalcBitwiseOr";
+                case ExpTokenType::CalcBitwiseExOr: return "CalcBitwiseExOr";
+                case ExpTokenType::CalcBitwiseLeftShift: return "CalcBitwiseLeftShift";
+                case ExpTokenType::CalcBitwiseRightShift: return "CalcBitwiseRightShift";
+                case ExpTokenType::Operand: return "Operand";
+                default: return "Unknown";
+            }
+        }
+
+        ExpressionToken::ExpressionToken() : type(ExpTokenType::NotSet) {
 
         }
-        ExpressionToken::ExpressionToken(const char* _start, const char* _end, TokenType _type) {
+        ExpressionToken::ExpressionToken(const char* _start, const char* _end, ExpTokenType _type) {
             start = _start;
             end = _end;
             type = _type;
         }
-        ExpressionToken::ExpressionToken(const char* _start, int length, TokenType _type) {
+        ExpressionToken::ExpressionToken(const char* _start, int length, ExpTokenType _type) {
             start = _start;
             end = _start + length;
             type = _type;
@@ -101,8 +87,8 @@ namespace HAL_JSON {
         ExpressionToken::~ExpressionToken() {
             // nothing to free here
         }
-        bool ExpressionToken::AnyType(const TokenType* candidates) {
-            while(*candidates != TokenType::NotSet) {
+        bool ExpressionToken::AnyType(const ExpTokenType* candidates) {
+            while(*candidates != ExpTokenType::NotSet) {
                 if (type == *candidates) return true;
                 candidates++;
             }
@@ -296,11 +282,10 @@ namespace HAL_JSON {
  
             for (int i=start;i<end;i++) {
                 ExpressionToken& tok = *tokens[i];
-                if (tok.type == TokenType::Ignore) continue;
                 std::string msgLine = "Token[" + std::to_string(i) + "]  ";
-                if (tok.type != TokenType::Operand) {
+                if (tok.type != ExpTokenType::Operand) {
                     msgLine += "---";
-                    msgLine += TokenTypeToString(tok.type);
+                    msgLine += ExpTokenTypeToString(tok.type);
                     msgLine += "---";
                 } else {
                     msgLine += tok.ToString();

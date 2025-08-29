@@ -47,61 +47,47 @@ namespace HAL_JSON {
             ActionJoiner,
             /** marks the token to be ignored in futher parsing, should be marked as Ignored When consumed*/
             Ignore,
-            /** used by expressions */
+            
+        };
+
+        enum class ExpTokenType : uint16_t {
+            /** used to make it easier to see unset tokens, is also used as terminator item when defining a list of token types */
+            NotSet,
             Operand,
-            /** used by expressions */
             LeftParenthesis,
-            /** used by expressions */
             RightParenthesis,
-            /** used by expressions */
             LogicalAnd,
-            /** used by expressions */
             LogicalOr,
-            /** used by expressions */
             CompareEqualsTo,
-            /** used by expressions */
             CompareNotEqualsTo,
-            /** used by expressions */
             CompareLessThan,
-            /** used by expressions */
             CompareGreaterThan,
-            /** used by expressions */
             CompareLessThanOrEqual,
-            /** used by expressions */
             CompareGreaterThanOrEqual,
-            /** used by expressions */
             CalcPlus,
-            /** used by expressions */
             CalcMinus,
-            /** used by expressions */
             CalcMultiply,
-            /** used by expressions */
             CalcDivide,
-            /** used by expressions */
             CalcModulus,
-            /** used by expressions */
             CalcBitwiseAnd,
-            /** used by expressions */
             CalcBitwiseOr,
-            /** used by expressions */
             CalcBitwiseExOr,
-            /** used by expressions */
             CalcBitwiseLeftShift,
-            /** used by expressions */
             CalcBitwiseRightShift
         };
 
         const char* TokenTypeToString(TokenType type);
+        const char* ExpTokenTypeToString(ExpTokenType type) ;
         TokenType GetFundamentalTokenType(const char* str);
 
         struct ExpressionToken : public ZeroCopyString {
             using ZeroCopyString::ZeroCopyString;
-            TokenType type;
+            ExpTokenType type;
             //int matchingIndex;
-            bool AnyType(const TokenType* candidates);
+            bool AnyType(const ExpTokenType* candidates);
             ExpressionToken();
-            ExpressionToken(const char* start, int length, TokenType type);
-            ExpressionToken(const char* _start, const char* _end, TokenType _type);
+            ExpressionToken(const char* start, int length, ExpTokenType type);
+            ExpressionToken(const char* _start, const char* _end, ExpTokenType _type);
             ~ExpressionToken();
         };
         struct ExpressionTokens {
