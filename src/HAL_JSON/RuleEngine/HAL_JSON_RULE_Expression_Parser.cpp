@@ -546,9 +546,9 @@ namespace HAL_JSON {
             operatorCount = GetGenerateRPNTokensCount_DryRun(rawTokens, operatorCount);
             
             ExpressionTokens* outTokens = new ExpressionTokens(totalCount);
-            ExpressionToken** outTokenItems = outTokens->items;
+            ExpressionToken* outTokenItems = outTokens->items;
 
-            ExpressionToken** opStack = new ExpressionToken*[operatorCount];
+            ExpressionToken* opStack = new ExpressionToken[operatorCount];
             int opStackIndex = 0;
 
             int outTokensIndex = 0;
@@ -562,16 +562,16 @@ namespace HAL_JSON {
 
                     // Parentheses
                     if (c == '(') {
-                        opStack[opStackIndex++] = new ExpressionToken(token.start+j, 1, ExpTokenType::LeftParenthesis);
+                        opStack[opStackIndex++].Set(token.start+j, 1, ExpTokenType::LeftParenthesis);
                         if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                     }
                     else if ( c == ')') {
                         // Pop until LeftParenthesis is found
                         while (opStackIndex != 0)
                         {
-                            ExpressionToken* top = opStack[opStackIndex - 1];
-                            if (top->type == ExpTokenType::LeftParenthesis) break;
-                            outTokenItems[outTokensIndex++] = top;
+                            ExpressionToken& top = opStack[opStackIndex - 1];
+                            if (top.type == ExpTokenType::LeftParenthesis) break;
+                            outTokenItems[outTokensIndex++].Set(top);
                             opStackIndex--;
                         }
 
@@ -589,14 +589,14 @@ namespace HAL_JSON {
                             // While there's an operator on top of the opStack with greater or equal precedence
                             while (opStackIndex != 0)
                             {
-                                ExpressionToken* top = opStack[opStackIndex - 1];
-                                if (top->type == ExpTokenType::LeftParenthesis) break;
-                                if (getPrecedence(top->type) < getPrecedence(twoCharOpType)) break;
-                                outTokenItems[outTokensIndex++] = top; 
+                                ExpressionToken& top = opStack[opStackIndex - 1];
+                                if (top.type == ExpTokenType::LeftParenthesis) break;
+                                if (getPrecedence(top.type) < getPrecedence(twoCharOpType)) break;
+                                outTokenItems[outTokensIndex++].Set(top); 
                                 opStackIndex--;
                             }
                             // Push current operator as new item
-                            opStack[opStackIndex++] = new ExpressionToken(token.start+j, 2, twoCharOpType);
+                            opStack[opStackIndex++].Set(token.start+j, 2, twoCharOpType);
                             if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                             j++; // consume one extra token
                             continue;
@@ -609,14 +609,14 @@ namespace HAL_JSON {
                             // While there's an operator on top of the opStack with greater or equal precedence
                             while (opStackIndex != 0)
                             {
-                                ExpressionToken* top = opStack[opStackIndex - 1];
-                                if (top->type == ExpTokenType::LeftParenthesis) break;
-                                if (getPrecedence(top->type) < getPrecedence(oneCharOpType)) break;
-                                outTokenItems[outTokensIndex++] = top;
+                                ExpressionToken& top = opStack[opStackIndex - 1];
+                                if (top.type == ExpTokenType::LeftParenthesis) break;
+                                if (getPrecedence(top.type) < getPrecedence(oneCharOpType)) break;
+                                outTokenItems[outTokensIndex++].Set(top);
                                 opStackIndex--;
                             }
                             // Push current operator as new item
-                            opStack[opStackIndex++] = new ExpressionToken(token.start + j, 1, oneCharOpType);
+                            opStack[opStackIndex++].Set(token.start + j, 1, oneCharOpType);
                             if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                         }
                         else {
@@ -627,7 +627,7 @@ namespace HAL_JSON {
                                 if (((j + 1) < tokenStrLength && IsTwoCharOp(token.start + j)!=ExpTokenType::NotSet)) break;
                                 if (IsSingleOp(token[j]) != ExpTokenType::NotSet) break;
                             }
-                            outTokenItems[outTokensIndex++] = new ExpressionToken(token.start + startIdx, token.start + j, ExpTokenType::Operand);
+                            outTokenItems[outTokensIndex++].Set(token.start + startIdx, token.start + j, ExpTokenType::Operand);
                             j--; 
 
                         }
@@ -648,7 +648,7 @@ namespace HAL_JSON {
             }
             // After loop: pop remaining ops
             while (opStackIndex != 0)
-                outTokenItems[outTokensIndex++] = opStack[--opStackIndex];
+                outTokenItems[outTokensIndex++].Set(opStack[--opStackIndex]);
             ReportInfo("\nGenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(totalCount) + "\n");
             ReportInfo("\nGenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(operatorCount) + "\n");
 
@@ -672,9 +672,7 @@ namespace HAL_JSON {
 
         LogicRPNNode* Expressions::BuildLogicTree(ExpressionTokens* tokens)
         {
-            std::vector<LogicRPNNode*> stack;
-
-            auto makeCalc = [&](std::vector<ExpressionToken*> rpn) {
+            auto makeCalc = [](std::vector<ExpressionToken*> rpn) {
                 auto* n = new LogicRPNNode();
                 n->calcRPN = std::move(rpn);
                 n->childA = nullptr;
@@ -683,7 +681,7 @@ namespace HAL_JSON {
                 return n;
             };
 
-            auto makeOp = [&](ExpressionToken* opTok, LogicRPNNode* lhs, LogicRPNNode* rhs) {
+            auto makeOp = [](ExpressionToken* opTok, LogicRPNNode* lhs, LogicRPNNode* rhs) {
                 auto* n = new LogicRPNNode();
                 n->childA = lhs;
                 n->childB = rhs;
@@ -691,10 +689,12 @@ namespace HAL_JSON {
                 return n;
             };
 
+            std::vector<LogicRPNNode*> stack;
             std::vector<ExpressionToken*> currentCalc;
+
             int tokensCount = tokens->count;
             for (int i=0;i<tokensCount;i++) {
-                ExpressionToken& tok = *tokens->items[i];
+                ExpressionToken& tok = tokens->items[i];
                 if (tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) {
                     // first flush pending calc as a leaf
                     if (!currentCalc.empty()) {
@@ -702,7 +702,10 @@ namespace HAL_JSON {
                         currentCalc.clear();
                     }
 
-                    if (stack.size() < 2) // this should never happend
+                    // This should never happen under normal use.
+                    // It can occur if logical and arithmetic expressions are improperly combined,
+                    // e.g., (a == 0 || b == 1) + 2, which is invalid.
+                    if (stack.size() < 2)
                         throw std::runtime_error("LogicRPN: not enough operands for logic op");
 
                     auto rhs = stack.back(); stack.pop_back();

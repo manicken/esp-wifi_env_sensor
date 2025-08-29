@@ -1010,9 +1010,9 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(newDirect);
             ReportInfo("\n\nnew complete RPN:");
             for (int i=0;i<newDirect->index;i++) { // index is set to after the last filled item
-                ExpressionToken* tok = newDirect->items[i];
+                ExpressionToken& tok = newDirect->items[i];
                 //if (tok->type == TokenType::Operand)
-                    ReportInfo(tok->ToString() + " ");
+                    ReportInfo(tok.ToString() + " ");
                 //else
                 //    ReportInfo(TokenTypeToString(tok->type ) + std::string(" "));
             }

@@ -6,6 +6,7 @@
 #include "../HAL_JSON_UID_Path.h"
 #include "../HAL_JSON_Manager.h"
 #include "HAL_JSON_RULE_Parser_Token.h"
+#include "HAL_JSON_RULE_Expression_Token.h"
 #include "HAL_JSON_RULE_Engine_Support.h"
 
 #include <string>

@@ -50,54 +50,10 @@ namespace HAL_JSON {
             
         };
 
-        enum class ExpTokenType : uint16_t {
-            /** used to make it easier to see unset tokens, is also used as terminator item when defining a list of token types */
-            NotSet,
-            Operand,
-            LeftParenthesis,
-            RightParenthesis,
-            LogicalAnd,
-            LogicalOr,
-            CompareEqualsTo,
-            CompareNotEqualsTo,
-            CompareLessThan,
-            CompareGreaterThan,
-            CompareLessThanOrEqual,
-            CompareGreaterThanOrEqual,
-            CalcPlus,
-            CalcMinus,
-            CalcMultiply,
-            CalcDivide,
-            CalcModulus,
-            CalcBitwiseAnd,
-            CalcBitwiseOr,
-            CalcBitwiseExOr,
-            CalcBitwiseLeftShift,
-            CalcBitwiseRightShift
-        };
 
         const char* TokenTypeToString(TokenType type);
-        const char* ExpTokenTypeToString(ExpTokenType type) ;
+        
         TokenType GetFundamentalTokenType(const char* str);
-
-        struct ExpressionToken : public ZeroCopyString {
-            using ZeroCopyString::ZeroCopyString;
-            ExpTokenType type;
-            //int matchingIndex;
-            bool AnyType(const ExpTokenType* candidates);
-            ExpressionToken();
-            ExpressionToken(const char* start, int length, ExpTokenType type);
-            ExpressionToken(const char* _start, const char* _end, ExpTokenType _type);
-            ~ExpressionToken();
-        };
-        struct ExpressionTokens {
-            ExpressionToken** items;
-            int index;
-            int count;
-            ExpressionTokens();
-            ExpressionTokens(int count);
-            ~ExpressionTokens();
-        };
 
         struct Token : public ZeroCopyString {
             using ZeroCopyString::ZeroCopyString;
@@ -190,6 +146,6 @@ namespace HAL_JSON {
         void ReportTokenWarning(const Token& t, const char* msg, const char* param = nullptr);
         
         std::string PrintTokens(Tokens& tokens, int subTokenIndexOffset = 0);
-        std::string PrintExpressionTokens(ExpressionTokens& _tokens, int start = 0, int end = -1); // -1 mean defaults to _tokens.count
+        
     }
 }

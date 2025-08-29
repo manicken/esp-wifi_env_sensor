@@ -12,6 +12,7 @@
 #include <vector>
 #include <stack>
 #include "HAL_JSON_RULE_Parser_Token.h"
+#include "HAL_JSON_RULE_Expression_Token.h"
 #include "HAL_JSON_RULE_Expression_Parser.h"
 #include "HAL_JSON_RULE_Engine.h"
 #include "../../Support/ConvertHelper.h"
