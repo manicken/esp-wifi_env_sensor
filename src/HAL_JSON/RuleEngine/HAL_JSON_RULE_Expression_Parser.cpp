@@ -379,7 +379,7 @@ namespace HAL_JSON {
 
         std::string CalcExpressionToString(const std::vector<ExpressionToken*>& calcExpr) {
             std::string out;
-            for (int i=0;i<calcExpr.size();i++) {
+            for (uint32_t i=0;i<calcExpr.size();i++) {
                 out += calcExpr[i]->ToString();
                 if (i + 1 < calcExpr.size()) out += " ";
             }
@@ -403,14 +403,6 @@ namespace HAL_JSON {
                 if (node->childA) printLogicRPNNodeTree(node->childA, indent + 1);
                 if (node->childB) printLogicRPNNodeTree(node->childB, indent + 1);
              }
-        }
-        
-        void PrintExpressionTokens(std::vector<ExpressionToken*>& calcRPN) {
-            Expressions::ReportInfo("\nTokens: ");
-            for (int i=0;i<calcRPN.size();i++){
-                Expressions::ReportInfo(calcRPN[i]->ToString() + " ");
-            }
-            Expressions::ReportInfo("\n");
         }
 
         void Expressions::GetGenerateRPNTokensCount_PreCalc(const Tokens& rawTokens, int& totalCount, int& operatorCount) {
@@ -436,7 +428,6 @@ namespace HAL_JSON {
                         operatorCountTemp++;
                     } else {
                         // identifier/number
-                        int startIdx = j;
                         while (j < tokenStrLength &&
                             token[j] != '(' &&
                             token[j] != ')' &&
