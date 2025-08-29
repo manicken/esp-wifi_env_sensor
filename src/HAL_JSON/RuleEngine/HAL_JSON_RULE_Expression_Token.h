@@ -56,7 +56,6 @@ namespace HAL_JSON {
             ExpressionToken(const char* _start, const char* _end, ExpTokenType _type);
             void Set(const char* start, int length, ExpTokenType type);
             void Set(const char* _start, const char* _end, ExpTokenType _type);
-            void Set(ExpressionToken& other);
             ~ExpressionToken();
         };
         struct ExpressionTokens {

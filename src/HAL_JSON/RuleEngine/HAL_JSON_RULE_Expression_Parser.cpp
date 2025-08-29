@@ -562,6 +562,7 @@ namespace HAL_JSON {
 
                     // Parentheses
                     if (c == '(') {
+                        // Push current operator as 'new' item
                         opStack[opStackIndex++].Set(token.start+j, 1, ExpTokenType::LeftParenthesis);
                         if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                     }
@@ -571,7 +572,8 @@ namespace HAL_JSON {
                         {
                             ExpressionToken& top = opStack[opStackIndex - 1];
                             if (top.type == ExpTokenType::LeftParenthesis) break;
-                            outTokenItems[outTokensIndex++].Set(top);
+                            outTokenItems[outTokensIndex++] = top;
+                            
                             opStackIndex--;
                         }
 
@@ -592,10 +594,10 @@ namespace HAL_JSON {
                                 ExpressionToken& top = opStack[opStackIndex - 1];
                                 if (top.type == ExpTokenType::LeftParenthesis) break;
                                 if (getPrecedence(top.type) < getPrecedence(twoCharOpType)) break;
-                                outTokenItems[outTokensIndex++].Set(top); 
+                                outTokenItems[outTokensIndex++] = top;
                                 opStackIndex--;
                             }
-                            // Push current operator as new item
+                            // Push current operator as 'new' item
                             opStack[opStackIndex++].Set(token.start+j, 2, twoCharOpType);
                             if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                             j++; // consume one extra token
@@ -612,10 +614,10 @@ namespace HAL_JSON {
                                 ExpressionToken& top = opStack[opStackIndex - 1];
                                 if (top.type == ExpTokenType::LeftParenthesis) break;
                                 if (getPrecedence(top.type) < getPrecedence(oneCharOpType)) break;
-                                outTokenItems[outTokensIndex++].Set(top);
+                                outTokenItems[outTokensIndex++] = top;
                                 opStackIndex--;
                             }
-                            // Push current operator as new item
+                            // Push current operator as 'new' item
                             opStack[opStackIndex++].Set(token.start + j, 1, oneCharOpType);
                             if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                         }
@@ -648,7 +650,7 @@ namespace HAL_JSON {
             }
             // After loop: pop remaining ops
             while (opStackIndex != 0)
-                outTokenItems[outTokensIndex++].Set(opStack[--opStackIndex]);
+                outTokenItems[outTokensIndex++] = opStack[--opStackIndex];
             ReportInfo("\nGenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(totalCount) + "\n");
             ReportInfo("\nGenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(operatorCount) + "\n");
 

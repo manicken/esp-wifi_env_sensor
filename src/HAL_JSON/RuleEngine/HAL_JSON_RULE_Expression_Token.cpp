@@ -64,11 +64,6 @@ namespace HAL_JSON {
             end = _end;
             type = _type;
         }
-        void ExpressionToken::Set(ExpressionToken& other) {
-            start = other.start;
-            end = other.end;
-            type = other.type;
-        }
 
         ExpressionTokens::ExpressionTokens() {
             items = nullptr;
