@@ -37,6 +37,28 @@ namespace HAL_JSON {
 #endif
         }
 
+        // precedence map
+        static const std::unordered_map<TokenType, int> precedence = {
+            // calc
+            {TokenType::CalcMultiply, 7}, {TokenType::CalcDivide, 7}, {TokenType::CalcModulus, 7},
+            {TokenType::CalcPlus, 6}, {TokenType::CalcMinus, 6},
+            {TokenType::CalcBitwiseLeftShift, 5}, {TokenType::CalcBitwiseRightShift, 5},
+            {TokenType::CalcBitwiseAnd, 4}, {TokenType::CalcBitwiseExOr, 4}, {TokenType::CalcBitwiseOr, 4},
+
+            // compare
+            {TokenType::CompareGreaterThan, 3}, {TokenType::CompareLessThan, 3},
+            {TokenType::CompareGreaterThanOrEqual, 3}, {TokenType::CompareLessThanOrEqual, 3},
+            {TokenType::CompareEqualsTo, 2}, {TokenType::CompareNotEqualsTo, 2},
+
+            // logic
+            {TokenType::LogicalAnd, 1}, {TokenType::LogicalOr, 0}
+        };
+
+        inline int getPrecedence(TokenType t) {
+            auto it = precedence.find(t);
+            return (it != precedence.end()) ? it->second : -1;
+        }
+
         const char* Expressions::SingleOperatorList = HAL_JSON_RULES_EXPRESSIONS_SINGLE_OPERATOR_LIST;
         const char* Expressions::DoubleOperatorList = HAL_JSON_RULES_EXPRESSIONS_DOUBLE_OPERATOR_LIST;
 
@@ -365,20 +387,34 @@ namespace HAL_JSON {
         #include <cctype>  // for isspace, isdigit, isalpha
 
         // Count total number of clean tokens first
-        int Expressions::preParseTokensCount(const Tokens& rawTokens) {
-            int count = 0;
+        void Expressions::preParseTokensCount(const Tokens& rawTokens, int& totalCount, int* operatorCount) {
+            int totalCountTemp = 0;
+            int operatorCountTemp = 0;
+            
             for (int i = 0; i < rawTokens.count; ++i) {
                 const Token& str = rawTokens.items[i];
                 int j = 0;
                 const int strLength = str.Length();
                 while (j < strLength) {
                     char c = str[j];
-                    if (c == '(' || c == ')') {
-                        ++count; ++j;
+                    if (c == '(') {
+                        if (operatorCount == nullptr)
+                            ++totalCountTemp;
+                        else {
+                            operatorCountTemp++;
+                        }
+                        ++j;
+                    } else if (c == ')') {
+                        if (operatorCount == nullptr)
+                            ++totalCountTemp;
+                        
+                        ++j;
                     } else if ((j + 1) < strLength && IsTwoCharOp(c, str[j+1]) != TokenType::NotSet) {
-                        ++count; j += 2;
+                        ++totalCountTemp; j += 2;
+                        operatorCountTemp++;
                     } else if (IsSingleOp(c) != TokenType::NotSet) {
-                        ++count; ++j;
+                        ++totalCountTemp; ++j;
+                        operatorCountTemp++;
                     } else {
                         // identifier/number
                         int startIdx = j;
@@ -389,18 +425,103 @@ namespace HAL_JSON {
                             !((j + 1) < strLength && IsTwoCharOp(str[j], str[j+1]) != TokenType::NotSet)) {
                             ++j;
                         }
-                        ++count;
+                        ++totalCountTemp;
                     }
                 }
             }
-            return count;
+            totalCount = totalCountTemp;
+            if (operatorCount == nullptr) return;
+            // Second pass: exact operator stack simulation
+            *operatorCount = RPNcountOpTokensDryRun(rawTokens, operatorCountTemp);
         }
+        int Expressions::RPNcountOpTokensDryRun(const Tokens& rawTokens, int initialSize)
+        {
+            int maxOperatorUsage = 0;  // track maximum usage for this expression
+
+            // Dry-run op stack (store only TokenType, not full ExpressionToken*)
+            TokenType* opStack = new TokenType[initialSize];
+            int opStackIndex = 0;      // current operator stack depth
+
+            const int rawTokensCount = rawTokens.count;
+            for (int i = 0; i < rawTokensCount; ++i) {
+                const Token& token = rawTokens.items[i];
+                const int strLength = token.Length();
+
+                for (int j = 0; j < strLength; ++j) {
+                    char c = token[j];
+
+                    // Parentheses
+                    if (c == '(') {
+                        opStack[opStackIndex++] = TokenType::LeftParenthesis;
+
+                        if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex;
+                    }
+                    else if (c == ')') {
+                        // Pop until LeftParenthesis is found
+                        while (opStackIndex != 0) {
+                            TokenType top = opStack[opStackIndex - 1];
+                            if (top == TokenType::LeftParenthesis) break;
+                            opStackIndex--;
+                        }
+                        if (opStackIndex != 0)
+                            opStackIndex--; // discard LeftParenthesis
+                    }
+                    else {
+                        // Detect operator type
+                        TokenType twoCharOpType = TokenType::NotSet;
+                        if ((j + 1) < strLength) twoCharOpType = IsTwoCharOp(c, token[j + 1]);
+
+                        if (twoCharOpType != TokenType::NotSet) {
+                            // Pop higher or equal precedence operators
+                            while (opStackIndex != 0) {
+                                TokenType top = opStack[opStackIndex - 1];
+                                if (top == TokenType::LeftParenthesis) break;
+                                if (getPrecedence(top) < getPrecedence(twoCharOpType)) break;
+                                opStackIndex--;
+                            }
+                            opStack[opStackIndex++] = twoCharOpType;
+                            if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex;
+                            j++; // consume extra char
+                            continue;
+                        }
+
+                        // Single-character operator
+                        TokenType oneCharOpType = IsSingleOp(c);
+                        if (oneCharOpType != TokenType::NotSet) {
+                            while (opStackIndex != 0) {
+                                TokenType top = opStack[opStackIndex - 1];
+                                if (top == TokenType::LeftParenthesis) break;
+                                if (getPrecedence(top) < getPrecedence(oneCharOpType)) break;
+                                opStackIndex--;
+                            }
+                            opStack[opStackIndex++] = oneCharOpType;
+                            if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex;
+                        }
+                        else {
+                            // Operand / identifier
+                            while (j < strLength &&
+                                token[j] != '(' &&
+                                token[j] != ')' &&
+                                IsSingleOp(token[j]) == TokenType::NotSet &&
+                                !((j + 1) < strLength && IsTwoCharOp(token[j], token[j + 1]) != TokenType::NotSet)) {
+                                ++j;
+                            }
+                            j--; // adjust for outer loop increment
+                        }
+                    }
+                }
+            }
+            delete[] opStack;
+            return maxOperatorUsage;
+        }
+
 
         // The actual pre-parser
         ExpressionTokens* Expressions::preParseTokens(const Tokens& rawTokens) {
-            size_t totalCount = preParseTokensCount(rawTokens);
+            int totalCount = 0;
+            preParseTokensCount(rawTokens, totalCount);
             ExpressionTokens* cleanTokens = new ExpressionTokens(totalCount);
-            ExpressionToken* cleanTokenItems = cleanTokens->items;
+            ExpressionToken** cleanTokenItems = cleanTokens->items;
             int cleanTokensIndex = 0;
             const int rawTokensCount = rawTokens.count;
             for (int i = 0; i < rawTokensCount; ++i) {
@@ -413,12 +534,13 @@ namespace HAL_JSON {
 
                     // Parentheses
                     if (c == '(' || c == ')') {
-                        ExpressionToken& cleanToken = cleanTokenItems[cleanTokensIndex++];
+                        ExpressionToken* cleanToken = new ExpressionToken();//[cleanTokensIndex++];
                         //cleanToken.line   = tok.line;
                         //cleanToken.column = tok.column + j;
-                        cleanToken.start  = str.start + j;
-                        cleanToken.end    = str.start + j + 1;
-                        cleanToken.type   = (c == '(')?TokenType::LeftParenthesis:TokenType::RightParenthesis;
+                        cleanToken->start  = str.start + j;
+                        cleanToken->end    = str.start + j + 1;
+                        cleanToken->type   = (c == '(')?TokenType::LeftParenthesis:TokenType::RightParenthesis;
+                        cleanTokenItems[cleanTokensIndex++] = cleanToken;
                         ++j;
                         continue;
                     }
@@ -428,12 +550,13 @@ namespace HAL_JSON {
                     if ((j + 1) < strLength) {
                         TokenType twoCharOpType = IsTwoCharOp(c, str[j+1]);
                         if (twoCharOpType != TokenType::NotSet) {
-                            ExpressionToken& cleanToken = cleanTokenItems[cleanTokensIndex++];
+                            ExpressionToken* cleanToken = new ExpressionToken();
                             //cleanToken.line   = tok.line;
                             //cleanToken.column = tok.column + j;
-                            cleanToken.start  = str.start + j;
-                            cleanToken.end    = str.start + j + 2;
-                            cleanToken.type   = twoCharOpType;
+                            cleanToken->start  = str.start + j;
+                            cleanToken->end    = str.start + j + 2;
+                            cleanToken->type   = twoCharOpType;
+                            cleanTokenItems[cleanTokensIndex++] = cleanToken;
                             j += 2;
                             continue;
                         }
@@ -442,12 +565,13 @@ namespace HAL_JSON {
                     // Single-character operator
                     TokenType oneCharOpType = IsSingleOp(c);
                     if (oneCharOpType != TokenType::NotSet) {
-                        ExpressionToken& cleanToken = cleanTokenItems[cleanTokensIndex++];
+                        ExpressionToken* cleanToken = new ExpressionToken();
                         //cleanToken.line   = tok.line;
                         //cleanToken.column = tok.column + j;
-                        cleanToken.start  = str.start + j;
-                        cleanToken.end    = str.start + j + 1;
-                        cleanToken.type   = oneCharOpType;
+                        cleanToken->start  = str.start + j;
+                        cleanToken->end    = str.start + j + 1;
+                        cleanToken->type   = oneCharOpType;
+                        cleanTokenItems[cleanTokensIndex++] = cleanToken;
                         ++j;
                         continue;
                     }
@@ -461,12 +585,13 @@ namespace HAL_JSON {
                         !((j + 1) < strLength && IsTwoCharOp(str[j], str[j+1])!=TokenType::NotSet)) {
                         ++j;
                     }
-                    ExpressionToken& cleanToken = cleanTokenItems[cleanTokensIndex++];
+                    ExpressionToken* cleanToken = new ExpressionToken();
                     //cleanToken.line   = tok.line;
                     //cleanToken.column = tok.column + startIdx;
-                    cleanToken.start  = str.start + startIdx;
-                    cleanToken.end    = str.start + j;
-                    cleanToken.type   = TokenType::Operand;
+                    cleanToken->start  = str.start + startIdx;
+                    cleanToken->end    = str.start + j;
+                    cleanToken->type   = TokenType::Operand;
+                    cleanTokenItems[cleanTokensIndex++] = cleanToken;
                 }
             }
             if (cleanTokensIndex != totalCount) {
@@ -671,12 +796,12 @@ namespace HAL_JSON {
             ctx.outStack.BeginSlice(outStackMinIndex, outStackCurrIndex);
             int tempStackCurrIndex=0, tempStackMinIndex=0;
             ctx.tempStack.BeginSlice(tempStackMinIndex, tempStackCurrIndex);
-            
+            ExpressionToken** tokenItems = tokens.items;
             int end = tokens.count;
             for (int i = tokens.index; i < end; i++) {
                 //tokens.index = i;
                 //std::cout << "\ntokens.index:" << std::to_string(tokens.index) << "\n";
-                ExpressionToken& tok = tokens.items[i];
+                ExpressionToken& tok = *tokenItems[i];
                 if (tok.type == TokenType::Ignore) continue;
 
                 if (tok.type == TokenType::LeftParenthesis) {
@@ -691,7 +816,7 @@ namespace HAL_JSON {
                     if (sub->IsPureCalcNode()) {
                         ctx.tempStack.push(&tok); // the first parenthesis
                         ctx.merge_calc_from(sub);
-                        ctx.tempStack.push(&tokens.items[tokens.index]); // the last parenthesis
+                        ctx.tempStack.push(tokenItems[tokens.index]); // the last parenthesis
                         delete sub; // when it's a pure calc node delete it
                     }else {
                         // flushCalc() here is technically redundant for valid inputs,
@@ -772,34 +897,14 @@ namespace HAL_JSON {
             }
             Expressions::ReportInfo("\n");
         }
-        // precedence map
-        static const std::unordered_map<TokenType, int> precedence = {
-            // calc
-            {TokenType::CalcMultiply, 7}, {TokenType::CalcDivide, 7}, {TokenType::CalcModulus, 7},
-            {TokenType::CalcPlus, 6}, {TokenType::CalcMinus, 6},
-            {TokenType::CalcBitwiseLeftShift, 5}, {TokenType::CalcBitwiseRightShift, 5},
-            {TokenType::CalcBitwiseAnd, 4}, {TokenType::CalcBitwiseExOr, 4}, {TokenType::CalcBitwiseOr, 4},
-
-            // compare
-            {TokenType::CompareGreaterThan, 3}, {TokenType::CompareLessThan, 3},
-            {TokenType::CompareGreaterThanOrEqual, 3}, {TokenType::CompareLessThanOrEqual, 3},
-            {TokenType::CompareEqualsTo, 2}, {TokenType::CompareNotEqualsTo, 2},
-
-            // logic
-            {TokenType::LogicalAnd, 1}, {TokenType::LogicalOr, 0}
-        };
-
-        inline int getPrecedence(TokenType t) {
-            auto it = precedence.find(t);
-            return (it != precedence.end()) ? it->second : -1;
-        }
+        
 
         LogicRPNNode* Expressions::ParseConditionalExpression2(ExpressionTokens& tokens, ParseContext& ctx) {
             LogicRPNNode* currentNode = new LogicRPNNode();  // This will hold all calc tokens directly
             int end = tokens.count;
-
+            ExpressionToken** tokenItems = tokens.items;
             for (int i = tokens.index; i < end; i++) {
-                ExpressionToken& tok = tokens.items[i];
+                ExpressionToken& tok = *tokenItems[i];
                 ReportInfo("token:" + tok.ToString() + "\n");
                // if (tok.type == TokenType::Ignore) continue; // this will never happend
                 if (tok.type == TokenType::LeftParenthesis) {
@@ -959,8 +1064,6 @@ namespace HAL_JSON {
             return ctx.outStack.notEmpty() ? ctx.outStack.top() : nullptr;
         }
 
-
-
         void Expressions::DoAllInplaceCalcRPN(LogicRPNNode* node) {
             if (!node) return;
 
@@ -973,25 +1076,15 @@ namespace HAL_JSON {
                 if (node->childB) DoAllInplaceCalcRPN(node->childB);
              }
         }
-        
-
-        
-        /** this is the first step to make 
-         * a more general function that in it's final state
-         * can take the 'raw' 'chaos' structure
-         * and generate the final 'executable' structure
-         * with basically as low ram footprint as possible
-         * to avoid heap fragmentation
-         */
                 
         void Expressions::ParseConditionalExpression(ExpressionTokens& tokens,std::vector<ExpressionToken*>& outStack) 
         {
             std::vector<ExpressionToken*> opStack;
             opStack.reserve(tokens.count);
-
+            ExpressionToken** tokenItems = tokens.items;
             for (int i = 0; i < tokens.count; i++)
             {
-                ExpressionToken& token = tokens.items[i];
+                ExpressionToken& token = *tokenItems[i];
                 //ReportInfo("\nToken: " + token.ToString() + "\n");
                 if (token.type == TokenType::LeftParenthesis)
                 {
@@ -1032,11 +1125,11 @@ namespace HAL_JSON {
                 {
                     outStack.push_back(&token);
                 }
-                /*ReportInfo("outStack:");
+                ReportInfo("outStack:");
                 for (int i=0;i<outStack.size();i++) {
                     ReportInfo(outStack[i]->ToString() + " ");
                 }
-                ReportInfo("\n");
+                ReportInfo("\n");/*
                 ReportInfo("opStack:");
                 for (int i=0;i<opStack.size();i++) {
                     ReportInfo(opStack[i]->ToString() + " ");
@@ -1120,132 +1213,124 @@ namespace HAL_JSON {
 
         ExpressionTokens* Expressions::GenerateRPNTokens(const Tokens& rawTokens) {
             
-            size_t totalCount = preParseTokensCount(rawTokens);
+            int totalCount = 0;
+            int operatorCount = 0;
+            int maxOperatorUsage = 0;
+            preParseTokensCount(rawTokens, totalCount, &operatorCount);
             
             ExpressionTokens* outTokens = new ExpressionTokens(totalCount);
             ExpressionToken** outTokenItems = outTokens->items;
 
-            ExpressionToken** opStack = new ExpressionToken*[totalCount];
+            ExpressionToken** opStack = new ExpressionToken*[operatorCount];
             int opStackIndex = 0;
 
             int outTokensIndex = 0;
             const int rawTokensCount = rawTokens.count;
             for (int i = 0; i < rawTokensCount; ++i) {
-                const Token& str = rawTokens.items[i];
+                const Token& token = rawTokens.items[i];
 
-                int j = 0;
-                const int strLength = str.Length();
+                const int strLength = token.Length();
                 for (int j=0; j < strLength; j++) {
-                    char c = str[j];
+                    char c = token[j];
 
                     // Parentheses
                     if (c == '(') {
-                        ExpressionToken* cleanToken = new ExpressionToken();
-
-                        //cleanToken.line   = tok.line;
-                        //cleanToken.column = tok.column + j;
-                        cleanToken->start  = str.start + j;
-                        cleanToken->end    = str.start + j + 1;
-                        cleanToken->type   = TokenType::LeftParenthesis;
-                        opStack[opStackIndex++] = cleanToken;
-
+                        opStack[opStackIndex++] = new ExpressionToken(token.start+j, 1, TokenType::LeftParenthesis);
+                        if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                     }
                     else if ( c == ')') {
                         // Pop until LeftParenthesis is found
-                        while (opStackIndex != 0 && opStack[opStackIndex-1]->type != TokenType::LeftParenthesis)
+                        while (opStackIndex != 0)
                         {
-                            outTokenItems[outTokensIndex++] = opStack[opStackIndex-1];
+                            ExpressionToken* top = opStack[opStackIndex - 1];
+                            if (top->type == TokenType::LeftParenthesis) break;
+                            outTokenItems[outTokensIndex++] = top;
                             opStackIndex--;
-                            //opStack.pop_back();
                         }
 
-                        if (opStackIndex == 0)
-                        {
-                            ReportError("Mismatched parenthesis");
-                        }
+                        if (opStackIndex != 0)
+                            opStackIndex--; // discard the LeftParenthesis
                         else
-                        {
-                            opStackIndex--;
-                            //opStack.pop_back(); // discard the LeftParenthesis
-                        }
-                        
-                    }
-                    else if ((j+1) < strLength) { // Two-character operators
-                        TokenType twoCharOpType = IsTwoCharOp(c, str[j+1]);
-                        if (twoCharOpType != TokenType::NotSet) {
-                            ExpressionToken* cleanToken = new ExpressionToken();
-                            //cleanToken.line   = tok.line;
-                            //cleanToken.column = tok.column + j;
-                            cleanToken->start  = str.start + j;
-                            cleanToken->end    = str.start + j + 2;
-                            cleanToken->type   = twoCharOpType;
-                            // While there's an operator on top of the opStack with greater or equal precedence
-                            while (opStackIndex != 0 &&
-                                opStack[opStackIndex-1]->type != TokenType::LeftParenthesis &&
-                                getPrecedence(opStack[opStackIndex-1]->type) >= getPrecedence(cleanToken->type))
-                            {
-                                outTokenItems[outTokensIndex++] = opStack[opStackIndex-1];
-                                opStackIndex--;
-                            }
-                            // Push current operator
-                            opStack[opStackIndex++] = cleanToken;
-                            
-                            j++; // consume one extra token
-                        }
+                            ReportError("Mismatched parenthesis"); // should never happend
                     }
                     else {
+                        TokenType twoCharOpType = TokenType::NotSet;
+                        if ((j + 1) < strLength) twoCharOpType = IsTwoCharOp(c, token[j + 1]);
+                        
+                        if (twoCharOpType != TokenType::NotSet) {
+                            
+                            // While there's an operator on top of the opStack with greater or equal precedence
+                            while (opStackIndex != 0)
+                            {
+                                ExpressionToken* top = opStack[opStackIndex - 1];
+                                if (top->type == TokenType::LeftParenthesis) break;
+                                if (getPrecedence(top->type) < getPrecedence(twoCharOpType)) break;
+                                outTokenItems[outTokensIndex++] = top; 
+                                // SPECIAL NOTE: here it should be possible to build the logic tree direclty if the operator is a logic && ||
+                                // however as the following expression: a > 2 || b < 5 && (c == 6 && (d == 7 || e == 8)) 
+                                // become the following RPN: a 2 > b 5 < c 6 == d 7 == e 8 == || && && ||
+                                // there are no savings
+                                opStackIndex--;
+                            }
+                            // Push current operator as new item
+                            opStack[opStackIndex++] = new ExpressionToken(token.start+j, 2, twoCharOpType);
+                            if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
+                            j++; // consume one extra token
+                            continue;
+                        }
+
                         // Single-character operator
                         TokenType oneCharOpType = IsSingleOp(c);
                         if (oneCharOpType != TokenType::NotSet) {
-                            ExpressionToken* cleanToken = new ExpressionToken();
-                            //cleanToken.line   = tok.line;
-                            //cleanToken.column = tok.column + j;
-                            cleanToken->start  = str.start + j;
-                            cleanToken->end    = str.start + j + 1;
-                            cleanToken->type   = oneCharOpType;
-
+                            
                             // While there's an operator on top of the opStack with greater or equal precedence
-                            while (opStackIndex != 0 &&
-                                opStack[opStackIndex-1]->type != TokenType::LeftParenthesis &&
-                                getPrecedence(opStack[opStackIndex-1]->type) >= getPrecedence(cleanToken->type))
+                            while (opStackIndex != 0)
                             {
-                                outTokenItems[outTokensIndex++] = opStack[opStackIndex-1];
+                                ExpressionToken* top = opStack[opStackIndex - 1];
+                                if (top->type == TokenType::LeftParenthesis) break;
+                                if (getPrecedence(top->type) < getPrecedence(oneCharOpType)) break;
+                                outTokenItems[outTokensIndex++] = top;
                                 opStackIndex--;
                             }
-                            // Push current operator
-                            opStack[opStackIndex++] = cleanToken;
+                            // Push current operator as new item
+                            opStack[opStackIndex++] = new ExpressionToken(token.start + j, 1, oneCharOpType);
+                            if (opStackIndex > maxOperatorUsage) maxOperatorUsage = opStackIndex; // debug only
                         }
                         else {
                             // Identifier / number
                             int startIdx = j;
                             for (;j < strLength;j++) {
-                                if (str[j] == '(') break;
-                                if (str[j] == ')') break;
-                                if (((j + 1) < strLength && IsTwoCharOp(str[j], str[j+1])!=TokenType::NotSet)) break;
-                                if (IsSingleOp(str[j]) == TokenType::NotSet) break;
+                                if (token[j] == '(' || token[j] == ')') break;
+                                if (((j + 1) < strLength && IsTwoCharOp(token[j], token[j+1])!=TokenType::NotSet)) break;
+                                if (IsSingleOp(token[j]) != TokenType::NotSet) break;
                             }
-                            ExpressionToken* cleanToken = new ExpressionToken();
-                            //cleanToken.line   = tok.line;
-                            //cleanToken.column = tok.column + startIdx;
-                            cleanToken->start  = str.start + startIdx;
-                            cleanToken->end    = str.start + j;
-                            cleanToken->type   = TokenType::Operand;
-                            outTokenItems[outTokensIndex++] = cleanToken;
+                            outTokenItems[outTokensIndex++] = new ExpressionToken(token.start + startIdx, token.start + j, TokenType::Operand);
                             j--; 
 
                         }
                     }
-
-                    
+/*
+                    ReportInfo("outStack:");
+                    for (int i=0;i<outTokensIndex;i++) {
+                        ReportInfo(outTokenItems[i]->ToString() + " ");
+                    }
+                    ReportInfo("\n");
+                    ReportInfo("opStack:");
+                    for (int i=0;i<opStackIndex;i++) {
+                        ReportInfo(opStack[i]->ToString() + " ");
+                    }
+                    ReportInfo("\n");
+*/
                 }
             }
             // After loop: pop remaining ops
             while (opStackIndex != 0)
-            {
-                opStackIndex--;
-                outTokenItems[outTokensIndex++] = opStack[opStackIndex];
-            }
-            
+                outTokenItems[outTokensIndex++] = opStack[--opStackIndex];
+            ReportInfo("\nGenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(totalCount) + "\n");
+            ReportInfo("\nGenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(operatorCount) + "\n");
+
+            delete[] opStack;
+            outTokens->index = outTokensIndex;
             return outTokens;
         }
     }

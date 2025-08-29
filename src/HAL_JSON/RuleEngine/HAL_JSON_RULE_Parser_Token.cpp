@@ -88,6 +88,16 @@ namespace HAL_JSON {
         ExpressionToken::ExpressionToken() : type(TokenType::NotSet) {
 
         }
+        ExpressionToken::ExpressionToken(const char* _start, const char* _end, TokenType _type) {
+            start = _start;
+            end = _end;
+            type = _type;
+        }
+        ExpressionToken::ExpressionToken(const char* _start, int length, TokenType _type) {
+            start = _start;
+            end = _start + length;
+            type = _type;
+        }
         ExpressionToken::~ExpressionToken() {
             // nothing to free here
         }
@@ -104,12 +114,20 @@ namespace HAL_JSON {
             index = 0;
         }
         ExpressionTokens::ExpressionTokens(int _count) {
-            items = new ExpressionToken*[_count];
             count = _count;
+            items = new ExpressionToken*[_count];
+            for (int i=0;i<count;i++)
+                items[i] = nullptr;
+            
             index = 0;
         }
         ExpressionTokens::~ExpressionTokens() {
-            delete[] items;
+            if (items != nullptr) {
+                for (int i=0;i<count;i++)
+                    delete items[i];
+                delete[] items;
+                items = nullptr;
+            }
         }
         
         Token::Token(): type(TokenType::NotSet) {
@@ -271,13 +289,13 @@ namespace HAL_JSON {
         }
 
         std::string PrintExpressionTokens(ExpressionTokens& _tokens, int start, int end) {
-            ExpressionToken* tokens = _tokens.items;
+            ExpressionToken** tokens = _tokens.items;
             int tokenCount = _tokens.count;
             std::string msg;
             if (end == -1) end = tokenCount;
  
             for (int i=start;i<end;i++) {
-                ExpressionToken& tok = tokens[i];
+                ExpressionToken& tok = *tokens[i];
                 if (tok.type == TokenType::Ignore) continue;
                 std::string msgLine = "Token[" + std::to_string(i) + "]  ";
                 if (tok.type != TokenType::Operand) {

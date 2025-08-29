@@ -239,6 +239,10 @@ namespace HAL_JSON {
                 else if (c == '/') return TokenType::CalcDivide;
                 else if (c == '<') return TokenType::CompareLessThan;
                 else if (c == '>') return TokenType::CompareGreaterThan;
+                else if (c == '&') return TokenType::CalcBitwiseAnd;
+                else if (c == '|') return TokenType::CalcBitwiseOr;
+                else if (c == '^') return TokenType::CalcBitwiseExOr;
+                else if (c == '&') return TokenType::CalcModulus;
                 return TokenType::NotSet;
             }
 
@@ -250,6 +254,8 @@ namespace HAL_JSON {
                 else if (c == '!' && next == '=') return TokenType::CompareNotEqualsTo;
                 else if (c == '<' && next == '=') return TokenType::CompareLessThanOrEqual;
                 else if (c == '>' && next == '=') return TokenType::CompareGreaterThanOrEqual;
+                else if (c == '>' && next == '>') return TokenType::CalcBitwiseRightShift;
+                else if (c == '<' && next == '<') return TokenType::CalcBitwiseLeftShift;
                 return TokenType::NotSet;
             }
             
@@ -274,7 +280,8 @@ namespace HAL_JSON {
             static void printLogicRPNNode(const LogicRPNNode* node);
             static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
 
-            static int preParseTokensCount(const Tokens& rawTokens);
+            static void preParseTokensCount(const Tokens& rawTokens, int& totalCount, int* operatorCount=nullptr);
+            static int RPNcountOpTokensDryRun(const Tokens& rawTokens, int initialSize);
             static ExpressionTokens* preParseTokens(const Tokens& rawTokens);
  
             /** to use this function preParseTokens is needed to be run before */

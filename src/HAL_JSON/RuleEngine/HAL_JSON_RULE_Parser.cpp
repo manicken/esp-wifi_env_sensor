@@ -1033,7 +1033,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             outStack.reserve(expressionTokens->count);
             Expressions::ParseConditionalExpression(*expressionTokens, outStack);
             LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(outStack);
-            ReportInfo("complete RPN:");
+            ReportInfo("\ncomplete RPN:");
             for (int i=0;i<outStack.size();i++) {
                 ReportInfo(outStack[i]->ToString() + " ");
             }
@@ -1042,6 +1042,17 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             Expressions::printLogicRPNNodeTree(lrpnNode, 0);
 
             ReportInfo("\nInput expression: " + tokens.ToString());
+
+            ExpressionTokens* newDirect = Expressions::GenerateRPNTokens(tokens);
+            ReportInfo("\n\nnew complete RPN:");
+            for (int i=0;i<newDirect->index;i++) { // index is set to after the last filled item
+                ExpressionToken* tok = newDirect->items[i];
+                //if (tok->type == TokenType::Operand)
+                    ReportInfo(tok->ToString() + " ");
+                //else
+                //    ReportInfo(TokenTypeToString(tok->type ) + std::string(" "));
+            }
+            ReportInfo("\n");
             delete lrpnNode; // deletes the whole tree recursive
             delete expressionTokens;
             delete[] fileContents;

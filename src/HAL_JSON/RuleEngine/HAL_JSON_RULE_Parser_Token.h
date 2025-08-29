@@ -100,6 +100,8 @@ namespace HAL_JSON {
             //int matchingIndex;
             bool AnyType(const TokenType* candidates);
             ExpressionToken();
+            ExpressionToken(const char* start, int length, TokenType type);
+            ExpressionToken(const char* _start, const char* _end, TokenType _type);
             ~ExpressionToken();
         };
         struct ExpressionTokens {
