@@ -104,12 +104,13 @@ namespace HAL_JSON {
             static bool ValidateExpression(Tokens& tokens, ExpressionContext exprContext);
 
             static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
+            static void PrintLogicRPNNode(const LogicRPNNode* node, int depth = 0);
 
             static void GetGenerateRPNTokensCount_PreCalc(const Tokens& rawTokens, int& totalCount, int& operatorCount);
             static int GetGenerateRPNTokensCount_DryRun(const Tokens& rawTokens, int initialSize);
            
             static LogicRPNNode* BuildLogicTree(ExpressionTokens* tokens);
-            static ExpressionTokens* GenerateRPNTokens(const Tokens& rawTokens);
+            static ExpressionTokens* GenerateRPNTokens(Tokens& rawTokens);
         };
     }
 }

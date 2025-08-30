@@ -32,8 +32,10 @@ namespace HAL_JSON {
         {
             HAL_JSON_NOCOPY_NOMOVE(ConditionalBranch);
 
-            LogicalExpressionRPNToken* expressionTokens;
-            int expressionTokensCount;
+            void* context;
+            /** used to delete the context depending on type */
+            Deleter deleter;
+            HALOperationResult (*handler)(void* context);
 
             bool ShouldExec();
 

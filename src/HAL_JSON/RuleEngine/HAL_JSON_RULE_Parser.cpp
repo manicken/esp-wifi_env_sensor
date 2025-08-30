@@ -3,8 +3,8 @@
 
 namespace HAL_JSON {
     namespace Rules {
-        static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
-        static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
+        //static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
+        //static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
 
         static const TokenType actionStartTypes[] = {TokenType::ActionSeparator, TokenType::And, TokenType::Else, TokenType::EndIf, TokenType::Then, TokenType::NotSet};
         static const TokenType actionEndTypes[] =   {TokenType::ActionSeparator, TokenType::And, TokenType::Else, TokenType::EndIf, TokenType::If, TokenType::ElseIf, TokenType::EndOn, TokenType::NotSet};
@@ -459,7 +459,7 @@ namespace HAL_JSON {
 
                     int count = 0;
                     int nestedLevel = 0;
-                    TokenType endTokenType = (token.type == TokenType::On) ? TokenType::EndOn : TokenType::EndIf;
+                    //TokenType endTokenType = (token.type == TokenType::On) ? TokenType::EndOn : TokenType::EndIf;
 
                     for (int j = i + 1; j < tokenCount; ++j) {
                         Token& t = tokens[j];
@@ -987,6 +987,8 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                 return false;
             }
             );
+            tokens.items[0].itemsInBlock = tokens.count; // set as a block
+            tokens.currIndex = 0;
 
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            PARSED TOKEN LIST                                   *\n");
@@ -1009,7 +1011,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ExpressionTokens* newDirect = Expressions::GenerateRPNTokens(tokens);
             LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(newDirect);
             ReportInfo("\n\nnew complete RPN:");
-            for (int i=0;i<newDirect->index;i++) { // index is set to after the last filled item
+            for (int i=0;i<newDirect->currentCount;i++) { // currentCount is set by GenerateRPNTokens and defines the current 'size'
                 ExpressionToken& tok = newDirect->items[i];
                 //if (tok->type == TokenType::Operand)
                     ReportInfo(tok.ToString() + " ");
@@ -1019,6 +1021,8 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("\n");
             ReportInfo("\n\ntree view:\n");
             Expressions::printLogicRPNNodeTree(lrpnNode, 0);
+            ReportInfo("\n\nadvanced tree view:\n");
+            Expressions::PrintLogicRPNNode(lrpnNode, 0);
             delete newDirect;
             delete lrpnNode; // deletes the whole tree recursive
             delete[] fileContents;

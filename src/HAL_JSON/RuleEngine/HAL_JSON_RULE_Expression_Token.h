@@ -60,8 +60,9 @@ namespace HAL_JSON {
         };
         struct ExpressionTokens {
             ExpressionToken* items;
-            int index;
+            int currentCount;
             int count;
+            bool containLogicOperators;
             ExpressionTokens();
             ExpressionTokens(int count);
             ~ExpressionTokens();

@@ -32,7 +32,8 @@ namespace HAL_JSON {
         }
 
         ExpressionToken::ExpressionToken() : type(ExpTokenType::NotSet) {
-
+            start = nullptr;
+            end = nullptr;
         }
         ExpressionToken::ExpressionToken(const char* _start, const char* _end, ExpTokenType _type) {
             start = _start;
@@ -68,13 +69,14 @@ namespace HAL_JSON {
         ExpressionTokens::ExpressionTokens() {
             items = nullptr;
             count = 0;
-            index = 0;
+            currentCount = 0;
+            containLogicOperators = false;
         }
         ExpressionTokens::ExpressionTokens(int _count) {
             count = _count;
             items = new ExpressionToken[_count];
-            
-            index = 0;
+            containLogicOperators = false;
+            currentCount = 0;
         }
         ExpressionTokens::~ExpressionTokens() {
             delete[] items;

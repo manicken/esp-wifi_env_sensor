@@ -34,18 +34,21 @@ namespace HAL_JSON {
         // precedence map
         static const std::unordered_map<ExpTokenType, int> precedence = {
             // calc
-            {ExpTokenType::CalcMultiply, 7}, {ExpTokenType::CalcDivide, 7}, {ExpTokenType::CalcModulus, 7},
-            {ExpTokenType::CalcPlus, 6}, {ExpTokenType::CalcMinus, 6},
-            {ExpTokenType::CalcBitwiseLeftShift, 5}, {ExpTokenType::CalcBitwiseRightShift, 5},
-            {ExpTokenType::CalcBitwiseAnd, 4}, {ExpTokenType::CalcBitwiseExOr, 4}, {ExpTokenType::CalcBitwiseOr, 4},
+            {ExpTokenType::CalcMultiply, 8}, {ExpTokenType::CalcDivide, 8}, {ExpTokenType::CalcModulus, 8},
+            {ExpTokenType::CalcPlus, 7}, {ExpTokenType::CalcMinus, 7},
+            {ExpTokenType::CalcBitwiseLeftShift, 6}, {ExpTokenType::CalcBitwiseRightShift, 6},
+            {ExpTokenType::CalcBitwiseAnd, 5}, {ExpTokenType::CalcBitwiseExOr, 5}, {ExpTokenType::CalcBitwiseOr, 5},
 
             // compare
-            {ExpTokenType::CompareGreaterThan, 3}, {ExpTokenType::CompareLessThan, 3},
-            {ExpTokenType::CompareGreaterThanOrEqual, 3}, {ExpTokenType::CompareLessThanOrEqual, 3},
-            {ExpTokenType::CompareEqualsTo, 2}, {ExpTokenType::CompareNotEqualsTo, 2},
+            {ExpTokenType::CompareGreaterThan, 4}, {ExpTokenType::CompareLessThan, 4},
+            {ExpTokenType::CompareGreaterThanOrEqual, 4}, {ExpTokenType::CompareLessThanOrEqual, 4},
+            {ExpTokenType::CompareEqualsTo, 3}, {ExpTokenType::CompareNotEqualsTo, 3},
 
             // logic
-            {ExpTokenType::LogicalAnd, 1}, {ExpTokenType::LogicalOr, 0}
+            {ExpTokenType::LogicalAnd, 2}, {ExpTokenType::LogicalOr, 1}
+
+            // assigment
+
         };
 
         inline int getPrecedence(ExpTokenType t) {
@@ -405,11 +408,56 @@ namespace HAL_JSON {
              }
         }
 
+        void Expressions::PrintLogicRPNNode(const LogicRPNNode* node, int depth) {
+            if (!node) {
+                ReportInfo(std::string(depth * 2, ' ') + "Node: nullptr\n");
+                return;
+            }
+
+            std::string indent(depth * 2, ' ');
+
+            // Print operator
+            if (node->op) {
+                ReportInfo(indent + "op: " + node->op->ToString() + "\n");  
+            } else {
+                ReportInfo(indent + "op: nullptr\n");
+            }
+
+            // Print calcRPN tokens
+            ReportInfo(indent + "calcRPN: ");
+            if (node->calcRPN.empty()) {
+                ReportInfo("empty\n");
+            } else {
+                for (auto* tok : node->calcRPN) {
+                    if (tok)
+                        ReportInfo(tok->ToString() + " ");
+                    else
+                        ReportInfo("nullptr ");
+                }
+                ReportInfo("\n");
+            }
+
+            // Print children
+            ReportInfo(indent + "childA:\n");
+            if (node->childA)
+                PrintLogicRPNNode(node->childA, depth + 1);
+            else
+                ReportInfo(indent + "  nullptr\n");
+
+            ReportInfo(indent + "childB:\n");
+            if (node->childB)
+                PrintLogicRPNNode(node->childB, depth + 1);
+            else
+                ReportInfo(indent + "  nullptr\n");
+        }
+
         void Expressions::GetGenerateRPNTokensCount_PreCalc(const Tokens& rawTokens, int& totalCount, int& operatorCount) {
             int totalCountTemp = 0;
             int operatorCountTemp = 0;
-            
-            for (int i = 0; i < rawTokens.count; ++i) {
+
+            const int startIndex = rawTokens.currIndex;
+            const int endIndex = startIndex + rawTokens.Current().itemsInBlock;
+            for (int i = startIndex; i < endIndex; ++i) {
                 const Token& token = rawTokens.items[i];
                 int j = 0;
                 const int tokenStrLength = token.Length();
@@ -449,9 +497,9 @@ namespace HAL_JSON {
             // Dry-run op stack (store only TokenType, not full ExpressionToken*)
             ExpTokenType* opStack = new ExpTokenType[initialSize];
             int opStackIndex = 0;      // current operator stack depth
-
-            const int rawTokensCount = rawTokens.count;
-            for (int i = 0; i < rawTokensCount; ++i) {
+            const int startIndex = rawTokens.currIndex;
+            const int endIndex = startIndex + rawTokens.Current().itemsInBlock;
+            for (int i = startIndex; i < endIndex; ++i) {
                 const Token& token = rawTokens.items[i];
                 const int tokenStrLength = token.Length();
 
@@ -523,7 +571,7 @@ namespace HAL_JSON {
             return maxOperatorUsage;
         }
 
-        ExpressionTokens* Expressions::GenerateRPNTokens(const Tokens& rawTokens) {
+        ExpressionTokens* Expressions::GenerateRPNTokens(Tokens& rawTokens) {
             
             int totalCount = 0;
             int operatorCount = 0;
@@ -543,8 +591,12 @@ namespace HAL_JSON {
             int opStackIndex = 0;
 
             int outTokensIndex = 0;
-            const int rawTokensCount = rawTokens.count;
-            for (int i = 0; i < rawTokensCount; ++i) {
+            
+            const int endIndex = rawTokens.currIndex + rawTokens.Current().itemsInBlock;
+            const int startindex = rawTokens.currIndex;
+            // consume current tokens here so we don't forget and to clearly mark what is happend
+            rawTokens.currIndex = endIndex; 
+            for (int i = startindex; i < endIndex; ++i) {
                 const Token& token = rawTokens.items[i];
 
                 const int tokenStrLength = token.Length();
@@ -645,8 +697,22 @@ namespace HAL_JSON {
             ReportInfo("\nGenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(totalCount) + "\n");
             ReportInfo("\nGenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(operatorCount) + "\n");
 
-            delete[] opStack;
-            outTokens->index = outTokensIndex;
+            outTokens->currentCount = outTokensIndex;
+
+            // define if this expression contains logic operators
+            // this allows the tree builder to have a single ptr to the rpnArray as the context
+            outTokens->containLogicOperators = false;
+            // going backwards as that is the fastest way of detecting logic operators
+            // as they mostly appear at the end
+            for (int i=outTokensIndex-1;i>=0;i--) { 
+                ExpressionToken& tok = outTokens->items[i];
+                if (tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) {
+                    outTokens->containLogicOperators = true;
+                    break; //  we only need to check if there is one
+                }
+            }
+
+            delete[] opStack; // this should not be done when we utilize global stack
             return outTokens;
         }
 
