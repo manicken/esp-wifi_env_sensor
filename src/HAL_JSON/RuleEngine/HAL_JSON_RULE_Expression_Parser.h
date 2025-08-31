@@ -41,7 +41,19 @@ namespace HAL_JSON {
         private:
             static const char* SingleOperatorList;
             static const char* DoubleOperatorList;
+
+            static ExpressionTokens* rpnOutputStack;
+            static int rpnOutputStackNeededSize;
+
+            static ExpressionToken* opStack;
+            static int opStackSizeNeededSize;
+            static int opStackSize;
         public:
+            static void CalcStackSizesInit();
+            static void CalcStackSizes(Tokens& tokens);
+            static void InitStacks();
+            static void ClearStacks();
+
             static void ReportError(const char* msg, const char* param = nullptr);
             static void ReportWarning(const char* msg, const char* param = nullptr);
             static void ReportInfo(std::string msg);
@@ -93,11 +105,11 @@ namespace HAL_JSON {
             static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
             static void PrintLogicRPNNodeAdvancedTree(const LogicRPNNode* node, int depth = 0);
 
-            static void GetGenerateRPNTokensCount_PreCalc(const Tokens& rawTokens, int& totalCount, int& operatorCount);
-            static int GetGenerateRPNTokensCount_DryRun(const Tokens& rawTokens, int initialSize);
+            static void GetGenerateRPNTokensCount_PreCalc(const Tokens& tokens, int& totalCount, int& operatorCount);
+            static int GetGenerateRPNTokensCount_DryRun(const Tokens& tokens, int initialSize);
            
             static LogicRPNNode* BuildLogicTree(ExpressionTokens* tokens);
-            static ExpressionTokens* GenerateRPNTokens(Tokens& rawTokens);
+            static ExpressionTokens* GenerateRPNTokens(Tokens& tokens);
         };
     }
 }

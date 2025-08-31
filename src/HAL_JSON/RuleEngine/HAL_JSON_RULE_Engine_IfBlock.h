@@ -4,6 +4,8 @@
 #include "../HAL_JSON_Device.h" // HALOperationResult
 #include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_LogicalExpressionRPNToken.h"
+#include "HAL_JSON_RULE_Expression_Token.h"
+#include "HAL_JSON_RULE_Expression_Parser.h"
 
 #include "HAL_JSON_RULE_Parser_Token.h"
 

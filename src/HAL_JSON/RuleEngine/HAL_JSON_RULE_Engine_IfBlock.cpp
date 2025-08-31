@@ -35,6 +35,12 @@ namespace HAL_JSON {
             // TODO consume if expression 
             tokens.currIndex += expression.itemsInBlock; // dummy consume here the conditional expression should be feed in
 
+            // here the returned pointer should be non owned
+            // and should belong to global stack of Expressions
+            ExpressionTokens* expTokens = Expressions::GenerateRPNTokens(tokens);
+            
+
+
             //when consumed we are at the then
             Token& thenToken = tokens.items[tokens.currIndex++]; // get and consume
             // here extract the itemsCount

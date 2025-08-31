@@ -56,11 +56,13 @@ namespace HAL_JSON {
             return false;
         }
         void ExpressionToken::Set(const char* _start, int length, ExpTokenType _type) {
+            //printf("ptr, int overload: %c\n", *_start);
             start = _start;
             end = _start + length;
             type = _type;
         }
         void ExpressionToken::Set(const char* _start, const char* _end, ExpTokenType _type) {
+            //printf("ptr, ptr overload: %c\n", *_start);
             start = _start;
             end = _end;
             type = _type;
