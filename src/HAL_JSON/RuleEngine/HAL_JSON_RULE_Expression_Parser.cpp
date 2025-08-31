@@ -380,11 +380,18 @@ namespace HAL_JSON {
         //    ██   ██ ██      ██  ██ ██ 
         //    ██   ██ ██      ██   ████ 
 
-        std::string CalcExpressionToString(const std::vector<ExpressionToken*>& calcExpr) {
+        std::string CalcExpressionToString(const ExpressionTokens* calcExpr) {
             std::string out;
-            for (uint32_t i=0;i<calcExpr.size();i++) {
-                out += calcExpr[i]->ToString();
-                if (i + 1 < calcExpr.size()) out += " ";
+            if (calcExpr == nullptr){
+                Expressions::ReportError("calcExpr == nullptr");
+                return out;
+            }
+            
+            int length = calcExpr->count;
+            ExpressionToken* calcExprItems = calcExpr->items;
+            for (uint32_t i=0;i<length;i++) {
+                out += calcExprItems[i].ToString();
+                if (i + 1 < length) out += " ";
             }
             return out;
         }
@@ -394,7 +401,7 @@ namespace HAL_JSON {
 
             std::string padding(indent * 2, ' '); // 2 spaces per level
 
-            if (node->op == nullptr || node->op->IsEmpty()) {
+            if (node->calcRPN != nullptr) {
                 // Leaf node → print calc RPN
                 ReportInfo(padding + "- calc: [" + CalcExpressionToString(node->calcRPN) + "]\n");
 
@@ -408,7 +415,7 @@ namespace HAL_JSON {
              }
         }
 
-        void Expressions::PrintLogicRPNNode(const LogicRPNNode* node, int depth) {
+        void Expressions::PrintLogicRPNNodeAdvancedTree(const LogicRPNNode* node, int depth) {
             if (!node) {
                 ReportInfo(std::string(depth * 2, ' ') + "Node: nullptr\n");
                 return;
@@ -425,14 +432,13 @@ namespace HAL_JSON {
 
             // Print calcRPN tokens
             ReportInfo(indent + "calcRPN: ");
-            if (node->calcRPN.empty()) {
+            if (node->calcRPN == nullptr) {
                 ReportInfo("empty\n");
             } else {
-                for (auto* tok : node->calcRPN) {
-                    if (tok)
-                        ReportInfo(tok->ToString() + " ");
-                    else
-                        ReportInfo("nullptr ");
+                int length = node->calcRPN->count;
+                ExpressionToken* calcRPNitems = node->calcRPN->items;
+                for (int i=0;i<length;i++) {
+                    ReportInfo(calcRPNitems[i].ToString() + " ");
                 }
                 ReportInfo("\n");
             }
@@ -440,13 +446,13 @@ namespace HAL_JSON {
             // Print children
             ReportInfo(indent + "childA:\n");
             if (node->childA)
-                PrintLogicRPNNode(node->childA, depth + 1);
+                PrintLogicRPNNodeAdvancedTree(node->childA, depth + 1);
             else
                 ReportInfo(indent + "  nullptr\n");
 
             ReportInfo(indent + "childB:\n");
             if (node->childB)
-                PrintLogicRPNNode(node->childB, depth + 1);
+                PrintLogicRPNNodeAdvancedTree(node->childB, depth + 1);
             else
                 ReportInfo(indent + "  nullptr\n");
         }
@@ -716,81 +722,82 @@ namespace HAL_JSON {
             return outTokens;
         }
 
-        LogicRPNNode::LogicRPNNode()
-            : childA(nullptr), childB(nullptr), op(nullptr)/*, type(OpType::Invalid)*/ {}
-
-        LogicRPNNode::~LogicRPNNode() {
-            delete childA;
-            delete childB;
-        }
+        
         
         static const ExpTokenType compareOperators[] = {ExpTokenType::CompareEqualsTo, ExpTokenType::CompareNotEqualsTo,
                                                      ExpTokenType::CompareGreaterThanOrEqual, ExpTokenType::CompareLessThanOrEqual,
                                                      ExpTokenType::CompareGreaterThan, ExpTokenType::CompareLessThan, 
                                                      ExpTokenType::NotSet};
-
+        
+        /** 
+         * Development test functions
+         * TODO. make a copy of them that produce the exec format
+         */
         LogicRPNNode* Expressions::BuildLogicTree(ExpressionTokens* tokens)
         {
-            auto makeCalc = [](std::vector<ExpressionToken*> rpn) {
-                auto* n = new LogicRPNNode();
-                n->calcRPN = std::move(rpn);
-                n->childA = nullptr;
-                n->childB = nullptr;
-                n->op = nullptr;
-                return n;
-            };
-
-            auto makeOp = [](ExpressionToken* opTok, LogicRPNNode* lhs, LogicRPNNode* rhs) {
-                auto* n = new LogicRPNNode();
-                n->childA = lhs;
-                n->childB = rhs;
-                n->op = opTok;
-                return n;
-            };
-
-            std::vector<LogicRPNNode*> stack;
-            std::vector<ExpressionToken*> currentCalc;
-
             int tokensCount = tokens->count;
+
+            // the following should also be calculated 
+            // in the scripts validate stage and stored globally 
+            // so that it can allocate the memory globally before all exec structure is made
+            // thus reducing heap fragmentation
+            int stackMaxSize = 0;
+            for (int i=0;i<tokensCount;i++) {
+                ExpressionToken& tok = tokens->items[i];
+                // include logic operators here for safetly
+                if (tok.AnyType(compareOperators) || tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) stackMaxSize++;
+            }
+            LogicRPNNode** stack = new LogicRPNNode*[stackMaxSize]();
+            int stackIndex = 0;
+  
+            int currentCalcStartIndex = -1;
+            int currentCalcEndIndex = -1;
+            
             for (int i=0;i<tokensCount;i++) {
                 ExpressionToken& tok = tokens->items[i];
                 if (tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) {
                     // first flush pending calc as a leaf
-                    if (!currentCalc.empty()) {
-                        stack.push_back(makeCalc(currentCalc));
-                        currentCalc.clear();
+                    if (currentCalcStartIndex != -1) {
+                        LogicRPNNode* newNode = new LogicRPNNode(tokens, currentCalcStartIndex, currentCalcEndIndex);
+                        stack[stackIndex++] = newNode; // push item
+                        currentCalcStartIndex = -1; // clear
                     }
-
+                    ReportInfo("BuildLogicTree stack size:" + std::to_string(stackIndex) + "\n");
                     // This should never happen under normal use.
                     // It can occur if logical and arithmetic expressions are improperly combined,
                     // e.g., (a == 0 || b == 1) + 2, which is invalid.
-                    if (stack.size() < 2)
+                    if (stackIndex < 2)
                         throw std::runtime_error("LogicRPN: not enough operands for logic op");
 
-                    auto rhs = stack.back(); stack.pop_back();
-                    auto lhs = stack.back(); stack.pop_back();
-                    stack.push_back(makeOp(&tok, lhs, rhs));
+                    auto rhs = stack[--stackIndex];// stack.back(); stack.pop_back();
+                    auto lhs = stack[--stackIndex];//stack.back(); stack.pop_back();
+                    LogicRPNNode* newNode =  new LogicRPNNode(&tok, lhs, rhs);
+                    stack[stackIndex++] = newNode; // push item
                 }
                 else {
-                    currentCalc.push_back(&tok);
+                    if (currentCalcStartIndex == -1) currentCalcStartIndex = i;
+                    currentCalcEndIndex = i;
 
                     // detect end of a comparison (= leaf boundary)
                     if (tok.AnyType(compareOperators)) {
-                        stack.push_back(makeCalc(currentCalc));
-                        currentCalc.clear();
+                        LogicRPNNode* newNode = new LogicRPNNode(tokens, currentCalcStartIndex, currentCalcEndIndex);
+                        stack[stackIndex++] = newNode; // push item
+                        currentCalcStartIndex = -1; // clear
                     }
                 }
             }
 
-            if (!currentCalc.empty()) {
-                stack.push_back(makeCalc(currentCalc));
-                currentCalc.clear();
+            if (currentCalcStartIndex != -1) {
+                LogicRPNNode* newNode = new LogicRPNNode(tokens, currentCalcStartIndex, currentCalcEndIndex);
+                stack[stackIndex++] = newNode; // push item
+                currentCalcStartIndex = -1; // clear
             }
 
-            if (stack.size() != 1)
+            if (stackIndex != 1)
                 throw std::runtime_error("LogicRPN: unbalanced tree");
-
-            return stack.back();
+            LogicRPNNode* ret = stack[stackIndex-1];
+            delete[] stack;
+            return ret;
         }
     }
 }

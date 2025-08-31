@@ -1022,7 +1022,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("\n\ntree view:\n");
             Expressions::printLogicRPNNodeTree(lrpnNode, 0);
             ReportInfo("\n\nadvanced tree view:\n");
-            Expressions::PrintLogicRPNNode(lrpnNode, 0);
+            Expressions::PrintLogicRPNNodeAdvancedTree(lrpnNode, 0);
             delete newDirect;
             delete lrpnNode; // deletes the whole tree recursive
             delete[] fileContents;

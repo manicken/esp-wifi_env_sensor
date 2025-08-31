@@ -7,6 +7,7 @@
 #include "../HAL_JSON_Manager.h"
 #include "HAL_JSON_RULE_Parser_Token.h"
 #include "HAL_JSON_RULE_Expression_Token.h"
+#include "HAL_JSON_RULE_Engine_LogicExecNode.h"
 #include "HAL_JSON_RULE_Engine_Support.h"
 
 #include <string>
@@ -36,20 +37,6 @@ namespace HAL_JSON {
             ReadWrite
         };
 
-        struct LogicRPNNode {
-
-            std::vector<ExpressionToken*> calcRPN;  // leaf if op.empty()
-            /** is owned and needs to be deleted */
-            LogicRPNNode* childA;   // nested nodes, nullptr when leaf
-            /** is owned and needs to be deleted */
-            LogicRPNNode* childB;   // nested nodes, nullptr when leaf
-            /** this is non owned, it's owned by the input token stream */
-            ExpressionToken* op;                     // "&&" or "||", nullptr when leaf
-
-            LogicRPNNode();
-            ~LogicRPNNode();
-        };
-        
         class Expressions {
         private:
             static const char* SingleOperatorList;
@@ -104,7 +91,7 @@ namespace HAL_JSON {
             static bool ValidateExpression(Tokens& tokens, ExpressionContext exprContext);
 
             static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
-            static void PrintLogicRPNNode(const LogicRPNNode* node, int depth = 0);
+            static void PrintLogicRPNNodeAdvancedTree(const LogicRPNNode* node, int depth = 0);
 
             static void GetGenerateRPNTokensCount_PreCalc(const Tokens& rawTokens, int& totalCount, int& operatorCount);
             static int GetGenerateRPNTokensCount_DryRun(const Tokens& rawTokens, int initialSize);

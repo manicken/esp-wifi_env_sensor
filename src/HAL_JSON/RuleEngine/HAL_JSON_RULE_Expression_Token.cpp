@@ -79,7 +79,7 @@ namespace HAL_JSON {
             currentCount = 0;
         }
         ExpressionTokens::~ExpressionTokens() {
-            delete[] items;
+            delete[] items; // this is allways owned
             items = nullptr;
         }
         
