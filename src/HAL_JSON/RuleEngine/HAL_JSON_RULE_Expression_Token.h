@@ -22,7 +22,8 @@ namespace HAL_JSON {
         enum class ExpTokenType : uint16_t {
             /** used to make it easier to see unset tokens, is also used as terminator item when defining a list of token types */
             NotSet,
-            Operand,
+            ConstValOperand,
+            VarOperand,
             LeftParenthesis,
             RightParenthesis,
             LogicalAnd,
@@ -58,6 +59,7 @@ namespace HAL_JSON {
             void Set(const char* _start, const char* _end, ExpTokenType _type);
             ~ExpressionToken();
         };
+        bool EqualsAny(ExpTokenType type, const ExpTokenType* candidates);
         struct ExpressionTokens {
             ExpressionToken* items;
             int currentCount;

@@ -8,11 +8,13 @@
 #include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Engine_RPNStack.h"
 #include "HAL_JSON_RULE_Parser_Token.h"
+#include "HAL_JSON_RULE_Expression_Token.h"
 
 namespace HAL_JSON {
     namespace Rules {
         /** used for all value calculations */ 
         extern RPNStack<HALValue> halValueStack;
+        using RPNHandler = HALOperationResult(*)(void*);
 
         struct CalcRPNToken {
             HAL_JSON_NOCOPY_NOMOVE(CalcRPNToken);
@@ -22,32 +24,41 @@ namespace HAL_JSON {
              * HALValue
              */
             void* context;
-            HALOperationResult (*handler)(void* context);
+            RPNHandler handler;
             Deleter deleter;
 
             static HALOperationResult GetAndPushVariableValue_Handler(void* context);
             static HALOperationResult GetAndPushConstValue_Handler(void* context);
 
-            static HALOperationResult Add_Operation_Handler(void* context);
-            static HALOperationResult Subtract_Operation_Handler(void* context);
-            static HALOperationResult Multiply_Operation_Handler(void* context);
-            static HALOperationResult Divide_Operation_Handler(void* context);
-            static HALOperationResult Modulus_Operation_Handler(void* context);
-            static HALOperationResult BitwiseAnd_Operation_Handler(void* context);
-            static HALOperationResult BitwiseOr_Operation_Handler(void* context);
-            static HALOperationResult BitwiseExOr_Operation_Handler(void* context);
-            static HALOperationResult BitwiseLeftShift_Operation_Handler(void* context);
-            static HALOperationResult BitwiseRightShift_Operation_Handler(void* context);
+            static HALOperationResult Calc_Addition_Operation_Handler(void* context);
+            static HALOperationResult Calc_Subtract_Operation_Handler(void* context);
+            static HALOperationResult Calc_Multiply_Operation_Handler(void* context);
+            static HALOperationResult Calc_Divide_Operation_Handler(void* context);
+            static HALOperationResult Calc_Modulus_Operation_Handler(void* context);
+            static HALOperationResult Calc_BitwiseAnd_Operation_Handler(void* context);
+            static HALOperationResult Calc_BitwiseOr_Operation_Handler(void* context);
+            static HALOperationResult Calc_BitwiseExOr_Operation_Handler(void* context);
+            static HALOperationResult Calc_BitwiseLeftShift_Operation_Handler(void* context);
+            static HALOperationResult Calc_BitwiseRightShift_Operation_Handler(void* context);
 
-            static HALOperationResult NotEquals_Operation_Handler(void* context);
-            static HALOperationResult Equals_Operation_Handler(void* context);
-            static HALOperationResult LessThan_Operation_Handler(void* context);
-            static HALOperationResult LargerThan_Operation_Handler(void* context);
-            static HALOperationResult LessThanOrEquals_Operation_Handler(void* context);
-            static HALOperationResult LargerThanOrEquals_Operation_Handler(void* context);
+            static HALOperationResult Compare_NotEqualsTo_Operation_Handler(void* context);
+            static HALOperationResult Compare_EqualsTo_Operation_Handler(void* context);
+            static HALOperationResult Compare_LessThan_Operation_Handler(void* context);
+            static HALOperationResult Compare_GreaterThan_Operation_Handler(void* context);
+            static HALOperationResult Compare_LessThanOrEqual_Operation_Handler(void* context);
+            static HALOperationResult Compare_GreaterThanOrEqual_Operation_Handler(void* context);
+
+            static RPNHandler GetRPN_OperatorFunction(ExpTokenType type);
 
             CalcRPNToken();
             ~CalcRPNToken();
+        };
+
+        struct CalcRPN {
+            CalcRPNToken* calcRPN;
+            int calcRPNcount;
+
+            CalcRPN(ExpressionTokens& tokens, int startIndex, int endIndex);
         };
     }
 }

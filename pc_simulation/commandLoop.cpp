@@ -83,9 +83,10 @@ void parseCommand(const char* cmd, bool oneShot) {
             filePath = zcFilePath.ToString();
         else
             filePath = "ruleset.txt";
-
+        HAL_JSON::Rules::Expressions::CalcStackSizesInit();
         auto start = std::chrono::high_resolution_clock::now();
         HAL_JSON::Rules::Parser::ReadAndParseRuleSetFile(filePath.c_str(), nullptr);
+        HAL_JSON::Rules::Expressions::PrintCalcedStackSizes();
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
 

@@ -27,12 +27,18 @@ namespace HAL_JSON {
         UnsupportedCommand = 3,   // was InvalidCommand
         ExecutionFailed = 4,       // was OperationFail
 
+        /** script engine specific status */
+        IfConditionTrue = 10,
+        /** script engine specific status */
+        IfConditionFalse = 11,
         /** script engine specific error */
-        StackUnderflow = 10,
+        StackUnderflow = 20,
         /** script engine specific error */
-        StackOverflow = 11,
+        StackOverflow = 21,
         /** script engine specific error */
-        DivideByZero = 12
+        DivideByZero = 22,
+
+
     };
     inline const char* ToString(HALOperationResult result) {
         switch (result) {

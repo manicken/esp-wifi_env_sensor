@@ -31,36 +31,60 @@ namespace HAL_JSON {
 #endif
         }
 
+        static const ExpTokenType compareOperators[] = {ExpTokenType::CompareEqualsTo, ExpTokenType::CompareNotEqualsTo,
+                                                     ExpTokenType::CompareGreaterThanOrEqual, ExpTokenType::CompareLessThanOrEqual,
+                                                     ExpTokenType::CompareGreaterThan, ExpTokenType::CompareLessThan, 
+                                                     ExpTokenType::NotSet};
+
         ExpressionTokens* Expressions::rpnOutputStack = nullptr;
         int Expressions::rpnOutputStackNeededSize = 0;
         ExpressionToken* Expressions::opStack = nullptr;
         int Expressions::opStackSizeNeededSize = 0;
-        int Expressions::opStackSize = 0;
+        
+        LogicRPNNode* Expressions::logicRPNNodeStackPool = nullptr;
+        LogicRPNNode** Expressions::logicRPNNodeStack = nullptr;
+        /** development test only */
+        int Expressions::finalOutputStackNeededSize = 0;
 
         void Expressions::CalcStackSizesInit() {
             rpnOutputStackNeededSize = 0;
             opStackSizeNeededSize = 0;
-
+            /** development test only */
+            finalOutputStackNeededSize = 0;
         }
         void Expressions::CalcStackSizes(Tokens& tokens) {
             int totalCount = 0;
             int operatorCount = 0;
-            GetGenerateRPNTokensCount_PreCalc(tokens, totalCount, operatorCount);
+            int finalOutputCount = 0;
+            GetGenerateRPNTokensCount_PreCalc(tokens, totalCount, operatorCount, finalOutputCount);
             // Second pass: simulate the operator stack precisely
             operatorCount = GetGenerateRPNTokensCount_DryRun(tokens, operatorCount);
 
-            if (opStackSize > opStackSizeNeededSize) opStackSizeNeededSize = opStackSize;
+            if (operatorCount > opStackSizeNeededSize) opStackSizeNeededSize = operatorCount;
             if (totalCount > rpnOutputStackNeededSize) rpnOutputStackNeededSize = totalCount;
+            if (finalOutputCount > finalOutputStackNeededSize) finalOutputStackNeededSize = finalOutputCount;
+        }
+        void Expressions::PrintCalcedStackSizes() {
+            printf("\nrpnOutputStackNeededSize:%d\n", rpnOutputStackNeededSize);
+            printf("opStackSizeNeededSize:%d\n", opStackSizeNeededSize);
+            /** development test only */
+            printf("logicRPNNodeStackNeededSize:%d\n\n", finalOutputStackNeededSize);
         }
         void Expressions::InitStacks() {
-            delete rpnOutputStack;
-            delete opStack;
+            printf("\n*************************************************** InitStacks ********************************\n");
+            ClearStacks();
             rpnOutputStack = new ExpressionTokens(rpnOutputStackNeededSize);
-            opStack = new ExpressionToken[opStackSize];
+            opStack = new ExpressionToken[opStackSizeNeededSize];
+            logicRPNNodeStackPool = new LogicRPNNode[finalOutputStackNeededSize];
+            logicRPNNodeStack = new LogicRPNNode*[finalOutputStackNeededSize];
+
+            printf("\n[DONE]\n");
         }
         void Expressions::ClearStacks() {
             delete rpnOutputStack;
-            delete opStack;
+            delete[] opStack;
+            delete[] logicRPNNodeStack; // delete the ptr array first
+            delete[] logicRPNNodeStackPool;            
         }
         // precedence map
         static const std::unordered_map<ExpTokenType, int> precedence = {
@@ -247,6 +271,7 @@ namespace HAL_JSON {
 */
             if (anyError) return false;
 
+
             int operandIndex = 0;
             bool inOperand = false;
             const char* p = nullptr;
@@ -299,6 +324,9 @@ namespace HAL_JSON {
                     ++operandIndex;
                     inOperand = false;
                 }
+            }
+            if (anyError == false) {
+                CalcStackSizes(tokens);
             }
             return !anyError;
         }
@@ -413,27 +441,33 @@ namespace HAL_JSON {
         //    ██   ██ ██      ██  ██ ██ 
         //    ██   ██ ██      ██   ████ 
 
-        std::string CalcExpressionToString(const ExpressionTokens* calcExpr) {
+        std::string Expressions::CalcExpressionToString(int startIndex, int endIndex) {
             std::string out;
-            if (calcExpr == nullptr){
-                Expressions::ReportError("calcExpr == nullptr");
-                return out;
-            }
-            int length = calcExpr->count;
-            ExpressionToken* calcExprItems = calcExpr->items;
-            for (uint32_t i=0;i<length;i++) {
+            ExpressionToken* calcExprItems = Expressions::rpnOutputStack->items;
+            for (int i=startIndex;i<endIndex;i++) {
                 out += calcExprItems[i].ToString();
-                if (i + 1 < length) out += " ";
+                if (i + 1 < endIndex) out += " ";
             }
             return out;
         }
 
-        void Expressions::printLogicRPNNodeTree(LogicRPNNode* node, int indent) {
+        std::string Expressions::CalcExpressionToString(const LogicRPNNode* node) {
+            std::string out;
+            int endIndex = node->calcRPNEndIndex;
+            ExpressionToken* calcExprItems = Expressions::rpnOutputStack->items;
+            for (int i=node->calcRPNStartIndex;i<endIndex;i++) {
+                out += calcExprItems[i].ToString();
+                if (i + 1 < endIndex) out += " ";
+            }
+            return out;
+        }
+
+        void Expressions::printLogicRPNNodeTree(const LogicRPNNode* node, int indent) {
             if (!node) return;
             std::string padding(indent * 2, ' '); // 2 spaces per level
-            if (node->calcRPN != nullptr) {
+            if (node->calcRPNStartIndex != -1) {
                 // Leaf node → print calc RPN
-                ReportInfo(padding + "- calc: [" + CalcExpressionToString(node->calcRPN) + "]\n");
+                ReportInfo(padding + "- calc: [" + CalcExpressionToString(node) + "]\n");
             } else {
                 // Operator node
                 ReportInfo(padding + "[" + (node->op?ExpTokenTypeToString(node->op->type):"") + "]\n");
@@ -456,14 +490,10 @@ namespace HAL_JSON {
             }
             // Print calcRPN tokens
             ReportInfo(indent + "calcRPN: ");
-            if (node->calcRPN == nullptr) {
+            if (node->calcRPNStartIndex != -1) {
                 ReportInfo("empty\n");
             } else {
-                int length = node->calcRPN->count;
-                ExpressionToken* calcRPNitems = node->calcRPN->items;
-                for (int i=0;i<length;i++) {
-                    ReportInfo(calcRPNitems[i].ToString() + " ");
-                }
+                ReportInfo(CalcExpressionToString(node));
                 ReportInfo("\n");
             }
             // Print children
@@ -480,9 +510,10 @@ namespace HAL_JSON {
                 ReportInfo(indent + "  nullptr\n");
         }
 
-        void Expressions::GetGenerateRPNTokensCount_PreCalc(const Tokens& tokens, int& totalCount, int& operatorCount) {
+        void Expressions::GetGenerateRPNTokensCount_PreCalc(const Tokens& tokens, int& totalCount, int& operatorCount, int&finalOutputCount) {
             int totalCountTemp = 0;
             int operatorCountTemp = 0;
+            int finalOutputSizeTemp = 0;
 
             const int startIndex = tokens.currIndex;
             const int endIndex = startIndex + tokens.Current().itemsInBlock;
@@ -504,10 +535,14 @@ namespace HAL_JSON {
                     } else if (*cPtr == ')') {                      
                         
                     } else if ((cPtr + 1) < tokenEnd && IsTwoCharOp(cPtr) != ExpTokenType::NotSet) {
+                        if (IsLogicOrCompare(cPtr))
+                            finalOutputSizeTemp++;
                         ++totalCountTemp;
                         operatorCountTemp++;
                         cPtr++; // consume the extra char
                     } else if (IsSingleOp(*cPtr) != ExpTokenType::NotSet) {
+                        if (IsSingleCompare(*cPtr))
+                            finalOutputSizeTemp++;
                         ++totalCountTemp;
                         operatorCountTemp++;
                     } else {
@@ -526,6 +561,7 @@ namespace HAL_JSON {
             }
             totalCount = totalCountTemp;
             operatorCount = operatorCountTemp;
+            finalOutputCount = finalOutputSizeTemp;
         }
         int Expressions::GetGenerateRPNTokensCount_DryRun(const Tokens& tokens, int initialSize)
         {
@@ -616,23 +652,10 @@ namespace HAL_JSON {
         }
 
         ExpressionTokens* Expressions::GenerateRPNTokens(Tokens& tokens) {
-            
-            int totalCount = 0;
-            int operatorCount = 0;
-            /** development test only */
-            int maxOperatorUsage = 0;
-            GetGenerateRPNTokensCount_PreCalc(tokens, totalCount, operatorCount);
-            // Second pass: simulate the operator stack precisely
-            // This step is intended to run during the validation phase,
-            // where globally 'static' reusable stacks for both RPN output and operator stack
-            // should be created in the Expressions namespace.
-            // For now, during development, we keep the stacks local here.
-            operatorCount = GetGenerateRPNTokensCount_DryRun(tokens, operatorCount);
-            
-            ExpressionTokens* outTokens = new ExpressionTokens(totalCount);
-            ExpressionToken* outTokenItems = outTokens->items;
 
-            ExpressionToken* opStack = new ExpressionToken[operatorCount];
+            int maxOperatorUsage = 0;
+            ExpressionToken* outTokenItems = rpnOutputStack->items;
+
             int opStackIndex = 0;
 
             int outTokensIndex = 0;
@@ -725,7 +748,10 @@ namespace HAL_JSON {
                                 if (((cPtr + 1) < tokenEnd && IsTwoCharOp(cPtr)!=ExpTokenType::NotSet)) break;
                                 if (IsSingleOp(*cPtr) != ExpTokenType::NotSet) break;
                             }
-                            outTokenItems[outTokensIndex++].Set(start, cPtr, ExpTokenType::Operand);
+                            ZeroCopyString zcStr(start, cPtr);
+                            bool validNumber = zcStr.ValidNumber();
+                            ExpTokenType type = validNumber?ExpTokenType::ConstValOperand:ExpTokenType::VarOperand;
+                            outTokenItems[outTokensIndex++].Set(start, cPtr, type);
                             cPtr--; // as the current loop will incr after this 
 
                         }
@@ -747,56 +773,42 @@ namespace HAL_JSON {
             // After loop: pop remaining ops
             while (opStackIndex != 0)
                 outTokenItems[outTokensIndex++] = opStack[--opStackIndex];
-            ReportInfo("\nGenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(outTokens->count) + "\n");
-            ReportInfo("\nGenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(operatorCount) + "\n");
 
-            outTokens->currentCount = outTokensIndex;
+            ReportInfo("\nGenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(rpnOutputStackNeededSize) + "\n");
+            ReportInfo("\nGenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(opStackSizeNeededSize) + "\n");
+
+            rpnOutputStack->currentCount = outTokensIndex;
 
             // define if this expression contains logic operators
             // this allows the tree builder to have a single ptr to the rpnArray as the context
-            outTokens->containLogicOperators = false;
+            rpnOutputStack->containLogicOperators = false;
             // going backwards as that is the fastest way of detecting logic operators
             // as they mostly appear at the end
             for (int i=outTokensIndex-1;i>=0;i--) { 
-                ExpressionToken& tok = outTokens->items[i];
+                ExpressionToken& tok = rpnOutputStack->items[i];
                 if (tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) {
-                    outTokens->containLogicOperators = true;
+                    rpnOutputStack->containLogicOperators = true;
                     break; //  we only need to check if there is one
                 }
             }
-
-            delete[] opStack; // this should not be done when we utilize global stack
-            return outTokens;
+            return rpnOutputStack;
         }
 
         
         
-        static const ExpTokenType compareOperators[] = {ExpTokenType::CompareEqualsTo, ExpTokenType::CompareNotEqualsTo,
-                                                     ExpTokenType::CompareGreaterThanOrEqual, ExpTokenType::CompareLessThanOrEqual,
-                                                     ExpTokenType::CompareGreaterThan, ExpTokenType::CompareLessThan, 
-                                                     ExpTokenType::NotSet};
+        
         
         /** 
          * Development test functions
-         * TODO. make a copy of them that produce the exec format
+         * TODO. make a copy of this that produce the exec format
          */
         LogicRPNNode* Expressions::BuildLogicTree(ExpressionTokens* tokens)
         {
             int tokensCount = tokens->count;
 
-            // in the final to exec function
-            // the following should be calculated 
-            // in the scripts validate stage and stored globally 
-            // so that it can allocate the memory globally before all exec structure is made
-            // thus reducing heap fragmentation
-            int stackMaxSize = 0;
-            for (int i=0;i<tokensCount;i++) {
-                ExpressionToken& tok = tokens->items[i];
-                // include logic operators here for safetly
-                if (tok.AnyType(compareOperators) || tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) stackMaxSize++;
-            }
-            LogicRPNNode** stack = new LogicRPNNode*[stackMaxSize]();
+            int stackPoolIndex = 0;
             int stackIndex = 0;
+            int stackMaxUsed = 0;
   
             int currentCalcStartIndex = -1;
             
@@ -806,9 +818,13 @@ namespace HAL_JSON {
                 if (tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) {
                     // first flush pending calc as a leaf
                     if (currentCalcStartIndex != -1) {
-                        LogicRPNNode* newNode = new LogicRPNNode(tokens, currentCalcStartIndex, i); // here it should only be i as the logic operator should not be included
-                        stack[stackIndex++] = newNode; // push item
+
+                        LogicRPNNode& newNode = logicRPNNodeStackPool[stackPoolIndex++]; //  get next item from the pool
+                        newNode.Set(tokens, currentCalcStartIndex, i); // here it should only be i as the logic operator should not be included
+                        logicRPNNodeStack[stackIndex++] = &newNode; // push item
                         currentCalcStartIndex = -1; // clear
+                    
+                        if (stackIndex > stackMaxUsed) stackMaxUsed = stackIndex;
                     }
                     ReportInfo("BuildLogicTree stack size:" + std::to_string(stackIndex) + "\n");
                     // This should never happen under normal use.
@@ -817,10 +833,12 @@ namespace HAL_JSON {
                     if (stackIndex < 2)
                         throw std::runtime_error("LogicRPN: not enough operands for logic op");
 
-                    auto rhs = stack[--stackIndex];// stack.back(); stack.pop_back();
-                    auto lhs = stack[--stackIndex];//stack.back(); stack.pop_back();
-                    LogicRPNNode* newNode =  new LogicRPNNode(&tok, lhs, rhs);
-                    stack[stackIndex++] = newNode; // push item
+                    LogicRPNNode* rhs = logicRPNNodeStack[--stackIndex];
+                    LogicRPNNode* lhs = logicRPNNodeStack[--stackIndex];
+                    LogicRPNNode& newNode = logicRPNNodeStackPool[stackPoolIndex++]; //  get next item from the pool
+                    newNode.Set(&tok, lhs, rhs);
+                    logicRPNNodeStack[stackIndex++] = &newNode; // push item
+                    if (stackIndex > stackMaxUsed) stackMaxUsed = stackIndex;
                 }
                 else {
                     if (currentCalcStartIndex == -1) currentCalcStartIndex = i;
@@ -828,24 +846,31 @@ namespace HAL_JSON {
 
                     // detect end of a comparison (= leaf boundary)
                     if (tok.AnyType(compareOperators)) {
-                        LogicRPNNode* newNode = new LogicRPNNode(tokens, currentCalcStartIndex, i+1); // i+1 as the compare operator needs to be included
-                        stack[stackIndex++] = newNode; // push item
+                        LogicRPNNode& newNode = logicRPNNodeStackPool[stackPoolIndex++]; //  get next item from the pool
+                        newNode.Set(tokens, currentCalcStartIndex, i+1); // i+1 as the compare operator needs to be included
+                        logicRPNNodeStack[stackIndex++] = &newNode; // push item
                         currentCalcStartIndex = -1; // clear
+                        if (stackIndex > stackMaxUsed) stackMaxUsed = stackIndex;
                     }
                 }
             }
 
             if (currentCalcStartIndex != -1) {
-                LogicRPNNode* newNode = new LogicRPNNode(tokens, currentCalcStartIndex, tokensCount);
-                stack[stackIndex++] = newNode; // push item
+                LogicRPNNode& newNode = logicRPNNodeStackPool[stackPoolIndex++];
+                newNode.Set(tokens, currentCalcStartIndex, tokensCount);
+                logicRPNNodeStack[stackIndex++] = &newNode; // push item
+                if (stackIndex > stackMaxUsed) stackMaxUsed = stackIndex;
                 currentCalcStartIndex = -1; // clear
             }
 
+            ReportInfo("BuildLogicTree - used " + std::to_string(stackMaxUsed) + " of " + std::to_string(finalOutputStackNeededSize) + "\n");
+
             if (stackIndex != 1)
                 throw std::runtime_error("LogicRPN: unbalanced tree");
-            LogicRPNNode* ret = stack[stackIndex-1];
-            delete[] stack;
-            return ret;
+
+            // note. logicRPNNodeStackPool is not owned and cannot be deleted here
+            // note. logicRPNNodeStack is not owned and cannot be deleted here
+            return logicRPNNodeStack[stackIndex-1];
         }
     }
 }

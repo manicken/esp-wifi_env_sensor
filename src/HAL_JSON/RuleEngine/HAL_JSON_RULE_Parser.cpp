@@ -986,6 +986,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                 delete[] fileContents;
                 return false;
             }
+            
             );
             tokens.items[0].itemsInBlock = tokens.count; // set as a block
             tokens.currIndex = 0;
@@ -999,12 +1000,18 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            VALIDATE PARSED TOKEN LIST                          *\n");
             ReportInfo("**********************************************************************************\n");
+            // need to be done before any ValidateExpression
+            // and that normally mean before any validation first occur
+            // i.e if many script files are to be validated this need to happen before any of that happens
+            Expressions::CalcStackSizesInit();
             if (Expressions::ValidateExpression(tokens, ExpressionContext::IfCondition) == false)
             {
                 ReportInfo("Error: validate tokens fail\n");
                 delete[] fileContents;
                 return false;
             }
+            Expressions::PrintCalcedStackSizes();
+            Expressions::InitStacks();
 
             ReportInfo("\nInput expression: " + tokens.ToString());
 
@@ -1021,10 +1028,10 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("\n");
             ReportInfo("\n\ntree view:\n");
             Expressions::printLogicRPNNodeTree(lrpnNode, 0);
-            ReportInfo("\n\nadvanced tree view:\n");
-            Expressions::PrintLogicRPNNodeAdvancedTree(lrpnNode, 0);
-            delete newDirect;
-            delete lrpnNode; // deletes the whole tree recursive
+            //ReportInfo("\n\nadvanced tree view:\n");
+            //Expressions::PrintLogicRPNNodeAdvancedTree(lrpnNode, 0);
+
+            Expressions::ClearStacks();
             delete[] fileContents;
 
             ReportInfo("\nAll done!!!\n");

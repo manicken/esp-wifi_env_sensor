@@ -48,9 +48,18 @@ namespace HAL_JSON {
             static ExpressionToken* opStack;
             static int opStackSizeNeededSize;
             static int opStackSize;
+
+            /** used both for development test and as temporary structure for the final exec output */
+            static LogicRPNNode* logicRPNNodeStackPool; // the fixed array o
+            static LogicRPNNode** logicRPNNodeStack;// = new LogicRPNNode*[stackMaxSize]();
+            
+            /** development/release */
+            static int finalOutputStackNeededSize;
+
         public:
             static void CalcStackSizesInit();
             static void CalcStackSizes(Tokens& tokens);
+            static void PrintCalcedStackSizes();
             static void InitStacks();
             static void ClearStacks();
 
@@ -69,7 +78,7 @@ namespace HAL_JSON {
                 else if (c == '&') return ExpTokenType::CalcBitwiseAnd;
                 else if (c == '|') return ExpTokenType::CalcBitwiseOr;
                 else if (c == '^') return ExpTokenType::CalcBitwiseExOr;
-                else if (c == '&') return ExpTokenType::CalcModulus;
+                else if (c == '%') return ExpTokenType::CalcModulus;
                 return ExpTokenType::NotSet;
             }
 
@@ -87,6 +96,24 @@ namespace HAL_JSON {
                 else if (first == '<' && next == '<') return ExpTokenType::CalcBitwiseLeftShift;
                 return ExpTokenType::NotSet;
             }
+
+            static inline bool IsSingleCompare(char c) {
+                if (c == '<') return true;
+                else if (c == '>') return true;
+                return false;
+            }
+
+            static inline bool IsLogicOrCompare(const char* c) {
+                char first = *(c++);
+                char next = *c;
+                if (first == '&' && next == '&') return true;
+                else if (first == '|' && next == '|') return true;
+                else if (first == '=' && next == '=') return true;
+                else if (first == '!' && next == '=') return true;
+                else if (first == '<' && next == '=') return true;
+                else if (first == '>' && next == '=') return true;
+                return false;
+            }
             
             //static void GetOperands(Tokens& tokens, ZeroCopyString* operands, int operandCount);
             
@@ -102,13 +129,17 @@ namespace HAL_JSON {
             static bool IsValidOperandChar(char c);
             static bool ValidateExpression(Tokens& tokens, ExpressionContext exprContext);
 
-            static void printLogicRPNNodeTree(LogicRPNNode* node, int indent = 0);
+            static std::string CalcExpressionToString(const LogicRPNNode* node);
+            static std::string CalcExpressionToString(int startIndex, int endIndex);
+            static void printLogicRPNNodeTree(const LogicRPNNode* node, int indent = 0);
             static void PrintLogicRPNNodeAdvancedTree(const LogicRPNNode* node, int depth = 0);
 
-            static void GetGenerateRPNTokensCount_PreCalc(const Tokens& tokens, int& totalCount, int& operatorCount);
+            static void GetGenerateRPNTokensCount_PreCalc(const Tokens& tokens, int& totalCount, int& operatorCount, int& finalOutputSize);
             static int GetGenerateRPNTokensCount_DryRun(const Tokens& tokens, int initialSize);
            
+            /** the returned pointer here is owned and need to be deleted by the caller */
             static LogicRPNNode* BuildLogicTree(ExpressionTokens* tokens);
+            /** special note here the returned pointer is non-owned and belongs to the global stack of Expressions */
             static ExpressionTokens* GenerateRPNTokens(Tokens& tokens);
         };
     }

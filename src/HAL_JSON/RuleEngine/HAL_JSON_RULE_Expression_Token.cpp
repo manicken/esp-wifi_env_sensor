@@ -3,6 +3,13 @@
 
 namespace HAL_JSON {
     namespace Rules {
+        bool EqualsAny(ExpTokenType type, const ExpTokenType* candidates) {
+            while(*candidates != ExpTokenType::NotSet) {
+                if (type == *candidates) return true;
+                candidates++;
+            }
+            return false;
+        }
         const char* ExpTokenTypeToString(ExpTokenType type) {
             switch (type) {
                 case ExpTokenType::NotSet: return "NotSet";
@@ -26,7 +33,8 @@ namespace HAL_JSON {
                 case ExpTokenType::CalcBitwiseExOr: return "CalcBitwiseExOr";
                 case ExpTokenType::CalcBitwiseLeftShift: return "CalcBitwiseLeftShift";
                 case ExpTokenType::CalcBitwiseRightShift: return "CalcBitwiseRightShift";
-                case ExpTokenType::Operand: return "Operand";
+                case ExpTokenType::VarOperand: return "VarOperand";
+                case ExpTokenType::ConstValOperand: return "ConstValOperand";
                 default: return "Unknown";
             }
         }
@@ -94,7 +102,7 @@ namespace HAL_JSON {
             for (int i=start;i<end;i++) {
                 ExpressionToken& tok = tokens[i];
                 std::string msgLine = "Token[" + std::to_string(i) + "]  ";
-                if (tok.type != ExpTokenType::Operand) {
+                if (tok.type != ExpTokenType::ConstValOperand && tok.type != ExpTokenType::VarOperand) {
                     msgLine += "---";
                     msgLine += ExpTokenTypeToString(tok.type);
                     msgLine += "---";

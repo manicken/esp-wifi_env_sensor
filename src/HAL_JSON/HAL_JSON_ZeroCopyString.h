@@ -8,6 +8,17 @@
 #include <cstdint>
 
 namespace HAL_JSON {
+
+    enum class NumberType { UINT32, INT32, FLOAT, INVALID };
+
+    struct NumberResult {
+        NumberType type;
+        union {
+            uint32_t u32;
+            int32_t i32;
+            float f32;
+        };
+    };
     /**
      * Note: 'end' is exclusive, i.e., points just past the last valid character
      */
@@ -99,6 +110,7 @@ namespace HAL_JSON {
         bool ConvertTo_uint32(uint32_t& outValue) const;
         bool ConvertTo_int32(int32_t& outValue) const;
         bool ConvertTo_float(float& outValue) const;
+        NumberResult ConvertStringToNumber();
 
         char operator[](size_t idx) const;
     };

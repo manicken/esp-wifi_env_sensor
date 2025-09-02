@@ -408,6 +408,42 @@ namespace HAL_JSON {
         return true;
     }
 
+    NumberResult ZeroCopyString::ConvertStringToNumber() {
+        NumberResult result{};
+        
+        // 1. Check for valid number first
+        if (!ValidNumber()) {
+            result.type = NumberType::INVALID;
+            return result;
+        }
+
+        uint32_t uval{};
+        if (ConvertTo_uint32(uval)) {
+            result.type = NumberType::UINT32;
+            result.u32 = uval;
+            return result;
+        }
+
+        int32_t ival{};
+        if (ConvertTo_int32(ival)) {
+            result.type = NumberType::INT32;
+            result.i32 = ival;
+            return result;
+        }
+
+        float fval{};
+        if (ConvertTo_float(fval)) {
+            result.type = NumberType::FLOAT;
+            result.f32 = fval;
+            return result;
+        }
+
+        // fallback: none succeeded
+        result.type = NumberType::INVALID;
+        return result;
+    }
+
+
     char ZeroCopyString::operator[](size_t idx) const {
         if (idx >= Length()) {
             return '\0';

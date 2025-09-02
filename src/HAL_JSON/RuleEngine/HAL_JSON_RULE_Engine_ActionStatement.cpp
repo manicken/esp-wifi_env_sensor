@@ -14,7 +14,7 @@ namespace HAL_JSON {
         }
 
         HALOperationResult ActionStatement::Handler(void* context) {
-
+            return HALOperationResult::Success;
         }
         
     }
