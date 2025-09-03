@@ -104,6 +104,19 @@ void parseCommand(const char* cmd, bool oneShot) {
         std::chrono::duration<double, std::milli> duration = end - start;
 
         std::cout << "Parse time: " << duration.count() << " ms\n";
+    } else if (zcCmdRoot == "ldac") {
+        if (oneShot) {
+            //HAL_JSON::Manager::setup(); // could use this later on
+        }
+        auto start = std::chrono::high_resolution_clock::now();
+        HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
+        std::cout << "using action expression to RPN conv file:" << zcFilePath.ToString() << "\n";
+        std::string filePath = zcFilePath.ToString();
+        HAL_JSON::Rules::Parser::ParseActionExpressionTest(filePath.c_str());
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+
+        std::cout << "Parse time: " << duration.count() << " ms\n";
     }
     else {
         std::cout << "Unknown command: " << cmd << "\n";

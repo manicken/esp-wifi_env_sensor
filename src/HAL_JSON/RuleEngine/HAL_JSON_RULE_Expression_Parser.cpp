@@ -225,6 +225,7 @@ namespace HAL_JSON {
                 ReportError("double operator(s) detected");
                 anyError = true;
             } else if (operatorCount != operandCount - 1) {
+                ReportInfo("operatorCount:" + std::to_string(operatorCount) + ", operandCount:" + std::to_string(operandCount) + "\n");
                 ReportError("operator(s) missing before/after parenthesis");
                 anyError = true;
             }

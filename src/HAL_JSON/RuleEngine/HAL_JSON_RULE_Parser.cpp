@@ -3,6 +3,9 @@
 
 namespace HAL_JSON {
     namespace Rules {
+
+        AssignmentParts g_assignmentParts;  // single reusable instance
+
         //static const char* actionStartKeywords[] = {";", "then", "do", "and", "else", "endif", nullptr};
         //static const char* actionEndKeywords[] = {";", "and", "if", "else", "elseif", "endon", "endif", nullptr};
 
@@ -757,6 +760,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                 // bool foundAdditionalAssigmentOperators
                 
                 if (foundAdditionalAssignmentOperators) {
+                    // error reporting  is taken care of above
                     continue; // skip for now as it would be hard to extract anything from such string
                 }
                 if (firstAssignmentOperator == nullptr) {
@@ -956,6 +960,79 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             return anyError == false;
         }
 
+        
+
+        AssignmentParts* Parser::ExtractAssignmentParts(Tokens& _tokens) {
+            g_assignmentParts.Clear();
+
+            Token* tokens = _tokens.items;
+            int startIndex = _tokens.currIndex;
+            int endIndex   = startIndex + _tokens.Current().itemsInBlock;
+
+            // Track assignment operator info
+            const char* firstAssignmentOperator = nullptr;
+            Token* firstAssignmentOperatorToken = nullptr;
+            const char* firstCompoundAssignmentOperator = nullptr;
+
+            // Scan tokens in the current block
+            for (int i = startIndex; i < endIndex; ++i) {
+                Token& exprToken = tokens[i];
+                const char* searchStart = exprToken.start;
+
+                const char* match = nullptr;
+                do {
+                    match = exprToken.FindChar('=', searchStart);
+                    if (match) {
+                        if (!firstAssignmentOperator) {
+                            firstAssignmentOperator = match;
+                            firstAssignmentOperatorToken = &exprToken;
+
+                            // check for compound assignment
+                            const char* prevChar = match - 1;
+                            if (exprToken.ContainsPtr(prevChar) &&
+                                Expressions::IsSingleOperator(*prevChar)) {
+                                firstCompoundAssignmentOperator = prevChar;
+                            }
+                        }
+                        // advance search
+                        searchStart = match + 1;
+                        if (searchStart >= exprToken.end) break;
+                    }
+                } while (match);
+            }
+
+            if (!firstAssignmentOperator) {
+                // no operator found: just return empty
+                return &g_assignmentParts;
+            }
+
+            // Decide operator start
+            const char* opStart = firstCompoundAssignmentOperator
+                                ? firstCompoundAssignmentOperator
+                                : firstAssignmentOperator;
+
+            // LHS
+            g_assignmentParts.lhs.start  = _tokens.Current().start;
+            g_assignmentParts.lhs.end    = opStart;
+            g_assignmentParts.lhs.line   = _tokens.Current().line;
+            g_assignmentParts.lhs.column = _tokens.Current().column;
+
+            // Operator
+            g_assignmentParts.op.start = opStart;
+            g_assignmentParts.op.end   = firstAssignmentOperator + 1;
+            g_assignmentParts.op.line  = firstAssignmentOperatorToken->line;
+            g_assignmentParts.op.column= firstAssignmentOperatorToken->column + (opStart - firstAssignmentOperatorToken->start);
+
+            // RHS
+            g_assignmentParts.rhs.items = firstAssignmentOperatorToken;
+            g_assignmentParts.rhs.count = endIndex - (firstAssignmentOperatorToken - tokens);
+            g_assignmentParts.rhs.firstTokenStartOffset = firstAssignmentOperator + 1;
+
+            return &g_assignmentParts;
+        }
+
+
+
         bool Parser::ParseExpressionTest(const char* filePath) {
             
             size_t fileSize;
@@ -1031,6 +1108,89 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             //ReportInfo("\n\nadvanced tree view:\n");
             //Expressions::PrintLogicRPNNodeAdvancedTree(lrpnNode, 0);
 
+            Expressions::ClearStacks();
+            delete[] fileContents;
+
+            ReportInfo("\nAll done!!!\n");
+            return true;
+        }
+
+        bool Parser::ParseActionExpressionTest(const char* filePath) {
+            
+            size_t fileSize;
+            char* fileContents;// = ReadFileToMutableBuffer(filePath, fileSize);
+            LittleFS_ext::FileResult fileResult = LittleFS_ext::load_from_file(filePath, &fileContents, &fileSize);
+            if (fileResult != LittleFS_ext::FileResult::Success) {
+                ReportInfo("Error: file could not be read/or is empty\n");
+                return false;
+            }
+
+            MEASURE_TIME("FixNewLines and StripComments time: ",
+            // fix newlines so that they only consists of \n 
+            // for easier parsing
+            FixNewLines(fileContents);
+            // replaces all comments with whitespace
+            // make it much simpler to parse the contents 
+            StripComments(fileContents);
+            );
+
+            int tokenCount = CountTokens(fileContents);
+            ReportInfo("Token count: " + std::to_string(tokenCount) + "\n");
+            Tokens tokens(tokenCount);
+            
+            MEASURE_TIME("Tokenize time: ",
+
+            if (Tokenize(fileContents, tokens) == false) {
+                ReportInfo("Error: could not Tokenize\n");
+                delete[] fileContents;
+                return false;
+            }
+            
+            );
+            tokens.items[0].itemsInBlock = tokens.count; // set as a block
+            tokens.currIndex = 0;
+
+            ReportInfo("**********************************************************************************\n");
+            ReportInfo("*                            PARSED TOKEN LIST                                   *\n");
+            ReportInfo("**********************************************************************************\n");
+
+            ReportInfo(PrintTokens(tokens,0) + "\n");
+
+            ReportInfo("**********************************************************************************\n");
+            ReportInfo("*                            VALIDATE PARSED TOKEN LIST                          *\n");
+            ReportInfo("**********************************************************************************\n");
+            // need to be done before any ValidateExpression
+            // and that normally mean before any validation first occur
+            // i.e if many script files are to be validated this need to happen before any of that happens
+            Expressions::CalcStackSizesInit();
+            if (Expressions::ValidateExpression(tokens, ExpressionContext::Assignment) == false)
+            {
+                ReportInfo("Error: validate tokens fail\n");
+                delete[] fileContents;
+                return false;
+            }
+            Expressions::PrintCalcedStackSizes();
+            Expressions::InitStacks();
+
+            ReportInfo("\nInput action expression: " + tokens.ToString());
+
+            AssignmentParts* action = ExtractAssignmentParts(tokens);
+
+            ReportInfo("\nAction lhs:" + action->lhs.ToString() + "\n");
+            ReportInfo("\nAction assigment operator:" + action->op.ToString() + "\n");
+
+            ExpressionTokens* newDirect = Expressions::GenerateRPNTokens(action->rhs);
+            
+            ReportInfo("\n\nAction rhs calc RPN:");
+            for (int i=0;i<newDirect->currentCount;i++) { // currentCount is set by GenerateRPNTokens and defines the current 'size'
+                ExpressionToken& tok = newDirect->items[i];
+                //if (tok->type == TokenType::Operand)
+                    ReportInfo(tok.ToString() + " ");
+                //else
+                //    ReportInfo(TokenTypeToString(tok->type ) + std::string(" "));
+            }
+            ReportInfo("\n");
+            
             Expressions::ClearStacks();
             delete[] fileContents;
 

@@ -32,11 +32,13 @@ namespace HAL_JSON {
         /** script engine specific status */
         IfConditionFalse = 11,
         /** script engine specific error */
-        StackUnderflow = 20,
+        StackUnderflow = 19,
+        /** script engine specific error */
+        DivideByZero = 20,
         /** script engine specific error */
         StackOverflow = 21,
         /** script engine specific error */
-        DivideByZero = 22,
+        ResultGetFail = 22
 
 
     };
@@ -47,6 +49,12 @@ namespace HAL_JSON {
             case HALOperationResult::UnsupportedOperation: return "UnsupportedOperation";
             case HALOperationResult::UnsupportedCommand: return "UnsupportedCommand";
             case HALOperationResult::ExecutionFailed: return "ExecutionFailed";
+            case HALOperationResult::IfConditionTrue: return "IfConditionTrue";
+            case HALOperationResult::IfConditionFalse: return "IfConditionFalse";
+            case HALOperationResult::StackUnderflow: return "StackUnderflow";
+            case HALOperationResult::DivideByZero: return "DivideByZero";
+            case HALOperationResult::StackOverflow: return "StackOverflow";
+            case HALOperationResult::ResultGetFail: return "ResultGetFail";
             default: return "Unknown";
         }
     }

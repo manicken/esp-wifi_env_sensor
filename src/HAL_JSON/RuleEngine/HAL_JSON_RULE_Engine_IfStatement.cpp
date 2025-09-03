@@ -26,20 +26,33 @@ namespace HAL_JSON {
         }
         ConditionalBranch::~ConditionalBranch()
         {
+            if (deleter && context) {
+                deleter(context);
+                context = nullptr;
+            }
             //delete[] items; is deleted by BranchBlock destructor
+
         }
         void ConditionalBranch::Set(Tokens& tokens)
         {
             // first increment to next and then get
             const Token& expression = tokens.items[++tokens.currIndex];
 
-            // the following consumes the tokens
-            ExpressionTokens* expTokens = Expressions::GenerateRPNTokens(tokens);
+            // the following consumes the expression tokens
+            ExpressionTokens* expTokens = Expressions::GenerateRPNTokens(tokens); // note here. expTokens is non owned
             // builds the temporary tree using memory pool
-            LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(expTokens);
+            LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(expTokens); // note here. lrpnNode is non owned 
 
-            // TODO make function that builds the IF condition exec structure
-
+            if (lrpnNode->calcRPNStartIndex != -1) { // pure calc compare expression, no logic
+                context = new CalcRPN(expTokens, lrpnNode->calcRPNStartIndex, lrpnNode->calcRPNEndIndex);
+                handler = &LogicExecNode::Eval_Calc;
+                deleter = DeleteAs<CalcRPN>;
+            } else {
+                LogicExecNode* newExecNode = new LogicExecNode(expTokens, lrpnNode);
+                context = newExecNode;
+                deleter = DeleteAs<LogicExecNode>;
+                handler = newExecNode->handler;
+            }
 
             //when consumed we are at the then
             Token& thenToken = tokens.items[tokens.currIndex++]; // get and consume

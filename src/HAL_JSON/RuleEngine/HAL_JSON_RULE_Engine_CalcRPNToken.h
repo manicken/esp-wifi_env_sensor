@@ -55,10 +55,13 @@ namespace HAL_JSON {
         };
 
         struct CalcRPN {
-            CalcRPNToken* calcRPN;
-            int calcRPNcount;
+            CalcRPNToken* items;
+            int count;
+            
+            CalcRPN(CalcRPN&) = delete;
+            CalcRPN(ExpressionTokens* tokens, int startIndex, int endIndex);
 
-            CalcRPN(ExpressionTokens& tokens, int startIndex, int endIndex);
+            HALOperationResult DoCalc();
         };
     }
 }

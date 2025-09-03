@@ -129,5 +129,37 @@ namespace HAL_JSON {
             return true;
         }
 
+        HALOperationResult TriggerBlock::Exec() {
+            HALOperationResult res;
+            for (int i=0;i<itemsCount;i++) {
+                StatementBlock& statementItem = items[i];
+                res = statementItem.handler(statementItem.context);
+                if (res != HALOperationResult::Success) {
+                    return res; // direct return on any failure here
+                }
+            }
+        }
+
+        void ScriptBlock::Exec() {
+            HALOperationResult res;
+            for (int i=0;i<triggerBlockCount;i++) {
+                if (triggerBlocks[i].triggerSource(triggerBlocks[i].context) == false)
+                    continue;
+                res = triggerBlocks[i].Exec();
+                if (res != HALOperationResult::Success) {
+                    GlobalLogger.Error(F("trigger: "), ToString(res));
+#ifdef _WIN32
+                    printf("script exec error:%s", ToString(res));
+#endif
+                }
+            }
+        }
+
+        void ScriptsBlock::Exec() {
+            for (int i=0;i<scriptBlocksCount;i++) {
+                scriptBlocks[i].Exec();
+            }
+        }
+
     }
 }

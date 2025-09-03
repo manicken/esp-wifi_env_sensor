@@ -49,3 +49,15 @@ bool EvalOr_CC(LogicExecNode* context); // CC
  example tree:
  - calc: [hum#temp 50 >=]
  
+ 
+ 
+ script loading is as follows:
+ 1. run Expressions::CalcStackSizesInit();
+ 2. loop throught all script files and validate them, inside ValidateExpression i call CalcStackSizes which calculates the current expression and updates needed stack sizes accordoly
+ 3. if all script validation passes i then run Expressions::InitStacks();
+    this will allocate all needed extra memory to parse all scripts
+ 4. start the actual script parse and load each script file into my internal indirect dispatch functionptr+context structure
+ 5. when all scripts are loaded i run Expressions::ClearStacks();
+ 
+ In my final version i will somehow try to calculate the total required memory usage for
+ my internal runtime exec structures and use heap 'forming' to make sure that the structures do not leave big holes of memory

@@ -10,7 +10,8 @@ namespace HAL_JSON {
         }
         ActionStatement::~ActionStatement()
         {
-
+            delete target;
+            delete calcRpn;
         }
 
         HALOperationResult ActionStatement::Handler(void* context) {

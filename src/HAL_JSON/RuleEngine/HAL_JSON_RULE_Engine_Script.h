@@ -29,6 +29,8 @@ namespace HAL_JSON {
             TriggerBlock();
             ~TriggerBlock();
 
+            HALOperationResult Exec();
+
             void Set(int statementBlockCount, Tokens& tokens);
         };
 
@@ -50,6 +52,8 @@ namespace HAL_JSON {
             ~ScriptBlock();
 
             void Set(Tokens& tokens);
+
+            void Exec();
         };
 
         /**
@@ -72,6 +76,8 @@ namespace HAL_JSON {
              * and if all pass then it begins to load in the structures
              */
             static bool ValidateAndLoadAllActiveScripts();
+            /** entry point of one script loop iteraction */
+            static void Exec();
         };
     }
 }

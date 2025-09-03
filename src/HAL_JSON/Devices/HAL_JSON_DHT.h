@@ -42,7 +42,7 @@ namespace HAL_JSON {
 
         static HALOperationResult readTemperature(Device* context, HALValue &val);
         static HALOperationResult readHumidity(Device* context, HALValue &val);
-        ReadToHALValue_FuncType GetReadToHALValue_Function(const char* funcName) override;
+        ReadToHALValue_FuncType GetReadToHALValue_Function(ZeroCopyString& zcFuncName) override;
         
 
         HALOperationResult read(HALValue &val) override;

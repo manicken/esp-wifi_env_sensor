@@ -6,11 +6,13 @@
 
 #include <ArduinoJson.h>
 #include <stdlib.h>
+#include "RuleEngine/HAL_JSON_RULE_Expression_Token.h"
 
 #include "../Support/Logger.h"
 #include "HAL_JSON_UID_Path.h"
 #include "HAL_JSON_Device.h"
 #include "HAL_JSON_Manager.h"
+
 
 namespace HAL_JSON {
 
@@ -33,8 +35,8 @@ namespace HAL_JSON {
          */
         Device::ReadToHALValue_FuncType readToHalValueFunc;
         
-        CachedDeviceAccess(const char* uidPath, const char* funcName = nullptr);
+        CachedDeviceAccess(ZeroCopyString& uidPath, ZeroCopyString& funcName);
         Device* GetDevice();
     };
-
+    
 }

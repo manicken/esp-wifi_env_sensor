@@ -84,14 +84,14 @@ namespace HAL_JSON {
         return HALOperationResult::Success;
     }
 
-    Device::ReadToHALValue_FuncType DHT::GetReadToHALValue_Function(const char* funcName) {
-        if (strcmp(funcName, "temp") == 0) {
+    Device::ReadToHALValue_FuncType DHT::GetReadToHALValue_Function(ZeroCopyString& zcFuncName) {
+        if (zcFuncName == "temp") {
             return DHT::readTemperature;
-        } else if (strcmp(funcName, "humidity") == 0) {
+        } else if (zcFuncName == "humidity") {
             return DHT::readHumidity;
         }
         else {
-            GlobalLogger.Warn(F("DHT::read - cmd not found: "), funcName); // this can then be read by getting the last entry from logger
+            GlobalLogger.Warn(F("DHT::read - cmd not found: "), zcFuncName.ToString().c_str()); // this can then be read by getting the last entry from logger
             return nullptr;
         }
     }

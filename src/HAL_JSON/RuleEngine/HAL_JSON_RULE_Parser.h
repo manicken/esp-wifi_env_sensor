@@ -49,6 +49,22 @@ namespace HAL_JSON {
             FileContentsAllocFail
         };
 
+        struct AssignmentParts {
+            Token lhs;
+            Token op;      // assignment operator (e.g. "=", "+=", "<<=")
+            Tokens rhs;
+
+            inline void Clear() {
+                lhs = {};
+                op = {};
+                rhs.count = 0;
+                rhs.items = nullptr;
+                rhs.currIndex = 0;
+                rhs.firstTokenStartOffset = nullptr;
+                rhs.rootBlockCount = 0;
+            }
+        };
+
         class Parser {
         private:
             
@@ -109,6 +125,9 @@ namespace HAL_JSON {
 
 
             static bool ParseExpressionTest(const char* filePath);
+            static bool ParseActionExpressionTest(const char* filePath);
+
+            static AssignmentParts* ExtractAssignmentParts(Tokens& _tokens);
         };
     }
 }

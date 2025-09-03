@@ -16,8 +16,7 @@ namespace HAL_JSON {
             HAL_JSON_NOCOPY_NOMOVE(ActionStatement);
 
             CachedDeviceAccess* target;
-            CalcRPNToken* sourceCalcItems;
-            int sourceCalcItemsCount;
+            CalcRPN* calcRpn;
 
             ActionStatement(Tokens& tokens);
             ~ActionStatement();

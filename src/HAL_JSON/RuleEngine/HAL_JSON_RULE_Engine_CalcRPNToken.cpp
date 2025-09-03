@@ -6,34 +6,33 @@ namespace HAL_JSON {
     namespace Rules {
         RPNStack<HALValue> halValueStack;
 
-        CalcRPNToken::CalcRPNToken()
-        {
-
-        }
+        CalcRPNToken::CalcRPNToken() { }
         CalcRPNToken::~CalcRPNToken()
         {
             if (deleter) deleter(context);
         }
-        CalcRPN::CalcRPN(ExpressionTokens& tokens, int startIndex, int endIndex) {
-            calcRPNcount = endIndex - startIndex;
-            calcRPN = new CalcRPNToken[calcRPNcount];
+        CalcRPN::CalcRPN(ExpressionTokens* tokens, int startIndex, int endIndex) {
+            count = endIndex - startIndex;
+            items = new CalcRPNToken[count];
             int calcRPNindex = 0;
-            ExpressionToken* tokenItems = tokens.items;
+            ExpressionToken* tokenItems = tokens->items;
             for (int i=startIndex;i<endIndex;i++, calcRPNindex++) {
-                ExpressionToken& token = tokenItems[i];
-                if (token.type == ExpTokenType::VarOperand) {
-                    calcRPN[calcRPNindex].handler = &CalcRPNToken::GetAndPushVariableValue_Handler;
-                    
-                    const char* uidPath = nullptr;
-                    const char* funcName = nullptr;
-                    // TODO extract above from token
-                    
-                    CachedDeviceAccess* cda = new CachedDeviceAccess(uidPath, funcName);
-                    calcRPN[calcRPNindex].context = cda;
-                    calcRPN[calcRPNindex].deleter = DeleteAs<CachedDeviceAccess>;
-                } else if (token.type == ExpTokenType::ConstValOperand) {
-                    calcRPN[calcRPNindex].handler = &CalcRPNToken::GetAndPushConstValue_Handler;
-                    NumberResult constNumber = token.ConvertStringToNumber();
+                ExpressionToken& expToken = tokenItems[i];
+                CalcRPNToken& calcRPNtoken = items[calcRPNindex];
+                if (expToken.type == ExpTokenType::VarOperand)
+                {
+                    ZeroCopyString varOperand;
+                    ZeroCopyString funcName = expToken;
+                    varOperand = funcName.SplitOffHead('#');
+                    CachedDeviceAccess* cda = new CachedDeviceAccess(varOperand, funcName);
+
+                    calcRPNtoken.context = cda;
+                    calcRPNtoken.handler = &CalcRPNToken::GetAndPushVariableValue_Handler;
+                    calcRPNtoken.deleter = DeleteAs<CachedDeviceAccess>;
+                }
+                else if (expToken.type == ExpTokenType::ConstValOperand)
+                {
+                    NumberResult constNumber = expToken.ConvertStringToNumber();
                     HALValue* value = new HALValue();
                     if (constNumber.type == NumberType::FLOAT)
                         value->set(constNumber.f32);
@@ -42,17 +41,34 @@ namespace HAL_JSON {
                     else if (constNumber.type == NumberType::UINT32)
                         value->set(constNumber.u32);
                     else { // should never happend
-                        std::string msg = token.ToString();
+                        std::string msg = expToken.ToString();
                         GlobalLogger.Error(F("fail of converting constant default is set to one"), msg.c_str()); // remainder the string is copied internally here
                         value->set(1); // default one so any divide by zero would not happend
                     }
-                    calcRPN[calcRPNindex].context = value;
-                    calcRPN[calcRPNindex].deleter = DeleteAs<HALValue>;
-                } else {
-                    calcRPN[calcRPNindex].handler = CalcRPNToken::GetRPN_OperatorFunction(token.type);
-                    calcRPN[calcRPNindex].deleter = nullptr; // not used here
+
+                    calcRPNtoken.context = value;
+                    calcRPNtoken.handler = &CalcRPNToken::GetAndPushConstValue_Handler;
+                    calcRPNtoken.deleter = DeleteAs<HALValue>;
+                }
+                else
+                {
+                    calcRPNtoken.context = nullptr; // not used here
+                    calcRPNtoken.handler = CalcRPNToken::GetRPN_OperatorFunction(expToken.type);
+                    calcRPNtoken.deleter = nullptr; // not used here
                 }
             }
+        }
+        HALOperationResult CalcRPN::DoCalc() {
+            //CalcRPN* calcRPN = static_cast<CalcRPN*>(context);
+            HALOperationResult res;
+            int calcRPNcount = count;
+            CalcRPNToken* calcItems = items;
+            for (int i=0;i<calcRPNcount;i++) {
+                res = calcItems[i].handler(calcItems[i].context);
+                if (res != HALOperationResult::Success)
+                    return res;
+            }
+            return res;
         }
 
         HALOperationResult CalcRPNToken::GetAndPushVariableValue_Handler(void* context) {

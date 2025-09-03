@@ -3,7 +3,8 @@
 #include "HAL_JSON_CachedDeviceAccess.h"
 
 namespace HAL_JSON {
-    CachedDeviceAccess::CachedDeviceAccess(const char* uidPath, const char* funcName) : path(uidPath) {
+
+    CachedDeviceAccess::CachedDeviceAccess(ZeroCopyString& uidPath, ZeroCopyString& funcName) : path(uidPath) {
         device = Manager::findDevice(path);
         currentVersion = Manager::ReloadVersionPtr();
         cachedVersion = *currentVersion;
@@ -13,6 +14,7 @@ namespace HAL_JSON {
             readToHalValueFunc = nullptr;
 
         valueDirectAccessPtr = device->GetValueDirectAccessPtr();
+        
     }
 
     Device* CachedDeviceAccess::GetDevice() {
