@@ -15,8 +15,9 @@
 
 using String = std::string;
 
-
+#if defined(_WIN32)
 #define strdup _strdup
+#endif
 #define __FlashStringHelper char 
 
 

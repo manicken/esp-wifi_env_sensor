@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h> // Needed for String class
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream> // including this take 209512 bytes flash
 
 #endif
@@ -20,7 +20,7 @@
 #include "../HAL_JSON_ZeroCopyString.h"
 
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <chrono>
 #include <iostream>
 
@@ -51,12 +51,11 @@ namespace HAL_JSON {
 
         struct AssignmentParts {
             Token lhs;
-            Token op;      // assignment operator (e.g. "=", "+=", "<<=")
+            char op;      // assignment operators first char is enough (e.g. "=", "+=", "<<=")
             Tokens rhs;
 
             inline void Clear() {
                 lhs = {};
-                op = {};
                 rhs.count = 0;
                 rhs.items = nullptr;
                 rhs.currIndex = 0;
@@ -69,7 +68,7 @@ namespace HAL_JSON {
         private:
             
             static void ReportError(const char* msg);
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             static void ReportInfo(std::string msg);
 #endif
             //static inline bool IsType(const Token& t, const char* str) { return t.EqualsIC(str); }

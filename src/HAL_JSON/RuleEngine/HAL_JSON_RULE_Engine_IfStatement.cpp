@@ -35,11 +35,17 @@ namespace HAL_JSON {
         }
         void ConditionalBranch::Set(Tokens& tokens)
         {
-            // first increment to next and then get
-            const Token& expression = tokens.items[++tokens.currIndex];
-
+            printf("(%d) ConditionalBranch::Set(Tokens& tokens): %s\n", tokens.currIndex, tokens.Current().ToString().c_str());
+            // consume the If / ElseIf token itself
+            tokens.currIndex++;
+            // set the slice to the items of this expression
+            tokens.currentEndIndex = tokens.currIndex + tokens.Current().itemsInBlock;
+            tokens.firstTokenStartOffset = nullptr;
             // the following consumes the expression tokens
             ExpressionTokens* expTokens = Expressions::GenerateRPNTokens(tokens); // note here. expTokens is non owned
+            printf("ConditionalBranch::Set expTokens:\n%s\n", PrintExpressionTokens(*expTokens, 0, expTokens->currentCount).c_str());
+            // restore the slice to full token array
+            tokens.currentEndIndex = tokens.count;
             // builds the temporary tree using memory pool
             LogicRPNNode* lrpnNode = Expressions::BuildLogicTree(expTokens); // note here. lrpnNode is non owned 
 
@@ -56,23 +62,36 @@ namespace HAL_JSON {
 
             //when consumed we are at the then
             Token& thenToken = tokens.items[tokens.currIndex++]; // get and consume
+            if (thenToken.type != TokenType::Then) {
+                ReportTokenError(thenToken, " ----------------------------- is not a then token: ");
+            }
             // here extract the itemsCount
             itemsCount = thenToken.itemsInBlock;
+            printf("(%d) ---------------------------- then item count:%d %s\n",tokens.currIndex, itemsCount, tokens.Current().ToString().c_str());
             items = new StatementBlock[itemsCount];
 
             for (int i=0;i<itemsCount;i++) {
-                items[i].Set(tokens);
+                if (tokens.SkipIgnores() == false) break;
+                TokenType currTokenType = tokens.Current().type;
+                if (currTokenType == TokenType::EndIf || currTokenType == TokenType::ElseIf || currTokenType == TokenType::Else)
+                    break;
+                items[i].Set(tokens); // each call should consume all tokens
             }
         }
 
         UnconditionalBranch::UnconditionalBranch(Tokens& tokens)
         {
+            printf("(%d) UnconditionalBranch::UnconditionalBranch: %s\n", tokens.currIndex, tokens.Current().ToString().c_str());
             const Token& elseToken = tokens.items[tokens.currIndex++]; // get and consume
 
             itemsCount = elseToken.itemsInBlock;
             items = new StatementBlock[itemsCount];
 
             for (int i=0;i<itemsCount;i++) {
+                if (tokens.SkipIgnores() == false) break;
+                TokenType currTokenType = tokens.Current().type;
+                if (currTokenType == TokenType::EndIf || currTokenType == TokenType::ElseIf || currTokenType == TokenType::Else)
+                    break;
                 items[i].Set(tokens);
             }
         }
@@ -84,6 +103,7 @@ namespace HAL_JSON {
         IfStatement::IfStatement(Tokens& tokens)
         {
             Token& ifToken = tokens.Current(); // this now points to the if-type token
+            if (ifToken.type != TokenType::If) { printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ifToken.type != TokenType::If\n");}
             branchItemsCount = ifToken.itemsInBlock;
             if (ifToken.hasElse == 1) branchItemsCount--; // minus one as the else case is handled separately
             branchItems = new ConditionalBranch[branchItemsCount];
@@ -99,7 +119,8 @@ namespace HAL_JSON {
                 } else if (token.type == TokenType::Else) {
                     // will consume all tokens until a EndIf is found (it will also consume cascaded ifblocks accordingly)
                     elseBranch = new UnconditionalBranch(tokens);
-                } 
+                } else if (token.type == TokenType::EndIf)
+                    break;
                 // nothing else is needed here as at this stage it's guaranteed that the token 'stream' is validated
             }
         }

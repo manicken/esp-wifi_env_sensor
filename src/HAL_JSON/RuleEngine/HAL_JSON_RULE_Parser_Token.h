@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h> // Needed for String class
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream> // including this take 209512 bytes flash
 #include <chrono>
 #endif
@@ -93,8 +93,10 @@ namespace HAL_JSON {
         inline bool operator==(const Token& lhs, const Token& rhs) { return lhs.start == rhs.start; }
         /** Tokens are considered not identical if their 'start' pointers are not the same */
         inline bool operator!=(const Token& lhs, const Token& rhs) { return lhs.start != rhs.start; }
+        
         struct Tokens {
         private:
+            static void ReportError(const char* msg);
             bool zeroCopy;
         public:
             /** used when there is a situation where the first token need to be splitted
@@ -110,6 +112,7 @@ namespace HAL_JSON {
             int count;
             /** root blocks count i.e. all on/if that is at root level only */
             int rootBlockCount;
+            int currentEndIndex;
             /** 
              * Current token index during script parsing/loading.
              * Used to track the read position within the token list.
@@ -125,8 +128,11 @@ namespace HAL_JSON {
             inline Token& Current() {
                 // Optional: assert to catch out-of-bounds in debug builds
                 //assert(currIndex < count);
+                //printf("???????????????????????????? current token get: %s\n", items[currIndex].ToString().c_str());
                 return items[currIndex];
             }
+
+            bool SkipIgnores();
 
             // Optional: const version
             inline const Token& Current() const {
@@ -139,6 +145,7 @@ namespace HAL_JSON {
             Tokens(Tokens&& other) = delete;           // no move constructor
             Tokens& operator=(Tokens&& other) = delete; // no move assignment
             std::string ToString();
+            std::string SliceToString();
         };
 
         void ReportTokenInfo(const Token& t, const char* msg, const char* param = nullptr);

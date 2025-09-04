@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <LittleFS.h>
 
-#ifndef _WIN32
+#if defined(_WIN32) || defined(__linux__)
+  #include <LittleFS_ext.h>
+#else
   #include "../Support/LittleFS_ext.h"
   #include <WiFiClient.h>
-#else
-  #include <LittleFS_ext.h>
 #endif
 #include <ESPAsyncWebServer.h> // have a stub wrapper for this
 

@@ -16,7 +16,7 @@
 #define REGO600_UART_TO_USE Serial2
 #elif defined(ESP8266)
 #define REGO600_UART_TO_USE Serial
-#elif defined(_WIN32)
+#elif defined(_WIN32) || defined(__linux__)
 #define REGO600_UART_TO_USE Serial
 #endif
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h> // Needed for String class
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream> // including this take 209512 bytes flash
 #include <chrono>
 #endif

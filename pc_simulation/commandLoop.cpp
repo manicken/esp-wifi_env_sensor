@@ -34,7 +34,8 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
     std::string strFilePath = zcFilePath.ToString();
     size_t fileSize = 0;
     char* contents;// = HAL_JSON::ReadFileToMutableBuffer(filename.c_str(), fileSize);
-    LittleFS_ext::FileResult fileResult = LittleFS_ext::load_from_file(strFilePath.c_str(), &contents, &fileSize);
+    const char* cFilePath = strFilePath.c_str();
+    LittleFS_ext::FileResult fileResult = LittleFS_ext::load_from_file(cFilePath, &contents, &fileSize);
     if (fileResult != LittleFS_ext::FileResult::Success) {
         if (fileResult == LittleFS_ext::FileResult::FileNotFound)
             std::cout << "Error: file could not be found: " << strFilePath << "\n";
@@ -118,6 +119,28 @@ void parseCommand(const char* cmd, bool oneShot) {
 
         std::cout << "Parse time: " << duration.count() << " ms\n";
     }
+    else if (zcCmdRoot == "ldtest") {
+        auto start = std::chrono::high_resolution_clock::now();
+        // loads the json HAL config, 
+        // this is needed as it's used by the script validator
+        HAL_JSON::Manager::setup();
+        HAL_JSON::Rules::ScriptsBlock::ValidateAndLoadAllActiveScripts();
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+
+        std::cout << "Parse time: " << duration.count() << " ms\n";
+    }
+    else if (zcCmdRoot == "ldval") {
+        auto start = std::chrono::high_resolution_clock::now();
+        // loads the json HAL config, 
+        // this is needed as it's used by the script validator
+        HAL_JSON::Manager::setup();
+        HAL_JSON::Rules::ScriptsBlock::ValidateAllActiveScripts();
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+
+        std::cout << "Parse time: " << duration.count() << " ms\n";
+    }
     else {
         std::cout << "Unknown command: " << cmd << "\n";
     }
@@ -141,6 +164,6 @@ void commandLoop() {
             running = false; // will also signal to the main loop to exit
         } 
         else
-            parseCommand(cmd.c_str());
+            parseCommand(cmd.c_str(), false);
     }
 }

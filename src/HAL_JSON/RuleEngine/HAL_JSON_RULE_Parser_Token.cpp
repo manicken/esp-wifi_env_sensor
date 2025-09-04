@@ -3,8 +3,16 @@
 namespace HAL_JSON {
     namespace Rules {
 
+        void Tokens::ReportError(const char* msg) {
+    #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
+            std::cout << "Error: " << msg << std::endl;
+    #else
+            GlobalLogger.Error(F("Rule Set Parse:"), msg);
+    #endif
+        }
+
         TokenType GetFundamentalTokenType(const char* str) {
-        #ifdef _WIN32
+        #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "GetFundamentalTokenType: >>>" << str << "<<<\n";
         #endif
             if (StrEqualsIC(str, "if")) return TokenType::If;
@@ -66,7 +74,7 @@ namespace HAL_JSON {
         void Token::MarkTokenGroup(int size, TokenType constructType) {
             if (size == 1) {
                 this->type = constructType;
-                itemsInBlock = 0;
+                itemsInBlock = 1; // was = 0 before
                 return;
             }
             itemsInBlock = size;
@@ -87,7 +95,7 @@ namespace HAL_JSON {
         }
 
         bool Token::MergedOrIgnore() const {
-            return ((type == TokenType::Merged || type == TokenType::Ignore) && itemsInBlock == 0);
+            return ((type == TokenType::Merged || type == TokenType::Ignore) && itemsInBlock < 2);
         }
 
         bool Token::AnyType(const TokenType* candidates) {
@@ -98,10 +106,23 @@ namespace HAL_JSON {
             return false;
         }
 
-        Tokens::Tokens() : zeroCopy(true), firstTokenStartOffset(nullptr), items(nullptr), count(0), rootBlockCount(0), currIndex(0) {}
+        bool Tokens::SkipIgnores() {
+            while (currIndex < count && Current().type == TokenType::Ignore) {
+                ReportTokenInfo(Current(), "--------- skipping token:");
+                currIndex++;
+            }
 
-        Tokens::Tokens(int count) : zeroCopy(false), firstTokenStartOffset(nullptr), items(new Token[count]), count(count), rootBlockCount(0), currIndex(0) { }
+            if (currIndex >= count) {
+                ReportError("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Unexpected end of tokens while building items");
+                return false;
+            }
+            return true;
+        }
 
+        Tokens::Tokens() : zeroCopy(true), firstTokenStartOffset(nullptr), items(nullptr), count(0), rootBlockCount(0), currentEndIndex(0), currIndex(0) {}
+
+        Tokens::Tokens(int count) : zeroCopy(false), firstTokenStartOffset(nullptr), items(new Token[count]), count(count), rootBlockCount(0), currentEndIndex(count), currIndex(0) { }
+        
         Tokens::~Tokens() {
             if (zeroCopy == false)
                 delete[] items;
@@ -110,6 +131,16 @@ namespace HAL_JSON {
             std::string str;
             //str += "firstTokenStartOffset:"; str += (firstTokenStartOffset?"true ":"false ");
             for (int i=0;i<count;i++) {
+                ZeroCopyString zcStrCopy = items[i];
+                //if (i==0 && firstTokenStartOffset != nullptr) zcStrCopy.start = firstTokenStartOffset;
+                str += zcStrCopy.ToString();
+            }
+            return str;
+        }
+        std::string Tokens::SliceToString() {
+            std::string str;
+            //str += "firstTokenStartOffset:"; str += (firstTokenStartOffset?"true ":"false ");
+            for (int i=currIndex;i<currentEndIndex;i++) {
                 ZeroCopyString zcStrCopy = items[i];
                 if (i==0 && firstTokenStartOffset != nullptr) zcStrCopy.start = firstTokenStartOffset;
                 str += zcStrCopy.ToString();
@@ -121,7 +152,7 @@ namespace HAL_JSON {
             std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
             if (param != nullptr)
                 message += param;
-    #ifdef _WIN32
+    #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Info " << message << std::endl;
     #else
             //GlobalLogger.Info(F("Token:"), message.c_str());
@@ -131,7 +162,7 @@ namespace HAL_JSON {
             std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
             if (param != nullptr)
                 message += param;
-    #ifdef _WIN32
+    #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cerr << "Error " << message << std::endl;
     #else
             GlobalLogger.Error(F("Token:"), message.c_str());
@@ -141,7 +172,7 @@ namespace HAL_JSON {
             std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;
             if (param != nullptr)
                 message += param;
-    #ifdef _WIN32
+    #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Warning " << message << std::endl;
     #else
             GlobalLogger.Warn(F("Token:"), message.c_str());
@@ -173,7 +204,7 @@ namespace HAL_JSON {
                 
                 
                 // only print one level down and only if the type is Action or IfCondition
-                if (subTokenIndexOffset == 0 && tok.itemsInBlock > 0 && (tok.type == TokenType::Action || tok.type == TokenType::IfCondition)) {
+                if (subTokenIndexOffset == 0 && tok.itemsInBlock > 1 && (tok.type == TokenType::Action || tok.type == TokenType::IfCondition)) {
                     if (lastWasBlock == false)
                         msgLine += "\n";
                     msgLine += "Tokens block:\n";

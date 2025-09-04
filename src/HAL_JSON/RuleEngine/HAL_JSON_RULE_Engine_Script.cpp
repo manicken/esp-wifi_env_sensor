@@ -20,10 +20,17 @@ namespace HAL_JSON {
         }
 
         void TriggerBlock::Set(int _itemsCount, Tokens& tokens) {
-            items = new StatementBlock[_itemsCount];
+            //printf("(%d) TriggerBlock::Set----------------- triggerblock statement item count:%d %s\n",tokens.currIndex, _itemsCount, tokens.Current().ToString().c_str());
+            
             itemsCount = _itemsCount;
-
+            items = new StatementBlock[_itemsCount];
+            
+           // printf("see if whe come her\n");
             for (int i=0;i<_itemsCount;i++) {
+                if (tokens.SkipIgnores() == false) { printf("reached end\n"); break; }
+                //TokenType currTokenType = tokens.Current().type;
+                //if (currTokenType == TokenType::EndIf || currTokenType == TokenType::ElseIf || currTokenType == TokenType::Else)
+                //    break;
                 items[i].Set(tokens);
             }
         }
@@ -50,9 +57,9 @@ namespace HAL_JSON {
                 
                 if (token.type == TokenType::On)
                 {
-                    tokens.currIndex++;
+                    tokens.currIndex++; // consume the On token as it dont have any important data
                     
-                    Token& triggerSourceToken = tokens.items[tokens.currIndex++];
+                    Token& triggerSourceToken = tokens.items[tokens.currIndex++]; // get and consume
                     if (triggerSourceToken.EqualsIC("eachloop"))
                         triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
                     else
@@ -64,13 +71,17 @@ namespace HAL_JSON {
                         // so accessing it here should allways pass
                         triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
                     }
-                    triggerBlock.Set(tokens.items[tokens.currIndex++].itemsInBlock, tokens);
+                    //ReportTokenInfo(tokens.Current(), "this should be a then token: ", tokens.Current().ToString().c_str());
+                    int itemCount = tokens.Current().itemsInBlock;
+                    tokens.currIndex++; // consume the then
+                    triggerBlock.Set(itemCount, tokens); // get number of items and consume
                 }
-                else if (token.type == TokenType::If)
+                else if (token.type == TokenType::If) 
                 {
+                    // here we dont consume anything just pass 
                     // wrap root-level if into a trigger block that always runs
-                    triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
-                    triggerBlock.Set(1, tokens);
+                    triggerBlock.triggerSource = TriggerBlock::AllwaysRun; // line 83
+                    triggerBlock.Set(1, tokens); // line 84
                 }
                 else
                     tokens.currIndex++;
@@ -122,7 +133,7 @@ namespace HAL_JSON {
             if (ValidateAllActiveScripts() == false) return false;
             Rules::Expressions::InitStacks();
             if (LoadAllActiveScripts() == false) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream>
                 std::cout << "Serious problem could not load scripts\n";
 #endif
@@ -140,19 +151,20 @@ namespace HAL_JSON {
                     return res; // direct return on any failure here
                 }
             }
+            return res;
         }
 
         void ScriptBlock::Exec() {
             HALOperationResult res;
             for (int i=0;i<triggerBlockCount;i++) {
-                if (triggerBlocks[i].triggerSource(triggerBlocks[i].context) == false)
-                    continue;
+                //if (triggerBlocks[i].triggerSource(triggerBlocks[i].context) == false)
+                //    continue;
                 res = triggerBlocks[i].Exec();
                 if (res != HALOperationResult::Success) {
-                    GlobalLogger.Error(F("trigger: "), ToString(res));
-#ifdef _WIN32
-                    printf("script exec error:%s", ToString(res));
-#endif
+                    GlobalLogger.Error(F("trigger: "), HALOperationResultToString(res));
+//#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
+                    printf("script exec error:%s\n", HALOperationResultToString(res));
+//#endif
                 }
             }
         }

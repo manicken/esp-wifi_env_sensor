@@ -8,7 +8,7 @@ namespace HAL_JSON {
         
 
         void Expressions::ReportError(const char* msg, const char* param) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Error: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
 #else
             GlobalLogger.Error(F("Expr Rule Parse:"), msg);
@@ -16,7 +16,7 @@ namespace HAL_JSON {
         }
 
         void Expressions::ReportWarning(const char* msg, const char* param) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Warning: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
 #else
             GlobalLogger.Warn(F("Expr Rule Parse:"), msg);
@@ -24,7 +24,7 @@ namespace HAL_JSON {
         }
 
         void Expressions::ReportInfo(std::string msg) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << msg;
 #else
             //GlobalLogger.Info(F("Expr Rule Parse:"), msg);
@@ -74,11 +74,11 @@ namespace HAL_JSON {
             printf("\n*************************************************** InitStacks ********************************\n");
             Expressions::PrintCalcedStackSizes();
             ClearStacks();
-            rpnOutputStack = new ExpressionTokens(rpnOutputStackNeededSize);
-            opStack = new ExpressionToken[opStackSizeNeededSize];
-            logicRPNNodeStackPool = new LogicRPNNode[finalOutputStackNeededSize];
-            logicRPNNodeStack = new LogicRPNNode*[finalOutputStackNeededSize];
-
+            rpnOutputStack = new ExpressionTokens(rpnOutputStackNeededSize+5);
+            opStack = new ExpressionToken[opStackSizeNeededSize+5];
+            logicRPNNodeStackPool = new LogicRPNNode[finalOutputStackNeededSize+5];
+            logicRPNNodeStack = new LogicRPNNode*[finalOutputStackNeededSize+5];
+            halValueStack.Init(rpnOutputStackNeededSize+5);
             printf("\n[DONE]\n");
         }
         void Expressions::ClearStacks() {
@@ -157,37 +157,12 @@ namespace HAL_JSON {
                 c == '#';
         }
 
-        bool Expressions::CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount, ExpressionContext exprContext) {
+        void Expressions::CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount, int& rightParenthesisCount, ExpressionContext exprContext) {
             operatorCount = 0;
             operandCount = 0;
             leftParenthesisCount  = 0;
-            // early checks
-            if (tokens.count == 0) {
-                ReportError("expr. is empty");
-                return false;
-            }
-            /*if (strlen(expr) == 0) {
-                ReportError("expr. is empty");
-                return false;
-            }*/
-
-            const char* firstTokenStart = nullptr;
-            if (tokens.firstTokenStartOffset != nullptr)
-                firstTokenStart = tokens.firstTokenStartOffset;
-            else
-                firstTokenStart = tokens.items[0].start;
-
-            if(IsDoubleOperator(firstTokenStart) && exprContext == ExpressionContext::IfCondition) { // this only checks the two first characters in the Expression
-                ReportError("expr. cannot start with a operator");
-                return false;
-            }
-            if(IsSingleOperator(*firstTokenStart)) {
-                ReportError("expr. cannot start with a operator");
-                return false;
-            }
-
-            int rightParenthesisCount = 0;
-
+            rightParenthesisCount = 0;
+  
             bool inOperand = false;
 
             for (int cti=0;cti<tokens.count;cti++) { // cti = currTokenIndex
@@ -221,21 +196,6 @@ namespace HAL_JSON {
                     }
                 }
             }
-            bool anyError = false;
-            if (operatorCount >= operandCount) {
-                ReportError("double operator(s) detected");
-                anyError = true;
-            } else if (operatorCount != operandCount - 1) {
-                ReportInfo("operatorCount:" + std::to_string(operatorCount) + ", operandCount:" + std::to_string(operandCount) + "\n");
-                ReportError("operator(s) missing before/after parenthesis");
-                anyError = true;
-            }
-            if (leftParenthesisCount != rightParenthesisCount) {
-                ReportError("mismatch parenthesis detected");
-                anyError = true;
-            }
-
-            return anyError == false;
         }
     
 /* in favor of ZeroCopyString ValidNumber function
@@ -262,10 +222,50 @@ namespace HAL_JSON {
         }
 
         bool Expressions::ValidateExpression(Tokens& tokens, ExpressionContext exprContext) {
-            int operatorCount, operandCount, leftParenthesisCount;
+            
             bool anyError = false;
 
-            anyError = !CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount, exprContext);
+            // early checks
+            if (tokens.count == 0) {
+                ReportError("tokens.count == 0");
+                return false;
+            }
+
+            if (tokens.currIndex == tokens.currentEndIndex) {
+                ReportError("tokens.currIndex == tokens.currentEndIndex");
+                return false;
+            }
+
+            const char* firstTokenStart = nullptr;
+            if (tokens.firstTokenStartOffset != nullptr)
+                firstTokenStart = tokens.firstTokenStartOffset;
+            else
+                firstTokenStart = tokens.items[0].start;
+
+            if(IsDoubleOperator(firstTokenStart) && exprContext == ExpressionContext::IfCondition) { // this only checks the two first characters in the Expression
+                ReportError("expr. cannot start with a operator");
+                anyError = true;
+            }
+            if(IsSingleOperator(*firstTokenStart)) {
+                ReportError("expr. cannot start with a operator");
+                anyError = true;
+            }
+
+            int operatorCount, operandCount, leftParenthesisCount, rightParenthesisCount;
+            CountOperatorsAndOperands(tokens, operatorCount, operandCount, leftParenthesisCount, rightParenthesisCount, exprContext);
+
+            if (operatorCount >= operandCount) {
+                ReportError("double operator(s) detected");
+                anyError = true;
+            } else if (operatorCount != operandCount - 1) {
+                ReportInfo("operatorCount:" + std::to_string(operatorCount) + ", operandCount:" + std::to_string(operandCount) + "\n");
+                ReportError("operator(s) missing before/after parenthesis");
+                anyError = true;
+            }
+            if (leftParenthesisCount != rightParenthesisCount) {
+                ReportError("mismatch parenthesis detected");
+                anyError = true;
+            }
 
             /*ReportInfo("operatorCount:" + std::to_string(operatorCount) +
                     ", operandCount:" + std::to_string(operandCount) +
@@ -280,15 +280,29 @@ namespace HAL_JSON {
             const char* operandStart = nullptr;
             const char* operandEnd = nullptr;
 
-            for (int cti = 0; cti < tokens.count; ++cti) {
+            int startIndex = tokens.currIndex;
+            int endIndex = tokens.currentEndIndex;
+            ReportInfo("\nValidateExpression startIndex:" + std::to_string(startIndex) + "\n");
+            ReportInfo("ValidateExpression endIndex:" + std::to_string(endIndex) + "\n");
+            ReportInfo("ValidateExpression tokens.count:" + std::to_string(tokens.count) + "\n");
+            for (int cti = startIndex; cti < endIndex; ++cti) {
                 Token& token = tokens.items[cti];
+                
+                //int a=0;
+                //int b = 5/a; // will introduce a crash
+
                 const char* effectiveStart  = nullptr;
-                if (cti == 0 && tokens.firstTokenStartOffset != nullptr) {
+                if (cti == startIndex && tokens.firstTokenStartOffset != nullptr) {
                     effectiveStart  = tokens.firstTokenStartOffset;
                     //std::cout << "firstTokenStartOffset was true\n"; 
                 } else {
                     effectiveStart  = token.start;
                 }
+
+                Token tokToPrint = token;
+                tokToPrint.start = effectiveStart;
+                ReportTokenInfo(tokToPrint, "checking token:", tokToPrint.ToString().c_str());
+
                 const char* tokenEnd = token.end;
                 for (p = effectiveStart ; p < tokenEnd; ++p) {
                     if (IsDoubleOperator(p)&& exprContext == ExpressionContext::IfCondition) {
@@ -395,9 +409,9 @@ namespace HAL_JSON {
                         anyError = true;
                         if (readResult == HALOperationResult::UnsupportedCommand) {
                             std::string funcNameStr = ": " + funcName.ToString();
-                            ReportTokenError(operandToken, ToString(readResult), funcNameStr.c_str());
+                            ReportTokenError(operandToken, HALOperationResultToString(readResult), funcNameStr.c_str());
                         } else {
-                            ReportTokenError(operandToken, ToString(readResult), ": read");
+                            ReportTokenError(operandToken, HALOperationResultToString(readResult), ": read");
                         }
                         
                     }
@@ -405,7 +419,7 @@ namespace HAL_JSON {
                     HALValue halValue;
                     readResult = device->read(halValue);
                     if (readResult != HALOperationResult::Success) {
-                        ReportTokenError(operandToken, ToString(readResult), ": read");
+                        ReportTokenError(operandToken, HALOperationResultToString(readResult), ": read");
                         anyError = true;
                     }
                 }
@@ -420,9 +434,9 @@ namespace HAL_JSON {
                         anyError = true;
                         if (writeResult == HALOperationResult::UnsupportedCommand) {
                             std::string funcNameStr = ": " + funcName.ToString();
-                            ReportTokenError(operandToken, ToString(writeResult), funcNameStr.c_str());
+                            ReportTokenError(operandToken, HALOperationResultToString(writeResult), funcNameStr.c_str());
                         } else {
-                            ReportTokenError(operandToken, ToString(writeResult), ": write");
+                            ReportTokenError(operandToken, HALOperationResultToString(writeResult), ": write");
                         }
                         
                     }
@@ -430,7 +444,7 @@ namespace HAL_JSON {
                     HALValue halValue;
                     writeResult = device->write(halValue);
                     if (writeResult != HALOperationResult::Success) {
-                        ReportTokenError(operandToken, ToString(writeResult), ": write");
+                        ReportTokenError(operandToken, HALOperationResultToString(writeResult), ": write");
                         anyError = true;
                     }
                 }
@@ -518,11 +532,11 @@ namespace HAL_JSON {
             int finalOutputSizeTemp = 0;
 
             const int startIndex = tokens.currIndex;
-            const int endIndex = startIndex + tokens.Current().itemsInBlock;
+            const int endIndex = tokens.currentEndIndex;
             for (int cti = startIndex; cti < endIndex; cti++) {
                 const Token& token = tokens.items[cti];
                 const char* tokenStart = nullptr;
-                if (cti == 0 && tokens.firstTokenStartOffset != nullptr) {
+                if (cti == startIndex && tokens.firstTokenStartOffset != nullptr) {
                     tokenStart  = tokens.firstTokenStartOffset;
                     //ReportInfo("***************** firstTokenStartOffset was set\n"); 
                 } else {
@@ -573,11 +587,11 @@ namespace HAL_JSON {
             ExpTokenType* opStack = new ExpTokenType[initialSize];
             int opStackIndex = 0;      // current operator stack depth
             const int startIndex = tokens.currIndex;
-            const int endIndex = startIndex + tokens.Current().itemsInBlock;
+            const int endIndex = tokens.currentEndIndex;
             for (int cti = startIndex; cti < endIndex; cti++) {
                 const Token& token = tokens.items[cti];
                 const char* tokenStart = nullptr;
-                if (cti == 0 && tokens.firstTokenStartOffset != nullptr) {
+                if (cti == startIndex && tokens.firstTokenStartOffset != nullptr) {
                     tokenStart  = tokens.firstTokenStartOffset;
                     //ReportInfo("***************** firstTokenStartOffset was set\n"); 
                 } else {
@@ -654,27 +668,26 @@ namespace HAL_JSON {
         }
 
         ExpressionTokens* Expressions::GenerateRPNTokens(Tokens& tokens) {
-            Tokens toPrint;
-            toPrint.items = &tokens.Current();
-            toPrint.count = tokens.Current().itemsInBlock;
-            ReportInfo("\ngenerate RPNtokens: " + toPrint.ToString() + "\n");
-
+            ReportInfo("\n***** GenerateRPNTokens: " + tokens.SliceToString() + "\n");
+            // development test only
             int maxOperatorUsage = 0;
+            // alias
             ExpressionToken* outTokenItems = rpnOutputStack->items;
-
+            // current stack indicies
             int opStackIndex = 0;
-
             int outTokensIndex = 0;
             
-            const int endIndex = tokens.currIndex + tokens.Current().itemsInBlock;
+            const int endIndex = tokens.currentEndIndex;
             const int startindex = tokens.currIndex;
+
             // consume current tokens here so we don't forget and to clearly mark what is happend
             tokens.currIndex = endIndex; 
+
             for (int cti = startindex; cti < endIndex; cti++) {
                 const Token& token = tokens.items[cti];
                 
                 const char* tokenStart = nullptr;
-                if (cti == 0 && tokens.firstTokenStartOffset != nullptr) {
+                if (cti == startindex && tokens.firstTokenStartOffset != nullptr) {
                     tokenStart  = tokens.firstTokenStartOffset;
                     //ReportInfo("***************** firstTokenStartOffset was set\n"); 
                 } else {
@@ -780,8 +793,8 @@ namespace HAL_JSON {
             while (opStackIndex != 0)
                 outTokenItems[outTokensIndex++] = opStack[--opStackIndex];
 
-            ReportInfo("\nGenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(rpnOutputStackNeededSize) + "\n");
-            ReportInfo("\nGenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(opStackSizeNeededSize) + "\n");
+            ReportInfo("GenerateRPNTokens used: " + std::to_string(outTokensIndex) + " of " + std::to_string(rpnOutputStackNeededSize) + "\n");
+            ReportInfo("GenerateRPNTokens used op: " + std::to_string(maxOperatorUsage) + " of " + std::to_string(opStackSizeNeededSize) + "\n");
 
             rpnOutputStack->currentCount = outTokensIndex;
 

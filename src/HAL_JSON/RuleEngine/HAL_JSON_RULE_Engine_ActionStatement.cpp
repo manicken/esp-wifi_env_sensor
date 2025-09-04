@@ -8,20 +8,33 @@ namespace HAL_JSON {
 
         ActionStatement::ActionStatement(Tokens& tokens, ActionHandler& handlerOut)
         {
-            Token& token = tokens.Current(); // this now point to the action-type token
+            //Token& token = tokens.Current(); // this now point to the action-type token
             
             // ExtractAssignmentParts "consumes" the tokens until the next action or whatever coming after
             AssignmentParts* actionParts = Parser::ExtractAssignmentParts(tokens);
-
-            ZeroCopyString varOperand;
+            Expressions::ReportInfo("\nAction lhs:" + actionParts->lhs.ToString() + "\n");
+            Expressions::ReportInfo("Action assigment operator:" + std::string(1, actionParts->op) + "\n");
+            
+            ZeroCopyString varOperand = actionParts->lhs;
             ZeroCopyString funcName = actionParts->lhs;
             varOperand = funcName.SplitOffHead('#');
             target = new CachedDeviceAccess(varOperand, funcName);
 
             ExpressionTokens* expTokens = Expressions::GenerateRPNTokens(actionParts->rhs); // note here. expTokens is non owned
+
+            Expressions::ReportInfo("-----------------Action rhs calc RPN: [");
+            for (int i=0;i<expTokens->currentCount;i++) { // currentCount is set by GenerateRPNTokens and defines the current 'size'
+                ExpressionToken& tok = expTokens->items[i];
+                //if (tok->type == TokenType::Operand)
+                    Expressions::ReportInfo(tok.ToString() + " ");
+                //else
+                //    ReportInfo(TokenTypeToString(tok->type ) + std::string(" "));
+            }
+            Expressions::ReportInfo("]\n");
+
             calcRpn = new CalcRPN(expTokens, 0, expTokens->count);
 
-            handlerOut = GetFunctionHandler(actionParts->op[0]); // only the first char is needed
+            handlerOut = GetFunctionHandler(actionParts->op);
         }
         ActionStatement::~ActionStatement()
         {

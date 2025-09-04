@@ -17,13 +17,13 @@ namespace HAL_JSON {
         
         
         void Parser::ReportError(const char* msg) {
-    #ifdef _WIN32
+    #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Error: " << msg << std::endl;
     #else
             GlobalLogger.Error(F("Rule Set Parse:"), msg);
     #endif
         }
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
         void Parser::ReportInfo(std::string msg) {
             std::cout << msg;
         }
@@ -309,7 +309,7 @@ namespace HAL_JSON {
                 if (((tokens[i].type == TokenType::If) || (tokens[i].type == TokenType::ElseIf)) == false) continue;
                 i++;
                 int conditionTokenCount = CountConditionTokens(_tokens, i);
-#ifdef _WIN32   
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)   
                 std::cout << "If case token count: " << conditionTokenCount << "\n";
 #endif
                 if (conditionTokenCount == -1) return false; // failsafe
@@ -686,7 +686,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                 ReportInfo("\n"); // newline
                 ReportInfo(conditions.ToString());
                 ReportInfo("\n"); // newline
-                
+                conditions.currentEndIndex = conditions.count;
                 if (Expressions::ValidateExpression(conditions, ExpressionContext::IfCondition) == false) anyError = true;
 
             }
@@ -802,12 +802,12 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                 zcLHS_AssignmentOperand.column = token.column;
 
                 if (token == *firstAssignmentOperatorToken) { 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
                     std::cout << "(token.start == firstAssignmentOperatorToken->start):" << token.ToString() << "\n";
 #endif
                     // this mean that the assigmentOperator is in the first token
                     // someVar= 5 or someVar=5(if this then token.itemsInBlock == 0)
-                    if (token.itemsInBlock == 0) {
+                    if (token.itemsInBlock < 2) {
                         zcRHS_AssignmentOperands.items = expressionTokens.items;
                         zcRHS_AssignmentOperands.count = 1;
                         zcRHS_AssignmentOperands.firstTokenStartOffset = firstAssignmentOperator + 1;
@@ -835,7 +835,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                     }
                     zcLHS_AssignmentOperand.end = token.end;
                 }
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
                 std::cout << "zcLHS_AssignmentOperand: " << zcLHS_AssignmentOperand.ToString() << "\n";
 #endif
                 if (firstCompoundAssignmentOperator) {
@@ -845,6 +845,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                     Expressions::ValidateOperand(zcLHS_AssignmentOperand, anyError, ValidateOperandMode::Write);
                 }
                 // use the following to validate the right side of the expression
+                zcRHS_AssignmentOperands.currentEndIndex = zcRHS_AssignmentOperands.count;
                 if (Expressions::ValidateExpression(zcRHS_AssignmentOperands, ExpressionContext::Assignment) == false) anyError = true;
 
             }
@@ -964,72 +965,101 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
         AssignmentParts* Parser::ExtractAssignmentParts(Tokens& tokens) {
             g_assignmentParts.Clear();
+
             Token& currentStartToken = tokens.Current();
+            int currentStartTokenIndex = tokens.currIndex;
             Token* tokensItems = tokens.items;
             int startIndex = tokens.currIndex;
             int endIndex   = startIndex + currentStartToken.itemsInBlock;
+            tokens.currIndex = endIndex; // consume tokens beforehand so we don't forget
 
             // Track assignment operator info
-            const char* firstAssignmentOperator = nullptr;
-            Token* firstAssignmentOperatorToken = nullptr;
-            const char* firstCompoundAssignmentOperator = nullptr;
+            const char* foundAssignmentOperator = nullptr;
+            Token* foundAssignmentOperatorToken = nullptr;
+            const char* foundCompoundAssignmentOperator = nullptr;
 
-            // Scan tokens in the current block
+            // Scan tokens in the current block for the assigment operator
+            // to get it's position
             for (int i = startIndex; i < endIndex; ++i) {
                 Token& exprToken = tokensItems[i];
-                const char* searchStart = exprToken.start;
+                if (exprToken.type == TokenType::Ignore) continue;
+                const char* match = exprToken.FindChar('=');
+                if (match == nullptr) continue; 
 
-                const char* match = nullptr;
-                do {
-                    match = exprToken.FindChar('=', searchStart);
-                    if (match) {
-                        if (!firstAssignmentOperator) {
-                            firstAssignmentOperator = match;
-                            firstAssignmentOperatorToken = &exprToken;
+                foundAssignmentOperator = match;
+                foundAssignmentOperatorToken = &exprToken;
 
-                            // check for compound assignment
-                            const char* prevChar = match - 1;
-                            if (exprToken.ContainsPtr(prevChar) &&
-                                Expressions::IsSingleOperator(*prevChar)) {
-                                if (*prevChar == '<' || *prevChar == '>')
-                                    prevChar--; // if it's leftwhift or rightshift
-                                firstCompoundAssignmentOperator = prevChar;
-                            }
-                        }
-                        // advance search
-                        searchStart = match + 1;
-                        if (searchStart >= exprToken.end) break;
-                    }
-                } while (match);
+                // check for compound assignment
+                const char* prevChar = match - 1;
+                if (exprToken.ContainsPtr(prevChar) &&
+                    Expressions::IsSingleOperator(*prevChar)) {
+                    // as this is validated beforehand we can safely assume that 
+                    // a additional < or > exists
+                    if (*prevChar == '<' || *prevChar == '>') 
+                        prevChar--; // if it's leftwhift or rightshift decrease the pointer
+                    foundCompoundAssignmentOperator = prevChar;
+                }
+                break; // break here as we found the =
             }
+            // have:
+            // const char* firstAssignmentOperator // is set when a assigment operator is found
+            // const char* firstCompoundAssignmentOperator // is set when a compound assigment operator is found
 
-            if (!firstAssignmentOperator) {
+            if (!foundAssignmentOperator) {
                 // no operator found: just return empty
+                ReportTokenError(currentStartToken, "!!!!!!!!!!!!!!!!!!!!!!!! firstAssignmentOperator not found");
                 return &g_assignmentParts;
             }
 
             // Decide operator start
-            const char* opStart = firstCompoundAssignmentOperator
-                                ? firstCompoundAssignmentOperator
-                                : firstAssignmentOperator;
+            const char* foundAssigmentOperatorStart = foundCompoundAssignmentOperator
+                                ? foundCompoundAssignmentOperator
+                                : foundAssignmentOperator;
 
-            // LHS
-            g_assignmentParts.lhs.start  = currentStartToken.start;
-            g_assignmentParts.lhs.end    = opStart;
-            g_assignmentParts.lhs.line   = currentStartToken.line;
+            g_assignmentParts.lhs.start = currentStartToken.start;
+            g_assignmentParts.lhs.line = currentStartToken.line;
             g_assignmentParts.lhs.column = currentStartToken.column;
+            g_assignmentParts.op = *foundAssigmentOperatorStart;
 
-            // Operator
-            g_assignmentParts.op.start = opStart;
-            g_assignmentParts.op.end   = firstAssignmentOperator + 1;
-            g_assignmentParts.op.line  = firstAssignmentOperatorToken->line;
-            g_assignmentParts.op.column= firstAssignmentOperatorToken->column + (opStart - firstAssignmentOperatorToken->start);
+            g_assignmentParts.rhs.items = tokens.items;
+            g_assignmentParts.rhs.count = tokens.count;
+            g_assignmentParts.rhs.currentEndIndex = currentStartTokenIndex + currentStartToken.itemsInBlock;
 
-            // RHS
-            g_assignmentParts.rhs.items = firstAssignmentOperatorToken;
-            g_assignmentParts.rhs.count = endIndex - (firstAssignmentOperatorToken - tokensItems);
-            g_assignmentParts.rhs.firstTokenStartOffset = firstAssignmentOperator + 1;
-            tokens.currIndex = endIndex; // consume tokens
+            if (currentStartToken == *foundAssignmentOperatorToken) {
+                // this mean that the assigmentOperator is in the first token
+                // finalize the lhs first
+                g_assignmentParts.lhs.end = foundAssigmentOperatorStart;
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
+                std::cout << "(currentStartToken.start == foundAssignmentOperatorToken->start):" << currentStartToken.ToString() << "\n";
+#endif
+                // someVar=5 cases
+                if (currentStartToken.itemsInBlock < 2) { 
+                    g_assignmentParts.rhs.currIndex = currentStartTokenIndex;
+                    g_assignmentParts.rhs.firstTokenStartOffset = foundAssignmentOperator + 1;
+                }
+                // someVar= 5 cases
+                else { 
+                    g_assignmentParts.rhs.currIndex = currentStartTokenIndex + 1;
+                }
+            }
+            else // currentStartToken != *foundAssignmentOperatorToken
+            {
+                // this mean that the assigmentOperator is separated from the first operand
+                // finalize the lhs first
+                g_assignmentParts.lhs.end = currentStartToken.end;
+
+                // someVar =5 or someVar +=5
+                if (foundAssignmentOperatorToken->ContainsPtr(foundAssignmentOperator+1)) {
+                    // this mean that there are characters after the assignment operator
+                    g_assignmentParts.rhs.firstTokenStartOffset = foundAssignmentOperator + 1;
+                    g_assignmentParts.rhs.currIndex = currentStartTokenIndex+1;
+                }
+                // someVar = 6 or someVar += 5 
+                else {
+                    g_assignmentParts.rhs.currIndex = currentStartTokenIndex+2;
+                }
+            }
+
             return &g_assignmentParts;
         }
 
@@ -1067,8 +1097,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             }
             
             );
-            tokens.items[0].itemsInBlock = tokens.count; // set as a block
-            tokens.currIndex = 0;
+            
 
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            PARSED TOKEN LIST                                   *\n");
@@ -1083,6 +1112,9 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             // and that normally mean before any validation first occur
             // i.e if many script files are to be validated this need to happen before any of that happens
             Expressions::CalcStackSizesInit();
+            tokens.currentEndIndex = tokens.count;
+            tokens.firstTokenStartOffset = nullptr;
+            tokens.currIndex = 0;
             if (Expressions::ValidateExpression(tokens, ExpressionContext::IfCondition) == false)
             {
                 ReportInfo("Error: validate tokens fail\n");
@@ -1158,7 +1190,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo(PrintTokens(tokens,0) + "\n");
 
-            ReportInfo("\nInput action expression: " + tokens.ToString());
+            ReportInfo("\nInput action expression: " + tokens.ToString() + "\n");
 
             AssignmentParts* action = ExtractAssignmentParts(tokens);
 
@@ -1179,7 +1211,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             Expressions::InitStacks();
 
             ReportInfo("\nAction lhs:" + action->lhs.ToString() + "\n");
-            ReportInfo("\nAction assigment operator:" + action->op.ToString() + "\n");
+            ReportInfo("Action assigment operator:" + std::string(1, action->op) + "\n\n");
 
             ExpressionTokens* newDirect = Expressions::GenerateRPNTokens(action->rhs);
             

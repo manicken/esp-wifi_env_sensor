@@ -42,7 +42,7 @@ namespace HAL_JSON {
 
 
     };
-    inline const char* ToString(HALOperationResult result) {
+    inline const char* HALOperationResultToString(HALOperationResult result) {
         switch (result) {
             case HALOperationResult::Success: return "Success";
             case HALOperationResult::DeviceNotFound: return "DeviceNotFound";
@@ -55,7 +55,10 @@ namespace HAL_JSON {
             case HALOperationResult::DivideByZero: return "DivideByZero";
             case HALOperationResult::StackOverflow: return "StackOverflow";
             case HALOperationResult::ResultGetFail: return "ResultGetFail";
-            default: return "Unknown";
+            
+            default:
+                printf("unknown HALOperationResult: %d\n", (int)result);
+                return "Unknown";
         }
     }
     struct HALReadValueByCmd {

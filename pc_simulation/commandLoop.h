@@ -10,6 +10,7 @@
 #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser.h"
 #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Expression_Parser.h"
 #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser_Token.h"
+#include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine_Script.h"
 
 extern std::atomic<bool> running;
 

@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #ifdef INPUT
 #undef INPUT
 #endif
@@ -5,23 +6,26 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#endif
 
 #include "HAL_JSON_REST.h"
 
 //using namespace httplib;
-
+#ifdef _WIN32
 static httplib::Server server;
+#endif
 
 namespace HAL_JSON {
 
     // Define the static server
     HAL_JSON_REST_CB REST::callback;  // define the static member here
-
+#ifdef _WIN32
     httplib::Server REST::server;
-
+#endif
     void REST::setup(HAL_JSON_REST_CB cb) {
         
         REST::callback = cb;
+#ifdef _WIN32
         // Example route
         server.set_error_handler([](const httplib::Request& req, httplib::Response& res) {
             //if (res.status != 404) return; // only intercept 404 errors
@@ -50,6 +54,6 @@ namespace HAL_JSON {
             WSACleanup();
             std::cerr << "Failed to bind REST API server.\n";
         }
-        
+#endif
     }
 }

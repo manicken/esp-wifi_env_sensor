@@ -16,7 +16,7 @@ namespace HAL_JSON {
     }
 
     void Manager::setup() {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
         if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()+1) == false) { // remove the leading /
 #else
         if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()) == false) {
@@ -237,13 +237,13 @@ namespace HAL_JSON {
 
         char* jsonBuffer = nullptr;
         size_t fileSize;
-
-        if (LittleFS_ext::load_from_file(path, &jsonBuffer, &fileSize) != LittleFS_ext::FileResult::Success)
+        const char* filePath = path;
+        if (LittleFS_ext::load_from_file(filePath, &jsonBuffer, &fileSize) != LittleFS_ext::FileResult::Success)
         {
             GlobalLogger.Error(F("ReadJSON - error could not load json file: "),path);
             return false;
         }
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
         size_t jsonDocBufferSize = fileSize * 10; // very safe mem
 #else
         size_t jsonDocBufferSize = (size_t)((float)fileSize * 1.5f);

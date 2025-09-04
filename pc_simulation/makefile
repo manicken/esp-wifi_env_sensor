@@ -1,17 +1,28 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -g -O0 -D _WIN32 -D _WIN32_WINNT=0x0A00
+#for windows builds
+#
+#for linux builds
 
-#CXXFLAGS += -g -O0 -Wall -Wextra -fno-omit-frame-pointer
+
+ifeq ($(OS),Windows_NT)
+	CXX = g++
+    CXXFLAGS = -std=c++17 -Wall -g -O0 -D_WIN32 -D_WIN32_WINNT=0x0A00
+    LDFLAGS =
+else
+    CXX = clang++
+    CXXFLAGS = -std=c++17 -Wall -g -O0 -fsanitize=address -fno-omit-frame-pointer
+    LDFLAGS = -fsanitize=address
+endif
+
 
 #LDFLAGS = -s
 
 BUILD_DIR = build
 
+#./cpp-httplib \
 # Header include path for ArduinoJson
 INCLUDE_DIRS = \
 	../.pio/libdeps/esp32dev/ArduinoJson/src \
 	./stubs/Arduino \
-	./cpp-httplib \
 	./stubs/ESPAsyncWebServer \
 	./stubs/Ticker \
 	./stubs/LittleFS \
@@ -20,7 +31,7 @@ INCLUDE_DIRS = \
 	./stubs/DallasTemperature
 
 INCLUDES = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
-
+#	
 # Source files
 SRC = \
 	./stubs/HAL_JSON_REST/HAL_JSON_REST.cpp \
@@ -54,13 +65,18 @@ EXCLUDE_SRC = \
 # Remove excluded files from SRC
 SRC := $(filter-out $(EXCLUDE_SRC), $(SRC))
 
+ifeq ($(OS),Windows_NT)
+    SOCKETS = -lws2_32
+else
+    SOCKETS =
+endif
 
 # Convert each .cpp into a .o file in the build directory
 OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)
 
 # Main executable
 test.exe: $(OBJ)
-	$(CXX) $(OBJ) $(INCLUDES) $(LDFLAGS) -lws2_32 -o $@
+	$(CXX) $(OBJ) $(INCLUDES) $(LDFLAGS) $(SOCKETS) -o $@
 
 # Rule to compile each .cpp to .o in the build directory
 $(BUILD_DIR)/%.o: %.cpp

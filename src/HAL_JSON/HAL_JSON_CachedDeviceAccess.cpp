@@ -12,7 +12,11 @@ namespace HAL_JSON {
             readToHalValueFunc = device->GetReadToHALValue_Function(funcName);
         else
             readToHalValueFunc = nullptr;
-
+        if (device == nullptr) {
+            std::string uidStr = uidPath.ToString();
+            printf("@CachedDeviceAccess const - device not found:>>%s<<\n", uidStr.c_str());
+            return;
+        }
         valueDirectAccessPtr = device->GetValueDirectAccessPtr();
         
     }

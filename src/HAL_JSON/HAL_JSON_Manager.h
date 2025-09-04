@@ -5,10 +5,10 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
-#ifndef _WIN32
-#include "../Support/LittleFS_ext.h"
-#else
+#if defined(_WIN32) || defined(__linux__)
 #include <LittleFS_ext.h>
+#else
+#include "../Support/LittleFS_ext.h"
 #endif
 #include <string>
 #include "HAL_JSON_Value.h"

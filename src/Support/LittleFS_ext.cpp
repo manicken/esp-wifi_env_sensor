@@ -5,7 +5,7 @@
 namespace LittleFS_ext
 {
     
-    FileResult load_from_file(const String& file_name, String &contents) {
+    FileResult load_from_file(const char* file_name, String &contents) {
         contents = "";
         
         File this_file = LittleFS.open(file_name, "r");
@@ -20,7 +20,7 @@ namespace LittleFS_ext
         return FileResult::Success;
     }
 
-    FileResult load_from_file(const String& file_name, char *buff) {
+    FileResult load_from_file(const char* file_name, char *buff) {
         File this_file = LittleFS.open(file_name, "r");
         if (!this_file) { // failed to open the file, retrn empty result
             return FileResult::FileNotFound;
@@ -33,7 +33,7 @@ namespace LittleFS_ext
         this_file.close();
         return FileResult::Success;
     }
-    FileResult load_from_file(const String& file_name, char** outBuffer, size_t* outSize) {
+    FileResult load_from_file(const char* file_name, char** outBuffer, size_t* outSize) {
         File this_file = LittleFS.open(file_name, "r");
         if (!this_file) {
             return FileResult::FileNotFound;
@@ -66,7 +66,7 @@ namespace LittleFS_ext
         return FileResult::Success;
     }
 
-    int getFileSize(const String& file_name)
+    int getFileSize(const char* file_name)
     {
         File this_file = LittleFS.open(file_name, "r");
         if (!this_file) { // failed to open the file, return empty result

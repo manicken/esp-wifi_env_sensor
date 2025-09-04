@@ -1,8 +1,8 @@
 
 on var1#trigger then // count 4
-	var1 = 0
-	var2 = 0
-	var3 = 0
+	var1 = 1
+	var2 = 2
+	var3 = 3
 	
 	if (var6 < 5) then // count 2
         var8 = 8 + var8
@@ -36,9 +36,9 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then // count 11
     
     // the following demostrates how multiline actions can be formed
     // note while using \ it must be precedenced by a space
-    var9 = 9+var8+ \
-            var0*3 \
-            var1/42
+    //var9 = 9+var8+ \
+    //        var0*3 \
+    //        var1/42
     
     // tests write and read only devices
 	wr_var=rd_var

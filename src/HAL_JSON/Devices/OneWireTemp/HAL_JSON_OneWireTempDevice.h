@@ -63,7 +63,7 @@ namespace HAL_JSON {
         
         OneWireTempDeviceAtRoot(const JsonVariant &jsonObj, const char* type);
         ~OneWireTempDeviceAtRoot();
-//#ifdef _WIN32
+//#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
         HALOperationResult write(const HALValue& val) override;
 //#endif
         void loop() override;

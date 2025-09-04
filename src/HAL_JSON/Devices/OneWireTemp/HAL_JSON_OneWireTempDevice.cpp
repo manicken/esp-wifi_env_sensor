@@ -114,7 +114,7 @@ namespace HAL_JSON {
     }
 
     HALOperationResult OneWireTempDeviceAtRoot::write(const HALValue& val) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
         dTemp->setTempC(val); // only in simulator
         return HALOperationResult::Success;
 #endif

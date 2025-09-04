@@ -1,7 +1,7 @@
 
 #include "HAL_JSON_CommandExecutor.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream>
 #endif
 
@@ -55,7 +55,7 @@ namespace HAL_JSON {
             } else {
                 filePath = "hal/" + zcOptionalFileName.ToString();
             }
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Reload cfg json: " << filePath << std::endl;  
 #endif
         
@@ -171,7 +171,7 @@ namespace HAL_JSON {
                 if (params.zcValue.ConvertTo_float(floatValue) == false) {
                     message += "{\"error\":\"Invalid float value.\"}";
                 } else {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
                     std::cout << "float value written: " << floatValue << "\n";
 #endif
                     UIDPath uidPath(params.zcUid);
@@ -219,7 +219,7 @@ namespace HAL_JSON {
             }
             if (writeResult != HALOperationResult::Success) {
                 message += "\"error\":\"";
-                message += ToString(writeResult);
+                message += HALOperationResultToString(writeResult);
                 message += "\"";
                 return false;
             }
@@ -298,7 +298,7 @@ namespace HAL_JSON {
         }
         if (readResult != HALOperationResult::Success) {
             message += "\"error\":\"";
-            message += ToString(readResult);
+            message += HALOperationResultToString(readResult);
             message += "\"";
             return false;
         }

@@ -12,7 +12,7 @@
 
 #include <string>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream>
 #endif
 
@@ -121,7 +121,7 @@ namespace HAL_JSON {
             
         public:
             static const char* ValidOperandVariableName(const Token& operand);
-            static bool CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount, ExpressionContext exprContext);
+            static void CountOperatorsAndOperands(Tokens& tokens, int& operatorCount, int& operandCount, int& leftParenthesisCount, int& rightParenthesisCount, ExpressionContext exprContext);
             static void ValidateOperand(const Token& operand, bool& anyError, ValidateOperandMode mode = ValidateOperandMode::Read);
             //static bool OperandIsVariable(const Token& operand);
             static bool IsSingleOperator(char c);

@@ -13,7 +13,7 @@
 
     #include "../src/HAL_JSON/HAL_JSON_Manager.h"
     #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine_Script.h"
-#ifdef _WIN32 // use this to avoid getting vscode error here
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__) // use this to avoid getting vscode error here
     #include "stubs/HAL_JSON_REST/HAL_JSON_REST.h"
 #endif
     #include "../src/Support/ConvertHelper.h"
@@ -45,7 +45,7 @@
         }
         
         std::cout << "\n****** Starting REST api server:\n";
-#ifdef _WIN32 // use this to avoid getting vscode error here
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__) // use this to avoid getting vscode error here
         HAL_JSON::REST::setup(halJsonRestCallback); // this will start the server
 #endif
         std::cout << "\n****** Init HAL_JSON Manager\n";

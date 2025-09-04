@@ -10,7 +10,7 @@
 
 #include <string>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream>
 #endif
 

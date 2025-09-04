@@ -6,7 +6,7 @@
 namespace HAL_JSON {
     namespace Rules {
         void SliceStackReportError(const char* msg, const char* param) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "SliceStackError: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
 #else
             GlobalLogger.Error(F("SliceStack:"), msg);
@@ -14,7 +14,7 @@ namespace HAL_JSON {
         }
 
         void Expressions::ReportError(const char* msg, const char* param) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Error: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
 #else
             GlobalLogger.Error(F("Expr Rule Parse:"), msg);
@@ -22,7 +22,7 @@ namespace HAL_JSON {
         }
 
         void Expressions::ReportWarning(const char* msg, const char* param) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Warning: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
 #else
             GlobalLogger.Warn(F("Expr Rule Parse:"), msg);
@@ -30,7 +30,7 @@ namespace HAL_JSON {
         }
 
         void Expressions::ReportInfo(std::string msg) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << msg;
 #else
             //GlobalLogger.Info(F("Expr Rule Parse:"), msg);
