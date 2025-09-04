@@ -86,7 +86,9 @@
 //#include "Drivers/UART2websocket.h" // this should not be here in final version (should only be accessible through HAL interface)
 
 #include "HAL_JSON/HAL_JSON.h"
-
+#ifdef HAL_JSON_H_
+#include "HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine_Script.h"
+#endif
 
 #define MAIN_URLS_JSON_CMD              F("/json_cmd")
 

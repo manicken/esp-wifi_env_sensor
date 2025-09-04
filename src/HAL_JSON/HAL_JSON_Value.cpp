@@ -15,6 +15,8 @@ namespace HAL_JSON {
 
     HALValue::HALValue(float v) : type(Type::FLOAT), fval(v) {}
 
+    HALValue::HALValue(bool v) : type(Type::UINT), uval(v?1:0) {}
+
     //HALValue::HALValue(char* str) : type(Type::STRING), str(v) {}
 
     HALValue::Type HALValue::getType() const {
@@ -128,50 +130,50 @@ namespace HAL_JSON {
         return lhs.asFloat() >= rhs.asFloat();
     }
 
-    HALValue HALValue::operator+(const HALValue& other) {
+    HALValue HALValue::operator+(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
             return fval + other.fval;
         } else {
             return uval + other.uval;
         }
     }
-    HALValue HALValue::operator-(const HALValue& other) {
+    HALValue HALValue::operator-(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
             return fval - other.fval;
         } else {
             return uval - other.uval;
         }
     }
-    HALValue HALValue::operator*(const HALValue& other) {
+    HALValue HALValue::operator*(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
             return fval * other.fval;
         } else {
             return uval * other.uval;
         }
     }
-    HALValue HALValue::operator/(const HALValue& other) {
+    HALValue HALValue::operator/(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
             return fval / other.fval;
         } else {
             return uval / other.uval;
         }
     }
-    HALValue HALValue::operator%(const HALValue& other) {
+    HALValue HALValue::operator%(const HALValue& other) const {
         return uval % other.uval;
     }
-    HALValue HALValue::operator&(const HALValue& other) {
+    HALValue HALValue::operator&(const HALValue& other) const {
         return uval & other.uval;
     }
-    HALValue HALValue::operator|(const HALValue& other) {
+    HALValue HALValue::operator|(const HALValue& other) const {
         return uval | other.uval;
     }
-    HALValue HALValue::operator^(const HALValue& other) {
+    HALValue HALValue::operator^(const HALValue& other) const {
         return uval ^ other.uval;
     }
-    HALValue HALValue::operator<<(const HALValue& other) {
+    HALValue HALValue::operator<<(const HALValue& other) const {
         return uval << other.uval;
     }
-    HALValue HALValue::operator>>(const HALValue& other) {
+    HALValue HALValue::operator>>(const HALValue& other) const {
         return uval >> other.uval;
     }
 

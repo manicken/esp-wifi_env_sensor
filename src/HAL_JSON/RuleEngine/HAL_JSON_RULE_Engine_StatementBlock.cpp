@@ -19,8 +19,8 @@ namespace HAL_JSON {
                 handler = IfStatement::Handler;
                 deleter = DeleteAs<IfStatement>;
             } else if (token.type == TokenType::Action) {
-                context = new ActionStatement(tokens);
-                handler = ActionStatement::Handler;
+                context = new ActionStatement(tokens, handler);
+                
                 deleter = DeleteAs<ActionStatement>;
             } else {
                 ReportTokenError(token, "StatementBlock::Set !!!! very big issue found unknown type:", TokenTypeToString(token.type));

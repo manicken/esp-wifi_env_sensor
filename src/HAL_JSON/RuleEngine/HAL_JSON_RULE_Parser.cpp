@@ -962,12 +962,12 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
         
 
-        AssignmentParts* Parser::ExtractAssignmentParts(Tokens& _tokens) {
+        AssignmentParts* Parser::ExtractAssignmentParts(Tokens& tokens) {
             g_assignmentParts.Clear();
-
-            Token* tokens = _tokens.items;
-            int startIndex = _tokens.currIndex;
-            int endIndex   = startIndex + _tokens.Current().itemsInBlock;
+            Token& currentStartToken = tokens.Current();
+            Token* tokensItems = tokens.items;
+            int startIndex = tokens.currIndex;
+            int endIndex   = startIndex + currentStartToken.itemsInBlock;
 
             // Track assignment operator info
             const char* firstAssignmentOperator = nullptr;
@@ -976,7 +976,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             // Scan tokens in the current block
             for (int i = startIndex; i < endIndex; ++i) {
-                Token& exprToken = tokens[i];
+                Token& exprToken = tokensItems[i];
                 const char* searchStart = exprToken.start;
 
                 const char* match = nullptr;
@@ -991,6 +991,8 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                             const char* prevChar = match - 1;
                             if (exprToken.ContainsPtr(prevChar) &&
                                 Expressions::IsSingleOperator(*prevChar)) {
+                                if (*prevChar == '<' || *prevChar == '>')
+                                    prevChar--; // if it's leftwhift or rightshift
                                 firstCompoundAssignmentOperator = prevChar;
                             }
                         }
@@ -1012,10 +1014,10 @@ void Parser::CountBlockItems(Tokens& _tokens) {
                                 : firstAssignmentOperator;
 
             // LHS
-            g_assignmentParts.lhs.start  = _tokens.Current().start;
+            g_assignmentParts.lhs.start  = currentStartToken.start;
             g_assignmentParts.lhs.end    = opStart;
-            g_assignmentParts.lhs.line   = _tokens.Current().line;
-            g_assignmentParts.lhs.column = _tokens.Current().column;
+            g_assignmentParts.lhs.line   = currentStartToken.line;
+            g_assignmentParts.lhs.column = currentStartToken.column;
 
             // Operator
             g_assignmentParts.op.start = opStart;
@@ -1025,9 +1027,9 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             // RHS
             g_assignmentParts.rhs.items = firstAssignmentOperatorToken;
-            g_assignmentParts.rhs.count = endIndex - (firstAssignmentOperatorToken - tokens);
+            g_assignmentParts.rhs.count = endIndex - (firstAssignmentOperatorToken - tokensItems);
             g_assignmentParts.rhs.firstTokenStartOffset = firstAssignmentOperator + 1;
-
+            tokens.currIndex = endIndex; // consume tokens
             return &g_assignmentParts;
         }
 
@@ -1156,6 +1158,10 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo(PrintTokens(tokens,0) + "\n");
 
+            ReportInfo("\nInput action expression: " + tokens.ToString());
+
+            AssignmentParts* action = ExtractAssignmentParts(tokens);
+
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            VALIDATE PARSED TOKEN LIST                          *\n");
             ReportInfo("**********************************************************************************\n");
@@ -1163,7 +1169,7 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             // and that normally mean before any validation first occur
             // i.e if many script files are to be validated this need to happen before any of that happens
             Expressions::CalcStackSizesInit();
-            if (Expressions::ValidateExpression(tokens, ExpressionContext::Assignment) == false)
+            if (Expressions::ValidateExpression(action->rhs, ExpressionContext::Assignment) == false)
             {
                 ReportInfo("Error: validate tokens fail\n");
                 delete[] fileContents;
@@ -1171,10 +1177,6 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             }
             Expressions::PrintCalcedStackSizes();
             Expressions::InitStacks();
-
-            ReportInfo("\nInput action expression: " + tokens.ToString());
-
-            AssignmentParts* action = ExtractAssignmentParts(tokens);
 
             ReportInfo("\nAction lhs:" + action->lhs.ToString() + "\n");
             ReportInfo("\nAction assigment operator:" + action->op.ToString() + "\n");

@@ -14,7 +14,7 @@
 #include "HAL_JSON_RULE_Parser_Token.h"
 #include "HAL_JSON_RULE_Expression_Token.h"
 #include "HAL_JSON_RULE_Expression_Parser.h"
-#include "HAL_JSON_RULE_Engine.h"
+
 #include "../../Support/ConvertHelper.h"
 #include "../../Support/CharArrayHelpers.h"
 #include "../HAL_JSON_ZeroCopyString.h"

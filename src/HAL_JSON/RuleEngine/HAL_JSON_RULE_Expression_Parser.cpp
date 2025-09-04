@@ -72,6 +72,7 @@ namespace HAL_JSON {
         }
         void Expressions::InitStacks() {
             printf("\n*************************************************** InitStacks ********************************\n");
+            Expressions::PrintCalcedStackSizes();
             ClearStacks();
             rpnOutputStack = new ExpressionTokens(rpnOutputStackNeededSize);
             opStack = new ExpressionToken[opStackSizeNeededSize];
@@ -653,6 +654,10 @@ namespace HAL_JSON {
         }
 
         ExpressionTokens* Expressions::GenerateRPNTokens(Tokens& tokens) {
+            Tokens toPrint;
+            toPrint.items = &tokens.Current();
+            toPrint.count = tokens.Current().itemsInBlock;
+            ReportInfo("\ngenerate RPNtokens: " + toPrint.ToString() + "\n");
 
             int maxOperatorUsage = 0;
             ExpressionToken* outTokenItems = rpnOutputStack->items;
@@ -805,7 +810,7 @@ namespace HAL_JSON {
          */
         LogicRPNNode* Expressions::BuildLogicTree(ExpressionTokens* tokens)
         {
-            int tokensCount = tokens->count;
+            int tokensCount = tokens->currentCount;
 
             int stackPoolIndex = 0;
             int stackIndex = 0;
@@ -816,6 +821,7 @@ namespace HAL_JSON {
             for (int i=0;i<tokensCount;i++) {
 
                 ExpressionToken& tok = tokens->items[i];
+                //if (tok.type == ExpTokenType::NotSet) break;
                 if (tok.type == ExpTokenType::LogicalAnd || tok.type == ExpTokenType::LogicalOr) {
                     // first flush pending calc as a leaf
                     if (currentCalcStartIndex != -1) {
@@ -865,9 +871,11 @@ namespace HAL_JSON {
             }
 
             ReportInfo("BuildLogicTree - used " + std::to_string(stackMaxUsed) + " of " + std::to_string(finalOutputStackNeededSize) + "\n");
-
-            if (stackIndex != 1)
-                throw std::runtime_error("LogicRPN: unbalanced tree");
+            if (stackIndex != 1) {
+                std::string msg = PrintExpressionTokens(*tokens, 0, tokens->currentCount);
+                throw std::runtime_error("LogicRPN - unbalanced tree: " + std::to_string(stackIndex) + msg);
+            }
+                
 
             // note. logicRPNNodeStackPool is not owned and cannot be deleted here
             // note. logicRPNNodeStack is not owned and cannot be deleted here

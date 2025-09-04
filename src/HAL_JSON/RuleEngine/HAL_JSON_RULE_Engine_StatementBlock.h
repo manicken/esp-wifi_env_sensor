@@ -5,6 +5,7 @@
 #include "../HAL_JSON_Device.h"
 #include "HAL_JSON_RULE_Engine_Support.h"
 #include "HAL_JSON_RULE_Parser_Token.h"
+#include "HAL_JSON_RULE_Engine_IfStatement.h"
 #include "HAL_JSON_RULE_Engine_ActionStatement.h"
 
 

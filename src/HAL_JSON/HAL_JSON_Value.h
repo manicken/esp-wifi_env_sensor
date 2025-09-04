@@ -26,6 +26,7 @@ namespace HAL_JSON {
         //HALValue(const HALValue& other);  // future use?? only used for string
         HALValue(uint32_t v);
         HALValue(float v);
+        HALValue(bool v);
         // HALValue(char* str); // future use??
 
         Type getType() const;
@@ -52,16 +53,16 @@ namespace HAL_JSON {
         operator int32_t() const;
         operator float() const;
 
-        HALValue operator+(const HALValue& other);
-        HALValue operator-(const HALValue& other);
-        HALValue operator*(const HALValue& other);
-        HALValue operator/(const HALValue& other);
-        HALValue operator%(const HALValue& other);
-        HALValue operator&(const HALValue& other);
-        HALValue operator|(const HALValue& other);
-        HALValue operator^(const HALValue& other);
-        HALValue operator<<(const HALValue& other);
-        HALValue operator>>(const HALValue& other);
+        HALValue operator+(const HALValue& other) const;
+        HALValue operator-(const HALValue& other) const;
+        HALValue operator*(const HALValue& other) const;
+        HALValue operator/(const HALValue& other) const;
+        HALValue operator%(const HALValue& other) const;
+        HALValue operator&(const HALValue& other) const;
+        HALValue operator|(const HALValue& other) const;
+        HALValue operator^(const HALValue& other) const;
+        HALValue operator<<(const HALValue& other) const;
+        HALValue operator>>(const HALValue& other) const;
     };
     // Comparison Operators
     bool operator==(const HALValue& lhs, const HALValue& rhs);

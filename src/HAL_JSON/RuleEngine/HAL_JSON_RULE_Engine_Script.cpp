@@ -84,7 +84,7 @@ namespace HAL_JSON {
 
         bool ScriptsBlock::ValidateAllActiveScripts()
         {
-            Rules::Expressions::CalcStackSizesInit();
+            
 
             Rules::Parser::ReadAndParseRuleSetFile("rules1.txt", nullptr);
             return true;
@@ -99,7 +99,7 @@ namespace HAL_JSON {
             delete[] scriptBlocks;
             scriptBlocks = nullptr;
             scriptBlocksCount = 0;
-            Rules::Expressions::InitStacks();
+            
             // here i will load the active scripts file and parse which scripts to load
             // and how many to load
             // currently for development first test we only load one file
@@ -118,7 +118,9 @@ namespace HAL_JSON {
 
         bool ScriptsBlock::ValidateAndLoadAllActiveScripts()
         {
+            Rules::Expressions::CalcStackSizesInit();
             if (ValidateAllActiveScripts() == false) return false;
+            Rules::Expressions::InitStacks();
             if (LoadAllActiveScripts() == false) {
 #ifdef _WIN32
 #include <iostream>

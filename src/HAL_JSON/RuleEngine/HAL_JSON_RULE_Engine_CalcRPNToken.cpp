@@ -105,7 +105,7 @@ namespace HAL_JSON {
 
 
 
-
+/*
         HALOperationResult CalcRPNToken::Calc_Addition_Operation_Handler(void* context) {
             int sp = halValueStack.sp; // micro-optimization - store locally 
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
@@ -202,7 +202,7 @@ namespace HAL_JSON {
             HALValue* itemPtr = &halValueStack.items[sp];
             HALValue b = *--itemPtr;
             HALValue a = *--itemPtr;
-            *itemPtr++ = (a | b);
+            *itemPtr++ = a | b;
             halValueStack.sp = sp - 1;
             return HALOperationResult::Success;
         }
@@ -343,6 +343,28 @@ namespace HAL_JSON {
                 case ExpTokenType::CalcBitwiseExOr: return &Calc_BitwiseExOr_Operation_Handler;
                 case ExpTokenType::CalcBitwiseLeftShift: return &Calc_BitwiseLeftShift_Operation_Handler;
                 case ExpTokenType::CalcBitwiseRightShift: return &Calc_BitwiseRightShift_Operation_Handler;
+                default: return nullptr; // handled by caller
+            }
+        }*/
+
+        RPNHandler CalcRPNToken::GetRPN_OperatorFunction(ExpTokenType type) {
+            switch (type) {
+                case ExpTokenType::CompareEqualsTo: return &Operation_Handler<OpCompEqual>;
+                case ExpTokenType::CompareNotEqualsTo: return &Operation_Handler<OpCompNotEqual>;
+                case ExpTokenType::CompareLessThan: return &Operation_Handler<OpCompLessThan>;
+                case ExpTokenType::CompareGreaterThan: return &Operation_Handler<OpCompGreaterThan>;
+                case ExpTokenType::CompareLessThanOrEqual: return &Operation_Handler<OpCompLessOrEqual>;
+                case ExpTokenType::CompareGreaterThanOrEqual: return &Operation_Handler<OpCompGreaterOrEqual>;
+                case ExpTokenType::CalcPlus: return &Operation_Handler<OpAdd>;
+                case ExpTokenType::CalcMinus: return &Operation_Handler<OpSub>;
+                case ExpTokenType::CalcMultiply: return &Operation_Handler<OpMul>;
+                case ExpTokenType::CalcDivide: return &Division_And_Modulus_Operation_Handler<OpDiv>;
+                case ExpTokenType::CalcModulus: return &Division_And_Modulus_Operation_Handler<OpMod>;
+                case ExpTokenType::CalcBitwiseAnd: return &Operation_Handler<OpBitAnd>;
+                case ExpTokenType::CalcBitwiseOr: return &Operation_Handler<OpBitOr>;
+                case ExpTokenType::CalcBitwiseExOr: return &Operation_Handler<OpBitExOr>;
+                case ExpTokenType::CalcBitwiseLeftShift: return &Operation_Handler<OpBitLshift>;
+                case ExpTokenType::CalcBitwiseRightShift: return &Operation_Handler<OpBitRshift>;
                 default: return nullptr; // handled by caller
             }
         }

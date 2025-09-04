@@ -9,12 +9,48 @@
 #include "HAL_JSON_RULE_Engine_RPNStack.h"
 #include "HAL_JSON_RULE_Parser_Token.h"
 #include "HAL_JSON_RULE_Expression_Token.h"
+#include "HAL_JSON_RULE_Engine_Operators.h"
 
 namespace HAL_JSON {
     namespace Rules {
         /** used for all value calculations */ 
         extern RPNStack<HALValue> halValueStack;
         using RPNHandler = HALOperationResult(*)(void*);
+        
+        
+        template <typename Op>
+        HALOperationResult Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            HALValue a = *--itemPtr;
+            *itemPtr++ = Op::apply(a, b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
+
+        template <typename Op>
+        HALOperationResult Division_And_Modulus_Operation_Handler(void* context) {
+            int sp = halValueStack.sp; // micro-optimization - store locally 
+#ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+            if (sp < 2) { return HALOperationResult::StackUnderflow; }    // underflow check
+            if (sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
+#endif
+            HALValue* itemPtr = &halValueStack.items[sp];
+            HALValue b = *--itemPtr;
+            if (b.asInt() == 0) {
+                // Log to GlobalLogger about divide by zero
+                return HALOperationResult::DivideByZero;
+            }
+            HALValue a = *--itemPtr;
+            *itemPtr++ = Op::apply(a, b);
+            halValueStack.sp = sp - 1;
+            return HALOperationResult::Success;
+        }
 
         struct CalcRPNToken {
             HAL_JSON_NOCOPY_NOMOVE(CalcRPNToken);
@@ -27,14 +63,17 @@ namespace HAL_JSON {
             RPNHandler handler;
             Deleter deleter;
 
+            
+
             static HALOperationResult GetAndPushVariableValue_Handler(void* context);
             static HALOperationResult GetAndPushConstValue_Handler(void* context);
 
-            static HALOperationResult Calc_Addition_Operation_Handler(void* context);
+           /* static HALOperationResult Calc_Addition_Operation_Handler(void* context);
             static HALOperationResult Calc_Subtract_Operation_Handler(void* context);
             static HALOperationResult Calc_Multiply_Operation_Handler(void* context);
             static HALOperationResult Calc_Divide_Operation_Handler(void* context);
             static HALOperationResult Calc_Modulus_Operation_Handler(void* context);
+
             static HALOperationResult Calc_BitwiseAnd_Operation_Handler(void* context);
             static HALOperationResult Calc_BitwiseOr_Operation_Handler(void* context);
             static HALOperationResult Calc_BitwiseExOr_Operation_Handler(void* context);
@@ -46,7 +85,7 @@ namespace HAL_JSON {
             static HALOperationResult Compare_LessThan_Operation_Handler(void* context);
             static HALOperationResult Compare_GreaterThan_Operation_Handler(void* context);
             static HALOperationResult Compare_LessThanOrEqual_Operation_Handler(void* context);
-            static HALOperationResult Compare_GreaterThanOrEqual_Operation_Handler(void* context);
+            static HALOperationResult Compare_GreaterThanOrEqual_Operation_Handler(void* context);*/
 
             static RPNHandler GetRPN_OperatorFunction(ExpTokenType type);
 
@@ -57,7 +96,7 @@ namespace HAL_JSON {
         struct CalcRPN {
             CalcRPNToken* items;
             int count;
-            
+
             CalcRPN(CalcRPN&) = delete;
             CalcRPN(ExpressionTokens* tokens, int startIndex, int endIndex);
 

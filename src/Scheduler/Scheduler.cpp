@@ -66,7 +66,7 @@ namespace Scheduler
         char *buff = new char[fileSize+2];
         if (buff == nullptr) { DEBUG_UART.println(F("LJ mem err")); return false; }
 
-        if (LittleFS_ext::load_from_file(filePath, buff) == false) {
+        if (LittleFS_ext::load_from_file(filePath, buff) != LittleFS_ext::FileResult::Success) {
             DEBUG_UART.println(F("LJ LFSe LFFE")); // LoadJson LittleFS_ext::load_from_file error
             //free(buff);
             delete[] buff;

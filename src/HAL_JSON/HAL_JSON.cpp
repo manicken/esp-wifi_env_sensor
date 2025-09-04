@@ -5,11 +5,12 @@ namespace HAL_JSON {
     void begin() {
         REST::setup();
         Manager::setup();
-        Rules::Parser::ReadAndParseRuleSetFile("script.txt");
+        Rules::ScriptsBlock::ValidateAndLoadAllActiveScripts(); 
     }
 
     void loop() {
         Manager::loop();
-        // RULE loop call here when done
+
+        Rules::ScriptsBlock::Exec();
     }
 }

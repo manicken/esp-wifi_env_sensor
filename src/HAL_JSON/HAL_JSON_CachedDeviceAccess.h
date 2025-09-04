@@ -37,6 +37,9 @@ namespace HAL_JSON {
         
         CachedDeviceAccess(ZeroCopyString& uidPath, ZeroCopyString& funcName);
         Device* GetDevice();
+
+        HALOperationResult WriteSimple(const HALValue& val);
+        HALOperationResult ReadSimple(HALValue& val);
     };
     
 }

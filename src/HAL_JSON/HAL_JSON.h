@@ -13,7 +13,7 @@
 #include "HAL_JSON_REST.h"
 
 #include "RuleEngine/HAL_JSON_RULE_Parser.h"
-#include "RuleEngine/HAL_JSON_RULE_Engine.h"
+#include "RuleEngine/HAL_JSON_RULE_Engine_Script.h"
 
 namespace HAL_JSON {
     void begin();

@@ -24,4 +24,29 @@ namespace HAL_JSON {
         }
         return device;
     }
+
+    HALOperationResult CachedDeviceAccess::WriteSimple(const HALValue& val) {
+        if (valueDirectAccessPtr != nullptr) {
+            *valueDirectAccessPtr = val;
+            return HALOperationResult::Success;
+        }
+        Device* device = GetDevice();
+        if (device == nullptr) return HALOperationResult::DeviceNotFound;
+        return device->write(val);
+    }
+
+    HALOperationResult CachedDeviceAccess::ReadSimple(HALValue& val) {
+        if (readToHalValueFunc != nullptr) {
+            Device* device = GetDevice();
+            if (device == nullptr) return HALOperationResult::DeviceNotFound;
+            return readToHalValueFunc(device, val);
+        }
+        if (valueDirectAccessPtr != nullptr) {
+            val = *valueDirectAccessPtr;
+            return HALOperationResult::Success;
+        }
+        Device* device = GetDevice();
+        if (device == nullptr) return HALOperationResult::DeviceNotFound;
+        return device->read(val);
+    }
 }

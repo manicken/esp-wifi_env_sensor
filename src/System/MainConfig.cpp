@@ -23,7 +23,7 @@ namespace MainConfig {
         }
         int size = LittleFS_ext::getFileSize(MAIN_CONFIG_CONFIG_JSON_FILE);
         char jsonBuffer[size + 1]; // +1 for null char
-        if (LittleFS_ext::load_from_file(MAIN_CONFIG_CONFIG_JSON_FILE, jsonBuffer) == false)
+        if (LittleFS_ext::load_from_file(MAIN_CONFIG_CONFIG_JSON_FILE, jsonBuffer) != LittleFS_ext::FileResult::Success)
         {
             lastJSONread_Error = "error could not load json file";
             return false;
