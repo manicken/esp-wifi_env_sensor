@@ -28,9 +28,10 @@ namespace HAL_JSON {
            // printf("see if whe come her\n");
             for (int i=0;i<_itemsCount;i++) {
                 if (tokens.SkipIgnores() == false) { printf("reached end\n"); break; }
-                //TokenType currTokenType = tokens.Current().type;
-                //if (currTokenType == TokenType::EndIf || currTokenType == TokenType::ElseIf || currTokenType == TokenType::Else)
-                //    break;
+                
+                while (tokens.Current().type == TokenType::EndIf) // skips any endif
+                    tokens.currIndex++;
+
                 items[i].Set(tokens);
             }
         }
@@ -50,16 +51,20 @@ namespace HAL_JSON {
             triggerBlocks = new TriggerBlock[tokens.rootBlockCount];
             
             tokens.currIndex = 0;
-
-            for (int i = 0; i < tokens.rootBlockCount || tokens.currIndex < tokens.count; i++) { // tokens.currIndex is incremented elsewhere and is included here as a out of bounds failsafe
-                TriggerBlock& triggerBlock = triggerBlocks[i];
+            int i = 0;
+            // i increments only when we actually assign a trigger block
+            // tokens.currIndex increments for every token we process or skip
+            while (i < tokens.rootBlockCount && tokens.currIndex < tokens.count) { // tokens.currIndex is incremented elsewhere and is included here as a out of bounds failsafe
+                
                 Token& token = tokens.Current();
                 
                 if (token.type == TokenType::On)
                 {
+                    TriggerBlock& triggerBlock = triggerBlocks[i++]; // consume a trigger block
+                    printf("\n(%d) FOUND ON TOKEN\n", tokens.currIndex);
                     tokens.currIndex++; // consume the On token as it dont have any important data
                     
-                    Token& triggerSourceToken = tokens.items[tokens.currIndex++]; // get and consume
+                    Token& triggerSourceToken = tokens.GetNextAndConsume();//.items[tokens.currIndex++]; // get and consume
                     if (triggerSourceToken.EqualsIC("eachloop"))
                         triggerBlock.triggerSource = TriggerBlock::AllwaysRun;
                     else
@@ -78,13 +83,18 @@ namespace HAL_JSON {
                 }
                 else if (token.type == TokenType::If) 
                 {
+                    TriggerBlock& triggerBlock = triggerBlocks[i++]; // consume a trigger block
+                    printf("\n(%d) FOUND IF TOKEN\n", tokens.currIndex);
                     // here we dont consume anything just pass 
                     // wrap root-level if into a trigger block that always runs
                     triggerBlock.triggerSource = TriggerBlock::AllwaysRun; // line 83
                     triggerBlock.Set(1, tokens); // line 84
                 }
-                else
+                else {
+                    printf("\n(%d) SKIPPING TOKEN: %s\n", tokens.currIndex, token.ToString().c_str());
                     tokens.currIndex++;
+                    
+                }
             }
         }
 
@@ -102,7 +112,24 @@ namespace HAL_JSON {
         }
 
         void ScriptsBlock::ScriptFileParsed(Tokens& tokens) {
+            Expressions::ReportInfo("\n");
+            Expressions::ReportInfo("**************************************************************************************\n");
+            Expressions::ReportInfo("**************************************************************************************\n");
+            Expressions::ReportInfo("**                                                                                  **\n");
+            Expressions::ReportInfo("** ██       ██████   █████  ██████      ███████  ██████ ██████  ██ ██████  ████████ **\n");
+            Expressions::ReportInfo("** ██      ██    ██ ██   ██ ██   ██     ██      ██      ██   ██ ██ ██   ██    ██    **\n");
+            Expressions::ReportInfo("** ██      ██    ██ ███████ ██   ██     ███████ ██      ██████  ██ ██████     ██    **\n");
+            Expressions::ReportInfo("** ██      ██    ██ ██   ██ ██   ██          ██ ██      ██   ██ ██ ██         ██    **\n");
+            Expressions::ReportInfo("** ███████  ██████  ██   ██ ██████      ███████  ██████ ██   ██ ██ ██         ██    **\n");
+            Expressions::ReportInfo("**                                                                                  **\n");
+            Expressions::ReportInfo("**************************************************************************************\n");
+            Expressions::ReportInfo("**************************************************************************************\n");
             scriptBlocks[currentScriptIndex].Set(tokens);
+            Expressions::ReportInfo("**************************************************************************************\n");
+            Expressions::ReportInfo("**************************************************************************************\n");
+            printf("\n\ntokens.currIndex(%d) of tokens.count(%d) reached end of 'script'\n\n", tokens.currIndex, tokens.count);
+            Expressions::ReportInfo("**************************************************************************************\n");
+            Expressions::ReportInfo("**************************************************************************************\n");
         }
 
         bool ScriptsBlock::LoadAllActiveScripts()
@@ -131,6 +158,7 @@ namespace HAL_JSON {
         {
             Rules::Expressions::CalcStackSizesInit();
             if (ValidateAllActiveScripts() == false) return false;
+            
             Rules::Expressions::InitStacks();
             if (LoadAllActiveScripts() == false) {
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
@@ -143,23 +171,25 @@ namespace HAL_JSON {
         }
 
         HALOperationResult TriggerBlock::Exec() {
-            HALOperationResult res;
             for (int i=0;i<itemsCount;i++) {
                 StatementBlock& statementItem = items[i];
-                res = statementItem.handler(statementItem.context);
+                if (statementItem.handler == nullptr) {
+                    printf("\nERRORERRORERRORERRORERRORERRORERRORERRORERRORERROR statementItem.handler == nullptr\n");
+                    break;
+                }
+                HALOperationResult res = statementItem.handler(statementItem.context);
                 if (res != HALOperationResult::Success) {
                     return res; // direct return on any failure here
                 }
             }
-            return res;
+            return HALOperationResult::Success;
         }
 
         void ScriptBlock::Exec() {
-            HALOperationResult res;
             for (int i=0;i<triggerBlockCount;i++) {
                 //if (triggerBlocks[i].triggerSource(triggerBlocks[i].context) == false)
                 //    continue;
-                res = triggerBlocks[i].Exec();
+                HALOperationResult res = triggerBlocks[i].Exec();
                 if (res != HALOperationResult::Success) {
                     GlobalLogger.Error(F("trigger: "), HALOperationResultToString(res));
 //#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)

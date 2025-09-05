@@ -1,6 +1,6 @@
 
 on var1#trigger then // count 4
-	var1 = 1
+	var1 += 1
 	var2 = 2
 	var3 = 3
 	
@@ -13,13 +13,13 @@ endon
 
 if ((hum#humidity>= 50) and (var1 ==0)) then // count 2 using a variable to create a state machine
 
-    BIRELSET=0 // =0 mean that the pre programmed pulse lenght will be used
+    //BIRELSET=0 // =0 mean that the pre programmed pulse lenght will be used
     var0=0
 
     
-elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then // count 11
+elseif ((hum < 40) && (var1+(2*(0-1)) > 1)) then // count 11
 
-    BIRELRST=0 // =0 mean that the pre programmed pulse lenght will be used
+    //BIRELRST=0 // =0 mean that the pre programmed pulse lenght will be used
     
     var1= 1 and var2 = 2
     var3 =3 ; var4 = 4
@@ -36,9 +36,9 @@ elseif ((hum < 40) && (var1+(2*(0-1)) == 1)) then // count 11
     
     // the following demostrates how multiline actions can be formed
     // note while using \ it must be precedenced by a space
-    //var9 = 9+var8+ \
-    //        var0*3 \
-    //        var1/42
+    var9 = 9+var8+ \
+            var0*3 \
+            var1/42
     
     // tests write and read only devices
 	wr_var=rd_var

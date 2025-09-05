@@ -3,7 +3,7 @@
 
 #include <Arduino.h> // Needed for String class
 
-#include <ArduinoJSON.h>
+#include <ArduinoJson.h>
 #include "../Support/Logger.h"
 #include "HAL_JSON_Device_GlobalDefines.h"
 

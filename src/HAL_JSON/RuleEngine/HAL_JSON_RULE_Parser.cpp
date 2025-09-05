@@ -1181,8 +1181,8 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             }
             
             );
-            tokens.items[0].itemsInBlock = tokens.count; // set as a block
-            tokens.currIndex = 0;
+            
+            
 
             ReportInfo("**********************************************************************************\n");
             ReportInfo("*                            PARSED TOKEN LIST                                   *\n");
@@ -1192,6 +1192,8 @@ void Parser::CountBlockItems(Tokens& _tokens) {
 
             ReportInfo("\nInput action expression: " + tokens.ToString() + "\n");
 
+            tokens.currIndex = 0;
+            tokens.items[0].itemsInBlock = tokens.count; // set as a block so that ExtractAssignmentParts can work as expected
             AssignmentParts* action = ExtractAssignmentParts(tokens);
 
             ReportInfo("**********************************************************************************\n");
@@ -1214,6 +1216,12 @@ void Parser::CountBlockItems(Tokens& _tokens) {
             ReportInfo("Action assigment operator:" + std::string(1, action->op) + "\n\n");
 
             ExpressionTokens* newDirect = Expressions::GenerateRPNTokens(action->rhs);
+            if (newDirect == nullptr) {
+                printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!! ParseActionExpressionTest - newDirect was nullptr\n");
+                Expressions::ClearStacks();
+                delete[] fileContents;
+                return false;
+            }
             
             ReportInfo("\n\nAction rhs calc RPN:");
             for (int i=0;i<newDirect->currentCount;i++) { // currentCount is set by GenerateRPNTokens and defines the current 'size'

@@ -94,12 +94,14 @@ namespace HAL_JSON {
         };
 
         struct CalcRPN {
+            std::string calcRPNstr;
+            
             CalcRPNToken* items;
             int count;
 
             CalcRPN(CalcRPN&) = delete;
             CalcRPN(ExpressionTokens* tokens, int startIndex, int endIndex);
-
+            ~CalcRPN();
             HALOperationResult DoCalc();
         };
     }

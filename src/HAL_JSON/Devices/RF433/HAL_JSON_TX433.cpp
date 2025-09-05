@@ -57,6 +57,14 @@ namespace HAL_JSON {
 
     }
     TX433::~TX433() {
+        if (units != nullptr) {
+            for (int i=0;i<unitCount;i++) {
+                delete units[i];
+                units[i] = nullptr;
+            }
+            delete[] units;
+            units = nullptr;
+        }
         pinMode(pin, INPUT); // reset to input so other devices can safely use it
     }
 

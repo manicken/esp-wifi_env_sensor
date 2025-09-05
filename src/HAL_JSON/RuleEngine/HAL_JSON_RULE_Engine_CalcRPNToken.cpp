@@ -2,6 +2,8 @@
 
 #include "HAL_JSON_RULE_Engine_CalcRPNToken.h"
 
+#define HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
+
 namespace HAL_JSON {
     namespace Rules {
         RPNStack<HALValue> halValueStack;
@@ -9,10 +11,16 @@ namespace HAL_JSON {
         CalcRPNToken::CalcRPNToken() { }
         CalcRPNToken::~CalcRPNToken()
         {
+            
             if (deleter) deleter(context);
         }
         CalcRPN::CalcRPN(ExpressionTokens* tokens, int startIndex, int endIndex) {
+            calcRPNstr = PrintExpressionTokensOneRow(*tokens, startIndex, endIndex);
             count = endIndex - startIndex;
+            int tokensCurrCount = tokens->currentCount;
+            //if (count != tokensCurrCount) // this is not really a error here
+            //    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ERROR count != tokensCurrCount ****************\n");
+            printf("CalcRPN::CalcRPN constr - count:%d, tokensCurrCount:%d, rpn:%s\n", count, tokensCurrCount, PrintExpressionTokensOneRow(*tokens,startIndex, endIndex).c_str());
             items = new CalcRPNToken[count];
             int calcRPNindex = 0;
             ExpressionToken* tokenItems = tokens->items;
@@ -58,24 +66,35 @@ namespace HAL_JSON {
                 }
             }
         }
+        CalcRPN::~CalcRPN() {
+            printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CalcRPN destructor was run\n");
+            delete[] items;
+        }
         HALOperationResult CalcRPN::DoCalc() {
-            //CalcRPN* calcRPN = static_cast<CalcRPN*>(context);
-            HALOperationResult res;
-            int calcRPNcount = count;
-            CalcRPNToken* calcItems = items;
+            printf("CalcRPN::DoCalc - rpn is:%s", calcRPNstr.c_str());
+            int calcRPNcount = count; // deref here for faster access
+            CalcRPNToken* calcItems = items; // deref here for faster access
+            halValueStack.sp = 0; // 'clear' stack before use
             for (int i=0;i<calcRPNcount;i++) {
-                res = calcItems[i].handler(calcItems[i].context);
+                if (calcItems[i].handler == nullptr) {
+                    printf("CalcRPN::DoCalc - handler was nullptr at index:%d of total:%d, rpn is:%s\n", i, calcRPNcount, calcRPNstr.c_str());
+                    return HALOperationResult::HandlerWasNullPtr;
+                }
+                HALOperationResult res = calcItems[i].handler(calcItems[i].context);
                 if (res != HALOperationResult::Success)
                     return res;
             }
-            return res;
+            HALValue val;
+            halValueStack.GetFinalResult(val);
+            printf(" result: uint:(%u), int(%d), float(%.6f)\n", val.asUInt(), val.asInt(), val.asFloat());
+            return HALOperationResult::Success;
         }
 
         HALOperationResult CalcRPNToken::GetAndPushVariableValue_Handler(void* context) {
             CachedDeviceAccess* item = static_cast<CachedDeviceAccess*>(context);
             HALValue value;
             if (item->valueDirectAccessPtr != nullptr) {
-                value = *item->valueDirectAccessPtr;
+                value = *(item->valueDirectAccessPtr);
             }
             else if (item->readToHalValueFunc != nullptr) {
                 Device* device = item->GetDevice();

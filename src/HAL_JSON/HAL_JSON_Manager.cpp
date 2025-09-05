@@ -80,6 +80,21 @@ namespace HAL_JSON {
         return false;
     }
 
+    void Manager::CleanUp() {
+        printf("\n&&&&&&&&&&&&&&&&&&&&&&&& CLEANUP OF LOADED DEVICES &&&&&&&&&&&&&&&&&&&&&&\n");
+        // cleanup of prev device list if existent
+        if (devices != nullptr) {
+            for (int i=0;i<HAL_JSON::Manager::deviceCount;i++) {
+                if (devices[i] != nullptr) {
+                    delete devices[i];
+                    devices[i] = nullptr;
+                }
+            }
+            delete[] devices;
+            devices = nullptr;
+        }
+    }
+
     bool Manager::ParseJSON(const JsonArray &jsonArray) {
         //Serial.println("PArse json thianasoidnoasidnasoidnsaiodnsaodinasdoiandoisandiosndoiasnd");
         uint32_t deviceCount = 0;
@@ -102,18 +117,8 @@ namespace HAL_JSON {
             if (valid == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION; // could either be continue; or return false depending if strict mode is on/off
             deviceCount++;
         }
-
-        // cleanup of prev device list if existent
-        if (devices != nullptr) {
-            for (int i=0;i<HAL_JSON::Manager::deviceCount;i++) {
-                if (devices[i] != nullptr) {
-                    delete devices[i];
-                    devices[i] = nullptr;
-                }
-            }
-            delete[] devices;
-            devices = nullptr;
-        }
+        CleanUp();
+        
         HAL_JSON::Manager::deviceCount = deviceCount;
         if (deviceCount == 0) {
             GlobalLogger.Error(F("The loaded JSON cfg does not contain any valid devices!\n" 

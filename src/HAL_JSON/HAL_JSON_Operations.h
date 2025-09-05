@@ -38,29 +38,19 @@ namespace HAL_JSON {
         /** script engine specific error */
         StackOverflow = 21,
         /** script engine specific error */
-        ResultGetFail = 22
+        ResultGetFail = 22,
+        /** script engine specific error */
+        HandlerWasNullPtr = 23,
+        /** script engine specific error, 
+         * this should only be fired from 
+         * within a handler function 
+         * if it's required to be set */
+        ContextWasNullPtr = 24,
 
-
+        NotSet = 99,
     };
-    inline const char* HALOperationResultToString(HALOperationResult result) {
-        switch (result) {
-            case HALOperationResult::Success: return "Success";
-            case HALOperationResult::DeviceNotFound: return "DeviceNotFound";
-            case HALOperationResult::UnsupportedOperation: return "UnsupportedOperation";
-            case HALOperationResult::UnsupportedCommand: return "UnsupportedCommand";
-            case HALOperationResult::ExecutionFailed: return "ExecutionFailed";
-            case HALOperationResult::IfConditionTrue: return "IfConditionTrue";
-            case HALOperationResult::IfConditionFalse: return "IfConditionFalse";
-            case HALOperationResult::StackUnderflow: return "StackUnderflow";
-            case HALOperationResult::DivideByZero: return "DivideByZero";
-            case HALOperationResult::StackOverflow: return "StackOverflow";
-            case HALOperationResult::ResultGetFail: return "ResultGetFail";
-            
-            default:
-                printf("unknown HALOperationResult: %d\n", (int)result);
-                return "Unknown";
-        }
-    }
+    const char* HALOperationResultToString(HALOperationResult result);
+
     struct HALReadValueByCmd {
         HALValue& out_value;
         //const std::string& cmd;

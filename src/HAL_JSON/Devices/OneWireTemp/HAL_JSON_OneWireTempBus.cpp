@@ -73,14 +73,17 @@ namespace HAL_JSON {
 
     OneWireTempBus::~OneWireTempBus() {
         if (devices != nullptr) {
-            for (int i=0;i<deviceCount;i++)
+            for (int i=0;i<deviceCount;i++) {
                 delete devices[i];
+                devices[i] = nullptr;
+            }
+            delete[] devices;
+            devices = nullptr;
         }
         delete dTemp;
         delete oneWire;
-        delete[] devices;
-        devices = nullptr;
-        pinMode(pin, INPUT); // set to default input
+        
+        pinMode(pin, INPUT); // "free" the pin
     }
 
     void OneWireTempBus::requestTemperatures()

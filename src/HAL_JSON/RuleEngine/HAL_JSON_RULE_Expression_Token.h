@@ -70,5 +70,7 @@ namespace HAL_JSON {
             ~ExpressionTokens();
         };
         std::string PrintExpressionTokens(ExpressionTokens& _tokens, int start = 0, int end = -1); // -1 mean defaults to _tokens.count
+        std::string PrintExpressionTokensOneRow(ExpressionTokens& _tokens, int start = 0, int end = -1);
+
     }
 }

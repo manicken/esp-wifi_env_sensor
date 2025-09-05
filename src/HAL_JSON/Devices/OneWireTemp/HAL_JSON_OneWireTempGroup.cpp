@@ -71,11 +71,13 @@ namespace HAL_JSON {
     }
     OneWireTempGroup::~OneWireTempGroup() {
         if (busses != nullptr) {
-            for (int i=0;i<busCount;i++)
+            for (int i=0;i<busCount;i++) {
                 delete busses[i];
+                busses[i] = nullptr;
+            }
+            delete[] busses;
+            busses = nullptr;
         }
-        delete[] busses;
-        busses = nullptr;
     }
 
     Device* OneWireTempGroup::findDevice(UIDPath& path) {

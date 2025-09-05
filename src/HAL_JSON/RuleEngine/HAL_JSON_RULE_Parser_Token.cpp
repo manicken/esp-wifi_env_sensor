@@ -13,7 +13,7 @@ namespace HAL_JSON {
 
         TokenType GetFundamentalTokenType(const char* str) {
         #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
-            std::cout << "GetFundamentalTokenType: >>>" << str << "<<<\n";
+            //std::cout << "GetFundamentalTokenType: >>>" << str << "<<<\n";
         #endif
             if (StrEqualsIC(str, "if")) return TokenType::If;
             else if (StrEqualsIC(str, "endif")) return TokenType::EndIf;
@@ -106,6 +106,38 @@ namespace HAL_JSON {
             return false;
         }
 
+        //    ████████  ██████  ██   ██ ███████ ███    ██ ███████ 
+        //       ██    ██    ██ ██  ██  ██      ████   ██ ██      
+        //       ██    ██    ██ █████   █████   ██ ██  ██ ███████ 
+        //       ██    ██    ██ ██  ██  ██      ██  ██ ██      ██ 
+        //       ██     ██████  ██   ██ ███████ ██   ████ ███████ 
+
+        Token& Tokens::GetNextAndConsume() {
+            if (currIndex >= count) {
+                printf("\n !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! token GetNextAndConsume() EXTREME ERROR out of bounds\n");
+                static Token EmptyToken;
+                return EmptyToken;
+            }
+            return items[currIndex++];
+        }
+
+        Token& Tokens::Current() {
+            if (currIndex >= count) {
+                printf("\n !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! token Current() EXTREME ERROR out of bounds\n");
+                static Token EmptyToken;
+                return EmptyToken;
+            }
+            return items[currIndex];
+        }
+        const Token& Tokens::Current() const {
+            if (currIndex >= count) {
+                printf("\n !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! token Current() const EXTREME ERROR out of bounds\n");
+                static Token EmptyToken;
+                return EmptyToken;
+            }
+            return items[currIndex];
+        }
+
         bool Tokens::SkipIgnores() {
             while (currIndex < count && Current().type == TokenType::Ignore) {
                 ReportTokenInfo(Current(), "--------- skipping token:");
@@ -139,14 +171,38 @@ namespace HAL_JSON {
         }
         std::string Tokens::SliceToString() {
             std::string str;
-            //str += "firstTokenStartOffset:"; str += (firstTokenStartOffset?"true ":"false ");
-            for (int i=currIndex;i<currentEndIndex;i++) {
+
+            if (!items) return str;
+
+            // clamp indices to valid range
+            int start = currIndex;
+            if (start < 0) start = 0;
+            if (start >= count) return str;
+
+            int end = currentEndIndex;
+            if (end < start) return str;
+            if (end > count) end = count;
+
+            for (int i = start; i < end; ++i) {
                 ZeroCopyString zcStrCopy = items[i];
-                if (i==0 && firstTokenStartOffset != nullptr) zcStrCopy.start = firstTokenStartOffset;
-                str += zcStrCopy.ToString();
+
+                // the FIRST token *in this slice* may have a custom start offset
+                if (i == start && firstTokenStartOffset != nullptr) {
+                    // only adjust if pointer is inside token range
+                    if (zcStrCopy.start <= firstTokenStartOffset && firstTokenStartOffset <= zcStrCopy.end) {
+                        zcStrCopy.start = firstTokenStartOffset;
+                    }
+                }
+
+                // ToString already guards invalid start/end
+                std::string piece = zcStrCopy.ToString();
+                if (!piece.empty()) {
+                    str += piece;
+                }
             }
             return str;
         }
+
 
         void ReportTokenInfo(const Token& t, const char* msg, const char* param) {
             std::string message = " (line " + std::to_string(t.line) + ", col " + std::to_string(t.column) + "): " + msg;

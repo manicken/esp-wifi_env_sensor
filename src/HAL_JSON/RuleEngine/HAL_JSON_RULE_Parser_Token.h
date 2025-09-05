@@ -112,6 +112,7 @@ namespace HAL_JSON {
             int count;
             /** root blocks count i.e. all on/if that is at root level only */
             int rootBlockCount;
+            /** End position (exclusive). Valid range is [currIndex, currentEndIndex). */
             int currentEndIndex;
             /** 
              * Current token index during script parsing/loading.
@@ -124,21 +125,15 @@ namespace HAL_JSON {
             Tokens(int count);
             ~Tokens();
 
-            // Inline accessor
-            inline Token& Current() {
-                // Optional: assert to catch out-of-bounds in debug builds
-                //assert(currIndex < count);
-                //printf("???????????????????????????? current token get: %s\n", items[currIndex].ToString().c_str());
-                return items[currIndex];
-            }
-
+            
+            Token& Current();
+            const Token& Current() const;
+            Token& GetNextAndConsume();
+            
             bool SkipIgnores();
 
             // Optional: const version
-            inline const Token& Current() const {
-                //assert(currIndex < count);
-                return items[currIndex];
-            }
+            
 
             Tokens(Tokens&) = delete;          // no copy constructor
             Tokens& operator=(const Tokens&) = delete; // no copy assignment

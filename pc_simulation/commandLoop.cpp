@@ -141,6 +141,15 @@ void parseCommand(const char* cmd, bool oneShot) {
 
         std::cout << "Parse time: " << duration.count() << " ms\n";
     }
+    else if (zcCmdRoot == "ldcfg") {
+        auto start = std::chrono::high_resolution_clock::now();
+        HAL_JSON::Manager::setup();
+        
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+
+        std::cout << "Parse time: " << duration.count() << " ms\n";
+    }
     else {
         std::cout << "Unknown command: " << cmd << "\n";
     }

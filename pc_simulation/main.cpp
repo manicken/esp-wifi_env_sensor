@@ -41,6 +41,7 @@
         if (argc > 1) {
             // one shot tests
             parseCommand(argv[1], true); // true mean one short test
+            HAL_JSON::Manager::CleanUp();
             return 0;
         }
         
@@ -54,11 +55,12 @@
         std::cout << "\n****** Starting commandLoop thread\n";
         std::thread cmdThread(commandLoop); // start command input thread from commandLoop that is in commandLoop.h
         while (running) { // running is in commandLoop.h
-            HAL_JSON::Manager::loop();
+            //HAL_JSON::Manager::loop();
             HAL_JSON::Rules::ScriptsBlock::Exec(); // runs the scriptengine
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         cmdThread.join(); // wait for command thread to finish
-        std::cout << "Exited cleanly.\n" << std::flush;;
+        std::cout << "Exited cleanly.\n" << std::flush;
+        HAL_JSON::Manager::CleanUp();
         return 0;
     }

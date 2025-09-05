@@ -99,7 +99,9 @@ namespace HAL_JSON {
     }
 
     OneWireTempDeviceAtRoot::~OneWireTempDeviceAtRoot() {
-        
+        delete dTemp;
+        delete oneWire;
+        pinMode(pin, INPUT); // "free" the pin
     }
 
     void OneWireTempDeviceAtRoot::requestTemperatures() {

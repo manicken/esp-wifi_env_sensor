@@ -65,23 +65,30 @@ namespace HAL_JSON {
             if (finalOutputCount > finalOutputStackNeededSize) finalOutputStackNeededSize = finalOutputCount;
         }
         void Expressions::PrintCalcedStackSizes() {
-            printf("\nrpnOutputStackNeededSize:%d\n", rpnOutputStackNeededSize);
-            printf("opStackSizeNeededSize:%d\n", opStackSizeNeededSize);
+            printf("\nrpnOutputStack NeededSize:%d\n", rpnOutputStackNeededSize);
+            printf("opStackSize NeededSize:%d\n", opStackSizeNeededSize);
             /** development test only */
-            printf("logicRPNNodeStackNeededSize:%d\n\n", finalOutputStackNeededSize);
+            printf("logicRPNNodeStack NeededSize:%d\n\n", finalOutputStackNeededSize);
         }
         void Expressions::InitStacks() {
             printf("\n*************************************************** InitStacks ********************************\n");
+            int extraStackSize = 10;
+            rpnOutputStackNeededSize += extraStackSize;
+            opStackSizeNeededSize += extraStackSize;
+            finalOutputStackNeededSize += extraStackSize;
+
             Expressions::PrintCalcedStackSizes();
             ClearStacks();
-            rpnOutputStack = new ExpressionTokens(rpnOutputStackNeededSize+5);
-            opStack = new ExpressionToken[opStackSizeNeededSize+5];
-            logicRPNNodeStackPool = new LogicRPNNode[finalOutputStackNeededSize+5];
-            logicRPNNodeStack = new LogicRPNNode*[finalOutputStackNeededSize+5];
-            halValueStack.Init(rpnOutputStackNeededSize+5);
+
+            rpnOutputStack = new ExpressionTokens(rpnOutputStackNeededSize);
+            opStack = new ExpressionToken[opStackSizeNeededSize];
+            logicRPNNodeStackPool = new LogicRPNNode[finalOutputStackNeededSize];
+            logicRPNNodeStack = new LogicRPNNode*[finalOutputStackNeededSize];
+            halValueStack.Init(rpnOutputStackNeededSize);
             printf("\n[DONE]\n");
         }
         void Expressions::ClearStacks() {
+            
             delete rpnOutputStack;
             delete[] opStack;
             delete[] logicRPNNodeStack; // delete the ptr array first
@@ -274,7 +281,7 @@ namespace HAL_JSON {
             if (anyError) return false;
 
 
-            int operandIndex = 0;
+            //int operandIndex = 0;
             bool inOperand = false;
             const char* p = nullptr;
             const char* operandStart = nullptr;
@@ -312,7 +319,7 @@ namespace HAL_JSON {
                             operand.line = token.line;
                             operand.column = token.column + (operandStart-effectiveStart);
                             ValidateOperand(operand, anyError);
-                            ++operandIndex;
+                            //operandIndex++;
                             inOperand = false;
                         }
                         ++p; // Skip second char of double op
@@ -323,7 +330,7 @@ namespace HAL_JSON {
                             operand.line = token.line;
                             operand.column = token.column + (operandStart-effectiveStart);
                             ValidateOperand(operand, anyError);
-                            ++operandIndex;
+                            //operandIndex++;
                             inOperand = false;
                         }
                     } else if (!inOperand) {
@@ -337,7 +344,7 @@ namespace HAL_JSON {
                     operand.line = token.line;
                     operand.column = token.column + (operandStart-effectiveStart);
                     ValidateOperand(operand, anyError);
-                    ++operandIndex;
+                    //operandIndex++;
                     inOperand = false;
                 }
             }
@@ -668,7 +675,8 @@ namespace HAL_JSON {
         }
 
         ExpressionTokens* Expressions::GenerateRPNTokens(Tokens& tokens) {
-            ReportInfo("\n***** GenerateRPNTokens: " + tokens.SliceToString() + "\n");
+            //std::string msg = "\n***** GenerateRPNTokens: "; msg+= tokens.SliceToString(); msg+= "\n";
+            //ReportInfo(msg);
             // development test only
             int maxOperatorUsage = 0;
             // alias
@@ -677,14 +685,20 @@ namespace HAL_JSON {
             int opStackIndex = 0;
             int outTokensIndex = 0;
             
-            const int endIndex = tokens.currentEndIndex;
             const int startindex = tokens.currIndex;
-
+            const int endIndex = tokens.currentEndIndex;
+            if (endIndex > tokens.count) {
+                printf("\n !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MASTER ERROR: endIndex >= tokens.count @ GenerateRPNTokens\n");
+                return nullptr;
+            }
+            printf("\nGenerateRPNTokens - startindex:%d, endIndex:%d\n\n",startindex,endIndex);
+            
             // consume current tokens here so we don't forget and to clearly mark what is happend
             tokens.currIndex = endIndex; 
 
             for (int cti = startindex; cti < endIndex; cti++) {
                 const Token& token = tokens.items[cti];
+                if (token.type == TokenType::Ignore) continue;
                 
                 const char* tokenStart = nullptr;
                 if (cti == startindex && tokens.firstTokenStartOffset != nullptr) {
@@ -885,7 +899,7 @@ namespace HAL_JSON {
 
             ReportInfo("BuildLogicTree - used " + std::to_string(stackMaxUsed) + " of " + std::to_string(finalOutputStackNeededSize) + "\n");
             if (stackIndex != 1) {
-                std::string msg = PrintExpressionTokens(*tokens, 0, tokens->currentCount);
+                std::string msg = PrintExpressionTokensOneRow(*tokens, 0, tokens->currentCount);
                 throw std::runtime_error("LogicRPN - unbalanced tree: " + std::to_string(stackIndex) + msg);
             }
                 
