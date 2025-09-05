@@ -18,8 +18,20 @@ endif
 
 BUILD_DIR = build
 
-#./cpp-httplib \
+#
 # Header include path for ArduinoJson
+ifeq ($(OS),Windows_NT)
+INCLUDE_DIRS = \
+	./cpp-httplib \
+	../.pio/libdeps/esp32dev/ArduinoJson/src \
+	./stubs/Arduino \
+	./stubs/ESPAsyncWebServer \
+	./stubs/Ticker \
+	./stubs/LittleFS \
+	./stubs/DHTesp \
+	./stubs/OneWire \
+	./stubs/DallasTemperature
+else
 INCLUDE_DIRS = \
 	../.pio/libdeps/esp32dev/ArduinoJson/src \
 	./stubs/Arduino \
@@ -29,7 +41,7 @@ INCLUDE_DIRS = \
 	./stubs/DHTesp \
 	./stubs/OneWire \
 	./stubs/DallasTemperature
-
+endif
 INCLUDES = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
 #	
 # Source files
@@ -67,15 +79,17 @@ SRC := $(filter-out $(EXCLUDE_SRC), $(SRC))
 
 ifeq ($(OS),Windows_NT)
     SOCKETS = -lws2_32
+	EXECFILE = test.exe
 else
     SOCKETS =
+	EXECFILE = test
 endif
 
 # Convert each .cpp into a .o file in the build directory
 OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)
 
 # Main executable
-test.exe: $(OBJ)
+$(EXECFILE): $(OBJ)
 	$(CXX) $(OBJ) $(INCLUDES) $(LDFLAGS) $(SOCKETS) -o $@
 
 # Rule to compile each .cpp to .o in the build directory
@@ -86,4 +100,4 @@ $(BUILD_DIR)/%.o: %.cpp
 # Clean target
 .PHONY: clean
 clean:
-	rm -f $(OBJ) test.exe
+	rm -f $(OBJ) $(EXECFILE)
