@@ -200,9 +200,11 @@ namespace HAL_JSON {
         }
 
         void ScriptsBlock::Exec() {
+            printf("\n****** SCRIPT LOOP START *******\n");
             for (int i=0;i<scriptBlocksCount;i++) {
                 scriptBlocks[i].Exec();
             }
+            printf("\n****** SCRIPT LOOP END *******\n");
         }
 
     }

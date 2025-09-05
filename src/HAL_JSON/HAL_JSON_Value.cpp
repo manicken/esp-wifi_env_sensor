@@ -10,6 +10,7 @@ namespace HAL_JSON {
             uval = other.uval;
         }
     }*/
+    HALValue::HALValue(int32_t v) : type(Type::INT), ival(v) {}
 
     HALValue::HALValue(uint32_t v) : type(Type::UINT), uval(v) {}
 
@@ -32,13 +33,15 @@ namespace HAL_JSON {
     }
 
     int32_t HALValue::asInt() const {
-        return static_cast<int32_t>(uval);
+        return ival;
     }
 
     float HALValue::asFloat() const {
         if (type == Type::FLOAT)
             return fval;
-        else if (type == Type::INT || type == Type::UINT)
+        else if (type == Type::INT)
+            return static_cast<float>(ival);
+        else if (type == Type::UINT)
             return static_cast<float>(uval);
         else
             return 0.0f;
@@ -132,28 +135,40 @@ namespace HAL_JSON {
 
     HALValue HALValue::operator+(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
-            return fval + other.fval;
+            return asFloat() + other.asFloat();
+        } else if (type == Type::INT || other.type == Type::INT) {
+            return ival + other.ival;
         } else {
             return uval + other.uval;
         }
     }
     HALValue HALValue::operator-(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
-            return fval - other.fval;
+            if (type == Type::FLOAT)
+            return asFloat() - other.asFloat();
+        } else if (type == Type::INT || other.type == Type::INT) {
+            return ival - other.ival;
         } else {
-            return uval - other.uval;
+            if (other.uval <= uval)
+                return uval - other.uval;
+            else
+                return ival - other.ival;
         }
     }
     HALValue HALValue::operator*(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
-            return fval * other.fval;
+            return asFloat() * other.asFloat();
+        } else if (type == Type::INT || other.type == Type::INT) {
+            return ival * other.ival;
         } else {
             return uval * other.uval;
         }
     }
     HALValue HALValue::operator/(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
-            return fval / other.fval;
+            return asFloat() / other.asFloat();
+        } else if (type == Type::INT || other.type == Type::INT) {
+            return ival / other.ival;
         } else {
             return uval / other.uval;
         }

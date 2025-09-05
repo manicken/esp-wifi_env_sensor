@@ -329,7 +329,8 @@ namespace HAL_JSON {
                 break;
             } else if (ch == '.') {
                 // Allways Stop at decimal separator
-                break;
+                return false;
+                //break;
             } else if (ch == ' ') {
                 // Allow spaces inside? optional.
                 // Skip or break depending on policy, comment the following if should be allowed

@@ -86,7 +86,12 @@ namespace HAL_JSON {
             }
             HALValue val;
             halValueStack.GetFinalResult(val);
-            printf(" result: uint:(%u), int(%d), float(%.6f)\n", val.asUInt(), val.asInt(), val.asFloat());
+            if (val.getType() == HALValue::Type::FLOAT)
+                printf(" result: float(%.6f)\n", val.asFloat());
+            else if (val.getType() == HALValue::Type::INT)
+                printf(" result: int(%d)\n", val.asInt());
+            else if (val.getType() == HALValue::Type::UINT)
+                printf(" result: uint:(%u)\n", val.asUInt());
             return HALOperationResult::Success;
         }
 
@@ -118,6 +123,7 @@ namespace HAL_JSON {
 #ifdef HAL_JSON_RULES_STRUCTURES_RPN_STACK_SAFETY_CHECKS
             if (halValueStack.sp >= halValueStack.size){ return HALOperationResult::StackOverflow; }   // overflow check before push
 #endif
+            //printf("\nsetting constant value:%.6f\n", item->asFloat());
             halValueStack.items[halValueStack.sp++] = *item;
             return HALOperationResult::Success;
         }

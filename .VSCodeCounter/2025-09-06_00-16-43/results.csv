@@ -1,0 +1,10 @@
+"filename", "language", "C++", "comment", "blank", "total"
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\FAN.h", "C++", 78, 5, 14, 97
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\HearbeatLed.h", "C++", 100, 0, 7, 107
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\REGO600.cpp", "C++", 307, 21, 41, 369
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\REGO600.h", "C++", 118, 19, 32, 169
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\RF433.cpp", "C++", 335, 32, 42, 409
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\RF433.h", "C++", 59, 28, 21, 108
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\UART2websocket.cpp", "C++", 37, 2, 8, 47
+"g:\_git\__ESP\esp-wifi_env_sensor\src\Drivers\UART2websocket.h", "C++", 25, 0, 8, 33
+"Total", "-", 1059, 107, 173, 1339

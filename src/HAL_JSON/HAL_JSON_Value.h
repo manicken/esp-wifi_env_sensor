@@ -16,6 +16,7 @@ namespace HAL_JSON {
         union {
             uint32_t uval;
             float fval;
+            int32_t ival;
             //char* str; // future use?? // check chatgpt conversation "Function Parameter Passing"
             //uint8_t* arr; // future use (here the first byte defines how many lenght def bytes that comes after, and then that lenght def bytes def. how many actual data bytes come after that)
         };
@@ -25,6 +26,7 @@ namespace HAL_JSON {
         HALValue();
         //HALValue(const HALValue& other);  // future use?? only used for string
         HALValue(uint32_t v);
+        HALValue(int32_t v);
         HALValue(float v);
         HALValue(bool v);
         // HALValue(char* str); // future use??

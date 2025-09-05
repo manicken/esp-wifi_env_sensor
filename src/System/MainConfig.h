@@ -24,7 +24,7 @@
 #endif
 
 #define MAIN_CONFIG_FILES_PATH                  F("/")
-#define MAIN_CONFIG_CONFIG_JSON_FILE            F("/cfg.json")
+#define MAIN_CONFIG_CONFIG_JSON_FILE            "/cfg.json"
 #define MAIN_CONFIG_URL_RELOAD_JSON             F("/MainConfig/restart")
 
 namespace MainConfig {

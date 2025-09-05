@@ -57,7 +57,7 @@ namespace Scheduler
 
         if (LittleFS.exists(filePath) == false) { DEBUG_UART.print(F("LJ FNF: ")); DEBUG_UART.println(filePath); return false; }
         
-        int fileSize = LittleFS_ext::getFileSize(filePath);
+        int fileSize = LittleFS_ext::getFileSize(filePath.c_str());
         if (fileSize == -1) {DEBUG_UART.println(F("LJ FEGFS -1")); return false; }
         
         DEBUG_UART.print(F("file size: ")); DEBUG_UART.println(fileSize);
@@ -66,7 +66,7 @@ namespace Scheduler
         char *buff = new char[fileSize+2];
         if (buff == nullptr) { DEBUG_UART.println(F("LJ mem err")); return false; }
 
-        if (LittleFS_ext::load_from_file(filePath, buff) != LittleFS_ext::FileResult::Success) {
+        if (LittleFS_ext::load_from_file(filePath.c_str(), buff) != LittleFS_ext::FileResult::Success) {
             DEBUG_UART.println(F("LJ LFSe LFFE")); // LoadJson LittleFS_ext::load_from_file error
             //free(buff);
             delete[] buff;

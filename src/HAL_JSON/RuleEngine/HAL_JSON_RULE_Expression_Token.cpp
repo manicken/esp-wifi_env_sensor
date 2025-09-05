@@ -124,13 +124,13 @@ namespace HAL_JSON {
                 ExpressionToken& tok = tokens[i];
                 
                 std::string msgLine;/* = "Token[" + std::to_string(i) + "]  ";*/
-                if (tok.type != ExpTokenType::ConstValOperand && tok.type != ExpTokenType::VarOperand) {
+                /*if (tok.type != ExpTokenType::ConstValOperand && tok.type != ExpTokenType::VarOperand) {
                     msgLine += "-";
                     msgLine += ExpTokenTypeToString(tok.type);
                     msgLine += "-";
-                } else {
+                } else {*/
                     msgLine += tok.ToString();
-                }
+                //}
                 msg += msgLine + " ";
             }
             return "[ " + msg + " ]";

@@ -32,7 +32,7 @@ namespace ThingSpeak
 
     #define TS_ACTIVITY_LED_PIN            5
     #define TS_FILES_PATH                  F("/thingspeak")
-    #define TS_CONFIG_JSON_FILE            F("/thingspeak/cfg.json")
+    #define TS_CONFIG_JSON_FILE            "/thingspeak/cfg.json"
     #define TS_CONFIG_JSON_FILE_URL_RELOAD F("/thingspeak/refresh")
     #define TS_URL_GET_DATA                F("/thingspeak/getDataUrl")
     //#define TS_JSON_FIELD_API_KEY         F("api_key")
