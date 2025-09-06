@@ -13,10 +13,8 @@
 #include "Devices/REGO600/HAL_JSON_REGO600.h"
 
 namespace HAL_JSON {
-    const char* test = "hello";
-    //char* test2 = "world"; // forbidden will generate warning
 
-    const DeviceTypeDef DeviceRegistry[] = {
+        const DeviceTypeDef DeviceRegistry[] = {
         {UseRootUID::Mandatory, "VAR", RuleVariable::Create, RuleVariable::VerifyJSON},
         
 

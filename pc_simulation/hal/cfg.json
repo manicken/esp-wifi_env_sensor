@@ -1,4 +1,6 @@
 [
+  {"uid":"true","val":1,"type":"CONSTVAR"},
+  {"uid":"false","val":0,"type":"CONSTVAR"},
   {"uid":"var1","type":"VAR"},
   {"uid":"var2","type":"VAR"},
   {"uid":"var3","type":"VAR"},

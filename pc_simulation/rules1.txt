@@ -19,8 +19,8 @@ if ((hum#humidity>= 50) and (var1 ==0)) then // count 2 using a variable to crea
     //BIRELSET=0 // =0 mean that the pre programmed pulse lenght will be used
     var0=0
 
-elseif var1 then
-	var1 = 0
+elseif var1 == true then
+	var1 = false
     
 elseif ((hum < 40) && (var1+(2*(0-1)) > 1)) then // count 11
 

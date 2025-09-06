@@ -5,7 +5,7 @@ namespace HAL_JSON {
     
     RuleVariable::RuleVariable(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One,type) {
         uid = encodeUID(GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_UID));
-        value = 0;
+        value = GetAsUINT32(jsonObj, "val",0);
     }
 
     bool RuleVariable::VerifyJSON(const JsonVariant &jsonObj) {
