@@ -119,8 +119,8 @@ namespace HAL_JSON {
             return (it != precedence.end()) ? it->second : -1;
         }
 
-        const char* Expressions::SingleOperatorList = HAL_JSON_RULES_EXPRESSIONS_SINGLE_OPERATOR_LIST;
-        const char* Expressions::DoubleOperatorList = HAL_JSON_RULES_EXPRESSIONS_DOUBLE_OPERATOR_LIST;
+        const char* Expressions::SingleOperatorList = "+-*/%|&^><";
+        const char* Expressions::DoubleOperatorList = "&&" "||" "==" "!=" ">=" "<=" "<<" ">>";
 
         bool Expressions::IsSingleOperator(char c) {
             const char* op = SingleOperatorList;
@@ -183,7 +183,7 @@ namespace HAL_JSON {
                 }
                 const char* tokenEnd = token.end;
                 for (const char* p = effectiveStart; p < tokenEnd; p++) {
-                    if (IsDoubleOperator(p) && exprContext == ExpressionContext::IfCondition) {
+                    if (IsDoubleOperator(p)/* && exprContext == ExpressionContext::IfCondition*/) {
                         p++;
                         operatorCount++;
                         inOperand = false;
@@ -249,7 +249,7 @@ namespace HAL_JSON {
             else
                 firstTokenStart = tokens.items[0].start;
 
-            if(IsDoubleOperator(firstTokenStart) && exprContext == ExpressionContext::IfCondition) { // this only checks the two first characters in the Expression
+            if(IsDoubleOperator(firstTokenStart)/* && exprContext == ExpressionContext::IfCondition*/) { // this only checks the two first characters in the Expression
                 ReportError("expr. cannot start with a operator");
                 anyError = true;
             }
@@ -312,7 +312,7 @@ namespace HAL_JSON {
 
                 const char* tokenEnd = token.end;
                 for (p = effectiveStart ; p < tokenEnd; ++p) {
-                    if (IsDoubleOperator(p)&& exprContext == ExpressionContext::IfCondition) {
+                    if (IsDoubleOperator(p) /*&& exprContext == ExpressionContext::IfCondition*/) {
                         if (inOperand) {
                             operandEnd = p;
                             Token operand(operandStart, operandEnd);

@@ -27,11 +27,11 @@ namespace HAL_JSON {
             
            // printf("see if whe come her\n");
             for (int i=0;i<_itemsCount;i++) {
-                if (tokens.SkipIgnores() == false) { printf("reached end\n"); break; }
+                if (tokens.SkipIgnoresAndEndIf() == false) {
+                    printf("SERIOUS ERROR - reached end\n");
+                    break;
+                }
                 
-                while (tokens.Current().type == TokenType::EndIf) // skips any endif
-                    tokens.currIndex++;
-
                 items[i].Set(tokens);
             }
         }

@@ -89,11 +89,10 @@ namespace HAL_JSON {
             items = new StatementBlock[itemsCount];
 
             for (int i=0;i<itemsCount;i++) {
-                if (tokens.SkipIgnores() == false) break;
- 
-                while (tokens.Current().type == TokenType::EndIf) // skips any endif
-                    tokens.currIndex++;
-
+                if (tokens.SkipIgnoresAndEndIf() == false) {
+                    printf("SERIOUS ERROR - reached end\n");
+                    break;
+                }
                 items[i].Set(tokens); // each call should consume all tokens
             }
         }
@@ -107,11 +106,10 @@ namespace HAL_JSON {
             items = new StatementBlock[itemsCount];
 
             for (int i=0;i<itemsCount;i++) {
-                if (tokens.SkipIgnores() == false) break;
-                
-                while (tokens.Current().type == TokenType::EndIf) // skips any endif
-                    tokens.currIndex++;
-
+                if (tokens.SkipIgnoresAndEndIf() == false) {
+                    printf("SERIOUS ERROR - reached end\n");
+                    break;
+                }
                 items[i].Set(tokens);
             }
         }

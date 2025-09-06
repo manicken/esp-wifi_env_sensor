@@ -80,12 +80,7 @@ namespace HAL_JSON {
              * TokenType::Action
              */
             void MarkTokenGroup(int size, TokenType constructType);
-            /** 
-             * return true if this token is a subtoken of another token.
-             * Used to skip it during post-processing checks.
-             * basically (merged && subTokenCount == 0)
-             */
-            bool MergedOrIgnore() const;
+
             bool AnyType(const TokenType* candidates);
             ~Token();
         };
@@ -130,7 +125,7 @@ namespace HAL_JSON {
             const Token& Current() const;
             Token& GetNextAndConsume();
             
-            bool SkipIgnores();
+            bool SkipIgnoresAndEndIf();
 
             // Optional: const version
             

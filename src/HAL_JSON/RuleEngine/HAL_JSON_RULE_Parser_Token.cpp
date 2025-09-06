@@ -94,10 +94,6 @@ namespace HAL_JSON {
             }
         }
 
-        bool Token::MergedOrIgnore() const {
-            return ((type == TokenType::Merged || type == TokenType::Ignore) && itemsInBlock < 2);
-        }
-
         bool Token::AnyType(const TokenType* candidates) {
             while(*candidates != TokenType::NotSet) {
                 if (type == *candidates) return true;
@@ -138,9 +134,12 @@ namespace HAL_JSON {
             return items[currIndex];
         }
 
-        bool Tokens::SkipIgnores() {
-            while (currIndex < count && Current().type == TokenType::Ignore) {
-                ReportTokenInfo(Current(), "--------- skipping token:");
+        bool Tokens::SkipIgnoresAndEndIf() {
+            while (currIndex < count) {
+                Token& token = Current();
+                if (token.type != TokenType::Ignore && token.type != TokenType::EndIf)
+                    break;
+                ReportTokenInfo(token, "--------- skipping token:");
                 currIndex++;
             }
 
