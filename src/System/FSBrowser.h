@@ -1,3 +1,5 @@
+#define FSBROWSER_SYNCED_WS_H_
+
 /*
   FSBrowser - A web-based FileSystem Browser for ESP8266 filesystems
 

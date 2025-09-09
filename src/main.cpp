@@ -16,10 +16,11 @@ unsigned long auto_last_change = 0;
 unsigned long last_wifi_check_time = 0;
 
 #ifdef ESP8266
-ESP8266WebServer webserver(HTTP_PORT);
+//ESP8266WebServer webserver(HTTP_PORT);
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin()
 #elif ESP32
-fs_WebServer webserver(HTTP_PORT);
+//fs_WebServer webserver(HTTP_PORT);
+AsyncWebServer webserver(HTTP_PORT);
 #define AUTOFORMAT_ON_FAIL true
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "/LittleFS", 10, "spiffs")
 #endif
@@ -262,7 +263,7 @@ void failsafeLoop()
     {
         ArduinoOTA.handle();
         HeartbeatLed::task();
-        webserver.handleClient();
+        //webserver.handleClient();
     }
 }
 /**************************************************************************/
@@ -282,11 +283,12 @@ void setup() {
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
     DEBUG_UART.println(Info::getResetReasonStr());
+
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true; // this call is needed before all access to internal Flash file system
 
-    MainConfig::begin(webserver);
+   // MainConfig::begin(webserver);
 
-#if defined(ESP32)
+#if defined(ESP32) && defined(FSBROWSER_SYNCED_WS_H_)
     if (InitSD_MMC()) FSBrowser::fsOK = true;
 #endif
 #if defined(USE_DISPLAY)
@@ -295,50 +297,43 @@ void setup() {
     WiFi.setSleep(false);
     connect_to_wifi();
     OTA::setup();
-    //tcp2uart.begin();
-    
-    Scheduler::setup(webserver, nameToFunctionList, sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]));
+
+    //Scheduler::setup(webserver, nameToFunctionList, sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]));
 
     Info::startTime = now();
-#if defined(AWS_IOT_H)
-    AWS_IOT::setup(webserver, AWS_IOT_messageReceived);
-#endif
-    initWebServerHandlers();
-    FSBrowser::setup(webserver);
-#if defined(DEVICE_MANAGER_H)
-    DeviceManager::setup(webserver);
-#endif
-    ThingSpeak::setup(webserver);
-    Info::setup(webserver);
-    webserver.begin();
 
-#if defined(NORD_POOL_FETCHER_H)
-    std::string ret = NPF::searchPatternInhtmlFromUrl();
-    DEBUG_UART.println(ret.c_str());
+    initWebServerHandlers();
+#ifdef FSBROWSER_SYNCED_WS_H_
+    FSBrowser::setup(webserver);
+#else
+    FSBrowser::setup(webserver);
 #endif
+
+   // ThingSpeak::setup(webserver);
+   // Info::setup(webserver);
+    
+
     HeartbeatLed::setup(webserver);
 #if defined(ESP32)
     Start_MDNS();
 #endif
-    
+    /*
     ws2812fx.init();
     ws2812fx.setBrightness(127);
     ws2812fx.setMode(12);
     ws2812fx.setSpeed(3048);
-    ws2812fx.start();
-    
+    ws2812fx.start();*/
+    /*
 #if defined(ESP32)
     File test = SD_MMC.open("/StartTimes.log", "a", true);
     test.println(Time_ext::GetTimeAsString(now()).c_str());
     test.close();
 #endif
-    //uart2ws.setup();
-#if defined(HEATPUMP)
-    rego600.setup();
-#endif
+*/
 #ifdef HAL_JSON_H_
     HAL_JSON::begin();
 #endif
+    webserver.begin();
     // make sure that the following are allways at the end of this function
     DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
@@ -348,44 +343,14 @@ void loop() {
 #ifdef HAL_JSON_H_
     HAL_JSON::loop();
 #endif
-    //ws2812fx.service();
-    //tcp2uart.BridgeMainTask();
+
     ArduinoOTA.handle();
-    webserver.handleClient();
-    Scheduler::HandleAlarms();
-    //currTime = millis();
+    //webserver.handleClient();
+    //Scheduler::HandleAlarms();
     HeartbeatLed::task();
-    //uart2ws.task_loop();
-#if defined(HEATPUMP)
-    rego600.task_loop();
-#endif
 
 #if defined(ESP8266)
     MDNS.update(); // this is only required on esp8266
-#endif
-#if defined(USE_DISPLAY)
-    if (millis() - deltaTime_displayUpdate >= 1000) {
-        deltaTime_displayUpdate = millis();
-        
-        //temp_dht = dht.getTemperature();
-        //humidity_dht = dht.getHumidity();
-        //sensors.requestTemperatures(); // Send the command to get temperatures
-        
-        //sensors.getTempC("00000000");
-        
-        //temp_ds = sensors.getTempCByIndex(0);
-      
-        display.setCursor(0,0);
-        display.print(temp_dht);
-        display.print("  ");
-        display.print(humidity_dht);
-
-        display.setCursor(0,8);
-        display.print(temp_ds);
-        
-        update_display = 1;
-        
-    }
 #endif
     
     if (WiFi.status() != wl_status_t:: WL_CONNECTED)
@@ -396,47 +361,19 @@ void loop() {
         else DEBUG_UART.println("reconnect fail");
         
         //connect_to_wifi();
-#if defined(AWS_IOT_H)
-        AWS_IOT::setup_and_connect();
     }
-    else if (AWS_IOT::canConnect)
-    {
-        if (AWS_IOT::pubSubClient.connected())
-            AWS_IOT::pubSubClient.loop();
-        else
-            AWS_IOT::setup_and_connect();
-    }
-#else
-    }
-#endif
-#if defined(USE_DISPLAY)
-    if (update_display == 1) {
-        update_display = 0;
-        display.display();
-    }
-#endif
 }
 
 void initWebServerHandlers(void)
 {
+#ifdef FSBROWSER_SYNCED_WS_H_
     webserver.on("/",  []() {
         if (LittleFS.exists(F("/index.html"))) FSBrowser::handleFileRead(F("/LittleFS/index.html"));
         else if (LittleFS.exists(F("/index.htm"))) FSBrowser::handleFileRead(F("/LittleFS/index.htm"));
         else webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
     });
-#if defined (AWS_IOT_H)
-    webserver.on(MAIN_URLS_JSON_CMD, HTTP_POST, [](){ webserver.send(200); }, [](){
-        HTTPUpload& upload = webserver.upload();
-        if (upload.status == UPLOAD_FILE_START) {
-            
-        } else if (upload.status == UPLOAD_FILE_WRITE) {
-            
-            
-        } else if (upload.status == UPLOAD_FILE_END) {
-            //AWS_IOT_messageReceived(nullptr, upload.buf, upload.currentSize);
-        }
-    });
 #endif
+/*
     webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, []() {
         
         if (LittleFS.format()) {
@@ -523,11 +460,12 @@ void initWebServerHandlers(void)
             fileToCheck.close();
             uri = "/LittleFS" + uri; // default to LittleFS
         }
-
+#ifdef FSBROWSER_SYNCED_WS_H_
         if (!FSBrowser::handleFileRead(uri))                  // send it if it exists
             webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
+#endif
     });
-    
+    */
 }
 #if defined(USE_DISPLAY)
 void init_display(void)
@@ -584,45 +522,4 @@ void connect_to_wifi(void)
     display.display();
 #endif
 }
-
-/*
-#include <esp_core_dump.h>
-#include <esp_log.h>
-void print_core_dump() {
-    esp_err_t err;
-    size_t core_dump_size = 0;
-
-    // Get core dump size
-    err = esp_core_dump_image_get(&core_dump_size, NULL);
-    if (err != ESP_OK || core_dump_size == 0) {
-        ESP_LOGE("CORE_DUMP", "Failed to get core dump size or no core dump available.");
-        return;
-    }
-
-    // Allocate buffer to read the core dump
-    uint8_t *core_dump_buffer = (uint8_t *)malloc(core_dump_size);
-    if (!core_dump_buffer) {
-        ESP_LOGE("CORE_DUMP", "Failed to allocate buffer for core dump.");
-        return;
-    }
-
-    // Retrieve core dump
-    err = esp_core_dump_image_get(&core_dump_size, core_dump_buffer);
-    if (err != ESP_OK) {
-        ESP_LOGE("CORE_DUMP", "Failed to retrieve core dump.");
-        free(core_dump_buffer);
-        return;
-    }
-
-    // Print core dump to serial
-    ESP_LOGI("CORE_DUMP", "Core dump size: %d bytes", core_dump_size);
-    for (size_t i = 0; i < core_dump_size; i++) {
-        printf("%02X", core_dump_buffer[i]);
-        if ((i + 1) % 16 == 0) printf("\n");
-    }
-
-    free(core_dump_buffer);
-    printf("\nCore dump printed successfully.\n");
-}
-*/
 

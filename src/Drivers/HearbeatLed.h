@@ -5,9 +5,11 @@
 #define DEBUG_UART Serial1
 #define WEBSERVER_TYPE ESP8266WebServer
 #elif defined(ESP32)
-#include "Support/fs_WebServer.h"
+//#include "Support/fs_WebServer.h"
 #define DEBUG_UART Serial
-#define WEBSERVER_TYPE fs_WebServer
+//#define WEBSERVER_TYPE fs_WebServer
+#include <ESPAsyncWebServer.h>
+#define WEBSERVER_TYPE AsyncWebServer
 #endif
 
 namespace HeartbeatLed
@@ -40,17 +42,19 @@ namespace HeartbeatLed
     unsigned long currentMillis = 0;
     unsigned long currentInterval = 0;
 
-    WEBSERVER_TYPE *webserver = nullptr;
+    //WEBSERVER_TYPE *webserver = nullptr;
+
+
 
     void setup(WEBSERVER_TYPE &srv)
     {
-        webserver = &srv;
-        webserver->on("/HeartbeatLed/set", []() {
+        //webserver = &srv;
+        srv.on("/HeartbeatLed/set", [](AsyncWebServerRequest *request) {
             bool hadAnyArg = false;
             String ret = "";
-            if (webserver->hasArg("on")) {
+            if (request->hasArg("on")) {
                 hadAnyArg = true;
-                String onArg = webserver->arg("on");
+                String onArg = request->arg("on");
                 if (Convert::isInteger(onArg.c_str()) == false)
                     ret += "ERROR: on argument is not a number<br>";
                 else
@@ -60,9 +64,9 @@ namespace HeartbeatLed
                     ret += "On value set to " + onArg + "<br>";
                 }
             }
-            if (webserver->hasArg("off")) {
+            if (request->hasArg("off")) {
                 hadAnyArg = true;
-                String offArg = webserver->arg("off");
+                String offArg = request->arg("off");
                 if (Convert::isInteger(offArg.c_str()) == false)
                     ret += "ERROR: off argument is not a number<br>";
                 else
@@ -75,7 +79,7 @@ namespace HeartbeatLed
             if (hadAnyArg == false) {
                 ret += "Warning: On/Off arguments missing!!!<br>";
             }
-            webserver->send(200, "text/html", ret);
+            request->send(200, "text/html", ret);
         });
         pinMode(HEARTBEATLED_PIN, OUTPUT); // output
         digitalWrite(HEARTBEATLED_PIN, HEARTBEATLED_INACTIVESTATE);

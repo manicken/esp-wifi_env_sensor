@@ -4,19 +4,22 @@
 #if defined(_WIN32) || defined(__linux__)
 #define DEMO_SCRIPT_FILE_PATH "script1.txt"
 #else
-#define DEMO_SCRIPT_FILE_PATH "/script1.txt"
+#define DEMO_SCRIPT_FILE_PATH "/scripts/script1.txt"
 #endif
 namespace HAL_JSON {
     namespace ScriptEngine {
 
         void Exec() {
            // printf("\033[2J\033[H");  // clear screen + move cursor to top-left
-
+#if defined(_WIN32) || defined(__linux__)
             printf("\n****** SCRIPT LOOP START *******\n");
+#endif
             for (int i=0;i<ScriptsBlock::scriptBlocksCount;i++) {
                 ScriptsBlock::scriptBlocks[i].Exec();
             }
+#if defined(_WIN32) || defined(__linux__)
             printf("\n****** SCRIPT LOOP END *******\n");
+#endif
             
         }
         bool ScriptsBlock::running = false;

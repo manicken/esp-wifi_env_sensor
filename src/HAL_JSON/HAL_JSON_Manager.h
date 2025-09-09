@@ -45,7 +45,7 @@ namespace HAL_JSON {
         // init
         /** calls the begin function on all loaded hal devices */
         static void begin();
-        static void setup();
+        static bool setupMgr();
         // JSON I/O
         static bool ParseJSON(const JsonArray &jsonArray);
         static bool ReadJSON(const char* path);

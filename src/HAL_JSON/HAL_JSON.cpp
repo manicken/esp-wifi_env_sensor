@@ -3,8 +3,9 @@
 
 namespace HAL_JSON {
     void begin() {
-        REST::setup();
-        Manager::setup();
+        HAL_JSON::REST::setupRest();
+        if (Manager::setupMgr() == false)
+            return;
         ScriptEngine::ValidateAndLoadAllActiveScripts(); 
     }
 
@@ -13,15 +14,15 @@ namespace HAL_JSON {
     void loop() {
         if (Manager::reloadQueued) {
             Manager::reloadQueued = false;
-            Manager::setup(); // this only reloads the cfg and run begin on all loaded devices
-            ScriptEngine::ValidateAndLoadAllActiveScripts();
+            //Manager::setup(); // this only reloads the cfg and run begin on all loaded devices
+            //ScriptEngine::ValidateAndLoadAllActiveScripts();
         }
 
         long currmillis = millis();
         if (currmillis-lastmillis > 100) {
             lastmillis = currmillis;
             Manager::loop();
-            if (ScriptEngine::ScriptsBlock::running)
+            //if (ScriptEngine::ScriptsBlock::running)
                 ScriptEngine::Exec(); // runs the scriptengine
         }
     }

@@ -29,6 +29,6 @@ namespace HAL_JSON {
     private:
         static AsyncWebServer* asyncWebserver;
     public:
-        static void setup();
+        static void setupRest();
     };
 }

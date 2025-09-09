@@ -16,7 +16,7 @@ namespace HAL_JSON {
         return &reloadVersion;
     }
 
-    void Manager::setup() {
+    bool Manager::setupMgr() {
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
         if (ReadJSON(String(HAL_JSON_CONFIG_JSON_FILE).c_str()+1) == false) { // remove the leading /
 #else
@@ -24,10 +24,10 @@ namespace HAL_JSON {
 #endif
             Serial.println("error happend while reading and parsing config JSON");
             GlobalLogger.printAllLogs(Serial, false);
+            return false;
         }
-        else {
-            begin(); // call the begin function on all loaded hal devices
-        }
+        begin(); // call the begin function on all loaded hal devices
+        return true;
     }
 
     std::string Manager::ToString() {
