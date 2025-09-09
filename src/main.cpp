@@ -438,11 +438,16 @@ void initWebServerHandlers(void)
     });
 #endif
     webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, []() {
-        LITTLEFS_BEGIN_FUNC_CALL;
-        if (LittleFS.format())
-            webserver.send(200,"text/html", "Format OK");
-        else
-            webserver.send(200,"text/html", "format Fail"); 
+        
+        if (LittleFS.format()) {
+            if (!LITTLEFS_BEGIN_FUNC_CALL) {
+                webserver.send(500, "text/html", "Format OK, but mount failed");
+                return;
+            }
+            webserver.send(200, "text/html", "Format OK and mounted");
+        } else {
+            webserver.send(500, "text/html", "Format failed");
+        }
     });
     webserver.on(MAIN_URLS_MKDIR, []() {
         if (!webserver.hasArg("dir")) { webserver.send(200,"text/html", "Error: dir argument missing"); }

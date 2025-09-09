@@ -1,11 +1,16 @@
 
 #include "HAL_JSON_SCRIPT_ENGINE.h"
 
+#if defined(_WIN32) || defined(__linux__)
+#define DEMO_SCRIPT_FILE_PATH "script1.txt"
+#else
+#define DEMO_SCRIPT_FILE_PATH "/script1.txt"
+#endif
 namespace HAL_JSON {
     namespace ScriptEngine {
 
         void Exec() {
-            printf("\033[2J\033[H");  // clear screen + move cursor to top-left
+           // printf("\033[2J\033[H");  // clear screen + move cursor to top-left
 
             printf("\n****** SCRIPT LOOP START *******\n");
             for (int i=0;i<ScriptsBlock::scriptBlocksCount;i++) {
@@ -22,7 +27,7 @@ namespace HAL_JSON {
         bool ValidateAllActiveScripts()
         {
             bool valid = true;
-            valid = ScriptEngine::Parser::ReadAndParseScriptFile("script1.txt", nullptr);
+            valid = ScriptEngine::Parser::ReadAndParseScriptFile(DEMO_SCRIPT_FILE_PATH, nullptr);
             return valid;
         }
 
@@ -66,7 +71,7 @@ namespace HAL_JSON {
             for (int i = 0;i<count;i++) {
                 currentScriptIndex = i;
                 // this should now pass and execute the given callback
-                ScriptEngine::Parser::ReadAndParseScriptFile("/script1.txt", ScriptFileParsed);
+                ScriptEngine::Parser::ReadAndParseScriptFile(DEMO_SCRIPT_FILE_PATH, ScriptFileParsed);
             }
             return true;
         }
