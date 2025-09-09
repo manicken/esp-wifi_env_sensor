@@ -14,6 +14,8 @@
 #define HAL_JSON_CMD_EXEC_WRITE_CMD               "write"
 #define HAL_JSON_CMD_EXEC_READ_CMD                "read"
 #define HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON         "reloadcfg"
+#define HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON_SAFE    "reloadcfgsafe"
+#define HAL_JSON_CMD_EXEC_RELOAD_SCRIPTS          "reloadscripts"
 #define HAL_JSON_CMD_EXEC_PRINT_DEVICES           "printDevices"
 #define HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST "getAvailableGPIOs"
 #define HAL_JSON_CMD_EXEC_PRINT_LOG_CONTENTS      "printlog"

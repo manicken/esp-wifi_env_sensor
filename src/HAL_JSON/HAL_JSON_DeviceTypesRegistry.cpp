@@ -3,9 +3,9 @@
 #include "HAL_JSON_DeviceTypesRegistry.h"
 
 // all HAL devices to use here
-#include "Devices/HAL_JSON_RuleVariable.h"
-#include "Devices/HAL_JSON_RuleVariableReadOnly.h"
-#include "Devices/HAL_JSON_RuleVariableWriteOnlyTest.h"
+#include "Devices/HAL_JSON_ScriptVariable.h"
+#include "Devices/HAL_JSON_ScriptVariableReadOnly.h"
+#include "Devices/HAL_JSON_ScriptVariableWriteOnlyTest.h"
 #include "Devices/HAL_JSON_CoreDevices.h"
 #include "Devices/OneWireTemp/HAL_JSON_OneWireTemp.h"
 #include "Devices/HAL_JSON_DHT.h"
@@ -15,7 +15,7 @@
 namespace HAL_JSON {
 
         const DeviceTypeDef DeviceRegistry[] = {
-        {UseRootUID::Mandatory, "VAR", RuleVariable::Create, RuleVariable::VerifyJSON},
+        {UseRootUID::Mandatory, "VAR", ScriptVariable::Create, ScriptVariable::VerifyJSON},
         
 
         {UseRootUID::Mandatory, "DIN", DigitalInput::Create, DigitalInput::VerifyJSON},
@@ -37,8 +37,8 @@ namespace HAL_JSON {
 #if defined(ESP32) || defined(_WIN32)
         {UseRootUID::Mandatory, "PWM_LEDC", nullptr, nullptr},
 #endif
-        {UseRootUID::Mandatory, "CONSTVAR", RuleVariableReadOnly::Create, RuleVariableReadOnly::VerifyJSON},
-        {UseRootUID::Mandatory, "WRITEVAR", RuleVariableWriteOnlyTest::Create, RuleVariableWriteOnlyTest::VerifyJSON},
+        {UseRootUID::Mandatory, "CONSTVAR", ScriptVariableReadOnly::Create, ScriptVariableReadOnly::VerifyJSON},
+        {UseRootUID::Mandatory, "WRITEVAR", ScriptVariableWriteOnlyTest::Create, ScriptVariableWriteOnlyTest::VerifyJSON},
 
         {UseRootUID::Void, nullptr, nullptr, nullptr} // terminator
     };

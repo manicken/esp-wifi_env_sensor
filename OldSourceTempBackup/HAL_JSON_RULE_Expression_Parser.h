@@ -5,8 +5,8 @@
 #include "../../../src/Support/Logger.h"
 #include "../HAL_JSON_UID_Path.h"
 #include "../HAL_JSON_Manager.h"
-#include "HAL_JSON_RULE_Parser_Token.h"
-#include "HAL_JSON_RULE_Engine_Support.h"
+#include "HAL_JSON_SCRIPT_ENGINE_Parser_Token.h"
+#include "HAL_JSON_SCRIPT_ENGINE_Support.h"
 
 #include <string>
 
@@ -14,17 +14,17 @@
 #include <iostream>
 #endif
 
-#define HAL_JSON_RULES_EXPRESSIONS_PARSER_SHOW_DEBUG
+#define HAL_JSON_SCRIPTS_EXPRESSIONS_PARSER_SHOW_DEBUG
 
-#define HAL_JSON_RULES_EXPRESSIONS_SINGLE_OPERATOR_LIST "+-*/|&^><"
-#define HAL_JSON_RULES_EXPRESSIONS_DOUBLE_OPERATOR_LIST "&&" "||" "==" "!=" ">=" "<="
+#define HAL_JSON_SCRIPTS_EXPRESSIONS_SINGLE_OPERATOR_LIST "+-*/|&^><"
+#define HAL_JSON_SCRIPTS_EXPRESSIONS_DOUBLE_OPERATOR_LIST "&&" "||" "==" "!=" ">=" "<="
 
-#define HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD "\\"
+#define HAL_JSON_SCRIPTS_EXPRESSIONS_MULTILINE_KEYWORD "\\"
 
 #include <vector> // until we see it working
 
 namespace HAL_JSON {
-    namespace Rules {
+    namespace ScriptEngine {
         enum class ExpressionContext {
             IfCondition,
             Assignment

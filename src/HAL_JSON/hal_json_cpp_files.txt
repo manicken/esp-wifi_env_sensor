@@ -13,7 +13,7 @@ G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_UID_Path.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Value.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_CoreDevices.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_DHT.cpp
-G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_RuleVariable.cpp
+G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_SCRIPTVariable.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_template.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempAutoRefresh.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempBus.cpp
@@ -23,5 +23,5 @@ G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\REGO600\HAL_JSON_REGO600.
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\REGO600\HAL_JSON_REGO600register.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\RF433\HAL_JSON_TX433.cpp
 G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\RF433\HAL_JSON_TX433unit.cpp
-G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Engine.cpp
-G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_RULE_Parser.cpp
+G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_SCRIPT_ENGINE_Engine.cpp
+G:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\RuleEngine\HAL_JSON_SCRIPT_ENGINE_Parser.cpp

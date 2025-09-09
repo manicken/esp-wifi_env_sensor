@@ -74,7 +74,7 @@ enum class BlockType {
             char uidStr[8];
         };
     };
-    //HAL_JSON::RuleEngine::validateRuleSet(fileContets);
+    //HAL_JSON::RuleEngine::validateScript(fileContets);
         /*
         std::cout << Convert::toHex((uint64_t)0x123456789ABCDEF0) << std::endl;
         std::cout << Convert::toHex(HAL_JSON::encodeUID("ABCDEFGHIJ")) << std::endl;

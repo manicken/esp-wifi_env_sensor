@@ -1,10 +1,10 @@
 
-#include "HAL_JSON_RULE_Expression_Parser.h"
+#include "HAL_JSON_SCRIPT_ENGINE_Expression_Parser.h"
 #include <unordered_map>
 
 
 namespace HAL_JSON {
-    namespace Rules {
+    namespace ScriptEngine {
         void SliceStackReportError(const char* msg, const char* param) {
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "SliceStackError: " << msg << " " << ((param!=nullptr)?param:"") << std::endl;
@@ -59,8 +59,8 @@ namespace HAL_JSON {
             return (it != precedence.end()) ? it->second : -1;
         }
 
-        const char* Expressions::SingleOperatorList = HAL_JSON_RULES_EXPRESSIONS_SINGLE_OPERATOR_LIST;
-        const char* Expressions::DoubleOperatorList = HAL_JSON_RULES_EXPRESSIONS_DOUBLE_OPERATOR_LIST;
+        const char* Expressions::SingleOperatorList = HAL_JSON_SCRIPTS_EXPRESSIONS_SINGLE_OPERATOR_LIST;
+        const char* Expressions::DoubleOperatorList = HAL_JSON_SCRIPTS_EXPRESSIONS_DOUBLE_OPERATOR_LIST;
 
         bool Expressions::IsSingleOperator(char c) {
             const char* op = SingleOperatorList;
@@ -245,7 +245,7 @@ namespace HAL_JSON {
                             inOperand = false;
                         }
                         ++p; // Skip second char of double op
-                    } else if (IsSingleOperator(*p) || *p == '(' || *p == ')' || *p == HAL_JSON_RULES_EXPRESSIONS_MULTILINE_KEYWORD[0]) {
+                    } else if (IsSingleOperator(*p) || *p == '(' || *p == ')' || *p == HAL_JSON_SCRIPTS_EXPRESSIONS_MULTILINE_KEYWORD[0]) {
                         if (inOperand) {
                             operandEnd = p;
                             Token operand(operandStart, operandEnd);
@@ -275,7 +275,7 @@ namespace HAL_JSON {
 
         void Expressions::ValidateOperand(const Token& operandToken, bool& anyError, ValidateOperandMode mode) {
             //bool operandIsVariable = OperandIsVariable(operandToken);
-#ifdef HAL_JSON_RULES_EXPRESSIONS_PARSER_SHOW_DEBUG
+#ifdef HAL_JSON_SCRIPTS_EXPRESSIONS_PARSER_SHOW_DEBUG
             std::string msg;
             //if (OperandIsVariable(operandToken)) {
             if (operandToken.ValidNumber() == false) {

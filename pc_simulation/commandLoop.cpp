@@ -44,12 +44,12 @@ void exprTestLoad(HAL_JSON::ZeroCopyString& zcStr) {
         else
             std::cout << "Error: other file error: " << strFilePath << "\n";
     } 
-    HAL_JSON::Rules::Tokens tokens;
-    HAL_JSON::Rules::Token token(contents);
+    HAL_JSON::ScriptEngine::Tokens tokens;
+    HAL_JSON::ScriptEngine::Token token(contents);
 
     tokens.count = 1;
     tokens.items = &token;
-    bool valid = HAL_JSON::Rules::Expressions::ValidateExpression(tokens, HAL_JSON::Rules::ExpressionContext::IfCondition);
+    bool valid = HAL_JSON::ScriptEngine::Expressions::ValidateExpression(tokens, HAL_JSON::ScriptEngine::ExpressionContext::IfCondition);
     if (valid) {
         std::cout << "Parse [OK]\n";
     }
@@ -84,10 +84,10 @@ void parseCommand(const char* cmd, bool oneShot) {
             filePath = zcFilePath.ToString();
         else
             filePath = "ruleset.txt";
-        HAL_JSON::Rules::Expressions::CalcStackSizesInit();
+        HAL_JSON::ScriptEngine::Expressions::CalcStackSizesInit();
         auto start = std::chrono::high_resolution_clock::now();
-        HAL_JSON::Rules::Parser::ReadAndParseRuleSetFile(filePath.c_str(), nullptr);
-        HAL_JSON::Rules::Expressions::PrintCalcedStackSizes();
+        HAL_JSON::ScriptEngine::Parser::ReadAndParseScriptFile(filePath.c_str(), nullptr);
+        HAL_JSON::ScriptEngine::Expressions::PrintCalcedStackSizes();
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
 
@@ -100,7 +100,7 @@ void parseCommand(const char* cmd, bool oneShot) {
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
         std::cout << "using expression to RPN conv file:" << zcFilePath.ToString() << "\n";
         std::string filePath = zcFilePath.ToString();
-        HAL_JSON::Rules::Parser::ParseExpressionTest(filePath.c_str());
+        HAL_JSON::ScriptEngine::Parser::ParseExpressionTest(filePath.c_str());
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
 
@@ -113,7 +113,7 @@ void parseCommand(const char* cmd, bool oneShot) {
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
         std::cout << "using action expression to RPN conv file:" << zcFilePath.ToString() << "\n";
         std::string filePath = zcFilePath.ToString();
-        HAL_JSON::Rules::Parser::ParseActionExpressionTest(filePath.c_str());
+        HAL_JSON::ScriptEngine::Parser::ParseActionExpressionTest(filePath.c_str());
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
 
@@ -124,7 +124,7 @@ void parseCommand(const char* cmd, bool oneShot) {
         // loads the json HAL config, 
         // this is needed as it's used by the script validator
         HAL_JSON::Manager::setup();
-        HAL_JSON::Rules::ScriptsBlock::ValidateAndLoadAllActiveScripts();
+        HAL_JSON::ScriptEngine::ValidateAndLoadAllActiveScripts();
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
 
@@ -135,7 +135,7 @@ void parseCommand(const char* cmd, bool oneShot) {
         // loads the json HAL config, 
         // this is needed as it's used by the script validator
         HAL_JSON::Manager::setup();
-        HAL_JSON::Rules::ScriptsBlock::ValidateAllActiveScripts();
+        HAL_JSON::ScriptEngine::ValidateAllActiveScripts();
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
 

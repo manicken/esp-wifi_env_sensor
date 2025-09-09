@@ -38,6 +38,7 @@ namespace HAL_JSON {
         static int reloadVersion;
 
     public:
+        static bool reloadQueued;// = false;
         // getters
         static int DeviceCount();
         static int* ReloadVersionPtr();

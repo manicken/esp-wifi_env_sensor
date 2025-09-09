@@ -5,7 +5,7 @@
 ██      ██ ██   ██  █████   ██████  ██   ██        ██     ██████  ██████   ██████  
                                                                                    
 
-fix ReadAndParseRuleSetFile and ParseRuleSet
+fix ReadAndParseScriptFile and ParseScript
 so that they can be reused for both:
 Validate
 and

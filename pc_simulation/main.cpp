@@ -8,11 +8,11 @@
     #include <vector>
     #include <stack>
     #include <string_view>
-    #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser.h"
-    #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Expression_Parser.h"
+    #include "../src/HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE_Parser.h"
+    #include "../src/HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE_Expression_Parser.h"
 
     #include "../src/HAL_JSON/HAL_JSON_Manager.h"
-    #include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine_Script.h"
+    #include "../src/HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE.h"
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__) // use this to avoid getting vscode error here
     #include "stubs/HAL_JSON_REST/HAL_JSON_REST.h"
 #endif
@@ -51,12 +51,18 @@
 #endif
         std::cout << "\n****** Init HAL_JSON Manager\n";
         HAL_JSON::Manager::setup();
-        HAL_JSON::Rules::ScriptsBlock::ValidateAndLoadAllActiveScripts();
+        HAL_JSON::ScriptEngine::ValidateAndLoadAllActiveScripts();
         std::cout << "\n****** Starting commandLoop thread\n";
         std::thread cmdThread(commandLoop); // start command input thread from commandLoop that is in commandLoop.h
+        long lastmillis = 0;
         while (running) { // running is in commandLoop.h
-            //HAL_JSON::Manager::loop();
-            HAL_JSON::Rules::ScriptsBlock::Exec(); // runs the scriptengine
+            HAL_JSON::Manager::loop();
+            long currmillis = millis();
+            if (currmillis-lastmillis > 100) {
+                lastmillis = currmillis;
+                if (HAL_JSON::ScriptEngine::ScriptsBlock::running)
+                    HAL_JSON::ScriptEngine::Exec(); // runs the scriptengine
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         cmdThread.join(); // wait for command thread to finish

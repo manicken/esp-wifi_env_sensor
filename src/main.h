@@ -87,7 +87,7 @@
 
 #include "HAL_JSON/HAL_JSON.h"
 #ifdef HAL_JSON_H_
-#include "HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine_Script.h"
+#include "HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE.h"
 #endif
 
 #define MAIN_URLS_JSON_CMD              F("/json_cmd")

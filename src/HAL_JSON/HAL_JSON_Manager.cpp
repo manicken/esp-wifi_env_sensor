@@ -6,6 +6,7 @@ namespace HAL_JSON {
     Device** Manager::devices = nullptr;
     int Manager::deviceCount = 0;
     int Manager::reloadVersion = 0;
+    bool Manager::reloadQueued = false;
     
     int Manager::DeviceCount() {
         return deviceCount;

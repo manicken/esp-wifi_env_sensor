@@ -1,1 +1,1 @@
-g++ main.cpp HAL_JSON_Manager_WIN.cpp ../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine.cpp ../src/HAL_JSON/HAL_JSON_Operations.cpp ../src/HAL_JSON/HAL_JSON_UID_Path.cpp ../src/HAL_JSON/HAL_JSON_Value.cpp -v -o .\RuleEngine.exe
+g++ main.cpp HAL_JSON_Manager_WIN.cpp ../src/HAL_JSON/RuleEngine/HAL_JSON_SCRIPT_ENGINE_Engine.cpp ../src/HAL_JSON/HAL_JSON_Operations.cpp ../src/HAL_JSON/HAL_JSON_UID_Path.cpp ../src/HAL_JSON/HAL_JSON_Value.cpp -v -o .\RuleEngine.exe

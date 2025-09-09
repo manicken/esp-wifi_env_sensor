@@ -6,7 +6,7 @@
 
 #include <ArduinoJson.h>
 #include <stdlib.h>
-#include "RuleEngine/HAL_JSON_RULE_Expression_Token.h"
+#include "ScriptEngine/HAL_JSON_SCRIPT_ENGINE_Expression_Token.h"
 
 #include "../Support/Logger.h"
 #include "HAL_JSON_UID_Path.h"

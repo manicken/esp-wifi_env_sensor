@@ -64,7 +64,7 @@ SRC = \
 	$(wildcard ../src/HAL_JSON/Devices/OneWireTemp/*.cpp) \
 	$(wildcard ../src/HAL_JSON/Devices/REGO600/*.cpp) \
 	$(wildcard ../src/HAL_JSON/Devices/RF433/*.cpp) \
-	$(wildcard ../src/HAL_JSON/RuleEngine/*.cpp) \
+	$(wildcard ../src/HAL_JSON/ScriptEngine/*.cpp) \
 	../src/Support/CharArrayHelpers.cpp \
 	../src/Support/Logger.cpp \
 	../src/Support/ConvertHelper.cpp

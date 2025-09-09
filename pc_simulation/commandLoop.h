@@ -7,10 +7,10 @@
 #include <chrono>
 #include "../src/HAL_JSON/HAL_JSON_ZeroCopyString.h"
 #include "../src/HAL_JSON/HAL_JSON_CommandExecutor.h"
-#include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser.h"
-#include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Expression_Parser.h"
-#include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Parser_Token.h"
-#include "../src/HAL_JSON/RuleEngine/HAL_JSON_RULE_Engine_Script.h"
+#include "../src/HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE_Parser.h"
+#include "../src/HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE_Expression_Parser.h"
+#include "../src/HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE_Parser_Token.h"
+#include "../src/HAL_JSON/ScriptEngine/HAL_JSON_SCRIPT_ENGINE.h"
 
 extern std::atomic<bool> running;
 

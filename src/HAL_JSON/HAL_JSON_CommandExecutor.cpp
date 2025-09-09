@@ -67,6 +67,14 @@ namespace HAL_JSON {
             }
             
         }
+        else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON_SAFE) {
+            Manager::reloadQueued = true;
+            message += "\"info\":\"OK\"";
+        }
+        else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_SCRIPTS) {
+            Manager::reloadQueued = true;
+            message += "\"info\":\"OK\"";
+        }
         else if (zcCommand == HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST) {
             message += GPIO_manager::GetList(zcStr);
         }
