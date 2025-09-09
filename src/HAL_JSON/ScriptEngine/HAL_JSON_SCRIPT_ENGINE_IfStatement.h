@@ -79,6 +79,7 @@ namespace HAL_JSON {
             int branchItemsCount;
             /** set when there are a else branch defined, else it's set to nullptr */
             UnconditionalBranch* elseBranch; 
+            bool elseBranchFound;
 
             IfStatement(Tokens& tokens);
             ~IfStatement();

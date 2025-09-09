@@ -120,6 +120,7 @@ namespace HAL_JSON {
 
         IfStatement::IfStatement(Tokens& tokens)
         {
+            elseBranchFound = false;
             Token& ifToken = tokens.Current(); // this now points to the if-type token
             if (ifToken.type != TokenType::If) { printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ifToken.type != TokenType::If\n");}
             branchItemsCount = ifToken.itemsInBlock;
@@ -145,9 +146,13 @@ namespace HAL_JSON {
                 printf("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ found ELSE token @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
                 // this will consume all tokens that actually belongs to this block
                 elseBranch = new UnconditionalBranch(tokens);
-            } else
+                elseBranchFound = true;
+            } 
+            else {
+                printf("\n@???????????????????????????????????????????? found NOT ANY FUCKING ELSE token @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
                 elseBranch = nullptr;
-
+                elseBranchFound = false;
+            }
             /*if (tokens.currIndex == 85) {
                     raise(SIGTRAP); // triggers a breakpoint in GDB
                     
@@ -165,6 +170,10 @@ namespace HAL_JSON {
                 return HALOperationResult::ContextWasNullPtr;
             }
             IfStatement* ifStatement = static_cast<IfStatement*>(context);
+            if (ifStatement == nullptr) {
+                printf("\n IfStatement::Handler ifStatement was nullprtr\n");
+                return HALOperationResult::ContextWasNullPtr;
+            }
             int ifStatementBranchItemsCount = ifStatement->branchItemsCount;
             ConditionalBranch* ifStatementBranchItems = ifStatement->branchItems;
             for (int i=0;i<ifStatementBranchItemsCount;i++) {
@@ -177,9 +186,10 @@ namespace HAL_JSON {
                 }
             }
             
-            if (ifStatement->elseBranch != nullptr)
+            if (ifStatement->elseBranch) {
                 printf("\n IfStatement::Handler - else EXEC \n");
                 return ifStatement->elseBranch->Exec();
+            }
             // allways return success when all execution was a success
             return HALOperationResult::Success;
         }
