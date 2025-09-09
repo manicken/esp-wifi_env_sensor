@@ -75,7 +75,7 @@ void parseCommand(const char* cmd, bool oneShot) {
         exprTestLoad(zcCmd);
     } else if (zcCmdRoot == "loadrules" || zcCmdRoot == "lr") {
         if (oneShot) {
-            HAL_JSON::Manager::setup();
+            HAL_JSON::Manager::setupMgr();
         }
         HAL_JSON::ZeroCopyString zcFilePath = zcCmd.SplitOffHead('/');
         std::cout << "using rule set file:" << zcFilePath.ToString() << "\n";
@@ -123,7 +123,7 @@ void parseCommand(const char* cmd, bool oneShot) {
         auto start = std::chrono::high_resolution_clock::now();
         // loads the json HAL config, 
         // this is needed as it's used by the script validator
-        HAL_JSON::Manager::setup();
+        HAL_JSON::Manager::setupMgr();
         HAL_JSON::ScriptEngine::ValidateAndLoadAllActiveScripts();
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
@@ -134,7 +134,7 @@ void parseCommand(const char* cmd, bool oneShot) {
         auto start = std::chrono::high_resolution_clock::now();
         // loads the json HAL config, 
         // this is needed as it's used by the script validator
-        HAL_JSON::Manager::setup();
+        HAL_JSON::Manager::setupMgr();
         HAL_JSON::ScriptEngine::ValidateAllActiveScripts();
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
@@ -143,7 +143,7 @@ void parseCommand(const char* cmd, bool oneShot) {
     }
     else if (zcCmdRoot == "ldcfg") {
         auto start = std::chrono::high_resolution_clock::now();
-        HAL_JSON::Manager::setup();
+        HAL_JSON::Manager::setupMgr();
         
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;

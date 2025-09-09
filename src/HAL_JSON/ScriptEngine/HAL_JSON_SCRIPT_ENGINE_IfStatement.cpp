@@ -145,7 +145,8 @@ namespace HAL_JSON {
                 printf("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ found ELSE token @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
                 // this will consume all tokens that actually belongs to this block
                 elseBranch = new UnconditionalBranch(tokens);
-            } 
+            } else
+                elseBranch = nullptr;
 
             /*if (tokens.currIndex == 85) {
                     raise(SIGTRAP); // triggers a breakpoint in GDB

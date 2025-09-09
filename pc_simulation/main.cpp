@@ -50,7 +50,7 @@
         //HAL_JSON::REST::setup(halJsonRestCallback); // this will start the server
 #endif
         std::cout << "\n****** Init HAL_JSON Manager\n";
-        HAL_JSON::Manager::setup();
+        HAL_JSON::Manager::setupMgr();
         HAL_JSON::ScriptEngine::ValidateAndLoadAllActiveScripts();
         std::cout << "\n****** Starting commandLoop thread\n";
         std::thread cmdThread(commandLoop); // start command input thread from commandLoop that is in commandLoop.h
