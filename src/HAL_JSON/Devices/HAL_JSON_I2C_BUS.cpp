@@ -121,11 +121,22 @@ namespace HAL_JSON {
             if (ValidateJsonStringField(item, HAL_JSON_KEYNAME_TYPE) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
             
             const char* type = GetAsConstChar(item, HAL_JSON_KEYNAME_TYPE);
-            if (strcasecmp(type, "SSD1306")) {
-                if (Display_SSD1306::VerifyJSON(item) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
-
-                validItemCount++;
+            const I2C_DeviceTypeDef* def = GetI2C_DeviceTypeDef(type);
+            if (def == nullptr) {
+                GlobalLogger.Error(F("VerifyI2CDeviceJson - could not find type:"),type);
+                return false;
             }
+            
+            if (def->Verify_JSON_Function == nullptr) {
+                GlobalLogger.Error(F("VerifyI2CDeviceJson - Verify_JSON_Function nullptr:"),type);
+                return false;
+            }
+            if (def->Create_Function == nullptr) {
+                GlobalLogger.Error(F("VerifyI2CDeviceJson - Create_Function nullptr:"),type);
+                return false;
+            }
+            if (def->Verify_JSON_Function(item) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
+            validItemCount++;
 
         }
         if (validItemCount == 0) {
