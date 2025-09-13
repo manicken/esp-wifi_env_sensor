@@ -46,21 +46,22 @@ namespace HAL_JSON {
         const JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
 
         int itemCount = items.size();
+        bool* validItems = new bool[itemCount];
         // first pass count valid items
         size_t validItemCount = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
-            if (IsConstChar(item) == true) continue; // comment item
-            if (Device::DisabledInJson(item) == true) continue; // disabled
-            if (ValidateJsonStringField(item, HAL_JSON_KEYNAME_TYPE) == false) continue;
+            if (IsConstChar(item) == true) { validItems[i] = false; continue; }// comment item
+            if (Device::DisabledInJson(item) == true) { validItems[i] = false; continue; } // disabled
+            if (ValidateJsonStringField(item, HAL_JSON_KEYNAME_TYPE) == false) { validItems[i] = false; continue; }
             
             const char* type = GetAsConstChar(item, HAL_JSON_KEYNAME_TYPE);
             
             const I2C_DeviceTypeDef* def = GetI2C_DeviceTypeDef(type);
             // no nullcheck is needed as ValidateJSON ensures that all types are correct
-            if (def->Verify_JSON_Function(item) == false) continue;
+            if (def->Verify_JSON_Function(item) == false) { validItems[i] = false; continue; }
             validItemCount++;
-
+            validItems[i] = true;
         }
         // second pass actually create the devices
         deviceCount = validItemCount;
@@ -68,15 +69,14 @@ namespace HAL_JSON {
         int index = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
-            if (IsConstChar(item) == true) continue; // comment item
-            if (Device::DisabledInJson(item) == true) continue; // disabled
-            if (ValidateJsonStringField(item, HAL_JSON_KEYNAME_TYPE) == false) continue;
+            if (validItems[i] == false) continue;
             
             const char* type = GetAsConstChar(item, HAL_JSON_KEYNAME_TYPE);
             const I2C_DeviceTypeDef* def = GetI2C_DeviceTypeDef(type);
              // no nullcheck is needed as ValidateJSON ensures that all types are correct
             devices[index++] = def->Create_Function(item, "SSD1306", *wire);
         }
+        delete[] validItems;
     }
     I2C_BUS::~I2C_BUS() {
         if (devices != nullptr) {
