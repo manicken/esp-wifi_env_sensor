@@ -14,9 +14,9 @@
 
 namespace HAL_JSON {
 
-        const DeviceTypeDef DeviceRegistry[] = {
+    const DeviceTypeDef DeviceRegistry[] = {
         {UseRootUID::Mandatory, "VAR", ScriptVariable::Create, ScriptVariable::VerifyJSON},
-        
+
 
         {UseRootUID::Mandatory, "DIN", DigitalInput::Create, DigitalInput::VerifyJSON},
         {UseRootUID::Mandatory, "DOUT", DigitalOutput::Create, DigitalOutput::VerifyJSON},
@@ -40,6 +40,17 @@ namespace HAL_JSON {
         {UseRootUID::Mandatory, "CONSTVAR", ScriptVariableReadOnly::Create, ScriptVariableReadOnly::VerifyJSON},
         {UseRootUID::Mandatory, "WRITEVAR", ScriptVariableWriteOnlyTest::Create, ScriptVariableWriteOnlyTest::VerifyJSON},
 
+        /** mandatory null terminator */
         {UseRootUID::Void, nullptr, nullptr, nullptr} // terminator
     };
+
+    const DeviceTypeDef* GetDeviceTypeDef(const char* type) {
+        int i=0;
+        while (true) {
+            const DeviceTypeDef& def = DeviceRegistry[i++];
+            if (def.typeName == nullptr) break;
+            if (strcasecmp(def.typeName, type) == 0) return &def;
+        }
+        return nullptr;
+    }
 }

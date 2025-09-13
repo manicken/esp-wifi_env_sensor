@@ -46,39 +46,39 @@ namespace HAL_JSON {
 
     Device* Manager::CreateDeviceFromJSON(const JsonVariant &jsonObj) {
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
-        for (int i=0;DeviceRegistry[i].typeName != nullptr;i++) {
-            if (strcmp(type, DeviceRegistry[i].typeName) == 0) {
-                if (DeviceRegistry[i].Create_Function == nullptr) {
-                    GlobalLogger.Error(F("CreateDeviceFromJSON - Create_Function == nullptr - something is very wrong if this happens"));
-                    return nullptr; // should never happen as VerifyJson is called before and do actually verify that this pointer do point to something
-                }
-                return DeviceRegistry[i].Create_Function(jsonObj, DeviceRegistry[i].typeName);
-            }
+        const DeviceTypeDef* def = GetDeviceTypeDef(type);
+        if (def == nullptr) {
+            // should never happen as VerifyJson is called before and do actually verify that this function should work
+            GlobalLogger.Error(F("CreateDeviceFromJSON - something is very wrong if this happens"));
+            return nullptr; // no match
         }
-        // should never happen as VerifyJson is called before and do actually verify that this function should work
-        GlobalLogger.Error(F("CreateDeviceFromJSON - something is very wrong if this happens"));
-        return nullptr; // no match
+
+        if (def->Create_Function == nullptr) {
+            GlobalLogger.Error(F("CreateDeviceFromJSON - Create_Function == nullptr - something is very wrong if this happens"));
+            return nullptr; // should never happen as VerifyJson is called before and do actually verify that this pointer do point to something
+        }
+        return def->Create_Function(jsonObj, def->typeName);
     }
     bool Manager::VerifyDeviceJson(const JsonVariant &jsonObj) {
         
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_TYPE)) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_MGR_VERIFY_DEVICE); return false; }
 
         const char* type = jsonObj[HAL_JSON_KEYNAME_TYPE].as<const char*>();
-        for (int i=0;DeviceRegistry[i].typeName != nullptr;i++) {
 
-            if (strcmp(type, DeviceRegistry[i].typeName) == 0) {
-                if (DeviceRegistry[i].useRootUID == UseRootUID::Mandatory)
-                    if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_MGR_VERIFY_DEVICE); return false; }
-
-                if (DeviceRegistry[i].Verify_JSON_Function == nullptr){ GlobalLogger.Error(F("Verify_JSON_Function missing for:"),type); return false; }
-                if (DeviceRegistry[i].Create_Function == nullptr){ GlobalLogger.Error(F("Create_Function missing for:"), type); return false; } // skip devices that dont have this defined
-
-                return DeviceRegistry[i].Verify_JSON_Function(jsonObj);
-            }
+        const DeviceTypeDef* def = GetDeviceTypeDef(type);
+        if (def == nullptr) {
+            GlobalLogger.Error(F("VerifyDeviceJson - could not find type:"),type);
+            return false;
         }
-     
-        GlobalLogger.Error(F("VerifyDeviceJson - could not find type:"),type);
-        return false;
+
+        if (def->useRootUID == UseRootUID::Mandatory)
+            if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)) { SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_MGR_VERIFY_DEVICE); return false; }
+
+        if (def->Verify_JSON_Function == nullptr){ GlobalLogger.Error(F("Verify_JSON_Function missing for:"),type); return false; }
+        if (def->Create_Function == nullptr){ GlobalLogger.Error(F("Create_Function missing for:"), type); return false; } // skip devices that dont have this defined
+
+        return def->Verify_JSON_Function(jsonObj);
+
     }
 
     void Manager::CleanUp() {

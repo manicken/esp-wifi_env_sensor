@@ -92,6 +92,17 @@ namespace HAL_JSON {
         }
         return true;
     }
+    bool ValidateUINT32(const JsonVariant& jsonObj, const char* keyName) {
+        if (!jsonObj.containsKey(keyName)) {
+            GlobalLogger.Error(HAL_JSON_ERR_MISSING_STRING_VALUE_KEY, keyName);
+            return false;
+        }
+        if (!jsonObj[keyName].is<uint32_t>()){
+            GlobalLogger.Error(F("Value type: "), keyName);
+            return false;
+        }
+        return true;
+    }
     bool IsUINT32(const JsonVariant& jsonObj, const char* keyName) {
         return jsonObj[keyName].is<uint32_t>();
     }

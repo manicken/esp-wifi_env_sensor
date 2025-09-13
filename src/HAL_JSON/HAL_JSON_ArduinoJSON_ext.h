@@ -20,6 +20,7 @@ namespace HAL_JSON {
     uint32_t ParseRefreshTimeMs(const JsonVariant &jsonObj, const uint32_t defaultRefreshTimeMs);
 
     bool ValidateUINT8(const JsonVariant& jsonObj, const char* keyName);
+    bool ValidateUINT32(const JsonVariant& jsonObj, const char* keyName);
     bool IsUINT32(const JsonVariant& jsonObj, const char* keyName);
     uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* keyName, uint32_t defaultValue);
     uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* keyName);

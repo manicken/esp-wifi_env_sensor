@@ -148,6 +148,13 @@ namespace HAL_JSON {
             return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
         }
 
+        bool ValidateJsonAndCheckIfPinAvailableAndReserve(const JsonVariant& jsonObj, const char* NAME, uint8_t pinMode) {
+            if (jsonObj.containsKey(NAME) == false) { GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(), NAME); return false; }
+            if (jsonObj[NAME].is<uint8_t>() == false)  { GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(), NAME); return false; }
+            uint8_t pin = jsonObj[NAME].as<uint8_t>(); 
+            return GPIO_manager::CheckIfPinAvailableAndReserve(pin, static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
+        }
+
         void ClearAllReservations() {
             if (available_gpio_list_lenght == -1) set_available_gpio_list_length();
             if (reservedPins == nullptr)

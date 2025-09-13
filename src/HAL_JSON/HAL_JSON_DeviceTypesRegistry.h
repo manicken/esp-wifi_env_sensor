@@ -29,4 +29,5 @@ namespace HAL_JSON {
 
     extern const DeviceTypeDef DeviceRegistry[];
 
+    const DeviceTypeDef* GetDeviceTypeDef(const char* type);
 }
