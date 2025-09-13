@@ -5,10 +5,8 @@
 
 #include <string>
 #include <ArduinoJson.h>
-#include "../../../Support/Logger.h"
-#include "../../HAL_JSON_Device.h"
-#include "../../HAL_JSON_Device_GlobalDefines.h"
-#include "../../HAL_JSON_ArduinoJSON_ext.h"
+
+#include "HAL_JSON_Display_SSD1306_Element.h"
 
 // Display
 #include <Wire.h>
@@ -20,7 +18,12 @@ namespace HAL_JSON {
     class Display_SSD1306 : public Device {
     private:
         Adafruit_SSD1306* display;
+
+        Display_SSD1306_Element** elements; // TODO change this into plain array for minimal heap fragmentation
+        int elementCount;
     public:
+        // here we could implement functions for to use with spi interface as well
+
         static Device* Create(const JsonVariant &jsonObj, const char* type, TwoWire& wire);
         static bool VerifyJSON(const JsonVariant &jsonObj);
         

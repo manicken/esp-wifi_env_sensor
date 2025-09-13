@@ -11,13 +11,13 @@
 
 namespace HAL_JSON {
 
-    class HAL_JSON_Display_SSD1306_Element : public Device {
+    class Display_SSD1306_Element : public Device {
     private:
         
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
 
-        HAL_JSON_Display_SSD1306_Element(const JsonVariant &jsonObj, const char* type);
+        Display_SSD1306_Element(const JsonVariant &jsonObj, const char* type);
 
         String ToString() override;
     };

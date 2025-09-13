@@ -33,4 +33,5 @@ namespace Convert
     std::string toHex(uint64_t value);
     std::string toBin(uint8_t value);
 
+
 } // namespace Convert
