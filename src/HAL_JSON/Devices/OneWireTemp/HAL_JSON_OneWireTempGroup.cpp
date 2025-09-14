@@ -36,7 +36,7 @@ namespace HAL_JSON {
         }
         return true;
     }
-    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Three, type),
+    OneWireTempGroup::OneWireTempGroup(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Many, type),
         autoRefresh(
             [this]() { requestTemperatures(); },
             [this]() { readAll(); },
@@ -81,7 +81,8 @@ namespace HAL_JSON {
     }
 
     Device* OneWireTempGroup::findDevice(UIDPath& path) {
-        HAL_UID currLevelUID;
+        return Device::findInArray(reinterpret_cast<Device**>(busses), busCount, path, this);
+        /*HAL_UID currLevelUID;
 
         if (uid.IsSet()) // current device uid
             currLevelUID = path.getNextUID();
@@ -108,7 +109,7 @@ namespace HAL_JSON {
             }
             
         }
-        return nullptr;
+        return nullptr;*/
     }
 
     HALOperationResult OneWireTempGroup::read(const HALReadStringRequestValue& val) {

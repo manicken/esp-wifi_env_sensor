@@ -29,9 +29,10 @@ unsigned long currTime = 0;
 
 #if defined(USE_DISPLAY)
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1); // -1 = no reset pin
 uint8_t update_display = 0;
 unsigned long deltaTime_displayUpdate = 0;
@@ -284,6 +285,17 @@ void setup() {
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
     DEBUG_UART.println(Info::getResetReasonStr());
 
+    Wire.begin(21, 22);
+    Serial.println("I2C scan...");
+    for (uint8_t addr=1; addr<127; ++addr) {
+        Wire.beginTransmission(addr);
+        if (Wire.endTransmission() == 0) {
+        Serial.print("Found: 0x");
+        Serial.println(addr, HEX);
+        }
+    }
+    Serial.println("Done");
+
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true; // this call is needed before all access to internal Flash file system
 
    // MainConfig::begin(webserver);
@@ -470,25 +482,21 @@ void initWebServerHandlers(void)
 #if defined(USE_DISPLAY)
 void init_display(void)
 {
-    if (display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
-    {
-        delay(2000);
-        display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-        delay(2000);
-        display.clearDisplay();
-        display.display();
-        //display.setFont(&FreeMono9pt7b);
-        display.setTextSize(1);
-        display.setTextColor(WHITE, BLACK);
+    Wire.begin(21, 22, 100000); // SDA=21, SCL=22
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        DEBUG_UART.println(F("OLED init fail"));
+        return;
+    }
 
-    }
-    else{
-        //DEBUG_UART.println(F("oled init fail"));
-        display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
-        //if (display.begin(SSD1306_SWITCHCAPVCC, 0x3D))
-            //DEBUG_UART.println(F("oled addr is 0x3D"));
-    }
+    DEBUG_UART.println(F("OLED OK"));
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0,0);
+    //display.println(F("Hello ESP32!"));
+    display.display(); // <--- push buffer to screen
 }
+
 #endif
 
 void connect_to_wifi(void)
@@ -518,8 +526,8 @@ void connect_to_wifi(void)
 #endif
     }
 #if defined(USE_DISPLAY)
-    display.clearDisplay();
-    display.display();
+    //display.clearDisplay();
+    //display.display();
 #endif
 }
 

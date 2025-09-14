@@ -10,7 +10,7 @@ namespace HAL_JSON {
     CommandExecutor::ReadWriteCmdParameters::ReadWriteCmdParameters(ZeroCopyString& zcStr) {
         zcType = zcStr.SplitOffHead('/');
         zcUid = zcStr.SplitOffHead('/');
-        zcValue = zcStr.SplitOffHead('/');
+        zcValue = zcStr; // the value is the rest
     }
 #ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
     std::string CommandExecutor::ReadWriteCmdParameters::ToString() {
@@ -50,11 +50,15 @@ namespace HAL_JSON {
             message += "\"filename\":\"" + (zcOptionalFileName.Length() != 0?zcOptionalFileName.ToString():"default") + "\"}";
 #endif
             std::string filePath;
+#if defined(ESP32) || defined(ESP8266)
+            filePath = "/";
+#endif
             if (zcOptionalFileName.Length() == 0) {
-                filePath = "hal/cfg.json";
+                filePath += "hal/cfg.json";
             } else {
-                filePath = "hal/" + zcOptionalFileName.ToString();
+                filePath += "hal/" + zcOptionalFileName.ToString();
             }
+
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
             std::cout << "Reload cfg json: " << filePath << std::endl;  
 #endif

@@ -151,6 +151,10 @@ namespace HAL_JSON {
     }
 
     Device* Manager::findDevice(UIDPath& path) {
+        path.reset(); // ensure to be at root level
+        return Device::findInArray(devices, deviceCount, path, nullptr);
+
+        /*
         if (path.empty()) {
             GlobalLogger.Error(F("findDevice failed: empty path"));
             return nullptr;
@@ -191,7 +195,7 @@ namespace HAL_JSON {
             return indirectMatch;
         }
         GlobalLogger.Error(F("could not find device: "),path.ToString().c_str());
-        return nullptr;
+        return nullptr;*/
     }
 
     HALOperationResult Manager::read(const HALReadRequest &req) {

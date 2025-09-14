@@ -4,6 +4,8 @@
 
 #define HAL_JSON_SCRIPTS_STRUCTURES_RPN_STACK_SAFETY_CHECKS
 
+//#define DEBUG_CALCRPN_EXEC
+
 namespace HAL_JSON {
     namespace ScriptEngine {
         RPNStack<HALValue> halValueStack;
@@ -20,7 +22,9 @@ namespace HAL_JSON {
             int tokensCurrCount = tokens->currentCount;
             //if (count != tokensCurrCount) // this is not really a error here
             //    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ERROR count != tokensCurrCount ****************\n");
+#ifdef DEBUG_CALCRPN_EXEC
             printf("CalcRPN::CalcRPN constr - count:%d, tokensCurrCount:%d, rpn:%s\n", count, tokensCurrCount, PrintExpressionTokensOneRow(*tokens,startIndex, endIndex).c_str());
+#endif
             items = new CalcRPNToken[count];
             int calcRPNindex = 0;
             ExpressionToken* tokenItems = tokens->items;
@@ -71,7 +75,9 @@ namespace HAL_JSON {
             delete[] items;
         }
         HALOperationResult CalcRPN::DoCalc() {
+#ifdef DEBUG_CALCRPN_EXEC
             printf("CalcRPN::DoCalc - rpn is:%s", calcRPNstr.c_str());
+#endif
             int calcRPNcount = count; // deref here for faster access
             CalcRPNToken* calcItems = items; // deref here for faster access
             halValueStack.sp = 0; // 'clear' stack before use
@@ -84,6 +90,7 @@ namespace HAL_JSON {
                 if (res != HALOperationResult::Success)
                     return res;
             }
+#ifdef DEBUG_CALCRPN_EXEC
             HALValue val;
             halValueStack.GetFinalResult(val);
             if (val.getType() == HALValue::Type::FLOAT)
@@ -92,6 +99,7 @@ namespace HAL_JSON {
                 printf(" result: int(%d)\n", val.asInt());
             else if (val.getType() == HALValue::Type::UINT)
                 printf(" result: uint:(%u)\n", val.asUInt());
+#endif
             return HALOperationResult::Success;
         }
 

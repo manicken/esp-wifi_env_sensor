@@ -11,7 +11,7 @@ namespace HAL_JSON {
     }
     bool HAL_UID::NotSet() { return val == HAL_UID::UID_NOT_SET; }
     bool HAL_UID::IsSet() { return (val != HAL_UID::UID_NOT_SET) && (val != HAL_UID::UID_INVALID); }
-    bool HAL_UID::Invalid() {return val == HAL_UID::UID_INVALID; }
+    bool HAL_UID::Invalid() { return val == HAL_UID::UID_INVALID; }
 
     bool operator==(const HAL_UID& lhs, const HAL_UID& rhs) {
         return lhs.val == rhs.val;

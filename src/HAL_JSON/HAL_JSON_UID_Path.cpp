@@ -101,6 +101,9 @@ namespace HAL_JSON {
         currentItemIndex = 0;
         return items[0];
     }
+    void UIDPath::reset() {
+        currentItemIndex = 0;
+    }
     bool UIDPath::isLast() {
         if (itemCount == 0) return true; // ideally this wont happen
         return (currentItemIndex==(itemCount-1));

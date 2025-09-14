@@ -49,6 +49,7 @@ namespace HAL_JSON {
         uint32_t count();
         HAL_UID getCurrentUID();
         HAL_UID resetAndGetFirst();
+        void reset();
         HAL_UID getNextUID();
         HAL_UID peekNextUID();
         bool isLast();

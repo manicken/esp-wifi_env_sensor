@@ -30,6 +30,9 @@ namespace HAL_JSON {
         Display_SSD1306(const JsonVariant &jsonObj, const char* type, TwoWire& wire);
         ~Display_SSD1306();
 
+        HALOperationResult write(const HALWriteStringRequestValue& val);
+        Device* findDevice(UIDPath& path) override;
+
         String ToString() override;
     };
 }

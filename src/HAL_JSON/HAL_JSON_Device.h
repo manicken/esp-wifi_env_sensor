@@ -16,10 +16,8 @@
 namespace HAL_JSON {
     
     enum class UIDPathMaxLength : uint8_t {
-        One = 1,
-        Two = 2,
-        Three = 3,
-        Four = 4 // not used at the moment
+        One,
+        Many
     };
 
     //typedef bool (*ReadToHALValue_FuncType)(HAL_JSON::Device*, HALValue&);
@@ -37,7 +35,7 @@ namespace HAL_JSON {
         virtual ~Device();
 
         HAL_UID uid;
-        const uint8_t uidMaxLength = 0;
+        const UIDPathMaxLength uidMaxLength;
         bool LoopTaskDone();
         virtual HALOperationResult read(HALValue& val);
         virtual HALOperationResult write(const HALValue& val);
@@ -57,7 +55,11 @@ namespace HAL_JSON {
         virtual String ToString();
 
         static bool DisabledInJson(const JsonVariant& jsonObj);
+
+        static Device* findInArray(Device** devices, int deviceCount, UIDPath& path, Device* currentDevice);
     };
+
+    
     
 #if defined(ESP32)
 //#define HAL_JSON_DEVICE_CONST_STRINGS_USE_F_PREFIX

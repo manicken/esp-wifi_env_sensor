@@ -13,7 +13,7 @@ namespace HAL_JSON {
         return new Display_SSD1306(jsonObj, type, wire);
     }
     
-    Display_SSD1306::Display_SSD1306(const JsonVariant &jsonObj, const char* type, TwoWire& wire) : Device(UIDPathMaxLength::One,type) {
+    Display_SSD1306::Display_SSD1306(const JsonVariant &jsonObj, const char* type, TwoWire& wire) : Device(UIDPathMaxLength::Many,type) {
 
         const char* uidStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_UID);
         uid = encodeUID(uidStr);
@@ -29,14 +29,12 @@ namespace HAL_JSON {
         delay(200);
         if (display->begin(SSD1306_SWITCHCAPVCC, addr))
         {
-            //delay(2000);
-            //display->begin(SSD1306_SWITCHCAPVCC, addr);
-            //delay(2000);
             display->clearDisplay();
-            display->display();
-            //display.setFont(&FreeMono9pt7b);
-            display->setTextSize(textSize);
-            display->setTextColor(WHITE, BLACK);
+            display->setTextSize(1);
+            display->setTextColor(SSD1306_WHITE);
+            display->setCursor(0,0);
+            //display.println(F("Hello ESP32!"));
+            display->display(); // <--- push buffer to screen
         }
 
         const JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
@@ -83,8 +81,8 @@ namespace HAL_JSON {
     bool Display_SSD1306::VerifyJSON(const JsonVariant &jsonObj) {
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_1WTD_VERIFY_JSON); return false; }
 
-        bool anyError = false == GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, "sckpin", static_cast<uint8_t>(GPIO_manager::PinMode::OUT));
-        anyError = false == GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, "sdapin", static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN));
+        bool anyError = false;
+        
         anyError = false == ValidateUINT32(jsonObj, "width");
         anyError = false == ValidateUINT32(jsonObj, "height");
         anyError = false == ValidateJsonStringField(jsonObj, "addr");
@@ -131,6 +129,40 @@ namespace HAL_JSON {
         ret += type;
         
         return ret;
+    }
+
+    Device* Display_SSD1306::findDevice(UIDPath& path) {
+        return Device::findInArray(reinterpret_cast<Device**>(elements), elementCount, path, this);
+    }
+
+    HALOperationResult Display_SSD1306::write(const HALWriteStringRequestValue& val) {
+        ZeroCopyString zcData = val.value;
+        printf("\nDisplay_SSD1306::write data:%s\n", zcData.ToString().c_str());
+        ZeroCopyString zcCmd = zcData.SplitOffHead('/');
+        
+        if (zcCmd == "text") {
+            printf("\nDisplay_SSD1306::write text:%s\n", zcData.ToString().c_str());
+            display->write(zcData.start, zcData.Length());
+        }
+        else if (zcCmd == "print") {
+            printf("\nDisplay_SSD1306::write print:%s\n", zcData.ToString().c_str());
+            display->write(zcData.start, zcData.Length());
+            display->display();
+        }
+        else if (zcCmd == "cursor") {
+            ZeroCopyString zcXstr = zcData.SplitOffHead('/');
+            int x = 0, y = 0;
+            zcXstr.ConvertTo_int32(x);
+            zcData.ConvertTo_int32(y);
+            display->setCursor(x,y);
+        } else if (zcCmd == "clear") {
+            display->clearDisplay();
+        } else if (zcCmd == "update") {
+            display->display();
+        } else {
+            return HALOperationResult::UnsupportedCommand;
+        }
+        return HALOperationResult::Success;
     }
 
 }

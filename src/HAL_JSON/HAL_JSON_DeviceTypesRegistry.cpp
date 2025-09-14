@@ -11,6 +11,7 @@
 #include "Devices/HAL_JSON_DHT.h"
 #include "Devices/RF433/HAL_JSON_TX433.h"
 #include "Devices/REGO600/HAL_JSON_REGO600.h"
+#include "Devices/HAL_JSON_I2C_BUS.h"
 
 namespace HAL_JSON {
 
@@ -37,6 +38,7 @@ namespace HAL_JSON {
 #if defined(ESP32) || defined(_WIN32)
         {UseRootUID::Mandatory, "PWM_LEDC", nullptr, nullptr},
 #endif
+        {UseRootUID::Mandatory, "I2C", I2C_BUS::Create, I2C_BUS::VerifyJSON},
         {UseRootUID::Mandatory, "CONSTVAR", ScriptVariableReadOnly::Create, ScriptVariableReadOnly::VerifyJSON},
         {UseRootUID::Mandatory, "WRITEVAR", ScriptVariableWriteOnlyTest::Create, ScriptVariableWriteOnlyTest::VerifyJSON},
 

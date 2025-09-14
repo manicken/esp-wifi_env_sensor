@@ -11,13 +11,13 @@
 
 namespace HAL_JSON {
 
-    class Template : public Device {
+    class ThingSpeak : public Device {
     private:
-        uint8_t pin = 0; // if pin would be used
+
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj, const char* type);
-        Template(const JsonVariant &jsonObj, const char* type);
+        ThingSpeak(const JsonVariant &jsonObj, const char* type);
 
         String ToString() override;
     };

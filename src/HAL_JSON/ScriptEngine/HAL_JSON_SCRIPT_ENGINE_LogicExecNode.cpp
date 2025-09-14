@@ -1,6 +1,7 @@
 
 #include "HAL_JSON_SCRIPT_ENGINE_LogicExecNode.h"
 
+//#define DEBUG_LOGIC_EXEC
 
 namespace HAL_JSON {
     namespace ScriptEngine {
@@ -36,7 +37,9 @@ namespace HAL_JSON {
         }
 
         HALOperationResult LogicExecNode::EvalAnd_LL(void* context) {  // LL (logic logic)
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalAnd_LL\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             // evaluate left side
             LogicExecNode* logicExecNodeA = static_cast<LogicExecNode*>(logicExecNode->childA);
@@ -48,7 +51,9 @@ namespace HAL_JSON {
             return logicExecNodeB->handler(logicExecNodeB);
         }
         HALOperationResult LogicExecNode::EvalAnd_LC(void* context) { // LC (logic calc)
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalAnd_LC\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             // evaluate left side
             LogicExecNode* logicExecNodeA = static_cast<LogicExecNode*>(logicExecNode->childA);
@@ -59,7 +64,9 @@ namespace HAL_JSON {
             return Eval_Calc(logicExecNode->childB);
         }
         HALOperationResult LogicExecNode::EvalAnd_CL(void* context) { // CL (calc logic)
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalAnd_CL\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             // evaluate left side
             HALOperationResult resA = Eval_Calc(logicExecNode->childA);
@@ -70,7 +77,9 @@ namespace HAL_JSON {
             return logicExecNodeB->handler(logicExecNodeB);
         }
         HALOperationResult LogicExecNode::EvalAnd_CC(void* context) { // CC (calc calc)
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalAnd_CC\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             // evaluate left side
             HALOperationResult resA = Eval_Calc(logicExecNode->childA);
@@ -81,7 +90,9 @@ namespace HAL_JSON {
         }
 
         HALOperationResult LogicExecNode::EvalOr_LL(void* context) { // LL
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalOr_LL\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             // evaluate left side
             LogicExecNode* logicExecNodeA = static_cast<LogicExecNode*>(logicExecNode->childA);
@@ -94,7 +105,9 @@ namespace HAL_JSON {
             return logicExecNodeB->handler(logicExecNodeB);
         }
         HALOperationResult LogicExecNode::EvalOr_LC(void* context) { // LC
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalOr_LC\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             // evaluate left side
             LogicExecNode* logicExecNodeA = static_cast<LogicExecNode*>(logicExecNode->childA);
@@ -106,7 +119,9 @@ namespace HAL_JSON {
             return Eval_Calc(logicExecNode->childB);
         }
         HALOperationResult LogicExecNode::EvalOr_CL(void* context) { // CL
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalOr_CL\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             HALOperationResult resA = Eval_Calc(logicExecNode->childA);
             // short-circuit: if A is not false, return immediately the result (either True or any error)
@@ -117,7 +132,9 @@ namespace HAL_JSON {
             return logicExecNodeB->handler(logicExecNodeB);
         }
         HALOperationResult LogicExecNode::EvalOr_CC(void* context) { // CC
+#ifdef DEBUG_LOGIC_EXEC
             printf("\nEvalOr_CC\n");
+#endif
             LogicExecNode* logicExecNode = static_cast<LogicExecNode*>(context);
             HALOperationResult resA = Eval_Calc(logicExecNode->childA);
             // short-circuit: if A is not false, return immediately the result (either True or any error)

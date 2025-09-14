@@ -25,9 +25,11 @@ namespace HAL_JSON {
         
         HAL_UID();
         HAL_UID(uint64_t v);
+        /** basically: val == HAL_UID::UID_NOT_SET */
         bool NotSet();
+        /** basically: (val != HAL_UID::UID_NOT_SET) && (val != HAL_UID::UID_INVALID) */
         bool IsSet();
-        /** invalid is a special state, not to be confused with not set */
+        /** basically: val == HAL_UID::UID_INVALID */
         bool Invalid();
         HAL_UID& operator=(const HAL_UID& v);
 

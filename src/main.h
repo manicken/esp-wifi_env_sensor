@@ -1,4 +1,4 @@
-//#define USE_DISPLAY
+#define USE_DISPLAY
 
 // basic
 #include <EEPROM.h>

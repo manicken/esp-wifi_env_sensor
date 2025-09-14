@@ -23,7 +23,7 @@ namespace HAL_JSON {
     Device* TX433::Create(const JsonVariant &jsonObj, const char* type) {
         return new TX433(jsonObj, type);
     }
-    TX433::TX433(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Two,type) {
+    TX433::TX433(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Many,type) {
         const char* uidStr = jsonObj[HAL_JSON_KEYNAME_UID].as<const char*>();
         uid = encodeUID(uidStr);
         pin = GetAsUINT32(jsonObj,HAL_JSON_KEYNAME_PIN);//].as<uint8_t>();

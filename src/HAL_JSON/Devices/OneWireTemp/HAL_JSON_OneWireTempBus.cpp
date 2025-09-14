@@ -38,7 +38,7 @@ namespace HAL_JSON {
         return GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, (static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)));
     }
 
-    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Two, type) {
+    OneWireTempBus::OneWireTempBus(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::Many, type) {
         const char* uidStr = GetAsConstChar(jsonObj,HAL_JSON_KEYNAME_UID);//].as<const char*>();
         uid = encodeUID(uidStr);
         pin = GetAsUINT32(jsonObj,HAL_JSON_KEYNAME_PIN);//].as<uint8_t>();
@@ -102,7 +102,8 @@ namespace HAL_JSON {
     }
 
     Device* OneWireTempBus::findDevice(UIDPath& path) {
-        HAL_UID currLevelUID;
+        return Device::findInArray(reinterpret_cast<Device**>(devices), deviceCount, path, this);
+        /*HAL_UID currLevelUID;
         if (uid.IsSet()) // current device uid
             currLevelUID = path.peekNextUID();
         else  // current device uid == 0
@@ -119,7 +120,7 @@ namespace HAL_JSON {
             if (!device) continue; // absolute failsafe
             if (device->uid == currLevelUID) return device;
         }
-        return nullptr;
+        return nullptr;*/
     }
 
     HALOperationResult OneWireTempBus::read(const HALReadStringRequestValue& val) {
