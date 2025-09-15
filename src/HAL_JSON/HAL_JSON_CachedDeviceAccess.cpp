@@ -8,15 +8,18 @@ namespace HAL_JSON {
         device = Manager::findDevice(path);
         currentVersion = Manager::ReloadVersionPtr();
         cachedVersion = *currentVersion;
-        if (funcName != nullptr && device != nullptr)
-            readToHalValueFunc = device->GetReadToHALValue_Function(funcName);
-        else
-            readToHalValueFunc = nullptr;
         if (device == nullptr) {
+            readToHalValueFunc = nullptr;
+            valueDirectAccessPtr = nullptr;
             std::string uidStr = uidPath.ToString();
             printf("@CachedDeviceAccess const - device not found:>>%s<<\n", uidStr.c_str());
             return;
         }
+        if (funcName != nullptr && device != nullptr)
+            readToHalValueFunc = device->GetReadToHALValue_Function(funcName);
+        else
+            readToHalValueFunc = nullptr;
+        
         valueDirectAccessPtr = device->GetValueDirectAccessPtr();
         
     }

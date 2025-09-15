@@ -54,7 +54,7 @@ namespace HAL_JSON {
         }
         // second pass actually create the devices
         elementCount = validItemCount;
-        elements = new Display_SSD1306_Element*[validItemCount];
+        elements = new Display_SSD1306_Element*[validItemCount]();
         int index = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
@@ -79,7 +79,7 @@ namespace HAL_JSON {
     }
 
     bool Display_SSD1306::VerifyJSON(const JsonVariant &jsonObj) {
-        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_1WTD_VERIFY_JSON); return false; }
+        if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_DISPLAY_SSD1306_VERIFY_JSON); return false; }
 
         bool anyError = false;
         
@@ -90,15 +90,18 @@ namespace HAL_JSON {
 
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_ITEMS) == false) {
             GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_ITEMS));
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_DISPLAY_SSD1306_VERIFY_JSON);
             return false;
         }
         if (jsonObj[HAL_JSON_KEYNAME_ITEMS].is<JsonArray>() == false) {
             GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_ITEMS " not array"));
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_DISPLAY_SSD1306_VERIFY_JSON);
             return false;
         }
         const JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
         if (items.size() == 0) {
-            GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("Display_SSD1306"));
+            GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY());
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_DISPLAY_SSD1306_VERIFY_JSON);
             return false;
         }
         int itemCount = items.size();
@@ -113,7 +116,8 @@ namespace HAL_JSON {
 
         }
         if (validItemCount == 0) {
-            GlobalLogger.Error(HAL_JSON_ERR_ITEMS_NOT_VALID("Display_SSD1306"));
+            GlobalLogger.Error(HAL_JSON_ERR_ITEMS_NOT_VALID(""));
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_DISPLAY_SSD1306_VERIFY_JSON);
             return false;
         }
 
@@ -165,4 +169,24 @@ namespace HAL_JSON {
         return HALOperationResult::Success;
     }
 
+    void Display_SSD1306::loop() {
+        display->clearDisplay();
+        for (int i=0;i<elementCount;i++) {
+            Display_SSD1306_Element& el = *elements[i];
+            display->setCursor(el.xPos, el.yPos);
+            display->print(el.label.c_str());
+
+            if (el.cdaSource != nullptr) {
+                el.cdaSource->ReadSimple(el.val);
+            }
+            HALValue::Type t = el.val.getType();
+            if (t == HALValue::Type::FLOAT)
+                display->print(el.val.asFloat());
+            else if (t == HALValue::Type::UINT)
+                display->print(el.val.asUInt());
+            else if (t == HALValue::Type::INT)
+                display->print(el.val.asInt());
+        }
+        display->display(); // update all in one go
+    }
 }

@@ -32,6 +32,7 @@ namespace HAL_JSON {
 
         HALOperationResult write(const HALWriteStringRequestValue& val);
         Device* findDevice(UIDPath& path) override;
+        void loop() override;
 
         String ToString() override;
     };

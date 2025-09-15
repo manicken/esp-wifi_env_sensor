@@ -37,6 +37,7 @@ namespace HAL_JSON {
         ~I2C_BUS();
 
         Device* findDevice(UIDPath& path) override;
+        void loop() override;
 
         String ToString() override;
     };

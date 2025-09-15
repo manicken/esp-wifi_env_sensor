@@ -482,6 +482,7 @@ void initWebServerHandlers(void)
 #if defined(USE_DISPLAY)
 void init_display(void)
 {
+    delay(1000);
     Wire.begin(21, 22, 100000); // SDA=21, SCL=22
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         DEBUG_UART.println(F("OLED init fail"));

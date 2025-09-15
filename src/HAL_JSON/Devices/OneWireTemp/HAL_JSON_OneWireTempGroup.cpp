@@ -60,7 +60,7 @@ namespace HAL_JSON {
             if (valid == false) continue;
             busCount++;
         }
-        busses = new OneWireTempBus*[busCount];
+        busses = new OneWireTempBus*[busCount]();
         // second pass create busses
         uint32_t index = 0;
         for (int i=0;i<itemCount;i++) {

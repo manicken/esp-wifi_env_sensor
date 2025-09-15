@@ -62,7 +62,7 @@ namespace HAL_JSON {
             if (valid == false) continue;
             deviceCount++;
         }
-        devices = new (std::nothrow) OneWireTempDevice*[deviceCount];
+        devices = new (std::nothrow) OneWireTempDevice*[deviceCount]();
         uint32_t index = 0;
         for (int i=0;i<itemCount;i++) {
             if (validDevices[i] == false) continue;

@@ -44,7 +44,7 @@ namespace HAL_JSON {
                 unitCount++;
             }
             // second pass create units(devices)
-            units = new (std::nothrow) TX433unit*[unitCount];
+            units = new (std::nothrow) TX433unit*[unitCount]();
             uint32_t index = 0;
             for (int i=0;i<_unitCount;i++) {
                 if (validUnits[i] == false) continue;

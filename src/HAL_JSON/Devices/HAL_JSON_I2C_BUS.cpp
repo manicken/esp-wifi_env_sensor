@@ -65,7 +65,7 @@ namespace HAL_JSON {
         }
         // second pass actually create the devices
         deviceCount = validItemCount;
-        devices = new Device*[validItemCount];
+        devices = new Device*[validItemCount]();
         int index = 0;
         for (int i=0;i<itemCount;i++) {
             const JsonVariant item = items[i];
@@ -94,22 +94,28 @@ namespace HAL_JSON {
     }
 
     bool I2C_BUS::VerifyJSON(const JsonVariant &jsonObj) {
-        if (!GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, "sckpin", static_cast<uint8_t>(GPIO_manager::PinMode::OUT)))
+        if (!GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, "sckpin", static_cast<uint8_t>(GPIO_manager::PinMode::OUT))) {
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
             return false;
-        if (!GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, "sdapin", static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN)))
+        }
+        if (!GPIO_manager::ValidateJsonAndCheckIfPinAvailableAndReserve(jsonObj, "sdapin", static_cast<uint8_t>(GPIO_manager::PinMode::OUT) | static_cast<uint8_t>(GPIO_manager::PinMode::IN))) {
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
             return false;
-        
+        }
         if (jsonObj.containsKey(HAL_JSON_KEYNAME_ITEMS) == false) {
             GlobalLogger.Error(HAL_JSON_ERR_MISSING_KEY(HAL_JSON_KEYNAME_ITEMS));
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
             return false;
         }
         if (jsonObj[HAL_JSON_KEYNAME_ITEMS].is<JsonArray>() == false) {
             GlobalLogger.Error(HAL_JSON_ERR_VALUE_TYPE(HAL_JSON_KEYNAME_ITEMS " not array"));
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
             return false;
         }
         const JsonArray items = jsonObj[HAL_JSON_KEYNAME_ITEMS].as<JsonArray>();
         if (items.size() == 0) {
-            GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY("I2C_BUS"));
+            GlobalLogger.Error(HAL_JSON_ERR_ITEMS_EMPTY());
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
             return false;
         }
         int itemCount = items.size();
@@ -124,15 +130,18 @@ namespace HAL_JSON {
             const I2C_DeviceTypeDef* def = GetI2C_DeviceTypeDef(type);
             if (def == nullptr) {
                 GlobalLogger.Error(F("VerifyI2CDeviceJson - could not find type:"),type);
+                SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
                 return false;
             }
             
             if (def->Verify_JSON_Function == nullptr) {
                 GlobalLogger.Error(F("VerifyI2CDeviceJson - Verify_JSON_Function nullptr:"),type);
+                SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
                 return false;
             }
             if (def->Create_Function == nullptr) {
                 GlobalLogger.Error(F("VerifyI2CDeviceJson - Create_Function nullptr:"),type);
+                SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
                 return false;
             }
             if (def->Verify_JSON_Function(item) == false) HAL_JSON_VALIDATE_IN_LOOP_FAIL_OPERATION;
@@ -141,6 +150,7 @@ namespace HAL_JSON {
         }
         if (validItemCount == 0) {
             GlobalLogger.Error(HAL_JSON_ERR_ITEMS_NOT_VALID("I2C_BUS"));
+            SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_I2C_VERIFY_JSON);
             return false;
         }
         return true;
@@ -177,6 +187,12 @@ namespace HAL_JSON {
     Device* I2C_BUS::findDevice(UIDPath& path) {
         printf("\nI2C_BUS::findDevice: %s\n", path.ToString().c_str());
         return Device::findInArray(reinterpret_cast<Device**>(devices), deviceCount, path, this);
+    }
+
+    void I2C_BUS::loop() {
+        for (int i=0;i<deviceCount;i++) {
+            devices[i]->loop();
+        }
     }
 
 }

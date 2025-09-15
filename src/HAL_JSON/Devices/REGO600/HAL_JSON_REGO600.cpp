@@ -28,8 +28,8 @@ namespace HAL_JSON {
             registerItemCount++;
         }
         // second pass
-        requestList = new (std::nothrow) Drivers::REGO600::Request*[registerItemCount];
-        registerItems = new (std::nothrow) REGO600register*[registerItemCount];
+        requestList = new (std::nothrow) Drivers::REGO600::Request*[registerItemCount]();
+        registerItems = new (std::nothrow) REGO600register*[registerItemCount]();
         int index = 0;
         for (int i=0;i<itemCount;i++) {
             if (validItems[i] == false) continue;
