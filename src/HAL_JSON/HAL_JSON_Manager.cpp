@@ -234,6 +234,16 @@ namespace HAL_JSON {
         //Serial.println(F("found device"));
         return device->write(req.valByCmd);
     }
+    HALOperationResult Manager::exec(UIDPath& path) {
+        Device* device = findDevice(path);
+        if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
+        return device->exec();
+    }
+    HALOperationResult Manager::exec(UIDPath& path, ZeroCopyString& cmd) {
+        Device* device = findDevice(path);
+        if (device == nullptr) { return HALOperationResult::DeviceNotFound; }
+        return device->exec(cmd);
+    }
 
     bool Manager::ReadJSON(const char* path) {
         if (path == nullptr) {

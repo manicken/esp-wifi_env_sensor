@@ -2,6 +2,8 @@
 #include "HAL_JSON_ThingSpeak.h"
 
 namespace HAL_JSON {
+
+    const char ThingSpeak::TS_ROOT_URL[] = "http://api.thingspeak.com/update?api_key=";
     
     ThingSpeak::ThingSpeak(const JsonVariant &jsonObj, const char* type) : Device(UIDPathMaxLength::One,type) {
 

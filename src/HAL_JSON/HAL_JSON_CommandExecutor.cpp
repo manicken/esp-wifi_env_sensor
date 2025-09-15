@@ -44,32 +44,12 @@ namespace HAL_JSON {
         {
             anyErrors = readCmd(zcStr, message) == false;
         }
+        else if (zcCommand == HAL_JSON_CMD_EXEC_CMD)
+        {
+            anyErrors = execCmd(zcStr, message) == false;
+        }
         else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON) {
-            ZeroCopyString zcOptionalFileName = zcStr.SplitOffHead('/');
-#ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
-            message += "\"filename\":\"" + (zcOptionalFileName.Length() != 0?zcOptionalFileName.ToString():"default") + "\"}";
-#endif
-            std::string filePath;
-#if defined(ESP32) || defined(ESP8266)
-            filePath = "/";
-#endif
-            if (zcOptionalFileName.Length() == 0) {
-                filePath += "hal/cfg.json";
-            } else {
-                filePath += "hal/" + zcOptionalFileName.ToString();
-            }
-
-#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
-            std::cout << "Reload cfg json: " << filePath << std::endl;  
-#endif
-        
-            if (Manager::ReadJSON(filePath.c_str())) {
-                message += "\"info\":\"OK\"";
-            } else {
-                message += "\"info\":\"FAIL\",";
-                anyErrors = true;
-            }
-            
+            anyErrors = reloadJSON(zcStr, message) == false;            
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON_SAFE) {
             Manager::reloadQueued = true;
@@ -114,6 +94,33 @@ namespace HAL_JSON {
         message += "}";
         
         return (anyErrors == false);
+    }
+    bool CommandExecutor::reloadJSON(ZeroCopyString& zcStr, std::string& message) {
+        ZeroCopyString zcOptionalFileName = zcStr.SplitOffHead('/');
+#ifdef HAL_JSON_CommandExecutor_DEBUG_CMD
+        message += "\"filename\":\"" + (zcOptionalFileName.Length() != 0?zcOptionalFileName.ToString():"default") + "\"}";
+#endif
+        std::string filePath;
+#if defined(ESP32) || defined(ESP8266)
+        filePath = "/";
+#endif
+        if (zcOptionalFileName.Length() == 0) {
+            filePath += "hal/cfg.json";
+        } else {
+            filePath += "hal/" + zcOptionalFileName.ToString();
+        }
+
+#if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
+        std::cout << "Reload cfg json: " << filePath << std::endl;  
+#endif
+    
+        if (Manager::ReadJSON(filePath.c_str())) {
+            message += "\"info\":\"OK\"";
+            return true;
+        } else {
+            message += "\"info\":\"FAIL\",";
+            return false;
+        }
     }
     //  ██     ██ ██████  ██ ████████ ███████ 
     //  ██     ██ ██   ██ ██    ██    ██      
@@ -318,4 +325,25 @@ namespace HAL_JSON {
         message += valueStr;
         return true;
     }
+
+    bool CommandExecutor::execCmd(ZeroCopyString& zcStr, std::string& message) {
+        HALOperationResult res = HALOperationResult::NotSet;
+        if (zcStr.FindChar('/') != nullptr) {
+            ZeroCopyString zcPath = zcStr.SplitOffHead('/');
+            UIDPath path(zcPath);
+            res = Manager::exec(path, zcStr);
+            
+        } else {
+            UIDPath path(zcStr);
+            res = Manager::exec(path);
+        }
+        if (res != HALOperationResult::Success) {
+            message += "\"error\":\"";
+            message += HALOperationResultToString(res);
+            message += "\"";
+            return false;
+        }
+        return true;
+    }
+
 }

@@ -32,8 +32,8 @@ namespace HAL_JSON {
         static Device** devices;
         static int deviceCount;
         
-        static Device* CreateDeviceFromJSON(const JsonVariant &json);
-        static bool VerifyDeviceJson(const JsonVariant &jsonObj);
+        static Device* CreateDeviceFromJSON(const JsonVariant& json);
+        static bool VerifyDeviceJson(const JsonVariant& jsonObj);
         
         static int reloadVersion;
 
@@ -47,18 +47,20 @@ namespace HAL_JSON {
         static void begin();
         static bool setupMgr();
         // JSON I/O
-        static bool ParseJSON(const JsonArray &jsonArray);
+        static bool ParseJSON(const JsonArray& jsonArray);
         static bool ReadJSON(const char* path);
         static void CleanUp();
 
         // Device operations
         static Device* findDevice(UIDPath& path);
-        static HALOperationResult read(const HALReadRequest &req);
-        static HALOperationResult write(const HALWriteRequest &req);
-        static HALOperationResult read(const HALReadStringRequest &req);
-        static HALOperationResult write(const HALWriteStringRequest &req);
-        static HALOperationResult read(const HALReadValueByCmdReq &req);
-        static HALOperationResult write(const HALWriteValueByCmdReq &req);
+        static HALOperationResult read(const HALReadRequest& req);
+        static HALOperationResult write(const HALWriteRequest& req);
+        static HALOperationResult read(const HALReadStringRequest& req);
+        static HALOperationResult write(const HALWriteStringRequest& req);
+        static HALOperationResult read(const HALReadValueByCmdReq& req);
+        static HALOperationResult write(const HALWriteValueByCmdReq& req);
+        static HALOperationResult exec(UIDPath& path);
+        static HALOperationResult exec(UIDPath& path, ZeroCopyString& cmd);
 
         // Maintenance
         static void loop();

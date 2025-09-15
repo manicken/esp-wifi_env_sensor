@@ -52,6 +52,11 @@ namespace HAL_JSON {
         /** used to find sub/leaf devices @ "group devices" */
         virtual Device* findDevice(UIDPath& path);
 
+        /** Executes a device action that requires no parameters. */
+        virtual HALOperationResult exec();
+        /** Executes a device action with a provided command string. */
+        virtual HALOperationResult exec(ZeroCopyString& cmd);
+
         virtual String ToString();
 
         static bool DisabledInJson(const JsonVariant& jsonObj);

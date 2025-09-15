@@ -84,6 +84,7 @@ namespace HAL_JSON {
 #endif
         HALOperationResult read(HALValue &val) override;
         HALOperationResult write(const HALValue &val) override;
+        HALOperationResult exec() override;
         String ToString() override;
     };
 

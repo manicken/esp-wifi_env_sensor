@@ -24,6 +24,8 @@ namespace HAL_JSON {
     HALOperationResult Device::write(const HALWriteStringRequestValue& val) { return HALOperationResult::UnsupportedOperation; }
     HALOperationResult Device::read(const HALReadValueByCmd& val) { return HALOperationResult::UnsupportedOperation; }
     HALOperationResult Device::write(const HALWriteValueByCmd& val) { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Device::exec() { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Device::exec(ZeroCopyString& cmd) { return HALOperationResult::UnsupportedOperation; }
     Device::ReadToHALValue_FuncType Device::GetReadToHALValue_Function(ZeroCopyString& zcFuncName) { return nullptr; }
     HALValue* Device::GetValueDirectAccessPtr() { return nullptr; }
 

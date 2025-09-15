@@ -179,6 +179,10 @@ namespace HAL_JSON {
             pulseLength = t;//val.asUInt();
         if (pulseLength == 0) return HALOperationResult::ExecutionFailed; // no pulse
 
+        return exec();
+    }
+
+    HALOperationResult SinglePulseOutput::exec() {
         digitalWrite(pin, !inactiveState);
         pulseTicker.detach();
         pulseTicker.once_ms(pulseLength, pulseTicker_Callback, this);

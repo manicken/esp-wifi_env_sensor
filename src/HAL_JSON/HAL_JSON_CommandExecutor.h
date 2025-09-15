@@ -13,6 +13,7 @@
 
 #define HAL_JSON_CMD_EXEC_WRITE_CMD               "write"
 #define HAL_JSON_CMD_EXEC_READ_CMD                "read"
+#define HAL_JSON_CMD_EXEC_CMD                     "exec"
 #define HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON         "reloadcfg"
 #define HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON_SAFE    "reloadcfgsafe"
 #define HAL_JSON_CMD_EXEC_RELOAD_SCRIPTS          "reloadscripts"
@@ -54,7 +55,9 @@ namespace HAL_JSON {
             std::string ToString();
 #endif
         };
+        static bool reloadJSON(ZeroCopyString& zcStr, std::string& message);
         static bool writeCmd(ZeroCopyString& zcStr, std::string& message);
         static bool readCmd(ZeroCopyString& zcStr, std::string& message);
+        static bool execCmd(ZeroCopyString& zcStr, std::string& message);
     };
 }

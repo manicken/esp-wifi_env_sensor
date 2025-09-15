@@ -1,0 +1,124 @@
+Date : 2025-09-15 17:34:04
+Directory : g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON
+Total : 92 files,  8089 codes, 1426 comments, 1592 blanks, all 11107 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C++      |         92 |      8,089 |      1,426 |      1,592 |     11,107 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                        | files      | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                           |         92 |      8,089 |      1,426 |      1,592 |     11,107 |
+| . (Files)                                                                                                   |         29 |      2,379 |        297 |        464 |      3,140 |
+| Devices                                                                                                     |         37 |      2,402 |        246 |        510 |      3,158 |
+| Devices (Files)                                                                                             |         16 |      1,003 |        122 |        221 |      1,346 |
+| Devices\Display_SSD1306                                                                                     |          4 |        249 |         15 |         58 |        322 |
+| Devices\OneWireTemp                                                                                         |          9 |        675 |         85 |        143 |        903 |
+| Devices\REGO600                                                                                             |          4 |        247 |         12 |         39 |        298 |
+| Devices\RF433                                                                                               |          4 |        228 |         12 |         49 |        289 |
+| ScriptEngine                                                                                                |         26 |      3,308 |        883 |        618 |      4,809 |
++-------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                    | language | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\Display_SSD1306\HAL_JSON_Display_SSD1306.cpp         | C++      |        161 |          3 |         28 |        192 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\Display_SSD1306\HAL_JSON_Display_SSD1306.h           | C++      |         25 |          2 |         12 |         39 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\Display_SSD1306\HAL_JSON_Display_SSD1306_Element.cpp | C++      |         40 |          0 |          9 |         49 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\Display_SSD1306\HAL_JSON_Display_SSD1306_Element.h   | C++      |         23 |         10 |          9 |         42 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_CoreDevices.cpp                             | C++      |        280 |         66 |         51 |        397 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_CoreDevices.h                               | C++      |        106 |         35 |         23 |        164 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_DHT.cpp                                     | C++      |        118 |          6 |         16 |        140 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_DHT.h                                       | C++      |         37 |          2 |         14 |         53 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_I2C_BUS.cpp                                 | C++      |        169 |          6 |         23 |        198 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_I2C_BUS.h                                   | C++      |         37 |          0 |         19 |         56 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ScriptVariable.cpp                          | C++      |         43 |          2 |          8 |         53 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ScriptVariable.h                            | C++      |         22 |          0 |          7 |         29 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ScriptVariableReadOnly.cpp                  | C++      |         36 |          2 |          8 |         46 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ScriptVariableReadOnly.h                    | C++      |         20 |          0 |          7 |         27 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ScriptVariableWriteOnlyTest.cpp             | C++      |         36 |          2 |          8 |         46 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ScriptVariableWriteOnlyTest.h               | C++      |         20 |          0 |          7 |         27 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ThingSpeak.cpp                              | C++      |         21 |          0 |          9 |         30 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_ThingSpeak.h                                | C++      |         17 |          0 |          7 |         24 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_template.cpp                                | C++      |         23 |          1 |          8 |         32 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\HAL_JSON_template.h                                  | C++      |         18 |          0 |          6 |         24 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTemp.h                   | C++      |          4 |          3 |          2 |          9 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempAutoRefresh.cpp      | C++      |         43 |          5 |          8 |         56 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempAutoRefresh.h        | C++      |         31 |          0 |         17 |         48 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempBus.cpp              | C++      |        209 |         28 |         31 |        268 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempBus.h                | C++      |         44 |          1 |         16 |         61 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempDevice.cpp           | C++      |         99 |         14 |         27 |        140 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempDevice.h             | C++      |         53 |          2 |         18 |         73 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempGroup.cpp            | C++      |        163 |         31 |         12 |        206 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\OneWireTemp\HAL_JSON_OneWireTempGroup.h              | C++      |         29 |          1 |         12 |         42 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\REGO600\HAL_JSON_REGO600.cpp                         | C++      |        122 |          4 |         13 |        139 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\REGO600\HAL_JSON_REGO600.h                           | C++      |         28 |          1 |          6 |         35 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\REGO600\HAL_JSON_REGO600register.cpp                 | C++      |         58 |          4 |         11 |         73 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\REGO600\HAL_JSON_REGO600register.h                   | C++      |         39 |          3 |          9 |         51 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\RF433\HAL_JSON_TX433.cpp                             | C++      |        102 |          4 |         14 |        120 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\RF433\HAL_JSON_TX433.h                               | C++      |         25 |          0 |          9 |         34 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\RF433\HAL_JSON_TX433unit.cpp                         | C++      |         70 |          2 |         14 |         86 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\Devices\RF433\HAL_JSON_TX433unit.h                           | C++      |         31 |          6 |         12 |         49 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON.cpp                                                 | C++      |         21 |          3 |          5 |         29 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON.h                                                   | C++      |         16 |          0 |          7 |         23 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_ArduinoJSON_ext.cpp                                 | C++      |        112 |          0 |         13 |        125 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_ArduinoJSON_ext.h                                   | C++      |         26 |          0 |         11 |         37 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_CachedDeviceAccess.cpp                              | C++      |         50 |          0 |          9 |         59 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_CachedDeviceAccess.h                                | C++      |         25 |          8 |         12 |         45 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_CommandExecutor.cpp                                 | C++      |        262 |         24 |         35 |        321 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_CommandExecutor.h                                   | C++      |         43 |          6 |         11 |         60 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Device.cpp                                          | C++      |         68 |          3 |         19 |         90 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Device.h                                            | C++      |         61 |          6 |         22 |         89 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_DeviceTypesRegistry.cpp                             | C++      |         45 |          2 |         11 |         58 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_DeviceTypesRegistry.h                               | C++      |         23 |          0 |         10 |         33 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Device_GlobalDefines.h                              | C++      |         45 |          5 |         13 |         63 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_GPIO_Manager.cpp                                    | C++      |        221 |         13 |         17 |        251 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_GPIO_Manager.h                                      | C++      |         53 |         15 |         18 |         86 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Manager.cpp                                         | C++      |        230 |         66 |         42 |        338 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Manager.h                                           | C++      |         51 |          7 |         13 |         71 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Operations.cpp                                      | C++      |         24 |          0 |          3 |         27 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Operations.h                                        | C++      |         74 |         15 |         15 |        104 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_REST.cpp                                            | C++      |         27 |          2 |          8 |         37 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_REST.h                                              | C++      |         24 |          3 |          7 |         34 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_UID.cpp                                             | C++      |         59 |          1 |          9 |         69 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_UID.h                                               | C++      |         33 |          5 |          7 |         45 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_UID_Path.cpp                                        | C++      |        113 |          1 |         11 |        125 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_UID_Path.h                                          | C++      |         41 |          5 |         15 |         61 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Value.cpp                                           | C++      |        153 |         13 |         29 |        195 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_Value.h                                             | C++      |         55 |          7 |         17 |         79 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_ZeroCopyString.cpp                                  | C++      |        364 |         33 |         66 |        463 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\HAL_JSON_ZeroCopyString.h                                    | C++      |         60 |         54 |          9 |        123 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE.cpp                      | C++      |         81 |          5 |         14 |        100 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE.h                        | C++      |         23 |         16 |          6 |         45 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_ActionStatement.cpp      | C++      |         53 |        143 |         11 |        207 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_ActionStatement.h        | C++      |         35 |         11 |         17 |         63 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_CalcRPNToken.cpp         | C++      |        144 |        245 |         17 |        406 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_CalcRPNToken.h           | C++      |         67 |         25 |         16 |        108 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Expression_Parser.cpp    | C++      |        701 |        108 |        103 |        912 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Expression_Parser.h      | C++      |        110 |          9 |         24 |        143 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Expression_Token.cpp     | C++      |        121 |          9 |          9 |        139 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Expression_Token.h       | C++      |         67 |          2 |          7 |         76 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_IfStatement.cpp          | C++      |        156 |         21 |         20 |        197 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_IfStatement.h            | C++      |         49 |         23 |         19 |         91 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_LogicExecNode.cpp        | C++      |        168 |         23 |         21 |        212 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_LogicExecNode.h          | C++      |         39 |          5 |         15 |         59 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Operators.h              | C++      |         21 |          2 |          2 |         25 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Parser.cpp               | C++      |        837 |        110 |        151 |      1,098 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Parser.h                 | C++      |         77 |         26 |         29 |        132 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Parser_Token.cpp         | C++      |        237 |         21 |         33 |        291 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Parser_Token.h           | C++      |         82 |         42 |         24 |        148 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_RPNStack.cpp             | C++      |          5 |          0 |          3 |          8 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_RPNStack.h               | C++      |         30 |          0 |         10 |         40 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Script.cpp               | C++      |         93 |         16 |         23 |        132 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Script.h                 | C++      |         33 |         13 |         15 |         61 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_StatementBlock.cpp       | C++      |         33 |          6 |         13 |         52 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_StatementBlock.h         | C++      |         22 |          2 |         12 |         36 |
+| g:\_git\__ESP\esp-wifi_env_sensor\src\HAL_JSON\ScriptEngine\HAL_JSON_SCRIPT_ENGINE_Support.h                | C++      |         24 |          0 |          4 |         28 |
+| Total                                                                                                       |          |      8,089 |      1,426 |      1,592 |     11,107 |
++-------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

@@ -13,7 +13,7 @@ namespace HAL_JSON {
 
     class ThingSpeak : public Device {
     private:
-
+        static const char TS_ROOT_URL[];
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj, const char* type);
