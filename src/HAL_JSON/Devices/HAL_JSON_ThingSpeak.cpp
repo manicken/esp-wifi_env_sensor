@@ -29,6 +29,35 @@ namespace HAL_JSON {
         }
     }
 
+    ThingSpeak::~ThingSpeak() {
+        delete[] fields;
+    }
+
+    HALOperationResult ThingSpeak::exec() {
+        std::string urlApi;
+        urlApi += TS_ROOT_URL;
+        urlApi += API_KEY;
+        for (int i=0;i<fieldCount;i++) {
+            ThingSpeakField& field = fields[i];
+            HALValue val;
+            HALOperationResult hres = field.cda->ReadSimple(val);
+            if (hres != HALOperationResult::Success) continue;
+            
+            urlApi += "&field";
+            urlApi += std::to_string(field.index);
+            urlApi += '=';
+            urlApi += val.toString();
+        }
+        http.begin(wifiClient, urlApi.c_str());
+                
+        int httpCode = http.GET();
+        if (httpCode > 0) DEBUG_UART.println(F("[OK]\r\n"));
+        else DEBUG_UART.println(F("[FAIL]\r\n"));
+
+        http.end();
+        return HALOperationResult::Success;
+    }
+
     bool ThingSpeak::VerifyJSON(const JsonVariant &jsonObj) {
         if (!ValidateJsonStringField(jsonObj, HAL_JSON_KEYNAME_UID)){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_THINGSPEAK_VERIFY_JSON); return false; }
         if (!ValidateJsonStringField(jsonObj, "key")){ SET_ERR_LOC(HAL_JSON_ERROR_SOURCE_THINGSPEAK_VERIFY_JSON); return false; }
@@ -92,9 +121,7 @@ namespace HAL_JSON {
         return new ThingSpeak(jsonObj, type);
     }
 
-    HALOperationResult ThingSpeak::exec() {
-
-    }
+    
 
     String ThingSpeak::ToString() {
         String ret;

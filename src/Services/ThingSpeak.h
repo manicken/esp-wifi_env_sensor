@@ -1,3 +1,5 @@
+#define SERVICES_THINGSPEAK_H_
+
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 

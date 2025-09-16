@@ -13,6 +13,7 @@
   {"uid":"var0","type":"VAR"},
   {"uid":"rd_var","type":"CONSTVAR"},
   {"uid":"wr_var","type":"WRITEVAR"},
+  
   {"uid":"temps","type":"1WTG","refreshtimesec":1,"note":"temperatures",
     "items":[
 	    {"uid":"a","pin":27,"note":"inne","items":[
@@ -21,13 +22,13 @@
 	      "the following is just here to test new devices command, currently disabled to make it work",
 	      {"disabled":true,"uid":"D3","romid":"228:61:64:34:83:74:BE:84","note":"nere"}
 	    ]},
-	    {"uid":"b","pin":26,"note":"mitten","items":[
+	    {"disabled":true,"uid":"b","pin":26,"note":"mitten","items":[
 	      {"uid":"a","romid":"28:61:64:35:18:18:C3:F0","note":"ute fram"},
 	      {"uid":"b","romid":"28:61:64:35:18:1F:79:D2","note":"ute bak"},
 	      {"uid":"c","romid":"28:61:64:35:18:21:D5:2F","note":"inne"}
 	    ]},
 	    "the following will cause a pin conflict",
-	    {"uid":"c","pin":25,"note":"duplicate pin use test","items":[
+	    {"disabled":true,"uid":"c","pin":25,"note":"duplicate pin use test","items":[
 	      "comment here should be fine",
 	      {"uid":"a","romid":"28:87:17:43:d4:bd:0a:46","note":"ute"},
 	      {"uid":"b","romid":"28:F0:5F:43:D4:CD:3C:59","note":"inne"}
@@ -40,16 +41,16 @@
   ]},
   {"uid":"temp","type":"1WTD","pin":33,"refreshtimesec":1,"romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
   {"disabled":true,"uid":"1WTD0","type":"1WTD","pin":34,"refreshtimesec":1,"romid":"28:61:64:35:18:20:9E:8D","note":"inne uppe"},
-  {"uid":"BIRELSET", "type":"DPOUT", "pin":18,"plength":500},
-  {"uid":"BIRELRST", "type":"DPOUT", "pin":19,"plength":1000},
-  {"uid":"hum", "type":"DHT","model":"dht11", "pin":21},
-  {"uid":"tx433", "type":"TX433", "pin":22,
+  {"uid":"BIRELSET", "type":"DPOUT", "pin":18,"plength":5000},
+  {"uid":"BIRELRST", "type":"DPOUT", "pin":19,"plength":5000},
+  {"uid":"hum", "type":"DHT","model":"dht11", "pin":23},
+  {"uid":"tx433", "type":"TX433", "pin":26,
     "units": [
       {"uid":"D0","model":"lc","anid":"hello","grp_btn":0,"btn":0,"state":0},
       {"uid":"D1","model":"lc","anid":"hello"}
     ]
   },
-  {"uid":"hp","type":"REGO600","rxpin":34,"txpin":23,"refreshtimesec":5,"items": [
+  {"disabled":true,"uid":"hp","type":"REGO600","rxpin":34,"txpin":23,"refreshtimesec":5,"items": [
 	  {"uid":"GT1","opcode":"02","addr":"0209","valuetype":"float"},
 	  {"uid":"GT2","opcode":"02","addr":"020A","valuetype":"float"},
 	  {"uid":"GT3","opcode":"02","addr":"020B","valuetype":"float"},
@@ -60,5 +61,26 @@
 	  {"uid":"GT10","opcode":"02","addr":"0211","valuetype":"float"},
 	  {"uid":"GT11","opcode":"02","addr":"0212","valuetype":"float"}
   ]},
-  {"uid":"pawcfg","type":"PWM_AW_CFG","freq":5000,"res":8,"note":"only to test write only device"}
+  {"uid":"pawcfg","type":"PWM_AW_CFG","freq":5000,"res":8,"note":"only to test write only device"},
+  {"uid":"i2c","type":"I2C","sckpin":22,"sdapin":21,"items": [
+    {"uid":"disp","type":"SSD1306","width":128,"height":64,"addr":"3C","items": [
+      {"uid":"a","x":0,"y":0,"label":"temps:a:a=","source":"temps:a:a"},
+      {"uid":"b","x":0,"y":8,"label":"temps:a:b=","source":"temps:a:b"},
+      {"uid":"c","x":0,"y":16,"label":"hum=","source":"hum"},
+      {"uid":"d","x":0,"y":24,"label":"var1="}
+    ]}  
+  ]},
+  {"uid":"ts1","type":"THINGSPEAK","key":"0123456789ABCDEF",
+    "items":{
+      "1":"temps:a:a",
+      "2":"temps:a:b",
+      "3":"var1",
+      "4":"var2",
+      "5":"var3",
+      "6":"var4",
+      "7":"var5",
+      "8":"var6"
+    }
+  },
+  {"uid":"neo","type":"WS2812","pin":26,"ledcount":8,"format":"RGB","ifspeed":"KHZ400","brightness":127,"mode":12,"fxspeed":3000}
 ]

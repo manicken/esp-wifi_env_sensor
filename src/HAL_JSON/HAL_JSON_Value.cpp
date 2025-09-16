@@ -49,6 +49,7 @@ namespace HAL_JSON {
 
     std::string HALValue::toString() const {
         switch (type) {
+            case Type::INT: return std::to_string(ival);
             case Type::UINT: return std::to_string(uval);
             case Type::FLOAT: return std::to_string(fval);
             default: return "";
@@ -144,7 +145,6 @@ namespace HAL_JSON {
     }
     HALValue HALValue::operator-(const HALValue& other) const {
         if (type == Type::FLOAT || other.type == Type::FLOAT) {
-            if (type == Type::FLOAT)
             return asFloat() - other.asFloat();
         } else if (type == Type::INT || other.type == Type::INT) {
             return ival - other.ival;

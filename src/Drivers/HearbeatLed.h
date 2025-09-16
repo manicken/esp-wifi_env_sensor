@@ -1,9 +1,12 @@
+#pragma once
+
 #include <Arduino.h>
 
 #if defined(ESP8266)
-#include <ESP8266WebServer.h>
+//#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 #define DEBUG_UART Serial1
-#define WEBSERVER_TYPE ESP8266WebServer
+#define WEBSERVER_TYPE AsyncWebServer
 #elif defined(ESP32)
 //#include "Support/fs_WebServer.h"
 #define DEBUG_UART Serial
@@ -11,6 +14,8 @@
 #include <ESPAsyncWebServer.h>
 #define WEBSERVER_TYPE AsyncWebServer
 #endif
+
+#include "../Support/ConvertHelper.h"
 
 namespace HeartbeatLed
 {
@@ -35,77 +40,10 @@ namespace HeartbeatLed
     #define HEARTBEATLED_DEFAULT_OFF_INTERVAL 4000
 #endif
 
-    unsigned long HEARTBEATLED_ON_INTERVAL = HEARTBEATLED_DEFAULT_ON_INTERVAL;
-    unsigned long HEARTBEATLED_OFF_INTERVAL = HEARTBEATLED_DEFAULT_OFF_INTERVAL;
-    int ledState = LOW;             // ledState used to set the LED
-    unsigned long previousMillis = 0;        // will store last time LED was updated
-    unsigned long currentMillis = 0;
-    unsigned long currentInterval = 0;
+    extern unsigned long HEARTBEATLED_ON_INTERVAL;
+    extern unsigned long HEARTBEATLED_OFF_INTERVAL;
 
-    //WEBSERVER_TYPE *webserver = nullptr;
-
-
-
-    void setup(WEBSERVER_TYPE &srv)
-    {
-        //webserver = &srv;
-        srv.on("/HeartbeatLed/set", [](AsyncWebServerRequest *request) {
-            bool hadAnyArg = false;
-            String ret = "";
-            if (request->hasArg("on")) {
-                hadAnyArg = true;
-                String onArg = request->arg("on");
-                if (Convert::isInteger(onArg.c_str()) == false)
-                    ret += "ERROR: on argument is not a number<br>";
-                else
-                {
-                    int onValue = atoi(onArg.c_str());
-                    HeartbeatLed::HEARTBEATLED_ON_INTERVAL = onValue;
-                    ret += "On value set to " + onArg + "<br>";
-                }
-            }
-            if (request->hasArg("off")) {
-                hadAnyArg = true;
-                String offArg = request->arg("off");
-                if (Convert::isInteger(offArg.c_str()) == false)
-                    ret += "ERROR: off argument is not a number<br>";
-                else
-                {
-                    int offValue = atoi(offArg.c_str());
-                    HeartbeatLed::HEARTBEATLED_OFF_INTERVAL = offValue;
-                    ret += "Off value set to " + offArg + "<br>";
-                }
-            }
-            if (hadAnyArg == false) {
-                ret += "Warning: On/Off arguments missing!!!<br>";
-            }
-            request->send(200, "text/html", ret);
-        });
-        pinMode(HEARTBEATLED_PIN, OUTPUT); // output
-        digitalWrite(HEARTBEATLED_PIN, HEARTBEATLED_INACTIVESTATE);
-    }
-    void task(void)
-    {
-        currentMillis = millis();
-        currentInterval = currentMillis - previousMillis;
-        
-        if (ledState == LOW)
-        {
-            if (currentInterval > HEARTBEATLED_OFF_INTERVAL)
-            {
-                previousMillis = currentMillis;
-                ledState = HIGH;
-                digitalWrite(HEARTBEATLED_PIN, HEARTBEATLED_ACTIVESTATE);
-            }
-        }
-        else
-        {
-            if (currentInterval > HEARTBEATLED_ON_INTERVAL)
-            {
-                previousMillis = currentMillis;
-                ledState = LOW;
-                digitalWrite(HEARTBEATLED_PIN, HEARTBEATLED_INACTIVESTATE);
-            }
-        }
-    }
+    void setup(WEBSERVER_TYPE &srv);
+    void task(void);
+    
 }

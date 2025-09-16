@@ -39,6 +39,8 @@ namespace HAL_JSON {
         Device* findDevice(UIDPath& path) override;
         void loop() override;
 
+        HALOperationResult read(const HALReadStringRequestValue& val) override;
+
         String ToString() override;
     };
 

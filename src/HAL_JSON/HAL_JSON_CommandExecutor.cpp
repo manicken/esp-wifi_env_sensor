@@ -311,6 +311,16 @@ namespace HAL_JSON {
                 valueStr += result;
                 valueStr += "\"";
             }
+        } else if (params.zcType == HAL_JSON_CMD_EXEC_JSON_STR_TYPE) {
+            UIDPath uidPath(params.zcUid);
+            std::string result;
+            HALReadStringRequestValue strHalValue(params.zcValue, result);
+            HALReadStringRequest req(uidPath, strHalValue);
+
+            readResult = Manager::read(req);
+            if (readResult == HALOperationResult::Success) {
+                valueStr += result;
+            }
         } else {
             message += "\"error\":\"Unknown type for reading.\"";
             return false;

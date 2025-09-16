@@ -88,7 +88,9 @@ namespace HAL_JSON {
             devices = nullptr;
             deviceCount = 0;
         }
+#if defined(ESP32)
         wire->end();
+#endif
         pinMode(sckpin, INPUT);
         pinMode(sdapin, INPUT);
     }
@@ -193,6 +195,32 @@ namespace HAL_JSON {
         for (int i=0;i<deviceCount;i++) {
             devices[i]->loop();
         }
+    }
+
+    HALOperationResult I2C_BUS::read(const HALReadStringRequestValue& val) {
+        if (val.cmd == "list") {
+            
+            //Serial.println("I2C scan...");
+            val.out_value = '[';
+            bool first = true;
+            for (uint8_t addr=1; addr<127; ++addr) {
+                wire->beginTransmission(addr);
+                if (wire->endTransmission() == 0) {
+                    if (first == false) val.out_value += ',';
+                    else if (first) first = false;
+                    val.out_value += "\"0x";
+                    val.out_value += Convert::toHex(addr);
+                    val.out_value += "\"";
+                    
+                    //Serial.print("Found: 0x");
+                    //Serial.println(addr, HEX);
+                }
+            }
+            val.out_value += ']';
+            //Serial.println("Done");
+            return HALOperationResult::Success;
+        }
+        return HALOperationResult::UnsupportedCommand;
     }
 
 }

@@ -8,13 +8,6 @@
 #include "../Support/Time_ext.h"
 #include "../Support/NTP.h"
 
-#if defined(ESP8266)
-#include <ESP8266WebServer.h>
-#define DEBUG_UART Serial1
-#elif defined(ESP32)
-#include "Support/fs_WebServer.h"
-#define DEBUG_UART Serial
-#endif
 
 #include "Scheduler.h"
 
@@ -27,7 +20,7 @@ AsStringParameter::AsStringParameter(const JsonVariant& json):OnTickExtParameter
 
 namespace Scheduler
 {
-    WEBSERVER_TYPE *webserver = nullptr;
+    //WEBSERVER_TYPE *webserver = nullptr;
 
     int FuncCount = 0;
     NameToFunction* nameToFuncList = nullptr;
@@ -267,7 +260,7 @@ namespace Scheduler
 
     void setup(WEBSERVER_TYPE &srv, NameToFunction* funcDefList, int funcDefListCount) {
 
-        webserver = &srv;
+        //webserver = &srv;
         FuncCount = funcDefListCount;
         nameToFuncList = funcDefList;
         NTP::NTPConnect();
@@ -279,17 +272,17 @@ namespace Scheduler
 
         //DEBUG_UART.printf("nameToFunctionList_Count:%d\r\n", funcDefListCount);
         
-        srv.on(SCHEDULER_URL_REFRESH, []() {
+        srv.on(SCHEDULER_URL_REFRESH, [](AsyncWebServerRequest *req) {
         if (LoadJson(SCHEDULER_CFG_FILE_PATH))
-            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, F("schedule ld OK"));
+            req->send(200,CONSTSTR::htmlContentType_TextPlain, F("schedule ld OK"));
         else
-            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, F("schedule ld err"));
+            req->send(200,CONSTSTR::htmlContentType_TextPlain, F("schedule ld err"));
         });
-        srv.on(SCHEDULER_URL_GET_MAX_NUMBER_OF_ALARMS, []() {
+        srv.on(SCHEDULER_URL_GET_MAX_NUMBER_OF_ALARMS, [](AsyncWebServerRequest *req) {
             std::string ret = std::to_string(dtNBR_ALARMS);
-            webserver->send(200, CONSTSTR::htmlContentType_TextPlain, ret.c_str());
+            req->send(200, CONSTSTR::htmlContentType_TextPlain, ret.c_str());
         });
-        srv.on(SCHEDULER_URL_GET_FUNCTION_NAMES, []() {
+        srv.on(SCHEDULER_URL_GET_FUNCTION_NAMES, [](AsyncWebServerRequest *req) {
 
             std::string jsonStr = "{";
 
@@ -299,16 +292,16 @@ namespace Scheduler
                 if (i < (FuncCount-1)) jsonStr += ",";
             }
             jsonStr += "}";
-            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, jsonStr.c_str());
+            req->send(200,CONSTSTR::htmlContentType_TextPlain, jsonStr.c_str());
         });
-        srv.on(SCHEDULER_URL_GET_SHORT_DOWS, []() {
+        srv.on(SCHEDULER_URL_GET_SHORT_DOWS, [](AsyncWebServerRequest *req) {
             std::string ret = GetShortFormDowListAsJson();
-            webserver->send(200,CONSTSTR::htmlContentType_TextPlain, ret.c_str());
+            req->send(200,CONSTSTR::htmlContentType_TextPlain, ret.c_str());
         });
-        srv.on(SCHEDULER_URL_GET_TIME, []() {
+        srv.on(SCHEDULER_URL_GET_TIME, [](AsyncWebServerRequest *req) {
             std::string nowstr = "{\n\"now\":\"" + Time_ext::GetTimeAsString(now()) + "\",\n";
             nowstr += "\"next trigger\":\"" + Time_ext::GetTimeAsString(Scheduler->getNextTrigger()) + "\"\n}";
-            webserver->send(200,F("text/json"), nowstr.c_str());
+            req->send(200,F("text/json"), nowstr.c_str());
         });
         LoadJson(SCHEDULER_CFG_FILE_PATH);
     }

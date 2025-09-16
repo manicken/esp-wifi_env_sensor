@@ -6,7 +6,7 @@ namespace MainConfig {
     String mDNS_name;
     std::string lastJSONread_Error = "";
 
-    WEBSERVER_TYPE *webserver = nullptr;
+    //WEBSERVER_TYPE *webserver = nullptr;
 
     bool ReadJson()
     {
@@ -67,16 +67,16 @@ namespace MainConfig {
         SetDefault_mDNS_name();
     }
 
-    void Restart()
+    void Restart(AsyncWebServerRequest *req)
     {
-        webserver->send(200, "text/html", "The device will now restart!");
+        req->send(200, "text/html", "The device will now restart!");
         delay(500);
         ESP.restart(); // the only way to do a proper reload of main settings
     }
 
     void begin(WEBSERVER_TYPE &srv) {
 
-        webserver = &srv;
+        //webserver = &srv;
         srv.on(MAIN_CONFIG_URL_RELOAD_JSON, HTTP_GET, Restart);
         if (ReadJson() == false) {
             OnReadJsonFail();

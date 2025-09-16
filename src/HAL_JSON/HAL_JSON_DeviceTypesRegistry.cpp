@@ -13,6 +13,7 @@
 #include "Devices/REGO600/HAL_JSON_REGO600.h"
 #include "Devices/HAL_JSON_I2C_BUS.h"
 #include "Devices/HAL_JSON_ThingSpeak.h"
+#include "Devices/HAL_JSON_WS2812.h"
 
 namespace HAL_JSON {
 
@@ -41,6 +42,7 @@ namespace HAL_JSON {
 #endif
         {UseRootUID::Mandatory, "I2C", I2C_BUS::Create, I2C_BUS::VerifyJSON},
         {UseRootUID::Mandatory, "THINGSPEAK", ThingSpeak::Create, ThingSpeak::VerifyJSON},
+        {UseRootUID::Mandatory, "WS2812", WS2812::Create, WS2812::VerifyJSON},
         {UseRootUID::Mandatory, "CONSTVAR", ScriptVariableReadOnly::Create, ScriptVariableReadOnly::VerifyJSON},
         {UseRootUID::Mandatory, "WRITEVAR", ScriptVariableWriteOnlyTest::Create, ScriptVariableWriteOnlyTest::VerifyJSON},
 

@@ -2,55 +2,57 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 #include "../Support/LittleFS_ext.h"
+#include "../Support/ConvertHelper.h"
 #include "Time_ext.h"
+#include <ESPAsyncWebServer.h>
 
 #if defined(ESP8266)
-#include <ESP8266WebServer.h>
-#define WEBSERVER_TYPE ESP8266WebServer
+//#include <ESP8266WebServer.h>
+#define WEBSERVER_TYPE AsyncWebServer
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin()
 #define WIFI_getChipId() ESP.getChipId()
 #define WIFI_CHIPID_PREFIX "ESP_"
 #elif defined(ESP32)
-#include "Support/fs_WebServer.h"
-#define WEBSERVER_TYPE fs_WebServer
+//#include "Support/fs_WebServer.h"
+#define WEBSERVER_TYPE AsyncWebServer
 #define AUTOFORMAT_ON_FAIL true
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "/LittleFS", 10, "spiffs")
 #define WIFI_getChipId() ESP.getEfuseMac()
 #define WIFI_CHIPID_PREFIX "ESP32_"
 #endif
 
-#define INFO_URL                       F("/info")
-#define INFO_URL_ESP_FREE_HEAP         F("/esp/free_heap")
-#define INFO_URL_ESP_LAST_RESET_REASON F("/esp/last_reset_reason")
+#define INFO_URL                       "/info"
+#define INFO_URL_ESP_FREE_HEAP         "/esp/free_heap"
+#define INFO_URL_ESP_LAST_RESET_REASON "/esp/last_reset_reason"
 
 namespace Info
 {
-    WEBSERVER_TYPE *webserver = nullptr;
+    //WEBSERVER_TYPE *webserver = nullptr;
 
     time_t startTime = 0;
 
     void printESP_info(void);
-    void srv_handle_info(void);
+    void srv_handle_info(AsyncWebServerRequest *req);
     
     bool resetReason_is_crash();
     const char* getResetReasonStr();
 
     void setup(WEBSERVER_TYPE &srv) {
-        webserver = &srv;
+        //webserver = &srv;
 
-        webserver->on(INFO_URL, srv_handle_info);
-        webserver->on(INFO_URL_ESP_LAST_RESET_REASON, []() {
+        srv.on(INFO_URL, srv_handle_info);
+        srv.on(INFO_URL_ESP_LAST_RESET_REASON, [](AsyncWebServerRequest *req) {
             std::string resetInfo = "Last Reset at: " + Time_ext::GetTimeAsString(startTime);
             resetInfo += "\nReason: " + std::string(getResetReasonStr());
             
-            webserver->send(200, F("text/plain"), resetInfo.c_str());
+            req->send(200, F("text/plain"), resetInfo.c_str());
         });
-        webserver->on(INFO_URL_ESP_FREE_HEAP, []() {
+        srv.on(INFO_URL_ESP_FREE_HEAP, [](AsyncWebServerRequest *req) {
             std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
 #if defined(ESP8266)
             ret += ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
 #endif
-            webserver->send(200,F("text/plain"), ret.c_str());
+            req->send(200,F("text/plain"), ret.c_str());
         });
     }
 
@@ -161,7 +163,7 @@ uint64_t reverseBytes(uint64_t value) {
            ((value & 0xFF00000000000000) >> 56);
 }
 
-void srv_handle_info()
+void srv_handle_info(AsyncWebServerRequest* req)
 {
     uint32_t ideSize = ESP.getFlashChipSize();
 #if defined(ESP8266)
@@ -229,7 +231,7 @@ void srv_handle_info()
         srv_return_msg.concat(F("<br>LittleFS Fail to mount"));
 
     srv_return_msg.concat(F("</body></html>"));
-    webserver->send(200, "text/html", srv_return_msg);
+    req->send(200, "text/html", srv_return_msg);
     //server.sendContent(srv_return_msg);
 
     //server.sendContent("");

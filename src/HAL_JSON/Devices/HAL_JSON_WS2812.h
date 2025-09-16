@@ -10,15 +10,23 @@
 #include "../HAL_JSON_Device_GlobalDefines.h"
 #include "../HAL_JSON_ArduinoJSON_ext.h"
 
+#include <WS2812FX.h>
+
 namespace HAL_JSON {
 
-    class Template : public Device {
+    class WS2812 : public Device {
     private:
         uint8_t pin = 0; // if pin would be used
+        WS2812FX* ws2812fx;
     public:
         static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj, const char* type);
-        Template(const JsonVariant &jsonObj, const char* type);
+        WS2812(const JsonVariant &jsonObj, const char* type);
+
+        HALOperationResult write(const HALWriteValueByCmd& val) override;
+        HALOperationResult write(const HALWriteStringRequestValue& val) override;
+
+        void loop() override;
 
         String ToString() override;
     };

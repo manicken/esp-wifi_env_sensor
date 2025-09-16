@@ -24,6 +24,7 @@ namespace HAL_JSON {
     bool IsUINT32(const JsonVariant& jsonObj, const char* keyName);
     uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* keyName, uint32_t defaultValue);
     uint32_t GetAsUINT32(const JsonVariant& jsonObj, const char* keyName);
+    uint16_t GetAsUINT16(const JsonVariant& jsonObj, const char* keyName);
     uint8_t GetAsUINT8(const JsonVariant& jsonObj, const char* keyName);
     
     inline bool IsConstChar(const JsonVariant& jsonObj) {

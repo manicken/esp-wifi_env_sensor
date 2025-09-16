@@ -3,24 +3,16 @@
 */
 #include "main.h"
 
-
-
-#if defined(ESP32)
-#include "esp_core_dump.h"
-#endif
-
+#include "System/WifiManagerWrapper.h"
+#include "System/System.h"
 #include "Support/ConstantStrings.h"
+#include "Drivers/HearbeatLed.h" // this should not be here in final version (should only be accessible through HAL interface)
 
-
-unsigned long auto_last_change = 0;
-unsigned long last_wifi_check_time = 0;
+AsyncWebServer webserver(HTTP_PORT);
 
 #ifdef ESP8266
-//ESP8266WebServer webserver(HTTP_PORT);
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin()
 #elif ESP32
-//fs_WebServer webserver(HTTP_PORT);
-AsyncWebServer webserver(HTTP_PORT);
 #define AUTOFORMAT_ON_FAIL true
 #define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "/LittleFS", 10, "spiffs")
 #endif
@@ -28,20 +20,11 @@ AsyncWebServer webserver(HTTP_PORT);
 unsigned long currTime = 0;
 
 #if defined(USE_DISPLAY)
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+#define SCREEN_ADDRESS 0x3C
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1); // -1 = no reset pin
-uint8_t update_display = 0;
-unsigned long deltaTime_displayUpdate = 0;
+Adafruit_SSD1306 display(128, 64, &Wire, -1); // -1 = no reset pin
 void init_display(void);
-#endif
-
-//UART2websocket uart2ws;
-#if defined(HEATPUMP)
-REGO600 rego600;
 #endif
 
 void Timer_SyncTime() {
@@ -53,39 +36,7 @@ void Timer_SyncTime() {
     setTime(now2.Hour+1, now2.Minute, now2.Second, now2.Day, now2.Month, year);
 }
 
-void Timer_SendEnvData()
-{
-    DEBUG_UART.println("Timer_SendEnvData");
-
-    if (ThingSpeak::canPost) {
-        
-        ThingSpeak::SendData();//temp_ds, humidity_dht);
-
-    }
-}
-#ifdef FAN_H_
-void Alarm_SetFanSpeed(const OnTickExtParameters *param)
-{
-    DEBUG_UART.println("\nAlarm_SetFanSpeed");
-    const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
-    if (casted_param != nullptr)
-    {
-        //FAN::DecodeFromJSON(casted_param->jsonStr);
-    }
-}
-#endif
-#ifdef HAL_JSON_DEVICE_RF433
-void Alarm_SendToRF433(const OnTickExtParameters *param)
-{
-    DEBUG_UART.println("Alarm_SendToRF433");
-    const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
-    if (casted_param != nullptr)
-    {
-        RF433::DecodeFromJSON(casted_param->jsonStr);
-    }
-}
-#endif
-#if defined(DEVICE_MANAGER_H)
+#if defined(HAL_JSON_H_)
 void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
 {
     DEBUG_UART.println("Alarm_SendToDeviceManager");
@@ -100,201 +51,28 @@ void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
 Scheduler::NameToFunction nameToFunctionList[] = {
 //   name         , onTick            , onTickExt
     {"ntp_sync"   , &Timer_SyncTime   , nullptr           }
-    ,{"sendEnvData", &Timer_SendEnvData, nullptr           }
-#ifdef FAN_H_
-    ,{"fan"        , nullptr           , &Alarm_SetFanSpeed} // this would be obsolete in favor of using SendToDeviceManager
-#endif
-#ifdef HAL_JSON_DEVICE_RF433
-    ,{"rf433"      , nullptr           , &Alarm_SendToRF433} // this would be obsolete in favor of using SendToDeviceManager
-#endif
-#if defined(DEVICE_MANAGER_H)
+#if defined(HAL_JSON_H_)
     ,{"devmgr"     , nullptr           , &Alarm_SendToDeviceManager}
 #endif
 };
 
-#if defined(ESP32)
-#define INIT_SDMMC_PRINT_INFO
-#define INIT_SDMMC_PRINT_DIR
-bool InitSD_MMC()
-{
-    pinMode(23, OUTPUT); // output
-    digitalWrite(23, HIGH); // enable pullup on IO2(SD_D0), IO12(SD_D2)
-    pinMode(2, INPUT); // input
-    if (digitalRead(2) == 0) return false; // no pullup connected to GPIO2 from GPIO23
-    delay(10);
-    log_e("SD-card initialialize...");
-
-    if (SD_MMC.begin("/sdcard", false, false, 20000)) {
-        DEBUG_UART.println("SD-card initialized OK");
-#if defined(INIT_SDMMC_PRINT_INFO)
-        DEBUG_UART.print("SD card size:"); DEBUG_UART.println(SD_MMC.cardSize());
-        DEBUG_UART.print("SD card type:"); 
-        if (SD_MMC.cardType() == sdcard_type_t::CARD_SD) DEBUG_UART.println("CARD_SD");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_MMC) DEBUG_UART.println("CARD_MMC");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_NONE) DEBUG_UART.println("CARD_NONE");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_SDHC) DEBUG_UART.println("CARD_SDHC");
-        else if (SD_MMC.cardType() == sdcard_type_t::CARD_UNKNOWN) DEBUG_UART.println("CARD_UNKNOWN");
-
-        DEBUG_UART.print("SD card totalBytes:"); DEBUG_UART.println(SD_MMC.totalBytes());
-        DEBUG_UART.print("SD card usedBytes:"); DEBUG_UART.println(SD_MMC.usedBytes());
-#endif
-#if defined(INIT_SDMMC_PRINT_DIR)
-        FS* fileSystem = &SD_MMC;
-        File root = fileSystem->open("/");
-
-        File file;
-        while (file = root.openNextFile())
-        {
-            DEBUG_UART.print("Name:"); DEBUG_UART.print(file.name());
-            DEBUG_UART.print(", Size:"); DEBUG_UART.print(file.size());
-            DEBUG_UART.print(", Dir:"); DEBUG_UART.print(file.isDirectory()?"true":"false");
-            DEBUG_UART.println();
-        }
-#endif
-        return true;
-    }
-    else
-    {
-        log_e("could not initialize/find any connected sd-card.");
-        return false;
-    }
-}
-#endif
-#if defined(ESP32)
-void Start_MDNS()
-{
-    DEBUG_UART.println("\n\n***** STARTING mDNS service ********");
-    if (MDNS.begin(MainConfig::mDNS_name.c_str())) {
-        mdns_instance_name_set("ESP32 development board");
-        MDNS.addService("http", "tcp", 80);
-        
-        if (mdns_service_add("_esp32devices", "http", "tcp", 80, NULL, 0) != ESP_OK)
-            DEBUG_UART.println("Failed adding service view");
-       // MDNS.addServiceTxt("http", "tcp", "path", "/");
-        DEBUG_UART.println("MDNS started with name:" + MainConfig::mDNS_name);
-    }
-    else {
-        DEBUG_UART.println("MDNS could not start");
-    }
-    DEBUG_UART.println("\n");
-}
-#endif
-#if defined(ESP32)
-#include "esp_task_wdt.h"
-
-void handleCoreDump(AsyncWebServerRequest *request=nullptr) {
-    size_t addr = 0;
-    size_t size = 0;
-
-    esp_err_t err = esp_core_dump_image_get(&addr, &size);
-    if (err != ESP_OK || size == 0) {
-        if (request != nullptr)
-            request->send(500, CONSTSTR::htmlContentType_TextPlain, "No core dump found or failed to read");
-        return;
-    }
-
-    const uint8_t* dump_ptr = reinterpret_cast<const uint8_t*>(addr);
-
-    if (dump_ptr == nullptr) return;
-
-    // Ensure LittleFS is mounted
-    if (!LittleFS.begin()) {
-        if (request != nullptr)
-            request->send(500, CONSTSTR::htmlContentType_TextPlain, "Failed to mount LittleFS");
-        return;
-    }
-
-    File file = LittleFS.open("/core_dump.bin", "w");
-    if (!file) {
-        if (request != nullptr)
-            request->send(500, CONSTSTR::htmlContentType_TextPlain, "Failed to open file for writing");
-        return;
-    }
-
-    size_t written = file.write(dump_ptr, size);
-    file.close();
-
-    if (written != size) {
-        if (request != nullptr)
-            request->send(500, CONSTSTR::htmlContentType_TextPlain, "Failed to write full core dump to file");
-    } else {
-        if (request != nullptr)
-            request->send(200, CONSTSTR::htmlContentType_TextPlain, "Core dump saved to LittleFS as /core_dump.bin");
-    }
-}
-#endif
-#if defined(ESP32)
-AsyncWebServer *asyncServer;
-#endif
-void failsafeLoop()
-{
-    // blink rapid to alert a crash
-    HeartbeatLed::HEARTBEATLED_OFF_INTERVAL = 300;
-    HeartbeatLed::HEARTBEATLED_ON_INTERVAL = 300;
-    connect_to_wifi();
-    OTA::setup();
-    DEBUG_UART.begin(115200);
-    DEBUG_UART.println();
-    DEBUG_UART.println(F("************************************"));
-    DEBUG_UART.println(F("* Now entering failsafe OTA loop.. *"));
-    DEBUG_UART.println(F("************************************"));
-#if defined(ESP32)
-    asyncServer = new AsyncWebServer(80);
-    asyncServer->on("/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, CONSTSTR::htmlContentType_TextPlain, "The system will now reset and luckily go into normal mode.");
-        // Small delay to ensure the response is sent before restarting
-        delay(100); // NOT blocking in this context, short enough to work
-#if defined(ESP32)
-        esp_restart();  // Software reset
-#elif defined(ESP8266)
-        ESP.restart();
-#endif
-    });
-    //asyncServer->on("/core-dump",HTTP_GET, handleCoreDump); // skip this non working garbage for now
-    asyncServer->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, CONSTSTR::htmlContentType_TextPlain, "The system is in OTA failsafe loop.");
-    });
-    asyncServer->begin();
-#elif defined(ESP8266)
-    // init stuff here
-    webserver.begin();
-#endif
-    //handleCoreDump(); // skip this non working garbage for now
-    while (1)
-    {
-        ArduinoOTA.handle();
-        HeartbeatLed::task();
-        //webserver.handleClient();
-    }
-}
 /**************************************************************************/
 /**************************************************************************/
 /**************************************************************************/
-WS2812FX ws2812fx = WS2812FX(40, 22, NEO_RGB + NEO_KHZ800);
+
 void setup() {
     if (Info::resetReason_is_crash(false)) {
+        OTA::setup();
         failsafeLoop();
-        
     }
-#if defined(ESP8266)
-    FAN::init();
-#endif
+
     DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
     DEBUG_UART.println(Info::getResetReasonStr());
 
-    Wire.begin(21, 22);
-    Serial.println("I2C scan...");
-    for (uint8_t addr=1; addr<127; ++addr) {
-        Wire.beginTransmission(addr);
-        if (Wire.endTransmission() == 0) {
-        Serial.print("Found: 0x");
-        Serial.println(addr, HEX);
-        }
-    }
-    Serial.println("Done");
+    
 
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true; // this call is needed before all access to internal Flash file system
 
@@ -307,10 +85,13 @@ void setup() {
     init_display();
 #endif
     WiFi.setSleep(false);
-    connect_to_wifi();
+    //connect_to_wifi();
+#ifdef WIFI_MANAGER_WRAPPER_H_
+    WiFiManager_Handler(display);
+#endif
     OTA::setup();
 
-    //Scheduler::setup(webserver, nameToFunctionList, sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]));
+    Scheduler::setup(webserver, nameToFunctionList, sizeof(nameToFunctionList) / sizeof(nameToFunctionList[0]));
 
     Info::startTime = now();
 
@@ -329,12 +110,8 @@ void setup() {
 #if defined(ESP32)
     Start_MDNS();
 #endif
-    /*
-    ws2812fx.init();
-    ws2812fx.setBrightness(127);
-    ws2812fx.setMode(12);
-    ws2812fx.setSpeed(3048);
-    ws2812fx.start();*/
+    /* TODO move this into a hal json device
+    
     /*
 #if defined(ESP32)
     File test = SD_MMC.open("/StartTimes.log", "a", true);
@@ -355,10 +132,8 @@ void loop() {
 #ifdef HAL_JSON_H_
     HAL_JSON::loop();
 #endif
-
     ArduinoOTA.handle();
-    //webserver.handleClient();
-    //Scheduler::HandleAlarms();
+    Scheduler::HandleAlarms();
     HeartbeatLed::task();
 
 #if defined(ESP8266)
@@ -378,50 +153,42 @@ void loop() {
 
 void initWebServerHandlers(void)
 {
-#ifdef FSBROWSER_SYNCED_WS_H_
-    webserver.on("/",  []() {
-        if (LittleFS.exists(F("/index.html"))) FSBrowser::handleFileRead(F("/LittleFS/index.html"));
-        else if (LittleFS.exists(F("/index.htm"))) FSBrowser::handleFileRead(F("/LittleFS/index.htm"));
-        else webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
-    });
-#endif
-/*
-    webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, []() {
+    webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, [](AsyncWebServerRequest* req) {
         
         if (LittleFS.format()) {
             if (!LITTLEFS_BEGIN_FUNC_CALL) {
-                webserver.send(500, "text/html", "Format OK, but mount failed");
+                req->send(500, "text/html", "Format OK, but mount failed");
                 return;
             }
-            webserver.send(200, "text/html", "Format OK and mounted");
+            req->send(200, "text/html", "Format OK and mounted");
         } else {
-            webserver.send(500, "text/html", "Format failed");
+            req->send(500, "text/html", "Format failed");
         }
     });
-    webserver.on(MAIN_URLS_MKDIR, []() {
-        if (!webserver.hasArg("dir")) { webserver.send(200,"text/html", "Error: dir argument missing"); }
+    webserver.on(MAIN_URLS_MKDIR, [](AsyncWebServerRequest* req) {
+        if (!req->hasArg("dir")) { req->send(200,"text/html", "Error: dir argument missing"); }
         else
         {
-            String path = webserver.arg("dir");
+            String path = req->arg("dir");
             
             if (LittleFS.mkdir(path.c_str()) == false) {
-                webserver.send(200,"text/html", "Error: could not create dir:" + path);
+                req->send(200,"text/html", "Error: could not create dir:" + path);
             }
             else
             {
-                webserver.send(200,"text/html", "create new dir OK");
+                req->send(200,"text/html", "create new dir OK");
             }
 
         }
 
     });
 #if defined(ESP32)
-    webserver.on("/sdcard_listfiles", []() {
+    webserver.on("/sdcard_listfiles", [](AsyncWebServerRequest* req) {
         
         //if (SD_MMC.begin("/sdcard", true, false, 20000)) {
             File root = SD_MMC.open("/");
             if (!root) {
-                webserver.send(200, CONSTSTR::htmlContentType_TextPlain, "error while open sd card again");
+                req->send(200, CONSTSTR::htmlContentType_TextPlain, "error while open sd card again");
                 return;
             }
 
@@ -434,20 +201,20 @@ void initWebServerHandlers(void)
                 ret.concat(", Dir:"); ret.concat(file.isDirectory()?"true":"false");
                 ret.concat("\n");
             }
-            webserver.send(200, CONSTSTR::htmlContentType_TextPlain, ret.c_str());
+            req->send(200, CONSTSTR::htmlContentType_TextPlain, ret.c_str());
        // }else {webserver.send(200, CONSTSTR::htmlContentType_TextPlain, "could not open sd card a second time");}
     });
 #endif
-    webserver.on("/crashTest", []() {
-        webserver.send(200, CONSTSTR::htmlContentType_TextPlain, "The system will now crash!!!, and luckily go into failsafe OTA upload mode.");
+    webserver.on("/crashTest", [](AsyncWebServerRequest* req) {
+        req->send(200, CONSTSTR::htmlContentType_TextPlain, "The system will now crash!!!, and luckily go into failsafe OTA upload mode.");
         int *ptr = nullptr; // Null pointer
         *ptr = 42;          // Dereference the null pointer (causes a crash)
     });
-    //webserver.on("/core-dump", handleCoreDump);
-    
-    webserver.onNotFound([]() {                              // If the client requests any URI
-        String uri = webserver.uri();
-        DEBUG_UART.println("onNotFound - hostHeader:" + webserver.hostHeader());
+
+    /*
+    webserver.onNotFound([](AsyncWebServerRequest* req) {                              // If the client requests any URI
+        String uri = req->uri();
+        DEBUG_UART.println("onNotFound - hostHeader:" + req->hostHeader());
         //bool isDir = false;
         //DEBUG_UART.println("webserver on not found:" + uri);
         if (uri.startsWith("/LittleFS") == false && uri.startsWith("/sdcard") == false)
@@ -497,38 +264,4 @@ void init_display(void)
     //display.println(F("Hello ESP32!"));
     display.display(); // <--- push buffer to screen
 }
-
 #endif
-
-void connect_to_wifi(void)
-{
-    WiFiManager wifiManager;
-    DEBUG_UART.println(F("trying to connect to saved wifi"));
-#if defined(USE_DISPLAY)
-    display.setCursor(0, 0);
-    display.println(F("WiFi connecting..."));
-    display.display();
-#endif
-    if (wifiManager.autoConnect() == true) { // using ESP.getChipId() internally
-#if defined(USE_DISPLAY)
-        display.setCursor(0, 9);
-        display.println("OK");
-        display.setCursor(0, 17);
-        display.println(WiFi.localIP());
-        display.display();
-        delay(2000);
-#endif
-    } else {
-#if defined(USE_DISPLAY)
-        display.setCursor(0, 9);
-        display.println("FAIL");
-        display.display();
-        delay(2000);
-#endif
-    }
-#if defined(USE_DISPLAY)
-    //display.clearDisplay();
-    //display.display();
-#endif
-}
-
