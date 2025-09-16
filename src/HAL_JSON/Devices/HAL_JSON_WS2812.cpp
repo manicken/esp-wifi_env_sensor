@@ -67,6 +67,31 @@ namespace HAL_JSON {
         ws2812fx->setSpeed(fxSpeed);
         ws2812fx->start();
     }
+    HALOperationResult WS2812::writeBrightness(Device* context, HALValue& val) {
+        printf("\nWS2812::writeBrightness\n");
+        WS2812* ws2812fx = static_cast<WS2812*>(context);
+        
+        ws2812fx->ws2812fx->setBrightness(val.asUInt());
+        
+        return HALOperationResult::Success;
+    }
+    HALOperationResult WS2812::writeColor(Device* context, HALValue& val) {
+        printf("\nWS2812::writeColor\n");
+        WS2812* ws2812fx = static_cast<WS2812*>(context);
+        ws2812fx->ws2812fx->pause();
+        ws2812fx->ws2812fx->setPixelColor(0,val.asUInt());
+        ws2812fx->ws2812fx->execShow();
+        return HALOperationResult::Success;
+    }
+
+    Device::ReadToHALValue_FuncType WS2812::GetWriteFromHALValue_Function(ZeroCopyString& zcFuncName) {
+        if (zcFuncName == "brightness")
+            return WS2812::writeBrightness;
+        else if (zcFuncName == "color")
+            return WS2812::writeColor;
+        else
+            return nullptr;
+    }
 
     HALOperationResult WS2812::write(const HALWriteValueByCmd& val) {
         if (val.cmd == "brightness")
@@ -102,7 +127,7 @@ namespace HAL_JSON {
         }
         else if (cmd == "setpixel") {
             ws2812fx->pause();
-            ws2812fx->setSpeed(0);
+           // ws2812fx->setSpeed(0);
             ZeroCopyString zcIndex = zcStr.SplitOffHead('/');
             ZeroCopyString zcR = zcStr.SplitOffHead('/');
             ZeroCopyString zcG = zcStr.SplitOffHead('/');

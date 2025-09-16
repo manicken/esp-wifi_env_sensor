@@ -282,6 +282,18 @@ namespace HAL_JSON {
 
         if (p == _end) return false; // Only sign and spaces?
 
+        // Check for hex prefix
+        if ((_end - p) > 2 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+            p += 2;
+            if (p == _end) return false; // only "0x" with nothing after
+
+            for (; p < _end; ++p) {
+                char c = *p;
+                if (!isxdigit(static_cast<unsigned char>(c))) return false;
+            }
+            return true;
+        }
+
         bool decimalSeen = false;
         bool commaSeen = false;
 
@@ -315,11 +327,29 @@ namespace HAL_JSON {
         // Skip leading spaces
         while (p < _end && *p == ' ') p++;
 
+        // Hex case
+        if ((_end - p) > 2 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+            p += 2;
+            uint32_t value = 0;
+            for (; p < _end; ++p) {
+                char ch = *p;
+                if (ch >= '0' && ch <= '9')
+                    value = (value << 4) | (ch - '0');
+                else if (ch >= 'a' && ch <= 'f')
+                    value = (value << 4) | (10 + (ch - 'a'));
+                else if (ch >= 'A' && ch <= 'F')
+                    value = (value << 4) | (10 + (ch - 'A'));
+                else
+                    return false;
+            }
+            outValue = value;
+            return true;
+        }
+
         // Skip optional '+' or '-' (but remember, we're returning unsigned!)
         if (p < _end && (*p == '+' || *p == '-')) p++;
 
         uint32_t value = 0;
-
         while (p < _end) {
             char ch = *p;
             if (ch >= '0' && ch <= '9') {

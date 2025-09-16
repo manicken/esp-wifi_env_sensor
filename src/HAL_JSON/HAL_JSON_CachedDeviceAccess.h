@@ -34,6 +34,7 @@ namespace HAL_JSON {
          * or actually sub values defined by using # in uidPath#subItem
          */
         Device::ReadToHALValue_FuncType readToHalValueFunc;
+        Device::ReadToHALValue_FuncType writeFromHalValueFunc;
         
         CachedDeviceAccess(ZeroCopyString& uidPath, ZeroCopyString& funcName);
         Device* GetDevice();

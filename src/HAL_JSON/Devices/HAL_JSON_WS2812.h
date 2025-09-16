@@ -17,14 +17,19 @@ namespace HAL_JSON {
     class WS2812 : public Device {
     private:
         uint8_t pin = 0; // if pin would be used
-        WS2812FX* ws2812fx;
+        
     public:
+        WS2812FX* ws2812fx;
         static bool VerifyJSON(const JsonVariant &jsonObj);
         static Device* Create(const JsonVariant &jsonObj, const char* type);
         WS2812(const JsonVariant &jsonObj, const char* type);
 
         HALOperationResult write(const HALWriteValueByCmd& val) override;
         HALOperationResult write(const HALWriteStringRequestValue& val) override;
+        Device::ReadToHALValue_FuncType GetWriteFromHALValue_Function(ZeroCopyString& zcFuncName) override;
+
+        static HALOperationResult writeBrightness(Device* context, HALValue& val);
+        static HALOperationResult writeColor(Device* context, HALValue& val);
 
         void loop() override;
 

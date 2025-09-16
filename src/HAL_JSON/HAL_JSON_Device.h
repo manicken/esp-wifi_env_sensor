@@ -44,6 +44,7 @@ namespace HAL_JSON {
         virtual HALOperationResult read(const HALReadValueByCmd& val);
         virtual HALOperationResult write(const HALWriteValueByCmd& val);
         virtual ReadToHALValue_FuncType GetReadToHALValue_Function(ZeroCopyString& zcFuncName);
+        virtual ReadToHALValue_FuncType GetWriteFromHALValue_Function(ZeroCopyString& zcFuncName);
         virtual HALValue* GetValueDirectAccessPtr();
         /** called regulary from the main loop */
         virtual void loop();
