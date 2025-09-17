@@ -40,6 +40,7 @@ namespace HAL_JSON {
         void loop() override;
 
         HALOperationResult read(const HALReadStringRequestValue& val) override;
+        HALOperationResult write(const HALWriteStringRequestValue& val) override;
 
         String ToString() override;
     };

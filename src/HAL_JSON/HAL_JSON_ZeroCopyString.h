@@ -107,6 +107,7 @@ namespace HAL_JSON {
         bool EqualsICAny(const char* const* candidates) const;
 
         bool ValidNumber() const;
+        bool ValidUINT() const;
         bool ConvertTo_uint32(uint32_t& outValue) const;
         bool ConvertTo_int32(int32_t& outValue) const;
         bool ConvertTo_float(float& outValue) const;

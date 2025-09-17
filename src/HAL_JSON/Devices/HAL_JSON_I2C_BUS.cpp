@@ -198,9 +198,40 @@ namespace HAL_JSON {
     }
 
     HALOperationResult I2C_BUS::read(const HALReadStringRequestValue& val) {
-        if (val.cmd == "list") {
-            
-            //Serial.println("I2C scan...");
+        ZeroCopyString zcStr = val.cmd; // make copy
+        ZeroCopyString zcCmd = zcStr.SplitOffHead('/');
+        if (zcCmd == "raw") { // this is more likely to be called
+            if (zcStr.IsEmpty()) return HALOperationResult::StringRequestParameterError;
+            ZeroCopyString zcAddr = zcStr.SplitOffHead('/');
+            if (zcAddr.ValidUINT() == false) return HALOperationResult::StringRequestParameterError;
+            uint32_t bytesToRead = 0;
+            if (zcStr.IsEmpty()) bytesToRead = 1;
+            else {
+                ZeroCopyString zcByteCount = zcStr.SplitOffHead('/'); // make this safe in case there are additonal / parameters that should just be ignored
+                // the following could default to one byte to read, 
+                // but if it's specified with a additional parameter
+                // it's best to return a error so that the user don't expect anything else
+                if (zcByteCount.ValidUINT() == false) return HALOperationResult::StringRequestParameterError;
+                zcByteCount.ConvertTo_uint32(bytesToRead);
+            }
+            uint32_t addr;
+            zcAddr.ConvertTo_uint32(addr);
+            val.out_value.reserve(2+bytesToRead*7/*-1+1*/); // ["0x00","0x01"] 2+ is the [] -1 is to remove the last , and +1 is the null char
+            val.out_value = '[';
+            bool first = true;
+            uint8_t received = wire->requestFrom((uint8_t)addr, (uint8_t)bytesToRead);
+            if (received == 0) return HALOperationResult::ExecutionFailed;
+            for (uint8_t i = 0; i < received; ++i) {
+                uint8_t byte = wire->read();
+                if (first == false) val.out_value += ',';
+                else first = false;
+                val.out_value += "\"0x";
+                val.out_value += Convert::toHex(byte);
+                val.out_value += "\"";
+            }
+            return HALOperationResult::Success;
+        }
+        else if (zcCmd == "list") {
             val.out_value = '[';
             bool first = true;
             for (uint8_t addr=1; addr<127; ++addr) {
@@ -211,13 +242,54 @@ namespace HAL_JSON {
                     val.out_value += "\"0x";
                     val.out_value += Convert::toHex(addr);
                     val.out_value += "\"";
-                    
-                    //Serial.print("Found: 0x");
-                    //Serial.println(addr, HEX);
                 }
             }
             val.out_value += ']';
-            //Serial.println("Done");
+            return HALOperationResult::Success;
+        }
+        return HALOperationResult::UnsupportedCommand;
+    }
+
+    HALOperationResult I2C_BUS::write(const HALWriteStringRequestValue& val) {
+        ZeroCopyString zcStr = val.value; // make copy
+        ZeroCopyString zcCmd = zcStr.SplitOffHead('/');
+        if (zcCmd == "raw") {
+            if (zcStr.IsEmpty()) return HALOperationResult::StringRequestParameterError;
+            ZeroCopyString zcAddr = zcStr.SplitOffHead('/');
+            if (zcStr.IsEmpty()) return HALOperationResult::StringRequestParameterError; // simple early check
+            if (zcAddr.ValidUINT() == false) return HALOperationResult::StringRequestParameterError;
+            ZeroCopyString zcByteCount = zcStr.SplitOffHead('/');
+            if (zcByteCount.ValidUINT() == false) return HALOperationResult::StringRequestParameterError;
+            uint32_t bytesToWrite = 0;
+            zcByteCount.ConvertTo_uint32(bytesToWrite);
+            if (bytesToWrite == 0) return HALOperationResult::StringRequestParameterError;
+            
+            int paramCount = zcStr.CountChar('/')+1; // +1 to make it easier/clearer
+            if (paramCount < bytesToWrite) return HALOperationResult::StringRequestParameterError;
+            uint32_t addr = 0;
+            zcAddr.ConvertTo_uint32(addr);
+            wire->beginTransmission((uint8_t)addr);
+            while (bytesToWrite--) {
+                ZeroCopyString zcByte = zcStr.SplitOffHead('/');
+                if (zcByte.ValidUINT() == false) {
+                    wire->endTransmission(true);
+                    return HALOperationResult::StringRequestParameterError;
+                }
+                uint32_t byteVal  = 0;
+                zcByte.ConvertTo_uint32(byteVal );
+                wire->write((uint8_t)byteVal );
+            }
+            uint8_t res = wire->endTransmission(true);
+            if (res != 0) {
+                val.result = 0x30 + res;
+                return HALOperationResult::ExecutionFailed;
+            }
+            if (zcStr.IsEmpty() == false) {
+                // this would mean that this is a write read request
+                // and the current parameter is the number of bytes to read
+                // currently a TODO feature
+                // and the read function need to be DRY first
+            }
             return HALOperationResult::Success;
         }
         return HALOperationResult::UnsupportedCommand;

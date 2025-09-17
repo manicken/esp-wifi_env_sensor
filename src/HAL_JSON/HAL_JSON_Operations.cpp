@@ -17,6 +17,7 @@ namespace HAL_JSON {
             case HALOperationResult::ResultGetFail: return "ResultGetFail";
             case HALOperationResult::HandlerWasNullPtr: return "HandlerWasNullPtr";
             case HALOperationResult::ContextWasNullPtr: return "ContextWasNullPtr";
+            case HALOperationResult::StringRequestParameterError: return "StringRequestParameterError";
             case HALOperationResult::NotSet: return "NotSet";
             
             default:

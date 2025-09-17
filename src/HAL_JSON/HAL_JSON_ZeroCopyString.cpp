@@ -318,6 +318,38 @@ namespace HAL_JSON {
         return true;
     }
 
+    bool ZeroCopyString::ValidUINT() const {
+        if (Length() == 0) return false;
+
+        const char* p = start;
+        const char* const _end = end;
+
+        // Skip leading spaces
+        while (p < _end && *p == ' ') p++;
+
+        if (p == _end) return false; // Only sign and spaces?
+
+        // Check for hex prefix
+        if ((_end - p) > 2 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+            p += 2;
+            if (p == _end) return false; // only "0x" with nothing after
+
+            for (; p < _end; ++p) {
+                char c = *p;
+                if (!isxdigit(static_cast<unsigned char>(c))) return false;
+            }
+            return true;
+        }
+
+        for (; p < _end; ++p) {
+            char c = *p;
+            if (isdigit(c) == false) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool ZeroCopyString::ConvertTo_uint32(uint32_t& outValue) const {
         if (Length() == 0) return false;
 
