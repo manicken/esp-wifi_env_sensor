@@ -62,7 +62,7 @@
 	  {"uid":"GT11","opcode":"02","addr":"0212","valuetype":"float"}
   ]},
   {"uid":"pawcfg","type":"PWM_AW_CFG","freq":5000,"res":8,"note":"only to test write only device"},
-  {"uid":"i2c","type":"I2C","sckpin":22,"sdapin":21,"items": [
+  {"uid":"i2c","type":"I2C","sckpin":22,"sdapin":21,"freq":100000,"items": [
     {"uid":"disp","type":"SSD1306","width":128,"height":64,"addr":"3C","items": [
       {"uid":"a","x":0,"y":0,"label":"temps:a:a=","source":"temps:a:a"},
       {"uid":"b","x":0,"y":8,"label":"temps:a:b=","source":"temps:a:b"},

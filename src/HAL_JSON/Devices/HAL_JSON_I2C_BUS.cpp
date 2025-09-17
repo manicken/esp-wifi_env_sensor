@@ -229,6 +229,7 @@ namespace HAL_JSON {
                 val.out_value += Convert::toHex(byte);
                 val.out_value += "\"";
             }
+            val.out_value += ']';
             return HALOperationResult::Success;
         }
         else if (zcCmd == "list") {
@@ -291,6 +292,16 @@ namespace HAL_JSON {
                 // and the read function need to be DRY first
             }
             return HALOperationResult::Success;
+        } else if (zcCmd == "speed") {
+            if (zcStr.IsEmpty()) return HALOperationResult::StringRequestParameterError;
+            ZeroCopyString zcSpeed = zcStr.SplitOffHead('/');
+            if (zcSpeed.IsEmpty()) return HALOperationResult::StringRequestParameterError;
+            if (zcSpeed.ValidUINT() == false) return HALOperationResult::StringRequestParameterError;
+            uint32_t speed = 0;
+            zcSpeed.ConvertTo_uint32(speed);
+            if (speed == 0) return HALOperationResult::StringRequestParameterError;
+            if (wire->setClock(speed) == false) return HALOperationResult::ExecutionFailed;
+            HALOperationResult::Success;
         }
         return HALOperationResult::UnsupportedCommand;
     }
