@@ -103,7 +103,7 @@ void setup() {
 #endif
 
    // ThingSpeak::setup(webserver);
-   // Info::setup(webserver);
+    Info::setup(webserver);
     
 
     HeartbeatLed::setup(webserver);

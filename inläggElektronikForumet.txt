@@ -18,11 +18,13 @@ till detta valde jag thingspeak.
 Ifrån början så var allting statiskt konfiguerat t.o.m. nätverkslösenord samt thingspeak api key
 detta ändrades snabbt till att jag började använda WifiManager, för att jag ville att detta projekt ska vara öppet
 och sedan implementerades secrets som var helt enkelt filer som inte laddas upp till github
+
 sedan gick jag över till att använda AWS iot för fjärrstyrning/direkt avläsning och detta krävde stora api keys,
 och efterssom jag vill ha flera enheter som lätt skulle kunda konfigureras utan att man skulle behöva omkompilera 
 samt ha flera cfgs för de olika enheterna för att förenkla detta används FSBrowser vilket är en webbbaserad fileditor
  där man kan editera esp:s LittleFS:s filer direkt, samt började också använda ArduinoJSON lib (inte den officiella Arduino_JSON)
  för att definera vilka filer som skulle användas (ville helst inte hårdkoda filnamnen heller)
+ 
  Efter detta tyckte jag inte heller om att hårdkoda updaterings tider för uppladdning till thingspeak
  och ville också ha mer flexibilitet vad det gäller övriga eventuella updateringar
  detta gjorde att jag sökte runt efter ett alarm lib och fastnade för TimeAlarms

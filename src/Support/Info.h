@@ -24,9 +24,23 @@
 #define INFO_URL                       "/info"
 #define INFO_URL_ESP_FREE_HEAP         "/esp/free_heap"
 #define INFO_URL_ESP_LAST_RESET_REASON "/esp/last_reset_reason"
-
+#include <esp_heap_caps.h>
 namespace Info
 {
+
+    
+#ifdef ESP32
+    float getHeapFragmentation() {
+        // Get total and largest free block in 8-bit accessible memory
+        size_t freeHeap = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+        size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+
+        if (freeHeap == 0) return 0.0; // avoid division by zero
+
+        // Fragmentation = 100 * (1 - (largest block / total free heap))
+        return 100.0 * (1.0 - ((float)largestBlock / (float)freeHeap));
+    }
+#endif
     //WEBSERVER_TYPE *webserver = nullptr;
 
     time_t startTime = 0;
@@ -49,8 +63,12 @@ namespace Info
         });
         srv.on(INFO_URL_ESP_FREE_HEAP, [](AsyncWebServerRequest *req) {
             std::string ret = "Free Heap:" + std::to_string(ESP.getFreeHeap());
+            ret += "\nLargest Free Heap chunk:" + std::to_string(ESP.getMaxAllocHeap());
+
 #if defined(ESP8266)
-            ret += ", Fragmentation:" + std::to_string(ESP.getHeapFragmentation());
+            ret += "\nFragmentation:" + std::to_string(ESP.getHeapFragmentation());
+#elif defined(ESP32)
+            ret += "\nFragmentation:" + std::to_string(getHeapFragmentation());
 #endif
             req->send(200,F("text/plain"), ret.c_str());
         });
