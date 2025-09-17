@@ -11,9 +11,12 @@
   {"uid":"var8","type":"VAR"},
   {"uid":"var9","type":"VAR"},
   {"uid":"var0","type":"VAR"},
+  {"uid":"rgb16","type":"VAR"},
+  {"uid":"red","type":"VAR"},
+  {"uid":"green","type":"VAR"},
+  {"uid":"blue","type":"VAR"},
   {"uid":"rd_var","type":"CONSTVAR"},
   {"uid":"wr_var","type":"WRITEVAR"},
-  
   {"uid":"temps","type":"1WTG","refreshtimesec":1,"note":"temperatures",
     "items":[
 	    {"uid":"a","pin":27,"note":"inne","items":[
@@ -44,7 +47,7 @@
   {"uid":"BIRELSET", "type":"DPOUT", "pin":18,"plength":5000},
   {"uid":"BIRELRST", "type":"DPOUT", "pin":19,"plength":5000},
   {"uid":"hum", "type":"DHT","model":"dht11", "pin":23},
-  {"uid":"tx433", "type":"TX433", "pin":26,
+  {"uid":"tx433", "type":"TX433", "pin":15,
     "units": [
       {"uid":"D0","model":"lc","anid":"hello","grp_btn":0,"btn":0,"state":0},
       {"uid":"D1","model":"lc","anid":"hello"}
@@ -62,13 +65,20 @@
 	  {"uid":"GT11","opcode":"02","addr":"0212","valuetype":"float"}
   ]},
   {"uid":"pawcfg","type":"PWM_AW_CFG","freq":5000,"res":8,"note":"only to test write only device"},
-  {"uid":"i2c","type":"I2C","sckpin":22,"sdapin":21,"freq":100000,"items": [
+  {"uid":"i2c","type":"I2C","sckpin":22,"sdapin":21,"items": [
     {"uid":"disp","type":"SSD1306","width":128,"height":64,"addr":"3C","items": [
-      {"uid":"a","x":0,"y":0,"label":"temps:a:a=","source":"temps:a:a"},
-      {"uid":"b","x":0,"y":8,"label":"temps:a:b=","source":"temps:a:b"},
-      {"uid":"c","x":0,"y":16,"label":"hum=","source":"hum"},
-      {"uid":"d","x":0,"y":24,"label":"var1="}
-    ]}  
+      {"uid":"tmpa","x":0,"y":0,"label":"temps:a:a=","source":"temps:a:a"},
+      {"uid":"tmpb","x":0,"y":8,"label":"temps:a:b=","source":"temps:a:b"},
+      {"uid":"hum","x":0,"y":16,"label":"hum=","source":"hum"},
+      {"uid":"var","x":0,"y":24,"label":"var1="},
+      {"uid":"rgb16","x":0,"y":32,"label":"rgb16="},
+      {"uid":"red","x":0,"y":40,"label":"red="},
+      {"uid":"green","x":0,"y":48,"label":"green="},
+      {"uid":"blue","x":0,"y":56,"label":"blue="}
+      
+    ]},
+    {"uid":"pcf1","type":"PCF8574x","addr":"38"},
+    {"uid":"pcf2","type":"PCF8574x","addr":"39"}
   ]},
   {"uid":"ts1","type":"THINGSPEAK","key":"0123456789ABCDEF",
     "items":{
@@ -82,5 +92,5 @@
       "8":"var6"
     }
   },
-  {"uid":"neo","type":"WS2812","pin":26,"ledcount":8,"format":"RGB","ifspeed":"KHZ400","brightness":127,"mode":12,"fxspeed":3000}
+  {"uid":"neo","type":"WS2812","pin":26,"ledcount":1,"format":"RGB","ifspeed":"KHZ400","brightness":64,"mode":12,"fxspeed":32000}
 ]

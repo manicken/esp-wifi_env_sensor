@@ -68,7 +68,7 @@ namespace HAL_JSON {
         ws2812fx->start();
     }
     HALOperationResult WS2812::writeBrightness(Device* context, HALValue& val) {
-        printf("\nWS2812::writeBrightness\n");
+        //printf("\nWS2812::writeBrightness\n");
         WS2812* ws2812fx = static_cast<WS2812*>(context);
         
         ws2812fx->ws2812fx->setBrightness(val.asUInt());
@@ -76,7 +76,7 @@ namespace HAL_JSON {
         return HALOperationResult::Success;
     }
     HALOperationResult WS2812::writeColor(Device* context, HALValue& val) {
-        printf("\nWS2812::writeColor\n");
+        //printf("\nWS2812::writeColor\n");
         WS2812* ws2812fx = static_cast<WS2812*>(context);
         ws2812fx->ws2812fx->pause();
         ws2812fx->ws2812fx->setPixelColor(0,val.asUInt());
