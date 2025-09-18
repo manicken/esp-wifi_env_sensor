@@ -18,7 +18,6 @@ namespace NTP {
     #define NTP_TIME_ZONE 1
 
     extern time_t now;
-    extern time_t nowish;
 
     void NTPConnect(void);
 }

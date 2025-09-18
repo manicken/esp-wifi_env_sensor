@@ -94,9 +94,9 @@ void setup() {
 
 #ifdef WIFI_MANAGER_WRAPPER_H_
 #if defined(USE_DISPLAY)
-    WiFiManagerWrapper::Setup(display);
+    bool connected = WiFiManagerWrapper::Setup(display);
 #else
-    WiFiManagerWrapper::Setup();
+    bool connected = WiFiManagerWrapper::Setup();
 #endif
 #endif
     OTA::setup();

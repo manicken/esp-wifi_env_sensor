@@ -1,6 +1,7 @@
 
 #include "WiFiManager.h"
 #include "WifiManagerWrapper.h"
+#include "../Support/NTP.h"
 
 #if defined(USE_DISPLAY)
 // Display
@@ -12,13 +13,12 @@
 namespace WiFiManagerWrapper {
 
     WiFiManager wifiManager;
-    bool wifiConnected = false;
-    bool portalRequested = false;
+    bool portalRunning = false;
 
 #if defined(USE_DISPLAY)
-    void Setup(Adafruit_SSD1306& display) {
+    bool Setup(Adafruit_SSD1306& display) {
 #else
-    void Setup() {
+    bool Setup() {
 #endif
 
         Serial.println(F("trying to connect to saved wifi"));
@@ -27,11 +27,13 @@ namespace WiFiManagerWrapper {
         display.println(F("WiFi connecting..."));
         display.display();
 #endif
+
         // Try connect to saved WiFi, portal starts if it fails
+        wifiManager.setConfigPortalBlocking(true); // default
         wifiManager.setConfigPortalTimeout(180); // 3 min to run the portal otherwise it will continue
         // autoConnect is using ESP.getChipId() internally
-        wifiManager.autoConnect();
-        wifiConnected = (WiFi.status() == WL_CONNECTED);
+        wifiManager.autoConnect(wifiManager.getDefaultAPName().c_str(), WIFI_MANAGER_AP_PASSWORD);
+        bool wifiConnected = (WiFi.status() == WL_CONNECTED);
 
         if (wifiConnected) {
 #if defined(USE_DISPLAY)
@@ -50,26 +52,37 @@ namespace WiFiManagerWrapper {
             delay(2000); // to make time for the user to see
 #endif
         }
+        return wifiConnected;
+    }
+
+    void startPortalNonBlocking() {
+        wifiManager.setConfigPortalBlocking(false);
+        wifiManager.startConfigPortal();
+        portalRunning = true;
     }
 
     void Task() {
         // Automatic reconnect
-        if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("WiFi lost, reconnecting...");
-            WiFi.reconnect();
-            wifiConnected = false;
-        } else {
-            wifiConnected = true;
-        }
+        static unsigned long lastReconnectAttempt = 0;
 
-        // Portal trigger: only if WiFi is not connected or the user requests the portal
-        if ((!wifiConnected || portalRequested)) {
-            portalRequested = false; // reset flag
-            Serial.println("Starting portal...");
-            wifiManager.setConfigPortalTimeout(180); // timeout for portal
-            wifiManager.startConfigPortal(); // blocking portal
-            // after portal try check connection
-            wifiConnected = (WiFi.status() == WL_CONNECTED);
+        if (WiFi.status() != WL_CONNECTED) {
+            if (millis() - lastReconnectAttempt > 10000) { // every 10 seconds
+                // request reconnect (non-blocking, connection happens in background)
+                if (WiFi.reconnect())
+                    Serial.println("WiFi lost, trying reconnect...");
+                else
+                    Serial.println("WiFi lost, reconnect could not be started...");
+                lastReconnectAttempt = millis();
+                if (portalRunning == false)
+                    startPortalNonBlocking();
+            }
+        } else {
+            if (portalRunning) {
+                portalRunning = false;
+                NTP::NTPConnect();
+            }
         }
+        if (portalRunning)
+            wifiManager.process();
     }
 }
