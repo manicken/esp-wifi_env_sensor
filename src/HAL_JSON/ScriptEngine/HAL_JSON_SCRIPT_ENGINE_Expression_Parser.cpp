@@ -691,7 +691,7 @@ namespace HAL_JSON {
                 printf("\n !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MASTER ERROR: endIndex >= tokens.count @ GenerateRPNTokens\n");
                 return nullptr;
             }
-            printf("\nGenerateRPNTokens - startindex:%d, endIndex:%d\n\n",startindex,endIndex);
+            //printf("\nGenerateRPNTokens - startindex:%d, endIndex:%d\n\n",startindex,endIndex);
             
             // consume current tokens here so we don't forget and to clearly mark what is happend
             tokens.currIndex = endIndex; 

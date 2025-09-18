@@ -189,7 +189,7 @@ namespace HAL_JSON {
     }
 
     Device* I2C_BUS::findDevice(UIDPath& path) {
-        printf("\nI2C_BUS::findDevice: %s\n", path.ToString().c_str());
+        //printf("\nI2C_BUS::findDevice: %s\n", path.ToString().c_str());
         return Device::findInArray(reinterpret_cast<Device**>(devices), deviceCount, path, this);
     }
 

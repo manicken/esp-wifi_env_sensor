@@ -48,7 +48,9 @@ namespace HAL_JSON {
         }
         void ConditionalBranch::Set(Tokens& tokens)
         {
+#if defined(ESP32) == false && defined(ESP8266) == false
             printf("(%d) ConditionalBranch::Set: %s\n", tokens.currIndex, tokens.Current().ToString().c_str());
+#endif
             // consume the If / ElseIf token itself
             tokens.currIndex++;
             // set the slice to the items of this expression
@@ -59,8 +61,10 @@ namespace HAL_JSON {
             //if (expTokens == nullptr) {
             //    return;
             //}
+#if defined(ESP32) == false && defined(ESP8266) == false
             printf("(%d) ConditionalBranch::Set after GenerateRPNTokens: %s\n", tokens.currIndex, tokens.Current().ToString().c_str());
-            printf("ConditionalBranch::Set expTokens:\n%s\n", PrintExpressionTokensOneRow(*expTokens, 0, expTokens->currentCount).c_str());
+#endif
+            //printf("ConditionalBranch::Set expTokens:\n%s\n", PrintExpressionTokensOneRow(*expTokens, 0, expTokens->currentCount).c_str());
             // restore the slice to full token array
             tokens.currentEndIndex = tokens.count;
             // builds the temporary tree using memory pool
@@ -85,7 +89,9 @@ namespace HAL_JSON {
             }
             // here extract the itemsCount
             itemsCount = thenToken.itemsInBlock;
+#if defined(ESP32) == false && defined(ESP8266) == false
             printf("(%d) ---------------------------------------------------------------------------------------------- THEN token item count: (%d)\n",tokens.currIndex-1, itemsCount);
+#endif
             items = new StatementBlock[itemsCount];
 
             for (int i=0;i<itemsCount;i++) {
@@ -99,7 +105,9 @@ namespace HAL_JSON {
 
         UnconditionalBranch::UnconditionalBranch(Tokens& tokens)
         {
+#if defined(ESP32) == false && defined(ESP8266) == false
             printf("(%d) UnconditionalBranch::UnconditionalBranch: %s\n", tokens.currIndex, tokens.Current().ToString().c_str());
+#endif
             const Token& elseToken = tokens.GetNextAndConsume();//.items[tokens.currIndex++]; // get and consume
 
             itemsCount = elseToken.itemsInBlock;
@@ -122,20 +130,20 @@ namespace HAL_JSON {
         {
             elseBranchFound = false;
             Token& ifToken = tokens.Current(); // this now points to the if-type token
-            if (ifToken.type != TokenType::If) { printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ifToken.type != TokenType::If\n");}
+            if (ifToken.type != TokenType::If) { printf("\nERROR ----- ifToken.type != TokenType::If\n");}
             branchItemsCount = ifToken.itemsInBlock;
             if (ifToken.hasElse == 1) branchItemsCount--; // minus one as the else case is handled separately
-            printf("\n----------------------------------------------------------------- branchItemsCount:%d\n",branchItemsCount);
+            //printf("\n----------------------------------------------------------------- branchItemsCount:%d\n",branchItemsCount);
             branchItems = new ConditionalBranch[branchItemsCount];
             // allways consume the first If condition
             branchItems[0].Set(tokens);
 
             // the following will ONLY go over ELSEIF ConditionalBranch:es
             for (int i=1;i<branchItemsCount;i++) {
-                printf("\n---------------------------- loading brachitem:%d\n",i);
+                //printf("\n---------------------------- loading brachitem:%d\n",i);
                 Token& token = tokens.Current();
                 if (token.type != TokenType::ElseIf) {
-                    printf("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ERROR TOKEN IS NOT A ELSEIF\n");
+                    printf("\n ERROR ----  TOKEN IS NOT A ELSEIF\n");
                     break;
                 }
                 // this will consume all tokens that actually belongs to this block
@@ -143,13 +151,17 @@ namespace HAL_JSON {
             }
             Token& token = tokens.Current();
             if (token.type == TokenType::Else) {
+#if defined(ESP32) == false && defined(ESP8266) == false
                 printf("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ found ELSE token @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+#endif
                 // this will consume all tokens that actually belongs to this block
                 elseBranch = new UnconditionalBranch(tokens);
                 elseBranchFound = true;
             } 
             else {
+#if defined(ESP32) == false && defined(ESP8266) == false
                 printf("\n@???????????????????????????????????????????? found NOT ANY ELSE token @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+#endif
                 elseBranch = nullptr;
                 elseBranchFound = false;
             }
@@ -181,13 +193,17 @@ namespace HAL_JSON {
                 if (res == HALOperationResult::IfConditionTrue) {
                     return ifStatementBranchItems[i].Exec();
                 } else if (res != HALOperationResult::IfConditionFalse) {
+#if defined(ESP32) == false && defined(ESP8266) == false
                     printf("\n IfStatement::Handler - did execute a error \n");
+#endif
                     return res; // direct fail stop exec here??
                 }
             }
             
             if (ifStatement->elseBranch) {
+#if defined(ESP32) == false && defined(ESP8266) == false
                 printf("\n IfStatement::Handler - else EXEC \n");
+#endif
                 return ifStatement->elseBranch->Exec();
             }
             // allways return success when all execution was a success

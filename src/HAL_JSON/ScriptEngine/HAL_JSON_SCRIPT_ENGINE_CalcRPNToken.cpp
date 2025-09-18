@@ -71,7 +71,7 @@ namespace HAL_JSON {
             }
         }
         CalcRPN::~CalcRPN() {
-            printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CalcRPN destructor was run\n");
+            //printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CalcRPN destructor was run\n");
             delete[] items;
         }
         HALOperationResult CalcRPN::DoCalc() {

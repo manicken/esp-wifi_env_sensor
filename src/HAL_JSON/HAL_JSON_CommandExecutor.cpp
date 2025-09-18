@@ -58,24 +58,30 @@ namespace HAL_JSON {
             anyErrors = execCmd(zcStr, message) == false;
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON) {
+            long startMillis = millis();
             anyErrors = reloadJSON(zcStr, message) == false;
+            printf("\n reloadJSON time:%ld ms\n", millis() - startMillis);
+            startMillis = millis();
             anyErrors = ScriptEngine::ValidateAndLoadAllActiveScripts() == false;
+            printf("\n ValidateAndLoadAllActiveScripts time:%ld ms\n", millis() - startMillis);
         }
         else if (zcCommand == "scripts") {
             ZeroCopyString zcSubCmd = zcStr.SplitOffHead('/');
             if (zcSubCmd == "reload") {
+                long startMillis = millis();
                 anyErrors = ScriptEngine::ValidateAndLoadAllActiveScripts() == false;
+                printf("\nValidateAndLoadAllActiveScripts time:%ld ms\n", millis() - startMillis);
             } else if (zcSubCmd == "stop") {
                 ScriptEngine::ScriptsBlock::running = false;
-                message += "{\"info\":\"OK\"}";
             } else if (zcSubCmd == "start") {
                 ScriptEngine::ScriptsBlock::running = true;
-                message += "{\"info\":\"OK\"}";
             } else {
                 anyErrors = true;
                 message += "\"error\":\"Unknown scripts subcommand.\"";
                 message += ",\"command\":\""+zcSubCmd.ToString()+"\"";
             }
+            if (anyErrors == false)
+                message += "\"info\":\"OK\"";
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST) {
             message += GPIO_manager::GetList(zcStr);

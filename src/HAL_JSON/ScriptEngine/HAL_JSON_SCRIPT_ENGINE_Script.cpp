@@ -61,7 +61,7 @@ namespace HAL_JSON {
                 if (token.type == TokenType::On)
                 {
                     TriggerBlock& triggerBlock = triggerBlocks[i++]; // consume a trigger block
-                    printf("\n(%d) FOUND ON TOKEN\n", tokens.currIndex);
+                    //printf("\n(%d) FOUND ON TOKEN\n", tokens.currIndex);
                     tokens.currIndex++; // consume the On token as it dont have any important data
                     
                     Token& triggerSourceToken = tokens.GetNextAndConsume();//.items[tokens.currIndex++]; // get and consume
@@ -84,14 +84,14 @@ namespace HAL_JSON {
                 else if (token.type == TokenType::If) 
                 {
                     TriggerBlock& triggerBlock = triggerBlocks[i++]; // consume a trigger block
-                    printf("\n(%d) FOUND IF TOKEN\n", tokens.currIndex);
+                    //printf("\n(%d) FOUND IF TOKEN\n", tokens.currIndex);
                     // here we dont consume anything just pass 
                     // wrap root-level if into a trigger block that always runs
                     triggerBlock.triggerSource = TriggerBlock::AllwaysRun; // line 83
                     triggerBlock.Set(1, tokens); // line 84
                 }
                 else {
-                    printf("\n(%d) SKIPPING TOKEN: %s\n", tokens.currIndex, token.ToString().c_str());
+                    //printf("\n(%d) SKIPPING TOKEN: %s\n", tokens.currIndex, token.ToString().c_str());
                     tokens.currIndex++;
                     
                 }
