@@ -18,8 +18,6 @@
 #include "System/OTA.h"
 
 // HTTP stuff
-
-
 #include <ESPAsyncWebServer.h>
 
 #if defined(USE_DISPLAY)
@@ -59,8 +57,6 @@
 
 #define MAIN_URLS_JSON_CMD              F("/json_cmd")
 
-#define MAIN_URLS_FORMAT_LITTLE_FS      "/formatLittleFs"
-#define MAIN_URLS_MKDIR                 "/mkdir"
 
 #if defined(ESP8266)
     #define DEBUG_UART Serial1
@@ -76,5 +72,3 @@
 
 #define WIFI_TIMEOUT 30000              // checks WiFi every ...ms. Reset after this time, if WiFi cannot reconnect.
 #define HTTP_PORT 80
-
-void initWebServerHandlers(void);

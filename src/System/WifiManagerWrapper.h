@@ -9,8 +9,16 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 //#include <Fonts/FreeMono9pt7b.h>
-void WiFiManager_Handler(Adafruit_SSD1306& display);
-#else
-void WiFiManager_Handler();
 #endif
 
+namespace WiFiManagerWrapper {
+    
+#if defined(USE_DISPLAY)
+void Setup(Adafruit_SSD1306& display);
+#else
+void Setup();
+#endif
+
+void Task();
+
+}

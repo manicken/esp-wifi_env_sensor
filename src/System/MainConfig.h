@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <Arduino.h>
@@ -27,7 +28,7 @@
 #define WIFI_CHIPID_PREFIX "ESP32_"
 #endif
 
-#define MAIN_CONFIG_FILES_PATH                  F("/")
+#define MAIN_CONFIG_FILES_PATH                  "/"
 #define MAIN_CONFIG_CONFIG_JSON_FILE            "/cfg.json"
 #define MAIN_CONFIG_URL_RELOAD_JSON             "/MainConfig/restart"
 

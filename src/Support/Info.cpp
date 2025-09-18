@@ -1,6 +1,8 @@
 
 #include "Info.h"
 
+#include "../System/System.h"
+
 namespace Info
 {
 

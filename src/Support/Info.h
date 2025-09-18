@@ -11,14 +11,14 @@
 #if defined(ESP8266)
 //#include <ESP8266WebServer.h>
 #define WEBSERVER_TYPE AsyncWebServer
-#define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin()
+
 #define WIFI_getChipId() ESP.getChipId()
 #define WIFI_CHIPID_PREFIX "ESP_"
 #elif defined(ESP32)
 //#include "Support/fs_WebServer.h"
 #define WEBSERVER_TYPE AsyncWebServer
-#define AUTOFORMAT_ON_FAIL true
-#define LITTLEFS_BEGIN_FUNC_CALL LittleFS.begin(AUTOFORMAT_ON_FAIL, "/LittleFS", 10, "spiffs")
+
+
 #define WIFI_getChipId() ESP.getEfuseMac()
 #define WIFI_CHIPID_PREFIX "ESP32_"
 #endif

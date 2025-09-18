@@ -31,7 +31,7 @@ public:
     AsStringParameter(const JsonVariant& json);
     AsStringParameter() = delete;
     AsStringParameter(AsStringParameter&) = delete;
-    std::string jsonStr;
+    std::string str;
 };
 
 namespace Scheduler

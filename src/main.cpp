@@ -3,6 +3,8 @@
 */
 #include "main.h"
 
+#include "HAL_JSON/HAL_JSON_CommandExecutor.h"
+
 #include "System/WifiManagerWrapper.h"
 #include "System/System.h"
 #include "Support/ConstantStrings.h"
@@ -21,10 +23,11 @@ AsyncWebServer webserver(HTTP_PORT);
 
 unsigned long currTime = 0;
 
+bool wifiConnected = false;
+bool portalRequested = false;
+
 #if defined(USE_DISPLAY)
-
 #define SCREEN_ADDRESS 0x3C
-
 Adafruit_SSD1306 display(128, 64, &Wire, -1); // -1 = no reset pin
 void init_display(void);
 #endif
@@ -39,13 +42,15 @@ void Timer_SyncTime() {
 }
 
 #if defined(HAL_JSON_H_)
-void Alarm_SendToDeviceManager(const OnTickExtParameters *param)
+void Alarm_SendToHalCmdExec(const OnTickExtParameters *param)
 {
-    DEBUG_UART.println("Alarm_SendToDeviceManager");
+    DEBUG_UART.println("Alarm_SendToHalCmdExec");
     const AsStringParameter* casted_param = static_cast<const AsStringParameter*>(param);
     if (casted_param != nullptr)
     {
-       // DeviceManager::DecodeFromJSON(casted_param->jsonStr);
+        HAL_JSON::ZeroCopyString zcCmd(casted_param->str.c_str());
+        std::string dummy;
+        HAL_JSON::CommandExecutor::execute(zcCmd,dummy);
     }
 }
 #endif
@@ -54,7 +59,7 @@ Scheduler::NameToFunction nameToFunctionList[] = {
 //   name         , onTick            , onTickExt
     {"ntp_sync"   , &Timer_SyncTime   , nullptr           }
 #if defined(HAL_JSON_H_)
-    ,{"devmgr"     , nullptr           , &Alarm_SendToDeviceManager}
+    ,{"halcmd"     , nullptr           , &Alarm_SendToHalCmdExec}
 #endif
 };
 
@@ -62,35 +67,14 @@ Scheduler::NameToFunction nameToFunctionList[] = {
 /**************************************************************************/
 /**************************************************************************/
 
-static void my_heap_printer(void *user, const char *fmt, va_list args) {
-    char buffer[128];
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
-
-    Serial.print(buffer);
-
-    // Feed the WDT and let scheduler breathe
-    esp_task_wdt_reset();
-    delay(0);  
-}
-
-void safe_heap_dump(uint32_t caps = MALLOC_CAP_DEFAULT) {
-    Serial.println("=== Heap Dump Start ===");
-    //heap_caps_print_heap_info(caps, my_heap_printer);
-    
-    Serial.println("=== Heap Dump End ===");
-}
-
 void setup() {
     if (Info::resetReason_is_crash(false)) {
         OTA::setup();
-        failsafeLoop();
+        System::failsafeLoop();
     }
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
-    
-    
-    //DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
-    
+
     DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
     Info::PrintHeapInfo();
 
@@ -98,7 +82,7 @@ void setup() {
 
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true; // this call is needed before all access to internal Flash file system
 
-   // MainConfig::begin(webserver);
+    MainConfig::begin(webserver);
 
 #if defined(ESP32) && defined(FSBROWSER_SYNCED_WS_H_)
     if (InitSD_MMC()) FSBrowser::fsOK = true;
@@ -107,9 +91,13 @@ void setup() {
     init_display();
 #endif
     WiFi.setSleep(false);
-    //connect_to_wifi();
+
 #ifdef WIFI_MANAGER_WRAPPER_H_
-    WiFiManager_Handler(display);
+#if defined(USE_DISPLAY)
+    WiFiManagerWrapper::Setup(display);
+#else
+    WiFiManagerWrapper::Setup();
+#endif
 #endif
     OTA::setup();
 
@@ -117,7 +105,7 @@ void setup() {
 
     Info::startTime = now();
 
-    initWebServerHandlers();
+    System::initWebServerHandlers(webserver);
 #ifdef FSBROWSER_SYNCED_WS_H_
     FSBrowser::setup(webserver);
 #else
@@ -126,7 +114,7 @@ void setup() {
     Info::setup(webserver);
     HeartbeatLed::setup(webserver);
 #if defined(ESP32)
-    Start_MDNS();
+    System::Start_MDNS();
 #endif
     
 #if defined(ESP32)
@@ -139,136 +127,29 @@ void setup() {
     HAL_JSON::begin();
 #endif
     webserver.begin();
+
     // make sure that the following are allways at the end of this function
-    //DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
     Info::PrintHeapInfo();
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
-    
-    //esp_task_wdt_deinit();//esp_task_wdt_init(60, true); 
-    //heap_caps_dump(MALLOC_CAP_INTERNAL);
-    //esp_task_wdt_init(5, true); 
-
-    
 }
 
 void loop() {
+    ArduinoOTA.handle();
+    HeartbeatLed::task();
+    Scheduler::HandleAlarms();
 #ifdef HAL_JSON_H_
     HAL_JSON::loop();
 #endif
-    ArduinoOTA.handle();
-    Scheduler::HandleAlarms();
-    HeartbeatLed::task();
-
+    
 #if defined(ESP8266)
     MDNS.update(); // this is only required on esp8266
 #endif
     
-    if (WiFi.status() != wl_status_t:: WL_CONNECTED)
-    {
-        DEBUG_UART.println("WiFi connection lost.");
-        wl_status_t status = WiFi.begin();
-        if (status == wl_status_t::WL_CONNECTED) DEBUG_UART.println("reconnect OK");
-        else DEBUG_UART.println("reconnect fail");
-        
-        //connect_to_wifi();
-    }
+#ifdef WIFI_MANAGER_WRAPPER_H_
+    WiFiManagerWrapper::Task();
+#endif
 }
 
-void initWebServerHandlers(void)
-{
-    webserver.on(MAIN_URLS_FORMAT_LITTLE_FS, [](AsyncWebServerRequest* req) {
-        
-        if (LittleFS.format()) {
-            if (!LITTLEFS_BEGIN_FUNC_CALL) {
-                req->send(500, "text/html", "Format OK, but mount failed");
-                return;
-            }
-            req->send(200, "text/html", "Format OK and mounted");
-        } else {
-            req->send(500, "text/html", "Format failed");
-        }
-    });
-    webserver.on(MAIN_URLS_MKDIR, [](AsyncWebServerRequest* req) {
-        if (!req->hasArg("dir")) { req->send(200,"text/html", "Error: dir argument missing"); }
-        else
-        {
-            String path = req->arg("dir");
-            
-            if (LittleFS.mkdir(path.c_str()) == false) {
-                req->send(200,"text/html", "Error: could not create dir:" + path);
-            }
-            else
-            {
-                req->send(200,"text/html", "create new dir OK");
-            }
-
-        }
-
-    });
-#if defined(ESP32)
-    webserver.on("/sdcard_listfiles", [](AsyncWebServerRequest* req) {
-        
-        //if (SD_MMC.begin("/sdcard", true, false, 20000)) {
-            File root = SD_MMC.open("/");
-            if (!root) {
-                req->send(200, CONSTSTR::htmlContentType_TextPlain, "error while open sd card again");
-                return;
-            }
-
-            File file;
-            String ret;
-            while (file = root.openNextFile())
-            {
-                ret.concat("Name:"); ret.concat(file.name());
-                ret.concat(", Size:"); ret.concat(file.size());
-                ret.concat(", Dir:"); ret.concat(file.isDirectory()?"true":"false");
-                ret.concat("\n");
-            }
-            req->send(200, CONSTSTR::htmlContentType_TextPlain, ret.c_str());
-       // }else {webserver.send(200, CONSTSTR::htmlContentType_TextPlain, "could not open sd card a second time");}
-    });
-#endif
-    webserver.on("/crashTest", [](AsyncWebServerRequest* req) {
-        req->send(200, CONSTSTR::htmlContentType_TextPlain, "The system will now crash!!!, and luckily go into failsafe OTA upload mode.");
-        int *ptr = nullptr; // Null pointer
-        *ptr = 42;          // Dereference the null pointer (causes a crash)
-    });
-
-    /*
-    webserver.onNotFound([](AsyncWebServerRequest* req) {                              // If the client requests any URI
-        String uri = req->uri();
-        DEBUG_UART.println("onNotFound - hostHeader:" + req->hostHeader());
-        //bool isDir = false;
-        //DEBUG_UART.println("webserver on not found:" + uri);
-        if (uri.startsWith("/LittleFS") == false && uri.startsWith("/sdcard") == false)
-        {
-#if defined(ESP32)
-            File fileToCheck = LittleFS.open(uri);
-#elif defined(ESP8266)
-            File fileToCheck = LittleFS.open(uri, "r");
-#endif
-             if (!fileToCheck) {
-                webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
-                return;
-            }
-
-            if (fileToCheck.isDirectory()) // if it's a folder, try to find index.htm or index.html
-            {
-                if (LittleFS.exists(uri + "/index.html"))
-                    uri += "/index.html";
-                else if (LittleFS.exists(uri + "/index.htm"))
-                    uri += "/index.htm";
-            }
-            fileToCheck.close();
-            uri = "/LittleFS" + uri; // default to LittleFS
-        }
-#ifdef FSBROWSER_SYNCED_WS_H_
-        if (!FSBrowser::handleFileRead(uri))                  // send it if it exists
-            webserver.send(404, CONSTSTR::htmlContentType_TextPlain, F("404: Not Found")); // otherwise, respond with a 404 (Not Found) error
-#endif
-    });
-    */
-}
 #if defined(USE_DISPLAY)
 void init_display(void)
 {

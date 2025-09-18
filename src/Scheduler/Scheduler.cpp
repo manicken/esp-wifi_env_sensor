@@ -15,7 +15,8 @@
 
 AsStringParameter::AsStringParameter(const JsonVariant& json):OnTickExtParameters(0,1)
 {
-    serializeJson(json, jsonStr);  // ArduinoJson overload writes directly into std::string
+    str = json.as<const char*>();
+    //serializeJson(json, jsonStr);  // ArduinoJson overload writes directly into std::string
 }
 
 namespace Scheduler
