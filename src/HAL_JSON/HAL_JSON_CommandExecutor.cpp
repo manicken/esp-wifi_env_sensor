@@ -48,24 +48,34 @@ namespace HAL_JSON {
 #endif
         //bool addLastLogEntryToMessage = false;
         bool anyErrors = false;
-        if (zcCommand == HAL_JSON_CMD_EXEC_WRITE_CMD)
-        {
+        if (zcCommand == HAL_JSON_CMD_EXEC_WRITE_CMD) {
             anyErrors = writeCmd(zcStr, message) == false;
         }
-        else if (zcCommand == HAL_JSON_CMD_EXEC_READ_CMD)
-        {
+        else if (zcCommand == HAL_JSON_CMD_EXEC_READ_CMD) {
             anyErrors = readCmd(zcStr, message) == false;
         }
-        else if (zcCommand == HAL_JSON_CMD_EXEC_CMD)
-        {
+        else if (zcCommand == HAL_JSON_CMD_EXEC_CMD) {
             anyErrors = execCmd(zcStr, message) == false;
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON) {
             anyErrors = reloadJSON(zcStr, message) == false;
             anyErrors = ScriptEngine::ValidateAndLoadAllActiveScripts() == false;
         }
-        else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_SCRIPTS) {
-            anyErrors = ScriptEngine::ValidateAndLoadAllActiveScripts() == false;
+        else if (zcCommand == "scripts") {
+            ZeroCopyString zcSubCmd = zcStr.SplitOffHead('/');
+            if (zcSubCmd == "reload") {
+                anyErrors = ScriptEngine::ValidateAndLoadAllActiveScripts() == false;
+            } else if (zcSubCmd == "stop") {
+                ScriptEngine::ScriptsBlock::running = false;
+                message += "{\"info\":\"OK\"}";
+            } else if (zcSubCmd == "start") {
+                ScriptEngine::ScriptsBlock::running = true;
+                message += "{\"info\":\"OK\"}";
+            } else {
+                anyErrors = true;
+                message += "\"error\":\"Unknown scripts subcommand.\"";
+                message += ",\"command\":\""+zcSubCmd.ToString()+"\"";
+            }
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST) {
             message += GPIO_manager::GetList(zcStr);

@@ -70,7 +70,7 @@ namespace HAL_JSON {
         if (currmillis-lastmillis > 100) {
             lastmillis = currmillis;
             Manager::loop();
-            //if (ScriptEngine::ScriptsBlock::running)
+            if (ScriptEngine::ScriptsBlock::running)
                 ScriptEngine::Exec(); // runs the scriptengine
         }
     }
