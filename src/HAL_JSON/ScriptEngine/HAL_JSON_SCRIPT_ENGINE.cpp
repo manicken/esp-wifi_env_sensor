@@ -1,6 +1,12 @@
 
 #include "HAL_JSON_SCRIPT_ENGINE.h"
 
+#include "HAL_JSON_SCRIPT_ENGINE_Support.h"
+#include "HAL_JSON_SCRIPT_ENGINE_StatementBlock.h"
+#include "HAL_JSON_SCRIPT_ENGINE_Parser.h"
+#include "HAL_JSON_SCRIPT_ENGINE_Parser_Token.h"
+#include "HAL_JSON_SCRIPT_ENGINE_Script.h"
+
 #if defined(_WIN32) || defined(__linux__)
 #define DEMO_SCRIPT_FILE_PATH "script1.txt"
 #else

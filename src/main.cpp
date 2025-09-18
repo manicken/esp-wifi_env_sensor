@@ -8,6 +8,8 @@
 #include "Support/ConstantStrings.h"
 #include "Drivers/HearbeatLed.h" // this should not be here in final version (should only be accessible through HAL interface)
 
+#include "esp_task_wdt.h"
+
 AsyncWebServer webserver(HTTP_PORT);
 
 #ifdef ESP8266
@@ -60,19 +62,39 @@ Scheduler::NameToFunction nameToFunctionList[] = {
 /**************************************************************************/
 /**************************************************************************/
 
+static void my_heap_printer(void *user, const char *fmt, va_list args) {
+    char buffer[128];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+    Serial.print(buffer);
+
+    // Feed the WDT and let scheduler breathe
+    esp_task_wdt_reset();
+    delay(0);  
+}
+
+void safe_heap_dump(uint32_t caps = MALLOC_CAP_DEFAULT) {
+    Serial.println("=== Heap Dump Start ===");
+    //heap_caps_print_heap_info(caps, my_heap_printer);
+    
+    Serial.println("=== Heap Dump End ===");
+}
+
 void setup() {
     if (Info::resetReason_is_crash(false)) {
         OTA::setup();
         failsafeLoop();
     }
-
-    DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
     DEBUG_UART.begin(115200);
     DEBUG_UART.setDebugOutput(true);
-    DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
-    DEBUG_UART.println(Info::getResetReasonStr());
-
     
+    
+    //DEBUG_UART.printf("free @ start:%u\n",ESP.getFreeHeap());
+    
+    DEBUG_UART.println(F("\r\n!!!!!Start of MAIN Setup!!!!!\r\n"));
+    Info::PrintHeapInfo();
+
+    DEBUG_UART.println(Info::getResetReasonStr());
 
     if (LITTLEFS_BEGIN_FUNC_CALL == true) FSBrowser::fsOK = true; // this call is needed before all access to internal Flash file system
 
@@ -101,31 +123,32 @@ void setup() {
 #else
     FSBrowser::setup(webserver);
 #endif
-
-   // ThingSpeak::setup(webserver);
     Info::setup(webserver);
-    
-
     HeartbeatLed::setup(webserver);
 #if defined(ESP32)
     Start_MDNS();
 #endif
-    /* TODO move this into a hal json device
     
-    /*
 #if defined(ESP32)
     File test = SD_MMC.open("/StartTimes.log", "a", true);
     test.println(Time_ext::GetTimeAsString(now()).c_str());
     test.close();
 #endif
-*/
+
 #ifdef HAL_JSON_H_
     HAL_JSON::begin();
 #endif
     webserver.begin();
     // make sure that the following are allways at the end of this function
-    DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
+    //DEBUG_UART.printf("free end of setup:%u\n",ESP.getFreeHeap());
+    Info::PrintHeapInfo();
     DEBUG_UART.println(F("\r\n!!!!!End of MAIN Setup!!!!!\r\n"));
+    
+    //esp_task_wdt_deinit();//esp_task_wdt_init(60, true); 
+    //heap_caps_dump(MALLOC_CAP_INTERNAL);
+    //esp_task_wdt_init(5, true); 
+
+    
 }
 
 void loop() {

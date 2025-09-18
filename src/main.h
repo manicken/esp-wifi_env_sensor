@@ -44,9 +44,13 @@
 
 
 #include "System/MainConfig.h"
-#include "System/FSBrowserAsync2.h"
+#include "System/FSBrowserAsync.h"
 
-
+#if defined(ESP8266)
+#include <ESP8266mDNS.h>
+#elif defined(ESP32)
+#include <ESPmDNS.h>
+#endif
 
 #include "HAL_JSON/HAL_JSON.h"
 #ifdef HAL_JSON_H_

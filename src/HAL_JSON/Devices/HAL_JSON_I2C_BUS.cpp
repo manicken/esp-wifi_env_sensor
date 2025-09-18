@@ -302,8 +302,12 @@ namespace HAL_JSON {
             uint32_t speed = 0;
             zcSpeed.ConvertTo_uint32(speed);
             if (speed == 0) return HALOperationResult::StringRequestParameterError;
+#if defined(ESP32)
             if (wire->setClock(speed) == false) return HALOperationResult::ExecutionFailed;
-            HALOperationResult::Success;
+#else
+            wire->setClock(speed);
+#endif
+            return HALOperationResult::Success;
         }
         return HALOperationResult::UnsupportedCommand;
     }

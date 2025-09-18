@@ -2,14 +2,8 @@
 
 #include <Arduino.h>
 #include <stdlib.h>
-
-#include "../Support/Logger.h"
-#include "../Support/ConvertHelper.h"
-
-#include "HAL_JSON_Device_GlobalDefines.h"
-
-#include "HAL_JSON_GPIO_Manager.h"
-#include "HAL_JSON_Manager.h"
+#include "HAL_JSON_ZeroCopyString.h"
+#include <queue>
 
 #define HAL_JSON_CMD_EXEC_WRITE_CMD               "write"
 #define HAL_JSON_CMD_EXEC_READ_CMD                "read"
@@ -32,8 +26,31 @@
 //#define HAL_JSON_CommandExecutor_DEBUG_CMD
 
 namespace HAL_JSON {
+    using CommandCallback = std::function<void(const std::string& response)>;
+
+    struct PendingRequest {
+        std::string command;
+        //AsyncWebServerRequest* request;
+        CommandCallback cb;
+    };
+
+
+
     class CommandExecutor {
     public:
+
+        static std::queue<PendingRequest> g_pending;
+        static portMUX_TYPE g_pendingMux;
+
+#if defined(ESP32)
+  //portMUX_TYPE g_pendingMux = portMUX_INITIALIZER_UNLOCKED;
+  #define CommandExecutor_LOCK_QUEUE()   portENTER_CRITICAL(&CommandExecutor::g_pendingMux)
+  #define CommandExecutor_UNLOCK_QUEUE() portEXIT_CRITICAL(&CommandExecutor::g_pendingMux)
+#else
+  #define CommandExecutor_LOCK_QUEUE()   noInterrupts()
+  #define CommandExecutor_UNLOCK_QUEUE() interrupts()
+#endif
+
         struct Result {
             bool success = true;
             // must be a string as the ownership must be here

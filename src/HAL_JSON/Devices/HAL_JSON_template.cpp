@@ -29,4 +29,20 @@ namespace HAL_JSON {
         return ret;
     }
 
+    void Template::loop() {}
+    void Template::begin() {}
+    Device* Template::findDevice(UIDPath& path) { return nullptr; }
+
+    HALOperationResult Template::read(HALValue& val) { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Template::write(const HALValue& val) { return HALOperationResult::UnsupportedOperation; };
+    HALOperationResult Template::read(const HALReadStringRequestValue& val) { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Template::write(const HALWriteStringRequestValue& val) { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Template::read(const HALReadValueByCmd& val) { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Template::write(const HALWriteValueByCmd& val) { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Template::exec() { return HALOperationResult::UnsupportedOperation; }
+    HALOperationResult Template::exec(ZeroCopyString& cmd) { return HALOperationResult::UnsupportedOperation; }
+    Device::ReadToHALValue_FuncType Template::GetReadToHALValue_Function(ZeroCopyString& zcFuncName) { return nullptr; }
+    Device::ReadToHALValue_FuncType Template::GetWriteFromHALValue_Function(ZeroCopyString& zcFuncName) { return nullptr; }
+    
+    HALValue* Template::GetValueDirectAccessPtr() { return nullptr; }
 }

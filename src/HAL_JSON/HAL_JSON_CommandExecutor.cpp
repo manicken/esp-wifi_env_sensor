@@ -1,11 +1,23 @@
 
 #include "HAL_JSON_CommandExecutor.h"
 
+#include "../Support/Logger.h"
+#include "../Support/ConvertHelper.h"
+
+#include "HAL_JSON_Device_GlobalDefines.h"
+
+#include "HAL_JSON_GPIO_Manager.h"
+#include "HAL_JSON_Manager.h"
+#include "ScriptEngine/HAL_JSON_SCRIPT_ENGINE.h"
+
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream>
 #endif
 
 namespace HAL_JSON {
+
+    portMUX_TYPE CommandExecutor::g_pendingMux = portMUX_INITIALIZER_UNLOCKED;
+    std::queue<PendingRequest> CommandExecutor::g_pending;
 
     CommandExecutor::ReadWriteCmdParameters::ReadWriteCmdParameters(ZeroCopyString& zcStr) {
         zcType = zcStr.SplitOffHead('/');
@@ -49,15 +61,11 @@ namespace HAL_JSON {
             anyErrors = execCmd(zcStr, message) == false;
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON) {
-            anyErrors = reloadJSON(zcStr, message) == false;            
-        }
-        else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_CFG_JSON_SAFE) {
-            Manager::reloadQueued = true;
-            message += "\"info\":\"OK\"";
+            anyErrors = reloadJSON(zcStr, message) == false;
+            anyErrors = ScriptEngine::ValidateAndLoadAllActiveScripts() == false;
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_RELOAD_SCRIPTS) {
-            Manager::reloadQueued = true;
-            message += "\"info\":\"OK\"";
+            anyErrors = ScriptEngine::ValidateAndLoadAllActiveScripts() == false;
         }
         else if (zcCommand == HAL_JSON_CMD_EXEC_GET_AVAILABLE_GPIO_LIST) {
             message += GPIO_manager::GetList(zcStr);

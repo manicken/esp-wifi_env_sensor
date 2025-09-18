@@ -1,279 +1,218 @@
+#pragma once
+#define FSBROWSER_ASYNC_WS_H_
+
 #include <Arduino.h>
-#include <WiFi.h>
-#include <LittleFS.h>
-#include <ESPAsyncWebServer.h>
-
-// Select the FileSystem by uncommenting one of the lines below
-
-//#define USE_SPIFFS
-//#define USE_LITTLEFS
-//#define USE_SDFS
-#define LITTLEFS_AND_SDMCC
-
-#define DEBUG_UART Serial
-
-#if defined USE_SPIFFS
-#include <FS.h>
-    const char* fsName = "SPIFFS";
-    FS* fileSystem = &SPIFFS;
-    SPIFFSConfig fileSystemConfig = SPIFFSConfig();
-#elif defined USE_LITTLEFS
-#include <LittleFS.h>
-    const char* fsName = "LittleFS";
-    FS* fileSystem = &LittleFS;
-#ifdef ESP8266
-    LittleFSConfig fileSystemConfig = LittleFSConfig();
-#endif
-#elif defined USE_SDFS
-#include <SDFS.h>
-    const char* fsName = "SDFS";
-    FS* fileSystem = &SDFS;
-    SDFSConfig fileSystemConfig = SDFSConfig();
-    // fileSystemConfig.setCSPin(chipSelectPin);
-#elif defined(LITTLEFS_AND_SDMCC)
+#include <SPI.h>
 #include <LittleFS.h>
 #if defined(ESP32)
 #include <SD_MMC.h>
 #endif
-    const char* fsName = "LittleFS"; // the main storage
-    FS* fileSystem = nullptr;
-#else
-#error Please select a filesystem first by uncommenting one of the "#define USE_xxx" lines at the beginning of the sketch.
-#endif
-
-
+//#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 
 namespace FSBrowser {
 
     
+    FS *fileSystem = &LittleFS; // default FS
+    bool fsOK = false;
+    String unsupportedFiles = String();
+    File uploadFile;
+
     const char TEXT_PLAIN[] PROGMEM = "text/plain";
     const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
     const char FILE_NOT_FOUND[] PROGMEM = "FileNotFound";
 
-    char upload_html[] PROGMEM = R"=====(
+    char upload_html[] PROGMEM = R"=====( 
 <form method="post" enctype="multipart/form-data">
       <input type="file" name="name">
       <input class="button" type="submit" value="Upload">
       <br>
       <br>
       <button onclick="window.location.href='/edit'">Go to edit page</button>
-      </a>
 </form>
-
 )=====";
-    //const char* ssid = "YOUR_SSID";
-    //const char* password = "YOUR_PASS";
 
-    AsyncWebServer server(80);
+    const char* fsName = "LittleFS"; // main storage
 
-    bool fsOK = false;
+    void replyOK(AsyncWebServerRequest *request) {
+        request->send(200, FPSTR(TEXT_PLAIN), "");
+    }
 
-    String unsupportedFiles = String();
+    void replyOKWithMsg(AsyncWebServerRequest *request, const String &msg) {
+        request->send(200, FPSTR(TEXT_PLAIN), msg);
+    }
 
-    /*
-      Return the list of files in the directory specified by the "dir" query string parameter.
-      Also demonstrates the use of chunked responses.
-    */
-    bool selectFileSystemAndFixPath(String &path)
-    {
-        //DBG_OUTPUT_PORT.println(String("before selectFileSystemAndFixPath: ") + path);
+    void replyNotFound(AsyncWebServerRequest *request, const String &msg) {
+        request->send(404, FPSTR(TEXT_PLAIN), msg);
+    }
+
+    void replyBadRequest(AsyncWebServerRequest *request, const String &msg) {
+        Serial.println(msg);
+        request->send(400, FPSTR(TEXT_PLAIN), msg + "\r\n");
+    }
+
+    void replyServerError(AsyncWebServerRequest *request, const String &msg) {
+        Serial.println(msg);
+        request->send(500, FPSTR(TEXT_PLAIN), msg + "\r\n");
+    }
+
+    bool selectFileSystemAndFixPath(String &path) {
 #if defined(ESP32)
         if (path.startsWith("/sdcard")) {
             fileSystem = &SD_MMC;
             path = path.substring(sizeof("/sdcard")-1);
             if (path.length() == 0) path = "/";
-            //DBG_OUTPUT_PORT.println(String("sdcard new Path: ") + path);
             return true;
         }
-        else 
 #endif
         if (path.startsWith("/LittleFS")) {
             fileSystem = &LittleFS;
             path = path.substring(sizeof("/LittleFS")-1);
             if (path.length() == 0) path = "/";
-            //DBG_OUTPUT_PORT.println(String("LittleFS new Path: ") + path);
             return true;
         }
-        DEBUG_UART.println("selectFileSystemAndFixPath error - invalid filesystem" + path);
+        Serial.println("selectFileSystemAndFixPath error: invalid FS " + path);
         return false;
-    }
-    // List files in LittleFS as JSON
-    void handleList(AsyncWebServerRequest *request) {
-        if (!fsOK) {
-            request->send(500, "text/plain", FPSTR(FS_INIT_ERROR));
-            return;
-        }
-
-        if (!request->hasParam("dir")) {
-            request->send(400, "text/plain", "DIR ARG MISSING");
-            return;
-        }
-
-        String path = request->getParam("dir")->value();
-        if (selectFileSystemAndFixPath(path) == false) {
-            request->send(200, "application/json", 
-                        "[{\"type\":\"dir\",\"name\":\"sdcard\"},{\"type\":\"dir\",\"name\":\"LittleFS\"}]");
-            return;
-        }
-
-        if (path != "/" && !fileSystem->exists(path)) {
-            request->send(400, "text/plain", "BAD PATH");
-            return;
-        }
-
-        Serial.println(String("handleFileList: ") + path);
-
-        File dir = fileSystem->open(path, "r");
-        if (!dir) {
-            request->send(500, "text/plain", "Failed to open directory");
-            return;
-        }
-
-        // Build JSON in RAM
-        String json = "[";
-        bool first = true;
-        File file;
-
-        while (file = dir.openNextFile()) {
-    #ifdef USE_SPIFFS
-            String error = checkForUnsupportedPath(file.name());
-            if (error.length() > 0) {
-                Serial.println(String("Ignoring ") + error + file.name());
-                continue;
-            }
-    #endif
-            if (!first) json += ",";
-            first = false;
-
-            json += "{\"type\":\"";
-            if (file.isDirectory()) {
-                json += "dir";
-            } else {
-                json += "file\",\"size\":\"";
-                json += file.size();
-            }
-
-            json += "\",\"name\":\"";
-            if (file.name()[0] == '/') {
-                json += &(file.name()[1]);
-            } else {
-                json += file.name();
-            }
-            json += "\"}";
-        }
-
-        json += "]";
-
-        request->send(200, "application/json", json);
-    }
-
-
-    // Handle file uploads
-    void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
-                    uint8_t *data, size_t len, bool final) {
-    static File uploadFile;
-
-    if (index == 0) {
-        // first chunk
-        if (!filename.startsWith("/")) filename = "/" + filename;
-        Serial.printf("Upload start: %s\n", filename.c_str());
-        uploadFile = LittleFS.open(filename, "w");
-    }
-
-    if (uploadFile) {
-        uploadFile.write(data, len);
-    }
-
-    if (final) {
-        if (uploadFile) uploadFile.close();
-        Serial.printf("Upload complete: %s\n", filename.c_str());
-    }
-    }
-
-    // Delete file
-    void handleDelete(AsyncWebServerRequest *request) {
-    if (!request->hasParam("file")) {
-        request->send(400, "text/plain", "Missing file param");
-        return;
-    }
-    String filename = request->getParam("file")->value();
-    if (!filename.startsWith("/")) filename = "/" + filename;
-
-    if (fileSystem->remove(filename)) {
-        request->send(200, "text/plain", "Deleted " + filename);
-    } else {
-        request->send(500, "text/plain", "Delete failed");
-    }
     }
 
     void handleStatus(AsyncWebServerRequest *request) {
-        Serial.println("handleStatus");
-
-        String json;
-        json.reserve(256);
-
-        json = "{\"type\":\"";
-        json += fsName;
-        json += "\", \"isOk\":";
-
+        String json = "{\"type\":\"" + String(fsName) + "\", \"isOk\":";
         if (fsOK) {
-    #ifdef ESP8266
+#if defined(ESP8266)
             FSInfo fs_info;
-            fileSystem->info(fs_info);
-            json += F("\"true\", \"totalBytes\":\"");
-            json += fs_info.totalBytes;
-            json += F("\", \"usedBytes\":\"");
-            json += fs_info.usedBytes;
-    #elif defined(ESP32)
-            json += F("\"true\", \"totalBytes\":\"");
-            json += LittleFS.totalBytes();
-            json += F("\", \"usedBytes\":\"");
-            json += LittleFS.usedBytes();
-    #endif
-            json += "\"";
+            LittleFS.info(fs_info);
+            json += "\"true\", \"totalBytes\":\"" + String(fs_info.totalBytes) + "\", \"usedBytes\":\"" + String(fs_info.usedBytes) + "\"";
+#elif defined(ESP32)
+            json += "\"true\", \"totalBytes\":\"" + String(LittleFS.totalBytes()) + "\", \"usedBytes\":\"" + String(LittleFS.usedBytes()) + "\"";
+#endif
         } else {
             json += "\"false\"";
         }
-
-        json += F(",\"unsupportedFiles\":\"");
-        json += unsupportedFiles;
-        json += "\"}";
-
+        json += ",\"unsupportedFiles\":\"" + unsupportedFiles + "\"}";
         request->send(200, "application/json", json);
     }
-    void handleFailsafeUploadPage(AsyncWebServerRequest *request) {
-        request->send(200, "text/html", (const char*)upload_html);
+
+    void handleFileList(AsyncWebServerRequest *request) {
+        if (!fsOK) return replyServerError(request, FPSTR(FS_INIT_ERROR));
+        if (!request->hasParam("dir")) return replyBadRequest(request, "DIR ARG MISSING");
+
+        String path = request->getParam("dir")->value();
+        printf("\nhandleFileList path:%s\n", path.c_str());
+        if (!selectFileSystemAndFixPath(path)) {
+            request->send(200, "application/json",
+                "[{\"type\":\"dir\",\"name\":\"sdcard\"},{\"type\":\"dir\",\"name\":\"LittleFS\"}]");
+            return;
+        }
+        
+
+        if (path != "/" && !fileSystem->exists(path)) return replyBadRequest(request, "BAD PATH");
+
+        String output = "[";
+    #if defined(ESP8266)
+        Dir dir = fileSystem->openDir(path);
+        while (dir.next()) {
+            File f = dir.openFile("r");
+            if (output.length() > 1) output += ",";
+            output += "{\"type\":\"";
+            output += (f.isDirectory()) ? "dir" : "file";
+            if (!f.isDirectory()) output += "\",\"size\":\"" + String(f.size());
+            output += "\",\"name\":\"";
+            output += (f.name()[0] == '/') ? &(f.name()[1]) : f.name();
+            output += "\"}";
+            f.close();
+        }
+    #elif defined(ESP32)
+        File dir = fileSystem->open(path);
+        if (dir && dir.isDirectory()) {
+            File f = dir.openNextFile();
+            while (f) {
+                if (output.length() > 1) output += ",";
+                output += "{\"type\":\"";
+                output += (f.isDirectory()) ? "dir" : "file";
+                if (!f.isDirectory()) output += "\",\"size\":\"" + String(f.size());
+                output += "\",\"name\":\"";
+                String fname = f.name();
+                if (fname[0] == '/') fname = fname.substring(1);
+                output += fname;
+                output += "\"}";
+                f = dir.openNextFile();
+            }
+        }
+    #endif
+        output += "]";
+        request->send(200, "application/json", output);
     }
 
 
-    void setup() {
- 
-    // Routes
-    server.on("/status", HTTP_GET, handleStatus);
-    server.on("/list", HTTP_GET, handleList);
-    server.on("/delete", HTTP_GET, handleDelete);
-    server.on("/upload", HTTP_POST, 
-                [](AsyncWebServerRequest *request) {
-                request->send(200, "text/plain", "Upload complete");
-                },
-                handleUpload);
-    server.on("/edit/upload", HTTP_GET, handleFailsafeUploadPage);
-    // Serve static files, index.htm as default
-    server.serveStatic("/", LittleFS, "/").setDefaultFile("index.htm");
-    server.onNotFound([](AsyncWebServerRequest *request) {
-        if (!LittleFS.begin()) {
-            request->send(500, "text/plain", "FS error");
-            return;
-        }
+    void handleFileRead(AsyncWebServerRequest *request) {
         String path = request->url();
-        if (path == "/") path = "/index.htm";
-        if (LittleFS.exists(path)) {
-            request->send(LittleFS, path, String(), true);
-        } else {
-            request->send(404, "text/plain", "Not Found");
+        printf("\nhandleFileRead path:%s\n", path.c_str());
+        if (!fsOK) { replyServerError(request, FPSTR(FS_INIT_ERROR)); return; }
+        if (!selectFileSystemAndFixPath(path)) { replyNotFound(request, "FS NOT FOUND"); return; }
+        if (!fileSystem->exists(path)) { replyNotFound(request, FPSTR(FILE_NOT_FOUND)); return; }
+        
+        AsyncWebServerResponse *response = request->beginResponse(
+            fileSystem->open(path, "r"), "application/octet-stream");
+        request->send(response);
+    }
+
+    void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+        if (!fsOK) return;
+        if (index == 0) {
+            printf("\nhandleFileUpload path:%s\n", filename.c_str());
+            if (!filename.startsWith("/")) filename = "/" + filename;
+            if (!selectFileSystemAndFixPath(filename)) { replyNotFound(request, "FS NOT FOUND"); return; }
+            uploadFile = fileSystem->open(filename, "w");
+            if (!uploadFile) { request->send(500, "text/plain", "CREATE FAILED"); return; }
         }
-    });
-    server.begin();
+        if (len && uploadFile) uploadFile.write(data, len);
+        if (final && uploadFile) uploadFile.close();
+    }
+
+    void handleFileCreate(AsyncWebServerRequest *request) {
+        if (!fsOK) return replyServerError(request, FPSTR(FS_INIT_ERROR));
+        if (!request->hasParam("path", true)) return replyBadRequest(request, "PATH ARG MISSING");
+
+        String path = request->getParam("path", true)->value();
+        printf("\nhandleFileCreate path:%s\n", path.c_str());
+
+        if (!selectFileSystemAndFixPath(path)) return;
+        if (path == "/" || fileSystem->exists(path)) return replyBadRequest(request, "BAD PATH");
+        
+        File file = fileSystem->open(path, "w");
+        if (!file) return replyServerError(request, "CREATE FAILED");
+        file.close();
+        replyOKWithMsg(request, path.substring(0, path.lastIndexOf('/')));
+    }
+
+    void handleFileDelete(AsyncWebServerRequest *request) {
+        if (!fsOK) return replyServerError(request, FPSTR(FS_INIT_ERROR));
+        if (!request->hasParam("path", true)) return replyBadRequest(request, "PATH ARG MISSING");
+
+        String path = request->getParam("path", true)->value();
+        printf("\nhandleFileDelete path:%s\n", path.c_str());
+        if (!selectFileSystemAndFixPath(path)) return;
+        if (path.isEmpty() || path == "/") return replyBadRequest(request, "BAD PATH");
+        if (!fileSystem->exists(path)) return replyNotFound(request, FPSTR(FILE_NOT_FOUND));
+        
+        fileSystem->remove(path);
+        replyOKWithMsg(request, path.substring(0, path.lastIndexOf('/')));
+    }
+
+    void setup(AsyncWebServer &srv) {
+        
+        fsOK = LittleFS.begin();
+
+        srv.on("/status", HTTP_GET, handleStatus);
+        srv.on("/list", HTTP_GET, handleFileList);
+        srv.on("/edit", HTTP_GET, [](AsyncWebServerRequest *r){ r->send(LittleFS, "/edit/index.htm", "text/html"); });
+        srv.on("/edit", HTTP_PUT, handleFileCreate);
+        srv.on("/edit", HTTP_DELETE, handleFileDelete);
+        srv.on("/edit/upload", HTTP_POST, [](AsyncWebServerRequest *r){ r->send(200); }, handleFileUpload);
+        srv.on("/edit", HTTP_POST, [](AsyncWebServerRequest *r){ r->send(200); }, handleFileUpload);
+
+        srv.serveStatic("/", LittleFS, "/").setDefaultFile("index.htm");
+        srv.onNotFound(handleFileRead);
     }
 
 }
