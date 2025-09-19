@@ -10,6 +10,16 @@ This project provides a flexible hardware and device abstraction framework for E
 
 Ideal for building modular, multi-device IoT projects and automation systems with minimal platform-specific code.
 
+# License
+
+This repository uses a mixed-license approach:
+
+- **GPL v3** for the core HAL/DAL and script engine files.  
+- **MIT** for device registration files:  
+  - HAL_JSON_DeviceTypesRegistry.cpp  
+  - HAL_JSON_I2C_BUS_DeviceTypeReg.cpp  
+
+Please consult the respective LICENSE files before using or redistributing the code.
 
 currently a work in progress
 but when finished:

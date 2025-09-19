@@ -21,6 +21,9 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   See readme.md for more information.
+
+  Modified by Jannik Svensson 2024 to include failsafe upload
+  Modified by Jannik Svensson 2024 so that filesystem selection can be done
 */
 
 ////////////////////////////////
