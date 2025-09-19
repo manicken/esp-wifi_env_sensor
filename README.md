@@ -1,5 +1,15 @@
-# esp-temperature2thingsspeak
-WiFi esp based temperature/hygrometer sensor using thingsspeak for data storage
+This project provides a flexible hardware and device abstraction framework for ESP32, ESP8266, Raspberry Pi Pico, and Linux.
+
+* JSON-based configuration: Easily define hardware and virtual devices.
+
+* Hybrid HAL/DAL system: Supports direct hardware access (GPIO, ADC, I²C, SPI, PWM) and logical/virtual devices.
+
+* Script engine: Compile scripts to fast indirect dispatch with function pointers and device contexts.
+
+* Cross-platform: Runs on microcontrollers and Linux, enabling unified device management and IoT integration (e.g., Thingspeak uploads).
+
+Ideal for building modular, multi-device IoT projects and automation systems with minimal platform-specific code.
+
 
 currently a work in progress
 but when finished:
